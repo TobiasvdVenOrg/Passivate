@@ -7,32 +7,23 @@ use futures::{
     channel::mpsc::{channel, Receiver},
     SinkExt, StreamExt,
 };
-use std::thread;
 
 fn main() {
     let path = "F:\\Projects\\passivate\\target";
     println!("Hello");
 
-    thread::spawn(move || {
-        let mut watcher = notify::recommended_watcher(|res| {
-            match res {
-                Ok(event) => println!("event: {:?}", event),
-                Err(e) => println!("watch error: {:?}", e),
-            }
-        }).expect("Unable to create watcher");
-
-        // Add a path to be watched. All files and directories at that path and
-        // below will be monitored for changes.
-        let w = watcher.watch(Path::new(path), RecursiveMode::Recursive);
-
-        if w.is_err() {
-            println!("watch error: {:?}", w.unwrap_err());
+    let mut watcher = notify::recommended_watcher(|res| {
+        match res {
+            Ok(event) => println!("event: {:?}", event),
+            Err(e) => println!("watch error: {:?}", e),
         }
+    }).expect("Unable to create watcher");
 
-        loop {
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
+    let w = watcher.watch(Path::new(path), RecursiveMode::Recursive);
+
+    if w.is_err() {
+        println!("watch error: {:?}", w.unwrap_err());
+    }
 
     let eframe_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
