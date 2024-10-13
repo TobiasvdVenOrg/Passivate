@@ -16,7 +16,7 @@ impl eframe::App for App {
 
         if let Ok(Some(event)) = self.rx.try_next() {
             match event {
-                Ok(e) => {
+                Ok(_e) => {
                     let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
                     let output = Command::new("cargo").arg("test").current_dir(path).output().expect("Failed to run tests.");
 

@@ -1,17 +1,20 @@
-//use passivate_core::add;
-
 mod app;
+mod egui_tests_view;
+
 use notify::*;
 use std::path::Path;
 use eframe::CreationContext;
 use futures::channel::mpsc::channel;
 use futures::SinkExt;
+use passivate_core::passivate_notify::NotifyChangeEvents;
+use passivate_core::test_execution::TestExecution;
 
 fn build_app(cc: &CreationContext) -> Box<app::App> {
     let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
     let (mut tx, rx) = channel(1);
 
     let cloned_context = cc.egui_ctx.clone();
+
     let mut watcher = RecommendedWatcher::new(move |res| {
         futures::executor::block_on(async {
             tx.send(res).await.unwrap();
@@ -21,7 +24,7 @@ fn build_app(cc: &CreationContext) -> Box<app::App> {
 
     let _ = watcher.watch(Path::new(&path), RecursiveMode::Recursive).expect("Unable to start watching.");
 
-    let mut app = Box::new(app::App::new(rx, cc.egui_ctx.clone(), watcher));
+    let app = Box::new(app::App::new(rx, cc.egui_ctx.clone(), watcher));
 
     app
 }
