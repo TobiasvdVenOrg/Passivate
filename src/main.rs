@@ -1,32 +1,26 @@
 mod app;
 mod egui_tests_view;
 
+use app::App;
 use notify::*;
-use std::path::Path;
 use eframe::CreationContext;
-use futures::channel::mpsc::channel;
 use futures::SinkExt;
+use passivate_core::change_events::AsyncChangeEventHandler;
 use passivate_core::passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::TestExecution;
+use passivate_core::tests_view::TestsStatus;
+use crate::egui_tests_view::EguiTestsView;
 
-fn build_app(cc: &CreationContext) -> Box<app::App> {
+fn build_app(cc: &CreationContext) -> App {
     let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
-    let (mut tx, rx) = channel(1);
 
-    let cloned_context = cc.egui_ctx.clone();
+    let tests_status = TestsStatus::new("Bladiebloe");
+    let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
+    let test_execution = TestExecution::new(Box::new(tests_view));
+    let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));
+    let change_events = NotifyChangeEvents::new(&path, change_event_handler);
 
-    let mut watcher = RecommendedWatcher::new(move |res| {
-        futures::executor::block_on(async {
-            tx.send(res).await.unwrap();
-            cloned_context.request_repaint();
-        })
-    }, Config::default()).expect("Unable to create watcher.");
-
-    let _ = watcher.watch(Path::new(&path), RecursiveMode::Recursive).expect("Unable to start watching.");
-
-    let app = Box::new(app::App::new(rx, cc.egui_ctx.clone(), watcher));
-
-    app
+    App::new(tests_status, Box::new(change_events))
 }
 
 fn main() {
@@ -42,7 +36,7 @@ fn main() {
         eframe_options,
         Box::new(|cc| {
             let app = build_app(cc);
-            Ok(app)
+            Ok(Box::new(app))
         }),
     ).expect("Unable to open window.");
 }

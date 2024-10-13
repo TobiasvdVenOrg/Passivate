@@ -1,29 +1,23 @@
-use eframe::Frame;
+use std::sync::{Arc, RwLock};
 use egui::Context;
-use passivate_core::tests_view::{TestsStatus, TestsView};
+use passivate_core::tests_view::{TestsStatus, TestsStatusHandler};
 
-struct EguiTestsView {
+pub struct EguiTestsView {
     context: Context,
-    status: TestsStatus
+    status: Arc<RwLock<TestsStatus>>
 }
 
 impl EguiTestsView {
-    pub fn new(ctx: Context) -> Self {
-        EguiTestsView { context: ctx, status: TestsStatus::default() }
+    pub fn new(ctx: Context, tests_status: Arc<RwLock<TestsStatus>>) -> Self {
+        EguiTestsView { context: ctx, status: tests_status }
     }
 }
 
-impl TestsView for EguiTestsView {
-    fn update(&mut self, status: TestsStatus) {
-        self.status = status;
+impl TestsStatusHandler for EguiTestsView {
+    fn refresh(&mut self, status: TestsStatus) {
+        let mut w = self.status.write().unwrap();
+        *w = status;
+
         self.context.request_repaint();
-    }
-}
-
-impl eframe::App for EguiTestsView {
-    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading(self.status.text.as_str());
-        });
     }
 }

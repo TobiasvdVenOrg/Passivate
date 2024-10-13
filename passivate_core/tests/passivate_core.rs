@@ -7,7 +7,7 @@ struct MockTestsView {
 }
 
 impl TestsView for MockTestsView {
-    fn update(&mut self, status: TestsStatus) {
+    fn refresh(&mut self, status: TestsStatus) {
         self.tests_status = status;
     }
 }
