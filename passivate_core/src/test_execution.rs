@@ -1,6 +1,7 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::{BufRead, BufReader};
 use crate::change_events::{ChangeEvent, ChangeEventHandler};
-use crate::tests_view::{TestsStatus, TestsStatusHandler};
+use crate::tests_view::{SingleTest, SingleTestStatus, TestsStatus, TestsStatusHandler};
 
 pub struct TestExecution {
     tests_status_handler: Box<dyn TestsStatusHandler>
@@ -14,13 +15,41 @@ impl TestExecution {
 
 impl ChangeEventHandler for TestExecution {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        self.tests_status_handler.refresh(TestsStatus { text: "RUNNING TESTS".to_string() });
+        self.tests_status_handler.refresh(TestsStatus { running: true, tests: Vec::new() });
 
         let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
-        let output = Command::new("cargo").arg("test").current_dir(path).output().expect("Failed to run tests.");
+        let output = Command::new("cargo").arg("test").current_dir(path).stdout(Stdio::piped()).spawn().expect("Failed to run tests.");
 
-        let s = String::from_utf8_lossy(&output.stdout);
+        let stdout = output.stdout.expect("Failed to capture stdout");
+        let reader = BufReader::new(stdout);
 
-        self.tests_status_handler.refresh(TestsStatus { text: s.to_string() });
+        let mut tests = Vec::new();
+
+
+        for line in reader.lines() {
+            let line = line.expect("Failed to read line");
+
+            if let Some((test, result)) = split_and_trim(&line) {
+                let status = match result.as_str() {
+                    "ok" => SingleTestStatus::Passed,
+                    _ => SingleTestStatus::Failed
+                };
+
+                tests.push(SingleTest { name: test.to_string(), status });
+            }
+        }
+
+        self.tests_status_handler.refresh(TestsStatus { running: false, tests });
     }
+}
+
+fn split_and_trim(line: &str) -> Option<(String, String)> {
+    // Split the line into at most two parts by "..."
+    let mut parts = line.splitn(2, "...");
+
+    // Get the first and second parts, if they exist
+    let first = parts.next()?.trim().to_string();  // Get and trim first part
+    let second = parts.next()?.trim().to_string(); // Get and trim second part
+
+    Some((first, second))
 }

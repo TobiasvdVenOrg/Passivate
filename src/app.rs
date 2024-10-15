@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 use eframe::{Frame};
-use egui::Context;
+use egui::{Color32, Context};
 use passivate_core::passivate_notify::NotifyChangeEvents;
-use passivate_core::tests_view::TestsStatus;
+use passivate_core::tests_view::{SingleTestStatus, TestsStatus};
 
 pub struct App {
     status: Arc<RwLock<TestsStatus>>,
@@ -12,7 +12,22 @@ pub struct App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading(self.status.read().unwrap().text.as_str());
+
+            if let Some(status) = self.status.read().ok() {
+                if status.running {
+                    ui.heading("RUNNING");
+                }
+                else {
+                    for test in &status.tests {
+                        let color = match test.status {
+                            SingleTestStatus::Failed => Color32::RED,
+                            SingleTestStatus::Passed => Color32::GREEN
+                        };
+
+                        ui.colored_label(color, &test.name);
+                    }
+                }
+            }
         });
     }
 }
