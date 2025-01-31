@@ -25,7 +25,6 @@ impl ChangeEventHandler for TestExecution {
 
         let mut tests = Vec::new();
 
-
         for line in reader.lines() {
             let line = line.expect("Failed to read line");
 

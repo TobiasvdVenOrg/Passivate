@@ -1,8 +1,9 @@
 mod app;
 mod egui_tests_view;
+mod error_app;
 
 use app::App;
-use notify::*;
+use passivate_core::error::{PassivateError, Result};
 use eframe::CreationContext;
 use futures::SinkExt;
 use passivate_core::change_events::AsyncChangeEventHandler;
@@ -10,17 +11,26 @@ use passivate_core::passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::TestExecution;
 use passivate_core::tests_view::TestsStatus;
 use crate::egui_tests_view::EguiTestsView;
+use crate::error_app::ErrorApp;
 
-fn build_app(cc: &CreationContext) -> App {
-    let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
+fn get_path_arg() -> Result<String> {
+    let path = std::env::args().nth(1);
+
+    match path {
+        Some(p) => Ok(p),
+        None => Err(PassivateError::missing_argument("Path"))
+    }
+}
+fn build_app(cc: &CreationContext) -> Result<Box<dyn eframe::App>> {
+    let path = get_path_arg()?;
 
     let tests_status = TestsStatus::new("Bladiebloe");
     let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
     let test_execution = TestExecution::new(Box::new(tests_view));
     let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));
-    let change_events = NotifyChangeEvents::new(&path, change_event_handler);
+    let change_events = NotifyChangeEvents::new(&path, change_event_handler)?;
 
-    App::new(tests_status, Box::new(change_events))
+    Ok(App::boxed(tests_status, change_events))
 }
 
 fn main() {
@@ -35,8 +45,14 @@ fn main() {
         "Passivate",
         eframe_options,
         Box::new(|cc| {
-            let app = build_app(cc);
-            Ok(Box::new(app))
+            let result = build_app(cc);
+
+            match result {
+                Ok(app) => Ok(app),
+                Err(error) => {
+                    Ok(ErrorApp::boxed(error))
+                }
+            }
         }),
     ).expect("Unable to open window.");
 }

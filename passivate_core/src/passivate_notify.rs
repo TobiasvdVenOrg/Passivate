@@ -1,6 +1,6 @@
-
-use notify::*;
+use notify::{RecommendedWatcher, Config, RecursiveMode, Watcher};
 use std::path::Path;
+use crate::error::{PassivateError, Result};
 use crate::change_events::{ChangeEvent, ChangeEventHandler};
 
 pub struct NotifyChangeEvents {
@@ -8,10 +8,11 @@ pub struct NotifyChangeEvents {
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &str, mut handler: Box<dyn ChangeEventHandler>) -> Self {
+    pub fn new(path: &str, mut handler: Box<dyn ChangeEventHandler>) -> Result<NotifyChangeEvents> {
         let mut watcher = RecommendedWatcher::new(move |res| {
             match res {
-                Ok(_event) => {
+                Ok(event) => {
+                    println!("{:?}", event);
                     let change_event = ChangeEvent { };
                     handler.handle_event(change_event);
                 }
@@ -21,8 +22,15 @@ impl NotifyChangeEvents {
             }
         }, Config::default()).expect("Unable to create watcher.");
 
-        let _ = watcher.watch(Path::new(&path), RecursiveMode::Recursive).expect("Unable to start watching.");
+        let watch_result = watcher.watch(Path::new(&path), RecursiveMode::Recursive);
 
-        Self { watcher }
+        match watch_result {
+            Err(error) => {
+                Err(PassivateError::notify(error, path))
+            }
+            Ok(_) => {
+                Ok(NotifyChangeEvents { watcher })
+            }
+        }
     }
 }

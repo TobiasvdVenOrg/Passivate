@@ -6,7 +6,7 @@ use passivate_core::tests_view::{SingleTestStatus, TestsStatus};
 
 pub struct App {
     status: Arc<RwLock<TestsStatus>>,
-    change_events: Box<NotifyChangeEvents>
+    change_events: NotifyChangeEvents
 }
 
 impl eframe::App for App {
@@ -33,7 +33,11 @@ impl eframe::App for App {
 }
 
 impl App {
-    pub fn new(status: Arc<RwLock<TestsStatus>>, change_events: Box<NotifyChangeEvents>) -> Self {
+    pub fn new(status: Arc<RwLock<TestsStatus>>, change_events: NotifyChangeEvents) -> Self {
         App { status, change_events }
+    }
+
+    pub fn boxed(status: Arc<RwLock<TestsStatus>>, change_events: NotifyChangeEvents) -> Box<App> {
+        Box::new(Self::new(status, change_events))
     }
 }

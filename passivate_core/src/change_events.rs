@@ -37,8 +37,8 @@ impl AsyncChangeEventHandler {
         let (sender, mut receiver) = channel(1);
         let thread = thread::spawn(move  || {
             loop {
-                if let Ok(change_event) = receiver.try_next() {
-                    handler.handle_event(change_event.unwrap());
+                if let Ok(Some(change_event)) = receiver.try_next() {
+                    handler.handle_event(change_event);
                 }
 
                 thread::sleep(Duration::from_millis(1000));
