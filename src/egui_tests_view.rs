@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 use egui::Context;
-use passivate_core::tests_view::{TestsStatus, TestsStatusHandler};
+use passivate_core::test_execution::{HandleTestsStatus, TestsStatus};
 
 pub struct EguiTestsView {
     context: Context,
@@ -13,7 +13,7 @@ impl EguiTestsView {
     }
 }
 
-impl TestsStatusHandler for EguiTestsView {
+impl HandleTestsStatus for EguiTestsView {
     fn refresh(&mut self, status: TestsStatus) {
         let mut w = self.status.write().unwrap();
         *w = status;
