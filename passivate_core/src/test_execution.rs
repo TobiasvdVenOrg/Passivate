@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use crate::change_events::{ChangeEvent, ChangeEventHandler};
+use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::tests_view::{SingleTest, SingleTestStatus, TestsStatus, TestsStatusHandler};
 
 pub struct TestExecution {
@@ -15,7 +15,7 @@ impl TestExecution {
     }
 }
 
-impl ChangeEventHandler for TestExecution {
+impl HandleChangeEvent for TestExecution {
     fn handle_event(&mut self, _event: ChangeEvent) {
         self.tests_status_handler.refresh(TestsStatus { running: true, tests: Vec::new() });
 
