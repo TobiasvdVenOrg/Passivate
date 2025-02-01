@@ -26,6 +26,10 @@ impl eframe::App for App {
 
                         ui.colored_label(color, &test.name);
                     }
+
+                    if status.tests.is_empty() {
+                        ui.heading("Make a change to discover tests!");
+                    }
                 }
             }
         });
