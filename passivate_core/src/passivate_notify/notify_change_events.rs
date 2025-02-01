@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fs;
-use std::hash::Hash;
 use notify::{ReadDirectoryChangesWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
@@ -11,16 +10,17 @@ use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::passivate_notify::NotifyChangeEventsError;
 
 pub struct NotifyChangeEvents {
-    watcher: RecommendedWatcher
+    watcher: RecommendedWatcher,
+    path: PathBuf
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &str, mut event_handler: Box<dyn HandleChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
+    pub fn new(path: &Path, mut event_handler: Box<dyn HandleChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
         let config = NotifyConfig::default().with_compare_contents(true);
 
-        let mut watcher = RecommendedWatcher::new(move |event: NotifyResult<NotifyEvent>| {
+        let watcher = RecommendedWatcher::new(move |event: NotifyResult<NotifyEvent>| {
             match event {
                 Ok(event) => {
                     for path in &event.paths {
@@ -66,7 +66,7 @@ impl NotifyChangeEvents {
             Ok(mut watcher) => {
                 watcher = Self::start_watcher(watcher, path)?;
 
-                Ok(NotifyChangeEvents { watcher })
+                Ok(NotifyChangeEvents { watcher, path: path.to_path_buf() })
             }
             Err(notify_error) => {
                 Err(NotifyChangeEventsError::invalid_path(path, notify_error))
@@ -75,8 +75,17 @@ impl NotifyChangeEvents {
 
     }
 
-    fn start_watcher(mut watcher: ReadDirectoryChangesWatcher, path: &str) -> Result<ReadDirectoryChangesWatcher, NotifyChangeEventsError> {
-        let watch_result = watcher.watch(Path::new(&path), RecursiveMode::Recursive);
+    pub fn stop(&mut self) -> Result<(), NotifyChangeEventsError> {
+        match self.watcher.unwatch(self.path.as_path()) {
+            Ok(_) => { Ok(()) }
+            Err(notify_error) => {
+                Err(NotifyChangeEventsError::invalid_path(self.path.as_path(), notify_error))
+            }
+        }
+    }
+
+    fn start_watcher(mut watcher: ReadDirectoryChangesWatcher, path: &Path) -> Result<ReadDirectoryChangesWatcher, NotifyChangeEventsError> {
+        let watch_result = watcher.watch(path, RecursiveMode::Recursive);
 
         match watch_result {
             Ok(_) => Ok(watcher),

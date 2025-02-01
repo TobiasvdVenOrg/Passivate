@@ -7,7 +7,7 @@ pub struct TestsStatus {
 }
 
 impl TestsStatus {
-    pub fn new(text: &str) -> Arc<RwLock<TestsStatus>> {
+    pub fn new() -> Arc<RwLock<TestsStatus>> {
         Arc::new( RwLock::new(TestsStatus {
             running: false,
             tests: Vec::new()

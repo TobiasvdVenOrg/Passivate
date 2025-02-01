@@ -1,8 +1,7 @@
-use std::process::Command;
 use std::sync::{Arc, RwLock};
 use eframe::{Frame};
 use egui::{Color32, Context, RichText};
-use passivate_core::passivate_notify::NotifyChangeEvents;
+use passivate_core::passivate_notify::{NotifyChangeEvents, NotifyChangeEventsError};
 use passivate_core::test_execution::{SingleTestStatus, TestsStatus};
 
 pub struct App {
@@ -17,6 +16,10 @@ impl App {
 
     pub fn boxed(status: Arc<RwLock<TestsStatus>>, change_events: NotifyChangeEvents) -> Box<App> {
         Box::new(Self::new(status, change_events))
+    }
+
+    fn stop(&mut self) -> Result<(), NotifyChangeEventsError> {
+        self.change_events.stop()
     }
 }
 
@@ -44,6 +47,18 @@ impl eframe::App for App {
 
                     if status.tests.is_empty() {
                         ui.heading("Make a change to discover tests!");
+                    }
+                }
+            }
+
+            ui.add_space(ui.available_height() - 16.0);
+            if ui.button("Stop").clicked() {
+                match self.stop() {
+                    Ok(_) => {
+                        println!("Stopped listening for change events.");
+                    }
+                    Err(_) => {
+                        println!("Failed to stop listening for change events.");
                     }
                 }
             }

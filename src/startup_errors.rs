@@ -31,7 +31,7 @@ impl Display for StartupError {
 impl Error for StartupError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            StartupError::MissingArgument(missing_argument) => { None }
+            StartupError::MissingArgument(_) => { None }
             StartupError::NotifyChangeEvents(notify_change_events) => { Some(notify_change_events) }
         }
     }

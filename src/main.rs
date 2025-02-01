@@ -3,29 +3,28 @@ mod egui_tests_view;
 mod error_app;
 mod startup_errors;
 
-use std::error::Error;
+use std::path::PathBuf;
 use app::App;
 use eframe::CreationContext;
-use futures::SinkExt;
 use passivate_core::change_events::AsyncChangeEventHandler;
-use passivate_core::passivate_notify::{NotifyChangeEvents};
+use passivate_core::passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use crate::egui_tests_view::EguiTestsView;
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
 
-fn get_path_arg() -> Result<String, MissingArgumentError> {
+fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
     let path = std::env::args().nth(1);
 
     match path {
-        Some(p) => Ok(p),
+        Some(p) => Ok(PathBuf::from(p)),
         None => Err(MissingArgumentError { argument: "path".to_string() })
     }
 }
 fn build_app(cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError> {
     let path = get_path_arg()?;
 
-    let tests_status = TestsStatus::new("");
+    let tests_status = TestsStatus::new();
     let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
     let test_execution = TestRunner::new(Box::new(tests_view));
     let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));
