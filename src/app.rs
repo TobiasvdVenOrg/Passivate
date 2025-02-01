@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::sync::{Arc, RwLock};
 use eframe::{Frame};
-use egui::{Color32, Context, WidgetText};
+use egui::{Color32, Context, RichText, WidgetText};
 use passivate_core::passivate_notify::NotifyChangeEvents;
 use passivate_core::tests_view::{SingleTestStatus, TestsStatus};
 
@@ -25,7 +25,7 @@ impl eframe::App for App {
                             SingleTestStatus::Passed => Color32::GREEN
                         };
 
-                        let text = WidgetText::from(&test.name).color(color);
+                        let text = RichText::new(&test.name).size(16.0).color(color);
                         if ui.button(text).clicked() {
                             println!("Clicked on {}", test.name);
                             //Command::new("rustrover").arg("test")
