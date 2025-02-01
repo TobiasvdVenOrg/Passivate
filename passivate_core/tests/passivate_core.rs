@@ -1,12 +1,12 @@
 use passivate_core::change_events::{ChangeEvent, ChangeEventHandler};
 use passivate_core::test_execution::TestExecution;
-use passivate_core::tests_view::{TestsStatus, TestsView};
+use passivate_core::tests_view::{TestsStatus, TestsStatusHandler};
 
 struct MockTestsView {
     tests_status: TestsStatus
 }
 
-impl TestsView for MockTestsView {
+impl TestsStatusHandler for MockTestsView {
     fn refresh(&mut self, status: TestsStatus) {
         self.tests_status = status;
     }

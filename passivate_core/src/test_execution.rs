@@ -1,5 +1,7 @@
+use std::ffi::OsStr;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
+use std::path::Path;
 use crate::change_events::{ChangeEvent, ChangeEventHandler};
 use crate::tests_view::{SingleTest, SingleTestStatus, TestsStatus, TestsStatusHandler};
 
@@ -28,13 +30,16 @@ impl ChangeEventHandler for TestExecution {
         for line in reader.lines() {
             let line = line.expect("Failed to read line");
 
+            println!("{}", line);
+
             if let Some((test, result)) = split_and_trim(&line) {
                 let status = match result.as_str() {
                     "ok" => SingleTestStatus::Passed,
                     _ => SingleTestStatus::Failed
                 };
 
-                tests.push(SingleTest { name: test.to_string(), status });
+                let path = Path::new(OsStr::new(""));
+                tests.push(SingleTest::new(test.to_string(), status, path, 0));
             }
         }
 
