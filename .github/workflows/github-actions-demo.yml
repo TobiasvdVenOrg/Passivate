@@ -15,8 +15,8 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - run: rustup update
-      - run: cargo build
+      - run: rustup target add x86_64-pc-windows-gnu
+      - run: cargo build --target x86_64-pc-windows-gnu
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
