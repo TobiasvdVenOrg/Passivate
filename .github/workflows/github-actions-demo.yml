@@ -20,5 +20,11 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-      - run: gh release create "0.1.${{ github.run_number }}" /target/release/passivate.exe --prerelease
+      - name: List files in target
+        run: |
+          ls ${{ github.workspace }}/target
+      - name: List files in the release
+        run: |
+          ls ${{ github.workspace }}/target/release
+      - run: gh release create "0.1.${{ github.run_number }}" target/release/passivate.exe --prerelease
       - run: echo "🍏 This job's status is ${{ job.status }}."
