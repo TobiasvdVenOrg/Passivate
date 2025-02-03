@@ -1,0 +1,19 @@
+name: Build Passivate
+run-name: Build Passivate
+on: [workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts
+          path: _artifacts/
+      - run: gh release create "0.1.${{ github.run_number }}" _artifacts/* --prerelease
