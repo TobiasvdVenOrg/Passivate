@@ -1,6 +1,6 @@
-/target
-passivate_core/target
-passivate_core/Cargo.lock
-sample_project/target
-Cargo.lock
-.idea
+passivate/target
+passivate/passivate_core/target
+passivate/passivate_core/Cargo.lock
+passivate/sample_project/target
+passivate/Cargo.lock
+passivate/.idea
