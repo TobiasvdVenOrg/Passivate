@@ -4,6 +4,9 @@ on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: /passivate
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
