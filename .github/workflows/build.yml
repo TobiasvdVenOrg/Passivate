@@ -1,12 +1,9 @@
-name: Deploy Passivate
-run-name: Deploy Passivate
+name: Build Passivate
+run-name: Build Passivate
 on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: /passivate
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -16,9 +13,11 @@ jobs:
           override: true
       - run: rustup target add x86_64-pc-windows-gnu
       - run: cargo build --release --target x86_64-pc-windows-gnu
+        with:
+          working-directory: /passivate
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
-          path: target/x86_64-pc-windows-gnu/release/passivate.exe
+          path: passivate/target/x86_64-pc-windows-gnu/release/passivate.exe
           retention-days: 1

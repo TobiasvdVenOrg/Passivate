@@ -1,5 +1,5 @@
-name: Build Passivate
-run-name: Build Passivate
+name: Deploy Passivate
+run-name: Deploy Passivate
 on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
