@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::process::{Command, Stdio};
+use std::process::{ChildStdout, Command, Output, Stdio};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
@@ -13,24 +13,16 @@ impl TestRunner {
     pub fn new(tests_status_handler: Box<dyn HandleTestsStatus>) -> Self {
         TestRunner { tests_status_handler }
     }
-}
 
-impl HandleChangeEvent for TestRunner {
-    fn handle_event(&mut self, _event: ChangeEvent) {
-        self.tests_status_handler.refresh(TestsStatus { running: true, tests: Vec::new() });
-
-        let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
-        let output = Command::new("cargo").arg("test").current_dir(path).stdout(Stdio::piped()).spawn().expect("Failed to run tests.");
-
-        let stdout = output.stdout.expect("Failed to capture stdout");
-        let reader = BufReader::new(stdout);
-
+    fn parse_status(&mut self, text: &str) -> TestsStatus {
         let mut tests = Vec::new();
 
-        for line in reader.lines() {
-            let line = line.expect("Failed to read line");
-
+        for line in text.lines() {
             println!("{}", line);
+
+            if line.contains("error") {
+                return TestsStatus::build_failure(line)
+            }
 
             if let Some((test, result)) = split_and_trim(&line) {
                 let status = match result.as_str() {
@@ -43,7 +35,32 @@ impl HandleChangeEvent for TestRunner {
             }
         }
 
-        self.tests_status_handler.refresh(TestsStatus { running: false, tests });
+        TestsStatus::completed(tests)
+    }
+}
+
+impl HandleChangeEvent for TestRunner {
+    fn handle_event(&mut self, _event: ChangeEvent) {
+        self.tests_status_handler.refresh(TestsStatus::running());
+
+        let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
+        let output = Command::new("cargo")
+            .arg("test")
+            .current_dir(path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output().expect("Failed to execute cargo test");
+
+        let text;
+
+        if !output.stdout.is_empty() {
+            text = String::from_utf8(output.stdout).unwrap();
+        } else {
+            text = String::from_utf8(output.stderr).unwrap();
+        }
+
+        let status = self.parse_status(&text);
+        self.tests_status_handler.refresh(status);
     }
 }
 

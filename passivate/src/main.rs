@@ -4,6 +4,7 @@ mod error_app;
 mod startup_errors;
 
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 use app::App;
 use eframe::CreationContext;
 use passivate_core::change_events::AsyncChangeEventHandler;
@@ -24,7 +25,7 @@ fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 fn build_app(cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError> {
     let path = get_path_arg()?;
 
-    let tests_status = TestsStatus::new();
+    let tests_status = Arc::new(RwLock::new(TestsStatus::waiting()));
     let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
     let test_execution = TestRunner::new(Box::new(tests_view));
     let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));

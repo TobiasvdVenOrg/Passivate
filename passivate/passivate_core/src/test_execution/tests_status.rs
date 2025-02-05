@@ -1,16 +1,34 @@
-use std::sync::{Arc, RwLock};
 use crate::test_execution::SingleTest;
 
-pub struct TestsStatus {
-    pub tests: Vec<SingleTest>,
-    pub running: bool
+pub struct CompleteTestsStatus {
+    pub tests: Vec<SingleTest>
+}
+
+pub struct BuildFailureTestsStatus {
+    pub message: String
+}
+
+pub enum TestsStatus {
+    Waiting,
+    Running,
+    Completed(CompleteTestsStatus),
+    BuildFailure(BuildFailureTestsStatus)
 }
 
 impl TestsStatus {
-    pub fn new() -> Arc<RwLock<TestsStatus>> {
-        Arc::new( RwLock::new(TestsStatus {
-            running: false,
-            tests: Vec::new()
-        }))
+    pub fn waiting() -> TestsStatus {
+        TestsStatus::Waiting
+    }
+
+    pub fn running() -> TestsStatus {
+        TestsStatus::Running
+    }
+
+    pub fn completed(tests: Vec<SingleTest>) -> TestsStatus {
+        TestsStatus::Completed(CompleteTestsStatus { tests })
+    }
+
+    pub fn build_failure(message: &str) -> TestsStatus {
+        TestsStatus::BuildFailure(BuildFailureTestsStatus { message: message.to_string() })
     }
 }

@@ -28,25 +28,36 @@ impl eframe::App for App {
         egui::CentralPanel::default().show(ctx, |ui| {
 
             if let Some(status) = self.status.read().ok() {
-                if status.running {
-                    ui.heading("Running tests...");
-                }
-                else {
-                    for test in &status.tests {
-                        let color = match test.status {
-                            SingleTestStatus::Failed => Color32::RED,
-                            SingleTestStatus::Passed => Color32::GREEN
-                        };
-
-                        let text = RichText::new(&test.name).size(16.0).color(color);
-                        if ui.button(text).clicked() {
-                            println!("Clicked on {}", test.name);
-                            //Command::new("rustrover").arg("test")
-                        }
-                    }
-
-                    if status.tests.is_empty() {
+                match &*status {
+                    TestsStatus::Waiting => {
                         ui.heading("Make a change to discover tests!");
+                    },
+                    TestsStatus::Running => {
+                        ui.heading("Running tests...");
+                    },
+                    TestsStatus::Completed(completed) => {
+                        for test in &completed.tests {
+                            let color = match test.status {
+                                SingleTestStatus::Failed => Color32::RED,
+                                SingleTestStatus::Passed => Color32::GREEN
+                            };
+
+                            let text = RichText::new(&test.name).size(16.0).color(color);
+                            if ui.button(text).clicked() {
+                                println!("Clicked on {}", test.name);
+                                //Command::new("rustrover").arg("test")
+                            }
+                        }
+
+                        if completed.tests.is_empty() {
+                            ui.heading("No tests found.");
+                        }
+                    },
+                    TestsStatus::BuildFailure(build_failure) => {
+                        ui.heading("Build failed.");
+
+                        let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
+                        ui.label(text);
                     }
                 }
             }
