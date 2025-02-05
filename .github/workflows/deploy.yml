@@ -4,9 +4,6 @@ on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: /passivate
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -14,9 +11,8 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts
-          path: _artifacts/
-      - run: gh release create "0.1.${{ github.run_number }}" _artifacts/* --prerelease
+      - run: rustup target add x86_64-pc-windows-gnu
+      - name: Build
+        working-directory: passivate
+        run: cargo build --release --target x86_64-pc-windows-gnu
+      - run: gh release create "0.1.${{ github.run_number }}" passivate/target/x86_64-pc-windows-gnu/release/passivate.exe --prerelease
