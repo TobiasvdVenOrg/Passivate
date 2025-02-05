@@ -1,6 +1,5 @@
 use std::ffi::OsStr;
-use std::process::{ChildStdout, Command, Output, Stdio};
-use std::io::{BufRead, BufReader};
+use std::process::{Command, Stdio};
 use std::path::Path;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::test_execution::{HandleTestsStatus, SingleTest, SingleTestStatus, TestsStatus};
