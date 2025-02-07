@@ -45,7 +45,7 @@ fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 fn run_from_path(path: &Path) -> Result<(), StartupError> {
     let (change_event_sender, change_event_receiver) = channel();
 
-    let _ = change_event_sender.send(ChangeEvent {});
+    change_event_sender.send(ChangeEvent {})?;
 
     let change_events = NotifyChangeEvents::new(&path, change_event_sender)?;
 
@@ -88,5 +88,5 @@ fn run_app(app: Box<dyn eframe::App>) {
         Box::new(|_cc| {
             Ok(app)
         }),
-    ).expect("Failed to start passivate!");
+    ).expect("Failed to start Passivate!");
 }
