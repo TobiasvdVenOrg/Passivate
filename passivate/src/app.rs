@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use eframe::{Frame};
 use egui::{Color32, Context, RichText};
-use passivate_core::passivate_notify::{NotifyChangeEvents, NotifyChangeEventsError};
+use crate::passivate_notify::{NotifyChangeEvents, NotifyChangeEventsError};
 use passivate_core::test_execution::{SingleTestStatus, TestsStatus};
 
 pub struct App {

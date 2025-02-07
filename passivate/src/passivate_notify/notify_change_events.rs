@@ -6,7 +6,7 @@ use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use crate::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::passivate_notify::NotifyChangeEventsError;
 
 pub struct NotifyChangeEvents {

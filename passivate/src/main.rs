@@ -2,13 +2,14 @@ mod app;
 mod egui_tests_view;
 mod error_app;
 mod startup_errors;
+pub mod passivate_notify;
 
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use app::App;
 use eframe::CreationContext;
 use passivate_core::change_events::AsyncChangeEventHandler;
-use passivate_core::passivate_notify::NotifyChangeEvents;
+use passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use crate::egui_tests_view::EguiTestsView;
 use crate::error_app::ErrorApp;

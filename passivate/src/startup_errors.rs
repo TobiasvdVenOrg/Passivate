@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use passivate_core::passivate_notify::NotifyChangeEventsError;
+use crate::passivate_notify::NotifyChangeEventsError;
 
 #[derive(Debug)]
 pub enum StartupError {
