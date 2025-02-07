@@ -1,20 +1,22 @@
-use std::sync::{Arc, RwLock};
+use std::sync::mpsc::Receiver;
 use eframe::{Frame};
 use egui::{Color32, Context, RichText};
 use crate::passivate_notify::{NotifyChangeEvents, NotifyChangeEventsError};
 use passivate_core::test_execution::{SingleTestStatus, TestsStatus};
 
 pub struct App {
-    status: Arc<RwLock<TestsStatus>>,
-    change_events: NotifyChangeEvents
+    receiver: Receiver<TestsStatus>,
+    change_events: NotifyChangeEvents,
+    status: TestsStatus
 }
 
 impl App {
-    pub fn new(status: Arc<RwLock<TestsStatus>>, change_events: NotifyChangeEvents) -> Self {
-        App { status, change_events }
+    pub fn new(receiver: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Self {
+        let status = TestsStatus::waiting();
+        App { receiver, change_events, status }
     }
 
-    pub fn boxed(status: Arc<RwLock<TestsStatus>>, change_events: NotifyChangeEvents) -> Box<App> {
+    pub fn boxed(status: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Box<App> {
         Box::new(Self::new(status, change_events))
     }
 
@@ -26,39 +28,40 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
+            if let Ok(status) = self.receiver.try_recv() {
+                self.status = status;
+            }
 
-            if let Some(status) = self.status.read().ok() {
-                match &*status {
-                    TestsStatus::Waiting => {
-                        ui.heading("Make a change to discover tests!");
-                    },
-                    TestsStatus::Running => {
-                        ui.heading("Running tests...");
-                    },
-                    TestsStatus::Completed(completed) => {
-                        for test in &completed.tests {
-                            let color = match test.status {
-                                SingleTestStatus::Failed => Color32::RED,
-                                SingleTestStatus::Passed => Color32::GREEN
-                            };
+            match self.status {
+                TestsStatus::Waiting => {
+                    ui.heading("Make a change to discover tests!");
+                },
+                TestsStatus::Running => {
+                    ui.heading("Running tests...");
+                },
+                TestsStatus::Completed(ref completed) => {
+                    for test in &completed.tests {
+                        let color = match test.status {
+                            SingleTestStatus::Failed => Color32::RED,
+                            SingleTestStatus::Passed => Color32::GREEN
+                        };
 
-                            let text = RichText::new(&test.name).size(16.0).color(color);
-                            if ui.button(text).clicked() {
-                                println!("Clicked on {}", test.name);
-                                //Command::new("rustrover").arg("test")
-                            }
+                        let text = RichText::new(&test.name).size(16.0).color(color);
+                        if ui.button(text).clicked() {
+                            println!("Clicked on {}", test.name);
+                            //Command::new("rustrover").arg("test")
                         }
-
-                        if completed.tests.is_empty() {
-                            ui.heading("No tests found.");
-                        }
-                    },
-                    TestsStatus::BuildFailure(build_failure) => {
-                        ui.heading("Build failed.");
-
-                        let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
-                        ui.label(text);
                     }
+
+                    if completed.tests.is_empty() {
+                        ui.heading("No tests found.");
+                    }
+                },
+                TestsStatus::BuildFailure(ref build_failure) => {
+                    ui.heading("Build failed.");
+
+                    let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
+                    ui.label(text);
                 }
             }
 
@@ -74,5 +77,7 @@ impl eframe::App for App {
                 }
             }
         });
+
+        ctx.request_repaint();
     }
 }

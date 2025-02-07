@@ -1,16 +1,17 @@
 use std::ffi::OsStr;
 use std::process::{Command, Stdio};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
-use crate::test_execution::{HandleTestsStatus, SingleTest, SingleTestStatus, TestsStatus};
+use crate::test_execution::{SingleTest, SingleTestStatus, TestsStatus};
 
 pub struct TestRunner {
     path: PathBuf,
-    tests_status_handler: Box<dyn HandleTestsStatus>
+    tests_status_handler: Sender<TestsStatus>
 }
 
 impl TestRunner {
-    pub fn new(path: &Path, tests_status_handler: Box<dyn HandleTestsStatus>) -> Self {
+    pub fn new(path: &Path, tests_status_handler: Sender<TestsStatus>) -> Self {
         TestRunner { path: path.to_path_buf(), tests_status_handler }
     }
 
@@ -41,7 +42,8 @@ impl TestRunner {
 
 impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        self.tests_status_handler.refresh(TestsStatus::running());
+        println!("Running...");
+        let _ = self.tests_status_handler.send(TestsStatus::running());
 
         let output = Command::new("cargo")
             .arg("test")
@@ -59,7 +61,8 @@ impl HandleChangeEvent for TestRunner {
         }
 
         let status = self.parse_status(&text);
-        self.tests_status_handler.refresh(status);
+        let _ = self.tests_status_handler.send(status);
+        println!("Done...");
     }
 }
 

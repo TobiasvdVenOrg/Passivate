@@ -1,17 +1,15 @@
 mod app;
-mod egui_tests_view;
 mod error_app;
 mod startup_errors;
 pub mod passivate_notify;
 
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::mpsc::channel;
 use app::App;
 use eframe::CreationContext;
 use passivate_core::change_events::AsyncChangeEventHandler;
 use passivate_notify::NotifyChangeEvents;
-use passivate_core::test_execution::{TestRunner, TestsStatus};
-use crate::egui_tests_view::EguiTestsView;
+use passivate_core::test_execution::{TestRunner};
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
 
@@ -23,16 +21,16 @@ fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
         None => Err(MissingArgumentError { argument: "path".to_string() })
     }
 }
-fn build_app(cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError> {
+fn build_app(_cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError> {
     let path = get_path_arg()?;
 
-    let tests_status = Arc::new(RwLock::new(TestsStatus::waiting()));
-    let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
-    let test_execution = TestRunner::new(&path, Box::new(tests_view));
-    let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));
-    let change_events = NotifyChangeEvents::new(&path, change_event_handler)?;
+    let (change_event_sender, change_event_receiver) = channel();
+    let (tests_status_sender, tests_status_receiver) = channel();
+    let test_execution = TestRunner::new(&path, tests_status_sender);
+    let change_events = NotifyChangeEvents::new(&path, change_event_sender)?;
+    let _change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution), change_event_receiver);
 
-    Ok(App::boxed(tests_status, change_events))
+    Ok(App::boxed(tests_status_receiver, change_events))
 }
 
 fn main() {

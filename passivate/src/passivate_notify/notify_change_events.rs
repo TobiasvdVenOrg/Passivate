@@ -5,8 +5,9 @@ use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::Sender;
 use std::time::SystemTime;
-use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::change_events::{ChangeEvent};
 use crate::passivate_notify::NotifyChangeEventsError;
 
 pub struct NotifyChangeEvents {
@@ -15,7 +16,7 @@ pub struct NotifyChangeEvents {
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &Path, mut event_handler: Box<dyn HandleChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
+    pub fn new(path: &Path, sender: Sender<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
         let config = NotifyConfig::default().with_compare_contents(true);
@@ -38,14 +39,14 @@ impl NotifyChangeEvents {
                                                 println!("Running... {:?}", modified);
                                                 println!("{:?}", event);
                                                 let change_event = ChangeEvent { };
-                                                event_handler.handle_event(change_event);
+                                                let _ = sender.send(change_event);
                                             } else {
                                                 println!("Ignoring...");
                                             }
                                         } else {
                                             println!("Not in cache! {:?}", path);
                                             let change_event = ChangeEvent { };
-                                            event_handler.handle_event(change_event);
+                                            let _ = sender.send(change_event);
                                         }
 
                                         modification_cache.insert(path.clone(), modified);
