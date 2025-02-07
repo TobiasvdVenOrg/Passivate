@@ -4,3 +4,4 @@ passivate/passivate_core/Cargo.lock
 passivate/sample_project/target
 passivate/Cargo.lock
 passivate/.idea
+passivate/htmlReport

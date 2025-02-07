@@ -1,16 +1,17 @@
 use std::ffi::OsStr;
 use std::process::{Command, Stdio};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::test_execution::{HandleTestsStatus, SingleTest, SingleTestStatus, TestsStatus};
 
 pub struct TestRunner {
+    path: PathBuf,
     tests_status_handler: Box<dyn HandleTestsStatus>
 }
 
 impl TestRunner {
-    pub fn new(tests_status_handler: Box<dyn HandleTestsStatus>) -> Self {
-        TestRunner { tests_status_handler }
+    pub fn new(path: &Path, tests_status_handler: Box<dyn HandleTestsStatus>) -> Self {
+        TestRunner { path: path.to_path_buf(), tests_status_handler }
     }
 
     fn parse_status(&mut self, text: &str) -> TestsStatus {
@@ -42,10 +43,9 @@ impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
         self.tests_status_handler.refresh(TestsStatus::running());
 
-        let path = std::env::args().nth(1).expect("Please supply a path to the directory of project's .toml file.");
         let output = Command::new("cargo")
             .arg("test")
-            .current_dir(path)
+            .current_dir(&self.path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output().expect("Failed to execute cargo test");

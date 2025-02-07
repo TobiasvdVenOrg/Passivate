@@ -1,13 +1,16 @@
 use crate::test_execution::SingleTest;
 
+#[derive(Clone)]
 pub struct CompleteTestsStatus {
     pub tests: Vec<SingleTest>
 }
 
+#[derive(Clone)]
 pub struct BuildFailureTestsStatus {
     pub message: String
 }
 
+#[derive(Clone)]
 pub enum TestsStatus {
     Waiting,
     Running,

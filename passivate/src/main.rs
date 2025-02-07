@@ -27,7 +27,7 @@ fn build_app(cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError>
 
     let tests_status = Arc::new(RwLock::new(TestsStatus::waiting()));
     let tests_view = EguiTestsView::new(cc.egui_ctx.clone(), tests_status.clone());
-    let test_execution = TestRunner::new(Box::new(tests_view));
+    let test_execution = TestRunner::new(&path, Box::new(tests_view));
     let change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution));
     let change_events = NotifyChangeEvents::new(&path, change_event_handler)?;
 

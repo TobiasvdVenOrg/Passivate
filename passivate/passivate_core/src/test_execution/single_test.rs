@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use crate::test_execution::SingleTestStatus;
 
+#[derive(Clone)]
 pub struct SingleTest {
     pub name: String,
     pub status: SingleTestStatus,
