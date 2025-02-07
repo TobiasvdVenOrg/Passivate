@@ -25,9 +25,10 @@ fn build_app(_cc: &CreationContext) -> Result<Box<dyn eframe::App>, StartupError
     let path = get_path_arg()?;
 
     let (change_event_sender, change_event_receiver) = channel();
+    let change_events = NotifyChangeEvents::new(&path, change_event_sender)?;
+
     let (tests_status_sender, tests_status_receiver) = channel();
     let test_execution = TestRunner::new(&path, tests_status_sender);
-    let change_events = NotifyChangeEvents::new(&path, change_event_sender)?;
     let _change_event_handler = AsyncChangeEventHandler::new(Box::new(test_execution), change_event_receiver);
 
     Ok(App::boxed(tests_status_receiver, change_events))
