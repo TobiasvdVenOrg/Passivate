@@ -24,12 +24,12 @@ impl Display for StartupError {
             }
             StartupError::NotifyChangeEvents(notify_change_events) => {
                 writeln!(f, "failed to start Notify for input project")?;
-                writeln!(f, "")?;
+                writeln!(f)?;
                 write!(f, "{}", notify_change_events)
             }
             StartupError::Channel(channel) => {
                 writeln!(f, "failed to start Passivate test runner")?;
-                writeln!(f, "")?;
+                writeln!(f)?;
                 write!(f, "{}", channel)
             }
         }

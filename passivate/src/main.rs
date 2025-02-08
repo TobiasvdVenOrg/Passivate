@@ -12,7 +12,7 @@ use std::thread;
 use app::App;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_notify::NotifyChangeEvents;
-use passivate_core::test_execution::{TestRunner};
+use passivate_core::test_execution::TestRunner;
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
 
@@ -47,10 +47,10 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
 
     change_event_sender.send(ChangeEvent {})?;
 
-    let change_events = NotifyChangeEvents::new(&path, change_event_sender)?;
+    let change_events = NotifyChangeEvents::new(path, change_event_sender)?;
 
     let (tests_status_sender, tests_status_receiver) = channel();
-    let mut test_execution = TestRunner::new(&path, tests_status_sender);
+    let mut test_execution = TestRunner::new(path, tests_status_sender);
 
     let exit_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
