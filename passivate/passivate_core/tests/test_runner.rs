@@ -1,6 +1,7 @@
 #![feature(assert_matches)]
 
 use std::assert_matches::assert_matches;
+use std::fs;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
@@ -21,6 +22,14 @@ pub fn change_event_causes_test_run_and_results() {
 
 #[test]
 pub fn test_run_outputs_coverage_file() {
+
+    let (sender, receiver) = channel();
+
+    mock_test_run(sender);
+
+    let expected_output_path = "../sample_project/.passivate/coverage/lcov";
+
+    assert!(fs::metadata(expected_output_path).is_ok(), "Expected coverage output file did not exist!");
 }
 
 fn build_test_runner(sender: Sender<TestsStatus>) -> TestRunner {

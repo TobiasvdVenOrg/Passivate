@@ -46,8 +46,10 @@ impl HandleChangeEvent for TestRunner {
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
         let output = Command::new("cargo")
-            .arg("test")
             .current_dir(&self.path)
+            .arg("test")
+            .env("RUSTFLAGS", "-Cinstrument-coverage")
+            .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage.profraw")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output().expect("Failed to execute cargo test");
@@ -59,6 +61,22 @@ impl HandleChangeEvent for TestRunner {
         } else {
             text = String::from_utf8(output.stderr).unwrap();
         }
+
+        let grcov = Command::new("grcov")
+            .current_dir(&self.path)
+            .arg(".")
+            .arg("-s")
+            .arg(".")
+            .arg("--binary-path")
+            .arg("./target/debug/")
+            .arg("-t")
+            .arg("lcov")
+            .arg("--branch")
+            .arg("--ignore-not-existing")
+            .arg("-o")
+            .arg("./.passivate/coverage/")
+            .spawn()
+            .unwrap();
 
         let status = self.parse_status(&text);
         let _ = self.tests_status_handler.send(status);
