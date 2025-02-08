@@ -5,7 +5,7 @@ use passivate_core::test_execution::{TestRunner, TestsStatus};
 
 #[test]
 pub fn change_event_causes_test_run_and_results() {
-    let (sender, mut receiver) = channel();
+    let (sender, receiver) = channel();
     let path = Path::new("../sample_project");
     let mut test_runner = TestRunner::new(path, sender);
 
