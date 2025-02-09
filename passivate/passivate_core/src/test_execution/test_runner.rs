@@ -49,16 +49,9 @@ impl HandleChangeEvent for TestRunner {
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
         let passivate_path = self.path.join(".passivate");
-
-        if !fs::exists(&passivate_path).unwrap() {
-            fs::create_dir(&passivate_path).unwrap();
-        }
-
         let coverage_path = passivate_path.join("coverage");
-     
-        if !fs::exists(&coverage_path).unwrap() {
-            fs::create_dir(&coverage_path).unwrap();
-        }
+
+        fs::create_dir_all(&coverage_path);
 
         let output = Command::new("cargo")
             .current_dir(&self.path)
