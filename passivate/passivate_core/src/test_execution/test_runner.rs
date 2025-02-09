@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::test_execution::{SingleTest, SingleTestStatus, TestsStatus};
+use std::fs;
 
 pub struct TestRunner {
     path: PathBuf,
@@ -47,9 +48,28 @@ impl HandleChangeEvent for TestRunner {
 
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
+        let passivate_path = self.path.join(".passivate");
+
+        if !fs::exists(&passivate_path).unwrap() {
+            fs::create_dir(&passivate_path).unwrap();
+        }
+
+        let coverage_path = passivate_path.join("coverage");
+     
+        if !fs::exists(&coverage_path).unwrap() {
+            fs::create_dir(&coverage_path).unwrap();
+        }
+
         let output = Command::new("cargo")
             .current_dir(&self.path)
             .arg("test")
+            .arg("--release")
+            .arg("--target")
+            // Note: $env:RUSTFLAGS="-C instrument-coverage" doesn't seem to work with x86_64-pc-windows-gnu
+            // But compiling locally with x86_64-pc-windows-gnu for debugging and LLDB (and github actions cross-compiles to Windows
+            // with GNU because Linux machine)
+            // Using msvc here just to be able to get coverage
+            .arg("x86_64-pc-windows-msvc")
             .env("RUSTFLAGS", "-Cinstrument-coverage")
             .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage.profraw")
             .stdout(Stdio::piped())
@@ -74,7 +94,7 @@ impl HandleChangeEvent for TestRunner {
             .arg("--branch")
             .arg("--ignore-not-existing")
             .arg("-o")
-            .arg("./.passivate/coverage/")
+            .arg(".passivate/coverage/")
             .spawn()
             .unwrap()
             .wait();
