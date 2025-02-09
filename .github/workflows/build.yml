@@ -11,10 +11,11 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - run: rustup target add x86_64-pc-windows-gnu
+      - run: rustup target add x86_64-unknown-linux-gnu
       - name: Test (Linux)
         working-directory: passivate
         run: cargo test --release --target x86_64-unknown-linux-gnu
+      - run: rustup target add x86_64-pc-windows-gnu
       - name: Build (Windows)
         working-directory: passivate
         run: cargo build --release --target x86_64-pc-windows-gnu
