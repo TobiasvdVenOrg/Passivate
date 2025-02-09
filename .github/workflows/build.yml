@@ -14,7 +14,7 @@ jobs:
       - run: rustup target add x86_64-unknown-linux-gnu
       - name: Test Core (Linux)
         working-directory: passivate/passivate_core
-        run: cargo test --release --target x86_64-unknown-linux-gnu
+        run: cargo test
       - run: rustup target add x86_64-pc-windows-gnu
       - name: Build (Windows)
         working-directory: passivate
