@@ -12,15 +12,6 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup target add x86_64-pc-windows-gnu
-      - name: Build
-        working-directory: passivate
-        run: cargo build --release --target x86_64-pc-windows-gnu
-      - name: Enable nightly for tests
-        working-directory: passivate/passivate_core
-        run: rustup override set nightly
       - name: Test
-        working-directory: passivate/passivate_core
-        run: cargo test
-      - name: Return to stable
-        working-directory: passivate/passivate_core
-        run: rustup override set stable
+        working-directory: passivate
+        run: cargo test --release --target x86_64-pc-windows-gnu
