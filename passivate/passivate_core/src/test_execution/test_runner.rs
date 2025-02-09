@@ -43,6 +43,8 @@ impl TestRunner {
 impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
         println!("Running...");
+        println!("Path: {}", self.path.display());
+
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
         let output = Command::new("cargo")
@@ -54,15 +56,13 @@ impl HandleChangeEvent for TestRunner {
             .stderr(Stdio::piped())
             .output().expect("Failed to execute cargo test");
 
-        let text;
-
-        if !output.stdout.is_empty() {
-            text = String::from_utf8(output.stdout).unwrap();
+        let text = if !output.stdout.is_empty() {
+            String::from_utf8(output.stdout).unwrap()
         } else {
-            text = String::from_utf8(output.stderr).unwrap();
-        }
+            String::from_utf8(output.stderr).unwrap()
+        };
 
-        let grcov = Command::new("grcov")
+        let _grcov = Command::new("grcov")
             .current_dir(&self.path)
             .arg(".")
             .arg("-s")
@@ -76,7 +76,8 @@ impl HandleChangeEvent for TestRunner {
             .arg("-o")
             .arg("./.passivate/coverage/")
             .spawn()
-            .unwrap();
+            .unwrap()
+            .wait();
 
         let status = self.parse_status(&text);
         let _ = self.tests_status_handler.send(status);

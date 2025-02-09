@@ -6,3 +6,4 @@ passivate/Cargo.lock
 passivate/.idea
 passivate/htmlReport
 **/.passivate
+passivate/passivate_app/target
