@@ -16,6 +16,8 @@ macro_rules! assert_matches {
         }
     };
 }
+
+#[cfg(target_os = "windows")]
 #[test]
 pub fn change_event_causes_test_run_and_results() {
     let (sender, receiver) = channel();
@@ -29,6 +31,7 @@ pub fn change_event_causes_test_run_and_results() {
     assert_matches!(completed, TestsStatus::Completed(completed) if completed.tests.len() == 3);
 }
 
+#[cfg(target_os = "windows")]
 #[test]
 pub fn test_run_outputs_coverage_file() {
     clean_passivate_dir();

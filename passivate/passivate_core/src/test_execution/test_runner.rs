@@ -57,12 +57,6 @@ impl HandleChangeEvent for TestRunner {
             .current_dir(&self.path)
             .arg("test")
             .arg("--release")
-            .arg("--target")
-            // Note: $env:RUSTFLAGS="-C instrument-coverage" doesn't seem to work with x86_64-pc-windows-gnu
-            // But compiling locally with x86_64-pc-windows-gnu for debugging and LLDB (and github actions cross-compiles to Windows
-            // with GNU because Linux machine)
-            // Using msvc here just to be able to get coverage
-            .arg("x86_64-pc-windows-msvc")
             .env("RUSTFLAGS", "-Cinstrument-coverage")
             .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage.profraw")
             .stdout(Stdio::piped())
