@@ -51,14 +51,15 @@ impl HandleChangeEvent for TestRunner {
         let passivate_path = self.path.join(".passivate");
         let coverage_path = passivate_path.join("coverage");
 
-        fs::create_dir_all(&coverage_path);
+        fs::create_dir_all(&coverage_path); 
 
         let output = Command::new("cargo")
             .current_dir(&self.path)
             .arg("test")
-            .arg("--release")
-            .env("RUSTFLAGS", "-Cinstrument-coverage")
-            .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage.profraw")
+            .arg("--target")
+            .arg("x86_64-pc-windows-msvc")
+            .env("RUSTFLAGS", "-C instrument-coverage")
+            .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage-%p-%m.profraw")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output().expect("Failed to execute cargo test");
@@ -71,21 +72,24 @@ impl HandleChangeEvent for TestRunner {
 
         let _grcov = Command::new("grcov")
             .current_dir(&self.path)
-            .arg(".")
+            .arg("./.passivate/coverage/")
             .arg("-s")
             .arg(".")
             .arg("--binary-path")
-            .arg("./target/debug/")
+            .arg("./target/x86_64-pc-windows-msvc/debug/")
             .arg("-t")
             .arg("lcov")
             .arg("--branch")
             .arg("--ignore-not-existing")
             .arg("-o")
-            .arg(".passivate/coverage/")
+            .arg("./.passivate/coverage/lcov.info")
             .spawn()
             .unwrap()
             .wait();
 
+        let mut coverage_path = self.path.clone();
+        coverage_path.push(".passivate/coverage/lcov");
+    
         let status = self.parse_status(&text);
         let _ = self.tests_status_handler.send(status);
         println!("Done...");

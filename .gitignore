@@ -1,9 +1,4 @@
-passivate/target
-passivate/passivate_core/target
-passivate/passivate_core/Cargo.lock
-passivate/sample_project/target
-passivate/Cargo.lock
-passivate/.idea
-passivate/htmlReport
+Cargo.lock
 **/.passivate
-passivate/passivate_app/target
+**target
+lcov.info

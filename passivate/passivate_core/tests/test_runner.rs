@@ -20,9 +20,10 @@ macro_rules! assert_matches {
 #[cfg(target_os = "windows")]
 #[test]
 pub fn change_event_causes_test_run_and_results() {
+    let path = "../../test_data/sample_project";
     let (sender, receiver) = channel();
 
-    mock_test_run(sender);
+    mock_test_run(path, sender);
 
     let running = receiver.recv().unwrap();
     let completed = receiver.recv().unwrap();
@@ -33,33 +34,46 @@ pub fn change_event_causes_test_run_and_results() {
 
 #[cfg(target_os = "windows")]
 #[test]
-pub fn test_run_outputs_coverage_file() {
-    clean_passivate_dir();
+pub fn test_run_outputs_coverage_file_for_project() {
+    let path = "../../test_data/sample_project";
+    let passivate_path = "../../test_data/sample_project/.passivate";
+    clean_passivate_dir(passivate_path);
 
     let (sender, _receiver) = channel();
 
-    mock_test_run(sender);
+    mock_test_run(path, sender);
     
-    let expected_output_path = fs::canonicalize("../sample_project/.passivate/coverage/lcov").unwrap();
+    let expected_output_path = fs::canonicalize("../../test_data/sample_project/.passivate/coverage/lcov.info").unwrap();
 
     let file_data = fs::metadata(&expected_output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {}", expected_output_path.display());
 }
 
-fn build_test_runner(sender: Sender<TestsStatus>) -> TestRunner {
-    let path = Path::new("../sample_project");
-    TestRunner::new(path, sender)
+#[cfg(target_os = "windows")]
+#[test]
+pub fn test_run_outputs_coverage_file_for_workspace() {
+    let path = "../../test_data/sample_workspace";
+    let passivate_path = "../../test_data/sample_workspace/.passivate";
+    clean_passivate_dir(passivate_path);
+
+    let (sender, _receiver) = channel();
+
+    mock_test_run(path, sender);
+    
+    let expected_output_path = fs::canonicalize("../../test_data/sample_workspace/.passivate/coverage/lcov.info").unwrap();
+
+    let file_data = fs::metadata(&expected_output_path);
+    assert!(file_data.is_ok(), "Expected coverage output file did not exist: {}", expected_output_path.display());
 }
 
-fn mock_test_run(sender: Sender<TestsStatus>) {
-    let mut test_runner = build_test_runner(sender);
+fn mock_test_run(path: &str, sender: Sender<TestsStatus>) {
+    let mut test_runner = TestRunner::new(Path::new(path), sender);
 
     let mock_event = ChangeEvent { };
     test_runner.handle_event(mock_event);
 }
 
-fn clean_passivate_dir() {
-    let path = "../sample_project/.passivate";
+fn clean_passivate_dir(path: &str) {
     if fs::exists(path).expect("Failed to even check if /.passivate directory exists!") {
         fs::remove_dir_all(path).expect("Failed to remove /.passivate directory before test run!");
     }

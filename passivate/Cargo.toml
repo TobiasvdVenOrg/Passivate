@@ -3,7 +3,4 @@ members = [
     "passivate_core",
     "passivate_app"
 ]
-exclude = [
-    "sample_project"
-]
 resolver = "2"
