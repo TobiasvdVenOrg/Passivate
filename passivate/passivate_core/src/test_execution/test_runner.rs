@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::process::{Command, Stdio};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
@@ -52,15 +52,7 @@ impl HandleChangeEvent for TestRunner {
         let passivate_path = self.path.join(".passivate");
         let coverage_path = passivate_path.join("coverage");
 
-        println!("Removing {}", coverage_path.display());
-
-        let remove_result = fs::remove_dir_all(&coverage_path);
-
-        if let Err(error) = remove_result {
-            if error.kind() != ErrorKind::NotFound {
-                println!("Failed to clean up .profraw files.");
-            }
-        }
+        remove_profraw_files(&coverage_path);
         fs::create_dir_all(&coverage_path).unwrap(); 
 
         let profraw_path = fs::canonicalize(
@@ -120,4 +112,16 @@ fn split_and_trim(line: &str) -> Option<(String, String)> {
     let second = parts.next()?.trim().to_string(); // Get and trim second part
 
     Some((first, second))
+}
+
+fn remove_profraw_files(directory: &Path) -> Result<(), Error> {
+    for profraw in fs::read_dir(directory)?.flatten() {      
+        if let Some(extension) = profraw.path().extension() {
+            if extension == "profraw" {
+                fs::remove_file(profraw.path())?;
+            }
+        }
+    }
+
+    Ok(())
 }

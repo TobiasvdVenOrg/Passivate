@@ -94,6 +94,33 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+#[test]
+// Temporary deletion of the lcov.info file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
+// to briefly error due to "not finding the file" until a new one is created
+pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), Error> {
+    let path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file");
+    let passivate_path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file/.passivate");
+    clean_passivate_dir(passivate_path);
+
+    let (sender, _receiver) = channel();
+    let mut test_runner = TestRunner::new(path, sender);
+
+    let mock_event = ChangeEvent { };
+    test_runner.handle_event(mock_event);
+    
+    let lcov_path = passivate_path.join("coverage").join("lcov.info");
+    let first_run_metadata = fs::metadata(&lcov_path)?;
+
+    let mock_event = ChangeEvent { };
+    test_runner.handle_event(mock_event);
+
+    let second_run_metadata = fs::metadata(&lcov_path)?;
+    
+    assert_eq!(first_run_metadata.created()?, second_run_metadata.created()?);
+    Ok(())
+}
+
 fn mock_test_run(path: &Path, sender: Sender<TestsStatus>) {
     let mut test_runner = TestRunner::new(path, sender);
 
@@ -115,7 +142,6 @@ fn get_profraw_count(passivate_path: &Path) -> Result<i32, Error> {
 
     for profraw in fs::read_dir(passivate_path)? {
         if let Some(extension) = profraw?.path().extension() {
-            let s = extension.to_str();
             if extension == "profraw" {
                 count += 1;
             }
