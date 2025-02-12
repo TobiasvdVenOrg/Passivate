@@ -51,7 +51,12 @@ impl HandleChangeEvent for TestRunner {
         let passivate_path = self.path.join(".passivate");
         let coverage_path = passivate_path.join("coverage");
 
-        fs::create_dir_all(&coverage_path); 
+        fs::create_dir_all(&coverage_path).unwrap(); 
+
+        let profraw_path = fs::canonicalize(
+            coverage_path).unwrap().join("coverage-%p-%m.profraw");
+
+        println!("Profraw: {}", profraw_path.display());
 
         let output = Command::new("cargo")
             .current_dir(&self.path)
@@ -59,7 +64,7 @@ impl HandleChangeEvent for TestRunner {
             .arg("--target")
             .arg("x86_64-pc-windows-msvc")
             .env("RUSTFLAGS", "-C instrument-coverage")
-            .env("LLVM_PROFILE_FILE", "./.passivate/coverage/coverage-%p-%m.profraw")
+            .env("LLVM_PROFILE_FILE", profraw_path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output().expect("Failed to execute cargo test");
