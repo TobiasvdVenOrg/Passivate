@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::process::{Command, Stdio};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
@@ -27,7 +27,7 @@ impl TestRunner {
                 return TestsStatus::build_failure(line)
             }
 
-            if let Some((test, result)) = split_and_trim(&line) {
+            if let Some((test, result)) = split_and_trim(line) {
                 let status = match result.as_str() {
                     "ok" => SingleTestStatus::Passed,
                     _ => SingleTestStatus::Failed
@@ -52,7 +52,7 @@ impl HandleChangeEvent for TestRunner {
         let passivate_path = self.path.join(".passivate");
         let coverage_path = passivate_path.join("coverage");
 
-        remove_profraw_files(&coverage_path);
+        remove_profraw_files(&coverage_path).unwrap();
         fs::create_dir_all(&coverage_path).unwrap(); 
 
         let profraw_path = fs::canonicalize(
@@ -115,6 +115,10 @@ fn split_and_trim(line: &str) -> Option<(String, String)> {
 }
 
 fn remove_profraw_files(directory: &Path) -> Result<(), Error> {
+    if !fs::exists(directory)? {
+        return Ok(())
+    }
+
     for profraw in fs::read_dir(directory)?.flatten() {      
         if let Some(extension) = profraw.path().extension() {
             if extension == "profraw" {
