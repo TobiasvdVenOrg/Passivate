@@ -5,8 +5,6 @@ pub fn parse_status(text: &str) -> TestsStatus {
     let mut tests = Vec::new();
 
     for line in text.lines() {
-        println!("{}", line);
-
         if line.contains("error") {
             return TestsStatus::build_failure(line)
         }

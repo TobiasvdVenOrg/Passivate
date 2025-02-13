@@ -19,9 +19,6 @@ impl TestRunner {
 
 impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        println!("Running...");
-        println!("Path: {}", self.path.display());
-
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
         let passivate_path = self.path.join(".passivate");
@@ -33,8 +30,6 @@ impl HandleChangeEvent for TestRunner {
         let profraw_path = fs::canonicalize(
             &coverage_path).unwrap().join("coverage-%p-%m.profraw");
 
-        println!("Profraw: {}", profraw_path.display());
-
         let test_output = cargo_test(&self.path, &profraw_path);
 
         let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
@@ -42,6 +37,5 @@ impl HandleChangeEvent for TestRunner {
     
         let status = parse_status(&test_output);
         let _ = self.tests_status_handler.send(status);
-        println!("Done...");
     }
 }

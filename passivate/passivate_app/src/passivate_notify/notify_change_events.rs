@@ -7,7 +7,7 @@ use notify::Result as NotifyResult;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::time::SystemTime;
-use passivate_core::change_events::{ChangeEvent};
+use passivate_core::change_events::ChangeEvent;
 use crate::passivate_notify::NotifyChangeEventsError;
 
 pub struct NotifyChangeEvents {
@@ -29,22 +29,14 @@ impl NotifyChangeEvents {
 
                         if let Some(extension) = extension {
                             if extension == "rs" {
-                                println!("Checking...");
                                 if let Ok(metadata) = fs::metadata(path) {
                                     if let Ok(modified) = metadata.modified() {
                                         if let Some(last_modification) = modification_cache.get(path.as_path()) {
-                                            println!("Last modified was: {:?}", last_modification);
-
                                             if &modified > last_modification {
-                                                println!("Running... {:?}", modified);
-                                                println!("{:?}", event);
                                                 let change_event = ChangeEvent { };
                                                 let _ = sender.send(change_event);
-                                            } else {
-                                                println!("Ignoring...");
                                             }
                                         } else {
-                                            println!("Not in cache! {:?}", path);
                                             let change_event = ChangeEvent { };
                                             let _ = sender.send(change_event);
                                         }
