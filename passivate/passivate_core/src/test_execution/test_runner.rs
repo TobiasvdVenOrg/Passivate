@@ -1,10 +1,11 @@
 use std::ffi::OsStr;
 use std::io::Error;
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::test_execution::{SingleTest, SingleTestStatus, TestsStatus};
+use crate::passivate_cargo::*;
 use std::fs;
 
 pub struct TestRunner {
@@ -60,22 +61,7 @@ impl HandleChangeEvent for TestRunner {
 
         println!("Profraw: {}", profraw_path.display());
 
-        let output = Command::new("cargo")
-            .current_dir(&self.path)
-            .arg("test")
-            .arg("--target")
-            .arg("x86_64-pc-windows-msvc")
-            .env("RUSTFLAGS", "-C instrument-coverage")
-            .env("LLVM_PROFILE_FILE", profraw_path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output().expect("Failed to execute cargo test");
-
-        let text = if !output.stdout.is_empty() {
-            String::from_utf8(output.stdout).unwrap()
-        } else {
-            String::from_utf8(output.stderr).unwrap()
-        };
+        let test_output = cargo_test(&self.path, &profraw_path);
 
         let _grcov = Command::new("grcov")
             .current_dir(&self.path)
@@ -97,7 +83,7 @@ impl HandleChangeEvent for TestRunner {
         let mut coverage_path = self.path.clone();
         coverage_path.push(".passivate/coverage/lcov");
     
-        let status = self.parse_status(&text);
+        let status = self.parse_status(&test_output);
         let _ = self.tests_status_handler.send(status);
         println!("Done...");
     }
