@@ -1,8 +1,7 @@
-use std::sync::mpsc::Receiver;
 use eframe::Frame;
 use egui::Context;
 use crate::{passivate_notify::NotifyChangeEvents, views::TestsStatusView};
-use crate::views::View;
+use crate::views::{CoverageView, View};
 use passivate_core::test_execution::TestsStatus;
 use egui_dock::{DockArea, DockState, Style, TabViewer};
 
@@ -26,15 +25,11 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(receiver: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Self {
+    pub fn new(tests_view: TestsStatusView, coverage_view: CoverageView, change_events: NotifyChangeEvents) -> Self {
         let status = TestsStatus::waiting();
-        let views: Vec<Box<dyn View>> = vec!(Box::new(TestsStatusView::new(receiver, status)));
+        let views: Vec<Box<dyn View>> = vec!(Box::new(tests_view), Box::new(coverage_view));
         let dock_state = DockState::new(views);
         App { _change_events: change_events, dock_state }
-    }
-
-    pub fn boxed(status: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Box<App> {
-        Box::new(Self::new(status, change_events))
     }
 }
 

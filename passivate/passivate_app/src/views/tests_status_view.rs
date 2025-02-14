@@ -9,8 +9,8 @@ pub struct TestsStatusView {
 }
 
 impl TestsStatusView {
-    pub fn new(receiver: Receiver<TestsStatus>, status: TestsStatus) -> TestsStatusView {
-        TestsStatusView { receiver, status }
+    pub fn new(receiver: Receiver<TestsStatus>) -> TestsStatusView {
+        TestsStatusView { receiver, status: TestsStatus::waiting() }
     }
 }
 

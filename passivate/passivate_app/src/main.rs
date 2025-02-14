@@ -14,6 +14,7 @@ use app::App;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::TestRunner;
+use views::{CoverageView, TestsStatusView};
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
 
@@ -51,6 +52,7 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
     let change_events = NotifyChangeEvents::new(path, change_event_sender)?;
 
     let (tests_status_sender, tests_status_receiver) = channel();
+    let (coverage_sender, coverage_receiver) = channel();
     let mut test_execution = TestRunner::new(path, tests_status_sender);
 
     let exit_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
@@ -66,7 +68,9 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
         }
     });
 
-    run_app(App::boxed(tests_status_receiver, change_events));
+    let tests_view = TestsStatusView::new(tests_status_receiver);
+    let coverage_view = CoverageView::new(coverage_receiver);
+    run_app(Box::new(App::new(tests_view, coverage_view, change_events)));
 
     exit_flag.store(true, SeqCst);
 
