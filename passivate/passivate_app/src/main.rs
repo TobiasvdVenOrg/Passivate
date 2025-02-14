@@ -1,7 +1,8 @@
 mod app;
 mod error_app;
 mod startup_errors;
-pub mod passivate_notify;
+mod views;
+mod passivate_notify;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
