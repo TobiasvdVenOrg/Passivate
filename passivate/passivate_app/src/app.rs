@@ -1,19 +1,65 @@
 use std::sync::mpsc::Receiver;
-use eframe::{Frame};
+use eframe::Frame;
 use egui::{Color32, Context, RichText};
 use crate::passivate_notify::{NotifyChangeEvents, NotifyChangeEventsError};
 use passivate_core::test_execution::{SingleTestStatus, TestsStatus};
+use egui_dock::{DockArea, DockState, Style, TabViewer};
+
+trait View {
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui);
+    fn title(&self) -> String;
+}
+
+struct AppleView;
+struct PearView;
+
+impl View for AppleView {
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
+        ui.label(format!("Apple!"));
+    }
+    
+    fn title(&self) -> String {
+        "A".to_string()
+    }
+}
+
+impl View for PearView {
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
+        ui.label(format!("Pear!"));
+    }
+    
+    fn title(&self) -> String {
+        "B".to_string()
+    }
+}
+
+struct MyTabViewer;
+
+impl TabViewer for MyTabViewer {
+    type Tab = Box<dyn View>;
+
+    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
+        tab.title().clone().into()
+    }
+
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
+        tab.ui(ui);
+    }
+}
 
 pub struct App {
     receiver: Receiver<TestsStatus>,
     change_events: NotifyChangeEvents,
-    status: TestsStatus
+    status: TestsStatus,
+    dock_state: DockState<Box<dyn View>>
 }
 
 impl App {
     pub fn new(receiver: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Self {
         let status = TestsStatus::waiting();
-        App { receiver, change_events, status }
+        let views: Vec<Box<dyn View>> = vec!(Box::new(AppleView {}), Box::new(PearView {}));
+        let dock_state = DockState::new(views);
+        App { receiver, change_events, status, dock_state }
     }
 
     pub fn boxed(status: Receiver<TestsStatus>, change_events: NotifyChangeEvents) -> Box<App> {
@@ -27,56 +73,12 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if let Ok(status) = self.receiver.try_recv() {
-                self.status = status;
-            }
-
-            match self.status {
-                TestsStatus::Waiting => {
-                    ui.heading("Make a change to discover tests!");
-                },
-                TestsStatus::Running => {
-                    ui.heading("Running tests...");
-                },
-                TestsStatus::Completed(ref completed) => {
-                    for test in &completed.tests {
-                        let color = match test.status {
-                            SingleTestStatus::Failed => Color32::RED,
-                            SingleTestStatus::Passed => Color32::GREEN
-                        };
-
-                        let text = RichText::new(&test.name).size(16.0).color(color);
-                        if ui.button(text).clicked() {
-                            println!("Clicked on {}", test.name);
-                            //Command::new("rustrover").arg("test")
-                        }
-                    }
-
-                    if completed.tests.is_empty() {
-                        ui.heading("No tests found.");
-                    }
-                },
-                TestsStatus::BuildFailure(ref build_failure) => {
-                    ui.heading("Build failed.");
-
-                    let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
-                    ui.label(text);
-                }
-            }
-
-            ui.add_space(ui.available_height() - 16.0);
-            if ui.button("Stop").clicked() {
-                match self.stop() {
-                    Ok(_) => {
-                        println!("Stopped listening for change events.");
-                    }
-                    Err(_) => {
-                        println!("Failed to stop listening for change events.");
-                    }
-                }
-            }
-        });
+        DockArea::new(&mut self.dock_state)
+            .style(Style::from_egui(ctx.style().as_ref()))
+            .show_close_buttons(false)
+            .show_leaf_collapse_buttons(false)
+            .show_leaf_close_all_buttons(false)
+            .show(ctx, &mut MyTabViewer);
 
         ctx.request_repaint();
     }
