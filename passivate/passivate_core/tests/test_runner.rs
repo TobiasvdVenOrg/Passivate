@@ -1,4 +1,4 @@
-use std::io::Error;
+use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
@@ -70,7 +70,7 @@ pub fn test_run_outputs_coverage_file_for_workspace() {
 
 #[cfg(target_os = "windows")]
 #[test]
-pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), Error> {
+pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError> {
     let path = Path::new("../../test_data/repeat_test_runs_do_not_accumulate_profraw_files");
     let passivate_path = Path::new("../../test_data/repeat_test_runs_do_not_accumulate_profraw_files/.passivate");
     clean_passivate_dir(passivate_path);
@@ -98,7 +98,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), Error> {
 #[test]
 // Temporary deletion of the lcov.info file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
-pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), Error> {
+pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
     let path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file");
     let passivate_path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file/.passivate");
     clean_passivate_dir(passivate_path);
@@ -136,7 +136,7 @@ fn clean_passivate_dir(path: &Path) {
     }
 }
 
-fn get_profraw_count(passivate_path: &Path) -> Result<i32, Error> {
+fn get_profraw_count(passivate_path: &Path) -> Result<i32, IoError> {
     
     let mut count = 0;
 
