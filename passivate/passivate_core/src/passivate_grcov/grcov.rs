@@ -7,8 +7,8 @@ pub struct GrcovComputeCoverage {
 }
 
 impl ComputeCoverage for GrcovComputeCoverage {
-    fn compute_coverage() -> CoverageStatus {
-        todo!()
+    fn compute_coverage(&self) -> Result<CoverageStatus, crate::coverage::CoverageError> {
+        Ok(CoverageStatus::Disabled)
     }
 }
 

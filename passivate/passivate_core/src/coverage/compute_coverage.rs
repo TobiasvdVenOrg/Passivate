@@ -1,6 +1,6 @@
-use super::CoverageStatus;
+use super::{CoverageError, CoverageStatus};
 
 
 pub trait ComputeCoverage {
-    fn compute_coverage() -> CoverageStatus;
+    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError>;
 }

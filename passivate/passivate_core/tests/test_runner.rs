@@ -4,6 +4,7 @@ use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::passivate_grcov::GrcovComputeCoverage;
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use std::fs;
 
@@ -65,7 +66,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
     clean_passivate_dir(passivate_path);
 
     let (sender, _receiver) = channel();
-    let mut test_runner = TestRunner::new(path, sender);
+    let mut test_runner = TestRunner::new(path, Box::new(GrcovComputeCoverage {}), sender);
 
     let mock_event = ChangeEvent { };
     test_runner.handle_event(mock_event);
@@ -93,7 +94,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
     clean_passivate_dir(passivate_path);
 
     let (sender, _receiver) = channel();
-    let mut test_runner = TestRunner::new(path, sender);
+    let mut test_runner = TestRunner::new(path, Box::new(GrcovComputeCoverage {}), sender);
 
     let mock_event = ChangeEvent { };
     test_runner.handle_event(mock_event);
@@ -110,8 +111,13 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
     Ok(())
 }
 
+#[test]
+pub fn grcov_not_installed_reports_bla() -> Result<(), IoError> {
+    Ok(()) 
+}
+
 fn mock_test_run(path: &Path, sender: Sender<TestsStatus>) {
-    let mut test_runner = TestRunner::new(path, sender);
+    let mut test_runner = TestRunner::new(path, Box::new(GrcovComputeCoverage {}), sender);
 
     let mock_event = ChangeEvent { };
     test_runner.handle_event(mock_event);

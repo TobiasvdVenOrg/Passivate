@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
+use crate::coverage::ComputeCoverage;
 use crate::passivate_cargo::*;
 use crate::test_execution::TestsStatus;
 use crate::passivate_grcov::*;
@@ -8,12 +9,13 @@ use std::fs;
 
 pub struct TestRunner {
     path: PathBuf,
+    coverage: Box<dyn ComputeCoverage>,
     tests_status_handler: Sender<TestsStatus>
 }
 
 impl TestRunner {
-    pub fn new(path: &Path, tests_status_handler: Sender<TestsStatus>) -> Self {
-        TestRunner { path: path.to_path_buf(), tests_status_handler }
+    pub fn new(path: &Path, coverage: Box<dyn ComputeCoverage>, tests_status_handler: Sender<TestsStatus>) -> Self {
+        TestRunner { path: path.to_path_buf(), coverage, tests_status_handler }
     }
 }
 
