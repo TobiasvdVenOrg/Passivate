@@ -1,5 +1,16 @@
 use std::{fs, path::{Path, PathBuf}, process::Command};
+use crate::coverage::ComputeCoverage;
+use crate::coverage::CoverageStatus;
 
+pub struct GrcovComputeCoverage {
+
+}
+
+impl ComputeCoverage for GrcovComputeCoverage {
+    fn compute_coverage() -> CoverageStatus {
+        todo!()
+    }
+}
 
 pub fn grcov(working_dir: &Path, profraw_dir: &Path, binary_path: &Path, output_dir: &Path) -> PathBuf {
     let lcov_info_path = output_dir.join("lcov.info");
