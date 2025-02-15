@@ -1,22 +1,11 @@
+mod helpers;
+
 use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use std::fs;
-
-macro_rules! assert_matches {
-    ($value:expr, $pattern:pat $( if $guard:expr )?) => {
-        match &$value {
-            $pattern $( if $guard )? => (),
-            _ => panic!(
-                "assertion failed: expected `{}` to match `{}`",
-                stringify!($value),
-                stringify!($pattern)
-            ),
-        }
-    };
-}
 
 #[cfg(target_os = "windows")]
 #[test]
