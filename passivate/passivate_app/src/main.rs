@@ -13,7 +13,7 @@ use std::thread;
 use app::App;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
-use passivate_core::passivate_grcov::GrcovComputeCoverage;
+use passivate_core::passivate_grcov::Grcov;
 use passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::TestRunner;
 use views::{CoverageView, TestsStatusView};
@@ -63,7 +63,7 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
         let exit_flag = exit_flag.clone();
         move || {
             let gargo_test = CargoTest { };
-            let coverage = GrcovComputeCoverage { };
+            let coverage = Grcov { };
             let mut test_execution = TestRunner::new(&path_buf, Box::new(gargo_test), Box::new(coverage), tests_status_sender);
             while !exit_flag.load(SeqCst) {
                 if let Ok(change_event) = change_event_receiver.recv() {

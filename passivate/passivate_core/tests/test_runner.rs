@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
-use passivate_core::passivate_grcov::GrcovComputeCoverage;
+use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use std::fs;
 
@@ -118,7 +118,7 @@ pub fn grcov_not_installed_reports_bla() -> Result<(), IoError> {
 }
 
 fn new_test_runner(path: &Path, sender: Sender<TestsStatus>) -> TestRunner {
-    TestRunner::new(path, Box::new(CargoTest { }), Box::new(GrcovComputeCoverage { }), sender)
+    TestRunner::new(path, Box::new(CargoTest { }), Box::new(Grcov { }), sender)
 }
 
 fn mock_test_run(path: &Path, sender: Sender<TestsStatus>) {

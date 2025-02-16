@@ -1,13 +1,12 @@
 use std::{fs, path::{Path, PathBuf}, process::Command};
-use crate::coverage::ComputeCoverage;
-use crate::coverage::CoverageStatus;
+use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus};
 
-pub struct GrcovComputeCoverage {
+pub struct Grcov {
 
 }
 
-impl ComputeCoverage for GrcovComputeCoverage {
-    fn compute_coverage(&self) -> Result<CoverageStatus, crate::coverage::CoverageError> {
+impl ComputeCoverage for Grcov {
+    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
         Ok(CoverageStatus::Disabled)
     }
 }
