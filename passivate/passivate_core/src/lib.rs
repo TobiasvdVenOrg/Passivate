@@ -34,5 +34,7 @@ pub mod coverage {
 
 #[cfg(test)]
 pub mod tests {
-    pub mod passivate_cargo;
+    mod passivate_cargo {
+        mod cargo_test_parser_tests;
+    }
 }
