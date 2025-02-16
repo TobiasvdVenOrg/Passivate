@@ -5,18 +5,21 @@ pub fn parse_status(text: &str) -> TestsStatus {
     let mut tests = Vec::new();
 
     for line in text.lines() {
-        if line.contains("error") {
-            return TestsStatus::build_failure(line)
+        let line = line.trim();
+
+        if line.starts_with("test") {
+            if let Some((test, result)) = split_and_trim(line) {
+                let status = match result.as_str() {
+                    "ok" => SingleTestStatus::Passed,
+                    _ => SingleTestStatus::Failed
+                };
+    
+                let path = Path::new(OsStr::new(""));
+                tests.push(SingleTest::new(test.to_string(), status, path, 0));
+            }
         }
-
-        if let Some((test, result)) = split_and_trim(line) {
-            let status = match result.as_str() {
-                "ok" => SingleTestStatus::Passed,
-                _ => SingleTestStatus::Failed
-            };
-
-            let path = Path::new(OsStr::new(""));
-            tests.push(SingleTest::new(test.to_string(), status, path, 0));
+        else if line.contains("error") {
+            return TestsStatus::build_failure(line)
         }
     }
 

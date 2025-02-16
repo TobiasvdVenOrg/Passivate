@@ -44,3 +44,13 @@ pub fn simple_test_output_includes_3_completed_tests() {
 
     assert_matches!(status, TestsStatus::Completed(completed) if completed.tests.len() == 3);
 }
+
+#[test]
+pub fn test_with_error_in_its_name_is_not_considered_a_build_failure() {
+    let test_output = r#"
+    test some_test_with_error ... ok
+    "#;
+
+    let status = parse_status(test_output);
+    assert_matches!(status, TestsStatus::Completed(_));
+}
