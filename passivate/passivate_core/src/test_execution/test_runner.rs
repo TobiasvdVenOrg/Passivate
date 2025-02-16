@@ -7,15 +7,22 @@ use crate::test_execution::TestsStatus;
 use crate::passivate_grcov::*;
 use std::fs;
 
+use super::RunTests;
+
 pub struct TestRunner {
     path: PathBuf,
+    runner: Box<dyn RunTests>,
     coverage: Box<dyn ComputeCoverage>,
     tests_status_handler: Sender<TestsStatus>
 }
 
 impl TestRunner {
-    pub fn new(path: &Path, coverage: Box<dyn ComputeCoverage>, tests_status_handler: Sender<TestsStatus>) -> Self {
-        TestRunner { path: path.to_path_buf(), coverage, tests_status_handler }
+    pub fn new(
+        path: &Path, 
+        runner: Box<dyn RunTests>,
+        coverage: Box<dyn ComputeCoverage>, 
+        tests_status_handler: Sender<TestsStatus>) -> Self {
+        TestRunner { path: path.to_path_buf(), runner, coverage, tests_status_handler }
     }
 }
 
@@ -29,13 +36,10 @@ impl HandleChangeEvent for TestRunner {
         remove_profraw_files(&coverage_path).unwrap();
         fs::create_dir_all(&coverage_path).unwrap(); 
 
-        let profraw_path = fs::canonicalize(
-            &coverage_path).unwrap().join("coverage-%p-%m.profraw");
-
-        let test_output = cargo_test(&self.path, &profraw_path);
+        let test_output = self.runner.run_tests(&self.path, &coverage_path).unwrap();
 
         let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
-        let _lcov_info = grcov(&self.path, &profraw_path, binary_path, &coverage_path);
+        let _lcov_info = grcov(&self.path, &coverage_path, binary_path, &coverage_path);
     
         let status = parse_status(&test_output);
         let _ = self.tests_status_handler.send(status);

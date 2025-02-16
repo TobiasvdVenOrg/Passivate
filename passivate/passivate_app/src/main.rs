@@ -12,6 +12,7 @@ use std::sync::mpsc::channel;
 use std::thread;
 use app::App;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::GrcovComputeCoverage;
 use passivate_notify::NotifyChangeEvents;
 use passivate_core::test_execution::TestRunner;
@@ -61,7 +62,9 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
     let change_events_thread = thread::spawn({
         let exit_flag = exit_flag.clone();
         move || {
-            let mut test_execution = TestRunner::new(&path_buf, Box::new(GrcovComputeCoverage {}), tests_status_sender);
+            let gargo_test = CargoTest { };
+            let coverage = GrcovComputeCoverage { };
+            let mut test_execution = TestRunner::new(&path_buf, Box::new(gargo_test), Box::new(coverage), tests_status_sender);
             while !exit_flag.load(SeqCst) {
                 if let Ok(change_event) = change_event_receiver.recv() {
                     test_execution.handle_event(change_event);
