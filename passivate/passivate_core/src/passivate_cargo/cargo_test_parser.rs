@@ -33,14 +33,3 @@ fn split_and_trim(line: &str) -> Option<(String, String)> {
 
     Some((first, second))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    pub fn haha() {
-
-    }
-
-}
