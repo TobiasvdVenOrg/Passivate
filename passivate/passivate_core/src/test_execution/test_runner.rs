@@ -4,13 +4,14 @@ use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::ComputeCoverage;
 use crate::passivate_cargo::*;
 use crate::test_execution::TestsStatus;
-use crate::passivate_grcov::*;
 use std::fs;
 
 use super::RunTests;
 
 pub struct TestRunner {
-    path: PathBuf,
+    workspace_path: PathBuf,
+    passivate_path: PathBuf,
+    coverage_path: PathBuf,
     runner: Box<dyn RunTests>,
     coverage: Box<dyn ComputeCoverage>,
     tests_status_handler: Sender<TestsStatus>
@@ -18,11 +19,20 @@ pub struct TestRunner {
 
 impl TestRunner {
     pub fn new(
-        path: &Path, 
+        workspace_path: &Path, 
         runner: Box<dyn RunTests>,
         coverage: Box<dyn ComputeCoverage>, 
         tests_status_handler: Sender<TestsStatus>) -> Self {
-        TestRunner { path: path.to_path_buf(), runner, coverage, tests_status_handler }
+        let passivate_path = workspace_path.join(".passivate");
+        let coverage_path = passivate_path.join("coverage");
+        TestRunner { 
+            workspace_path: workspace_path.to_path_buf(), 
+            passivate_path,
+            coverage_path,
+            runner, 
+            coverage, 
+            tests_status_handler 
+        }
     }
 }
 
@@ -30,16 +40,13 @@ impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
         let _ = self.tests_status_handler.send(TestsStatus::running());
 
-        let passivate_path = self.path.join(".passivate");
-        let coverage_path = passivate_path.join("coverage");
+        let _ = self.coverage.clean_coverage_output();
+        fs::create_dir_all(&self.coverage_path).unwrap(); 
 
-        remove_profraw_files(&coverage_path).unwrap();
-        fs::create_dir_all(&coverage_path).unwrap(); 
+        let test_output = self.runner.run_tests(&self.workspace_path, &self.coverage_path).unwrap();
 
-        let test_output = self.runner.run_tests(&self.path, &coverage_path).unwrap();
-
-        let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
-        let _lcov_info = grcov(&self.path, &coverage_path, binary_path, &coverage_path);
+        
+        let _ = self.coverage.compute_coverage();
     
         let status = parse_status(&test_output);
         let _ = self.tests_status_handler.send(status);

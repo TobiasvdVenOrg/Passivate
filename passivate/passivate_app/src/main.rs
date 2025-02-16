@@ -58,13 +58,17 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
     
     let exit_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
-    let path_buf = path.to_path_buf();
+    let workspace_path = path.to_path_buf();
+    let passivate_path = workspace_path.join(".passivate");
+    let coverage_path = passivate_path.join("coverage");
+    let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
+
     let change_events_thread = thread::spawn({
         let exit_flag = exit_flag.clone();
         move || {
             let gargo_test = CargoTest { };
-            let coverage = Grcov { };
-            let mut test_execution = TestRunner::new(&path_buf, Box::new(gargo_test), Box::new(coverage), tests_status_sender);
+            let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
+            let mut test_execution = TestRunner::new(&workspace_path, Box::new(gargo_test), Box::new(coverage), tests_status_sender);
             while !exit_flag.load(SeqCst) {
                 if let Ok(change_event) = change_event_receiver.recv() {
                     test_execution.handle_event(change_event);

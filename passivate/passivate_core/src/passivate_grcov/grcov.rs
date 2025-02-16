@@ -2,25 +2,27 @@ use std::{fs, path::{Path, PathBuf}, process::Command};
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus};
 
 pub struct Grcov {
-
+    workspace_path: PathBuf,
+    output_path: PathBuf,
+    binary_path: PathBuf
 }
 
-impl ComputeCoverage for Grcov {
-    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
-        Ok(CoverageStatus::Disabled)
+impl Grcov {
+    pub fn new(workspace_path: &Path, output_path: &Path, binary_path: &Path) -> Self {
+        Self { workspace_path: workspace_path.to_path_buf(), output_path: output_path.to_path_buf(), binary_path: binary_path.to_path_buf() }
     }
 }
+impl ComputeCoverage for Grcov {
+    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
+        let lcov_info_path = self.output_path.join("lcov.info");
 
-pub fn grcov(working_dir: &Path, profraw_dir: &Path, binary_path: &Path, output_dir: &Path) -> PathBuf {
-    let lcov_info_path = output_dir.join("lcov.info");
-
-    let _grcov = Command::new("grcov")
-            .current_dir(working_dir)
-            .arg(profraw_dir)
+        let _grcov = Command::new("grcov")
+            .current_dir(&self.workspace_path)
+            .arg(&self.output_path)
             .arg("-s")
             .arg(".")
             .arg("--binary-path")
-            .arg(binary_path)
+            .arg(&self.binary_path)
             .arg("-t")
             .arg("lcov")
             .arg("--branch")
@@ -31,21 +33,22 @@ pub fn grcov(working_dir: &Path, profraw_dir: &Path, binary_path: &Path, output_
             .unwrap()
             .wait();
 
-        lcov_info_path.to_path_buf()
-}
-
-pub fn remove_profraw_files(profraw_dir: &Path) -> Result<(), std::io::Error> {
-    if !fs::exists(profraw_dir)? {
-        return Ok(())
+        Ok(CoverageStatus::Disabled)
     }
 
-    for profraw in fs::read_dir(profraw_dir)?.flatten() {      
-        if let Some(extension) = profraw.path().extension() {
-            if extension == "profraw" {
-                fs::remove_file(profraw.path())?;
+    fn clean_coverage_output(&self) -> Result<(), CoverageError> {
+        if !fs::exists(&self.output_path)? {
+            return Ok(())
+        }
+    
+        for profraw in fs::read_dir(&self.output_path)?.flatten() {      
+            if let Some(extension) = profraw.path().extension() {
+                if extension == "profraw" {
+                    fs::remove_file(profraw.path())?;
+                }
             }
         }
+    
+        Ok(())
     }
-
-    Ok(())
 }
