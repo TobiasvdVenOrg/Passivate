@@ -1,26 +1,27 @@
-use std::{fs, path::Path, process::{Command, Stdio}};
+use std::{path::{Path, PathBuf}, process::{Command, Stdio}};
 use crate::test_execution::{RunTests, RunTestsError};
 
 pub struct CargoTest {
-
+    workspace_path: PathBuf,
+    coverage_output_path: PathBuf
 }
 
 impl CargoTest {
-
+    pub fn new(workspace_path: &Path, profraw_output_path: &Path) -> Self {
+        let coverage_output_path = profraw_output_path.join("coverage-%p-%m.profraw").to_path_buf();
+        Self { workspace_path: workspace_path.to_path_buf(), coverage_output_path }
+    }
 }
 
 impl RunTests for CargoTest {
-    fn run_tests(&self, path: &Path, profraw_output_dir: &Path) -> Result<String, RunTestsError> {
-        // Absolute dir, because a relative dir will cause profraw files to be output relative to each individual project in the workspace
-        let absolute_profraw_output_dir = fs::canonicalize(profraw_output_dir)?.join("coverage-%p-%m.profraw");
-        
+    fn run_tests(&self) -> Result<String, RunTestsError> {
         let output = Command::new("cargo")
-            .current_dir(path)
+            .current_dir(&self.workspace_path)
             .arg("test")
             .arg("--target")
             .arg("x86_64-pc-windows-msvc")
             .env("RUSTFLAGS", "-C instrument-coverage")
-            .env("LLVM_PROFILE_FILE", absolute_profraw_output_dir)
+            .env("LLVM_PROFILE_FILE", &self.coverage_output_path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()?;

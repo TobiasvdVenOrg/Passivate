@@ -1,6 +1,5 @@
-use std::path::Path;
 use super::RunTestsError;
 
 pub trait RunTests {
-    fn run_tests(&self, path: &Path, profraw_output_dir: &Path) -> Result<String, RunTestsError>;
+    fn run_tests(&self) -> Result<String, RunTestsError>;
 }

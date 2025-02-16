@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::mpsc::channel;
-use std::thread;
+use std::{fs, thread};
 use app::App;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
@@ -63,12 +63,17 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
     let coverage_path = passivate_path.join("coverage");
     let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
 
+    fs::create_dir_all(&coverage_path)?; 
+
+    // Absolute dir, because a relative dir will cause profraw files to be output relative to each individual project in the workspace
+    let profraw_output_path = fs::canonicalize(&coverage_path)?;
+
     let change_events_thread = thread::spawn({
         let exit_flag = exit_flag.clone();
         move || {
-            let gargo_test = CargoTest { };
-            let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-            let mut test_execution = TestRunner::new(&workspace_path, Box::new(gargo_test), Box::new(coverage), tests_status_sender);
+            let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
+            let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
+            let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), tests_status_sender);
             while !exit_flag.load(SeqCst) {
                 if let Ok(change_event) = change_event_receiver.recv() {
                     test_execution.handle_event(change_event);

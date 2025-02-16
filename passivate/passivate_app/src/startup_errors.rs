@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::io::Error as IoError;
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::mpsc::SendError;
 use passivate_core::change_events::ChangeEvent;
@@ -8,7 +9,8 @@ use crate::passivate_notify::NotifyChangeEventsError;
 pub enum StartupError {
     MissingArgument(MissingArgumentError),
     NotifyChangeEvents(NotifyChangeEventsError),
-    Channel(SendError<ChangeEvent>)
+    Channel(SendError<ChangeEvent>),
+    DirectorySetup(IoError)
 }
 
 #[derive(Debug)]
@@ -32,6 +34,11 @@ impl Display for StartupError {
                 writeln!(f)?;
                 write!(f, "{}", channel)
             }
+            StartupError::DirectorySetup(directory_setup_error) => {
+                writeln!(f, "failed to initialize Passivate environment")?;
+                writeln!(f)?;
+                write!(f, "{}", directory_setup_error)
+            },
         }
     }
 }
@@ -42,24 +49,31 @@ impl Error for StartupError {
             StartupError::MissingArgument(_) => { None }
             StartupError::NotifyChangeEvents(notify_change_events) => { Some(notify_change_events) }
             StartupError::Channel(channel) => { Some(channel) }
+            StartupError::DirectorySetup(directory_setup_error) => Some(directory_setup_error),
         }
     }
 }
 
 impl From<NotifyChangeEventsError> for StartupError {
-    fn from(err: NotifyChangeEventsError) -> Self {
-        StartupError::NotifyChangeEvents(err)
+    fn from(error: NotifyChangeEventsError) -> Self {
+        StartupError::NotifyChangeEvents(error)
     }
 }
 
 impl From<MissingArgumentError> for StartupError {
-    fn from(err: MissingArgumentError) -> Self {
-        StartupError::MissingArgument(err)
+    fn from(error: MissingArgumentError) -> Self {
+        StartupError::MissingArgument(error)
     }
 }
 
 impl From<SendError<ChangeEvent>> for StartupError {
-    fn from(err: SendError<ChangeEvent>) -> Self {
-        StartupError::Channel(err)
+    fn from(error: SendError<ChangeEvent>) -> Self {
+        StartupError::Channel(error)
+    }
+}
+
+impl From<IoError> for StartupError {
+    fn from(error: IoError) -> Self {
+        StartupError::DirectorySetup(error)
     }
 }
