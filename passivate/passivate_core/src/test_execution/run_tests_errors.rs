@@ -1,20 +1,13 @@
 use std::io::Error as IoError;
 use std::string::FromUtf8Error;
 
-#[derive(Debug)]
+use thiserror::Error;
+
+#[derive(Error, Debug)]
 pub enum RunTestsError {
-    Io(IoError),
-    Utf8(FromUtf8Error)
-}
+    #[error("failed to start test runner process")]
+    Process(#[from] IoError),
 
-impl From<IoError> for RunTestsError {
-    fn from(err: IoError) -> Self {
-        RunTestsError::Io(err)
-    }
-}
-
-impl From<FromUtf8Error> for RunTestsError {
-    fn from(err: FromUtf8Error) -> Self {
-        RunTestsError::Utf8(err)
-    }
+    #[error("test runner output was not valid UTF8")]
+    Output(#[from] FromUtf8Error)
 }
