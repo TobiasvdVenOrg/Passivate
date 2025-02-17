@@ -34,9 +34,17 @@ pub mod coverage {
     mod_use!(coverage_errors);
 }
 
+pub mod test_helpers {
+    pub mod assert_matches;
+}
+
 #[cfg(test)]
 pub mod tests {
     mod passivate_cargo {
         mod cargo_test_parser_tests;
+    }
+
+    mod test_execution {
+        mod test_runner_tests;
     }
 }

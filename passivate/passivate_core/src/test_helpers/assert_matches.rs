@@ -1,9 +1,9 @@
 
 #[macro_export]
 macro_rules! assert_matches {
-    ($value:expr, $pattern:pat $( if $guard:expr )?) => {
-        match &$value {
-            $pattern $( if $guard )? => (),
+    ($value:expr, $pattern:path) => {
+        match $value {
+            $pattern(result) => result, 
             _ => panic!(
                 "assertion failed: expected `{}` to match `{}`",
                 stringify!($value),
@@ -12,3 +12,5 @@ macro_rules! assert_matches {
         }
     };
 }
+
+pub(crate) use assert_matches;

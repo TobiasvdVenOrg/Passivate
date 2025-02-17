@@ -4,7 +4,7 @@ use crate::coverage::ComputeCoverage;
 use crate::passivate_cargo::*;
 use crate::test_execution::TestsStatus;
 
-use super::RunTests;
+use super::{RunTests, RunTestsErrorStatus};
 
 pub struct TestRunner {
     runner: Box<dyn RunTests>,
@@ -31,10 +31,19 @@ impl HandleChangeEvent for TestRunner {
 
         let _ = self.coverage.clean_coverage_output();
 
-        let test_output = self.runner.run_tests().unwrap();       
-        let _ = self.coverage.compute_coverage();
+        let test_output = self.runner.run_tests();
+
+        match test_output {
+            Ok(test_output) => {
+                let _ = self.coverage.compute_coverage();
     
-        let status = parse_status(&test_output);
-        let _ = self.tests_status_handler.send(status);
+                let status = parse_status(&test_output);
+                let _ = self.tests_status_handler.send(status);
+            },
+            Err(test_error) => {
+                let error_status = RunTestsErrorStatus { inner_error_display: test_error.to_string() };
+                let _  = self.tests_status_handler.send(TestsStatus::RunTestsError(error_status));
+            }
+        }
     }
 }

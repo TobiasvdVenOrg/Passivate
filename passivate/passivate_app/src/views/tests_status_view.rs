@@ -50,7 +50,13 @@ impl View for TestsStatusView {
 
                 let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
                 ui.label(text);
-            }
+            },
+            TestsStatus::RunTestsError(ref run_tests_error_status) => {
+                ui.heading("Failed to run tests.");
+
+                let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);
+                ui.label(text);
+            },
         }
     }
 

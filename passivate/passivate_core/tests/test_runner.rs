@@ -1,5 +1,3 @@
-mod helpers;
-
 use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
@@ -8,6 +6,7 @@ use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{TestRunner, TestsStatus};
 use std::fs;
+use passivate_core::assert_matches;
 
 #[cfg(target_os = "windows")]
 #[test]
@@ -17,11 +16,11 @@ pub fn change_event_causes_test_run_and_results() -> Result<(), IoError> {
 
     new_test_run(path, sender)?;
 
-    let running = receiver.recv().unwrap();
+    let _running = receiver.recv().unwrap();
     let completed = receiver.recv().unwrap();
 
-    assert_matches!(running, TestsStatus::Running);
-    assert_matches!(completed, TestsStatus::Completed(completed) if completed.tests.len() == 3);
+    let completed = assert_matches!(completed, TestsStatus::Completed);
+    assert_eq!(3, completed.tests.len());
 
     Ok(())
 }

@@ -14,11 +14,18 @@ pub struct BuildFailureTestsStatus {
 
 #[derive(Clone)]
 #[derive(Debug)]
+pub struct RunTestsErrorStatus {
+    pub inner_error_display: String
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
 pub enum TestsStatus {
     Waiting,
     Running,
     Completed(CompleteTestsStatus),
-    BuildFailure(BuildFailureTestsStatus)
+    BuildFailure(BuildFailureTestsStatus),
+    RunTestsError(RunTestsErrorStatus)
 }
 
 impl TestsStatus {

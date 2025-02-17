@@ -18,7 +18,7 @@ pub fn parse_status(text: &str) -> TestsStatus {
                 tests.push(SingleTest::new(test.to_string(), status, path, 0));
             }
         }
-        else if line.contains("error") {
+        else if line.contains("error:") {
             return TestsStatus::build_failure(line)
         }
     }
