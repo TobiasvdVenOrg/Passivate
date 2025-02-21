@@ -12,5 +12,3 @@ macro_rules! assert_matches {
         }
     };
 }
-
-pub(crate) use assert_matches;

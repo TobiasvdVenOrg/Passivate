@@ -1,4 +1,4 @@
-use std::{io::Error as IoError, sync::mpsc::channel};
+use std::sync::mpsc::channel;
 use crate::{assert_matches, change_events::{ChangeEvent, HandleChangeEvent}, coverage::{CoverageError, CoverageStatus, MockComputeCoverage}, test_execution::{MockRunTests, RunTestsError, TestRunner, TestRunnerStatusDispatch, TestsStatus}};
 
 #[test]

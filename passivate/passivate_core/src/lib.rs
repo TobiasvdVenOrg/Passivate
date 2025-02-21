@@ -1,6 +1,8 @@
 macro_rules! mod_use {
     ($module: ident) => {
         pub mod $module;
+
+        #[allow(unused_imports)]
         pub use $module::*;
     }
 }

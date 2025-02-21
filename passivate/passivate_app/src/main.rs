@@ -51,7 +51,7 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
 
     change_event_sender.send(ChangeEvent {})?;
 
-    let change_events = NotifyChangeEvents::new(path, change_event_sender)?;
+    let mut change_events = NotifyChangeEvents::new(path, change_event_sender)?;
 
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
@@ -85,10 +85,11 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
 
     let tests_view = TestsStatusView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver);
-    run_app(Box::new(App::new(tests_view, coverage_view, change_events)));
+    run_app(Box::new(App::new(tests_view, coverage_view)));
 
     exit_flag.store(true, SeqCst);
 
+    let _ = change_events.stop();
     change_events_thread.join().unwrap();
 
     Ok(())

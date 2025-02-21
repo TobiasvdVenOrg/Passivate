@@ -1,13 +1,11 @@
 use std::io::Error as IoError;
 use std::path::Path;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::channel;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
-use passivate_core::dispatching::Dispatch;
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch, TestsStatus};
+use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch};
 use std::fs;
-use passivate_core::assert_matches;
 
 #[cfg(target_os = "windows")]
 #[test]
@@ -133,7 +131,6 @@ fn test_run(test_runner: &mut TestRunner) -> Result<(), IoError> {
 
 fn clean_passivate_dir(path: &Path) -> Result<(), IoError> {
     let passivate_path = path.join(".passivate");
-    let p = fs::canonicalize(&passivate_path);
     if fs::exists(&passivate_path)? {
         fs::remove_dir_all(&passivate_path)?
     }

@@ -1,5 +1,4 @@
-use std::sync::mpsc::Sender;
-use crate::{coverage::CoverageStatus, dispatching::{Dispatch, DispatchError}};
+use crate::coverage::CoverageStatus;
 use super::TestsStatus;
 
 pub enum TestRunnerStatus {
