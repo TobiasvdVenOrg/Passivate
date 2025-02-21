@@ -5,12 +5,8 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - run: rustup toolchain uninstall stable
+      - run: rustup toolchain install stable
       - run: rustup target add x86_64-unknown-linux-gnu
       - name: Test Core (Linux)
         working-directory: passivate/passivate_core
