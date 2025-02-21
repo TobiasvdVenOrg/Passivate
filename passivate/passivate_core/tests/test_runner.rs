@@ -2,27 +2,29 @@ use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::mpsc::{channel, Sender};
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::dispatching::Dispatch;
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunner, TestsStatus};
+use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch, TestsStatus};
 use std::fs;
 use passivate_core::assert_matches;
 
 #[cfg(target_os = "windows")]
 #[test]
 pub fn change_event_causes_test_run_and_results() -> Result<(), IoError> {
-    let path = Path::new("../../test_data/change_event_causes_test_run_and_results");
-    let (sender, receiver) = channel();
+    todo!("Move this to a unit test")
+    // let path = Path::new("../../test_data/change_event_causes_test_run_and_results");
+    // let (sender, receiver) = channel();
 
-    new_test_run(path, sender)?;
+    // new_test_run(path, sender)?;
 
-    let _running = receiver.recv().unwrap();
-    let completed = receiver.recv().unwrap();
+    // let _running = receiver.recv().unwrap();
+    // let completed = receiver.recv().unwrap();
 
-    let completed = assert_matches!(completed, TestsStatus::Completed);
-    assert_eq!(3, completed.tests.len());
+    // let completed = assert_matches!(completed, TestsStatus::Completed);
+    // assert_eq!(3, completed.tests.len());
 
-    Ok(())
+    // Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -31,9 +33,7 @@ pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError> {
     let path = Path::new("../../test_data/test_run_outputs_coverage_file_for_project");  
     clean_passivate_dir(path)?;
 
-    let (sender, _receiver) = channel();
-
-    new_test_run(path, sender)?;
+    new_test_run(path)?;
     
     let expected_output_path = fs::canonicalize("../../test_data/test_run_outputs_coverage_file_for_project/.passivate/coverage/lcov.info")?;
 
@@ -49,9 +49,7 @@ pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError> {
     let path = Path::new("../../test_data/test_run_outputs_coverage_file_for_workspace");
     clean_passivate_dir(path)?;
 
-    let (sender, _receiver) = channel();
-
-    new_test_run(path, sender)?;
+    new_test_run(path)?;
     
     let expected_output_path = fs::canonicalize("../../test_data/test_run_outputs_coverage_file_for_workspace/.passivate/coverage/lcov.info")?;
 
@@ -67,8 +65,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
     let path = Path::new("../../test_data/repeat_test_runs_do_not_accumulate_profraw_files");
     clean_passivate_dir(path)?;
 
-    let (sender, _receiver) = channel();
-    let mut test_runner = new_test_runner(path, sender)?;
+    let mut test_runner = new_test_runner(path)?;
 
     test_run(&mut test_runner)?;
     
@@ -91,8 +88,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
     let path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file");
     clean_passivate_dir(path)?;
 
-    let (sender, _receiver) = channel();
-    let mut test_runner = new_test_runner(path, sender)?;
+    let mut test_runner = new_test_runner(path)?;
 
     test_run(&mut test_runner)?;
     
@@ -107,12 +103,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
     Ok(())
 }
 
-#[test]
-pub fn grcov_not_installed_reports_bla() -> Result<(), IoError> {
-    Ok(()) 
-}
-
-fn new_test_runner(path: &Path, sender: Sender<TestsStatus>) -> Result<TestRunner, IoError> {
+fn new_test_runner(path: &Path) -> Result<TestRunner, IoError> {
     let passivate_path = path.join(".passivate");
     let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
     let coverage_path = path.join(".passivate").join("coverage");
@@ -120,11 +111,14 @@ fn new_test_runner(path: &Path, sender: Sender<TestsStatus>) -> Result<TestRunne
     let absolute_coverage_path = fs::canonicalize(passivate_path.join("coverage"))?; 
     let grcov = Grcov::new(path, &coverage_path, binary_path);
     let cargo_test = CargoTest::new(path, &absolute_coverage_path);
-    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), sender))
+    let (tests_sender, _tests_receiver) = channel();
+    let (coverage_sender, _coverage_receiver) = channel();
+    let dispatch = TestRunnerStatusDispatch::new(tests_sender, coverage_sender);
+    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), dispatch))
 }
 
-fn new_test_run(path: &Path, sender: Sender<TestsStatus>) -> Result<(), IoError> {
-    let mut test_runner = new_test_runner(path, sender)?;
+fn new_test_run(path: &Path) -> Result<(), IoError> {
+    let mut test_runner = new_test_runner(path)?;
 
     test_run(&mut test_runner)
 }

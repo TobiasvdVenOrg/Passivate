@@ -1,17 +1,16 @@
-use std::io::Error as IoError;
+use std::io::ErrorKind as IoErrorKind;
+
+use thiserror::Error;
 
 
+#[derive(Error, Debug, Clone)]
 pub enum CoverageError {
-    GrcovNotInstalled(GrcovNotInstalledCoverageError),
-    Io(IoError)
-}
+    #[error("grcov is not installed")]
+    GrcovNotInstalled(IoErrorKind),
 
-pub struct GrcovNotInstalledCoverageError {
+    #[error("coverage failed to generate for an unexpected reason")]
+    FailedToGenerate(IoErrorKind),
 
-}
-
-impl From<IoError> for CoverageError {
-    fn from(err: IoError) -> Self {
-        CoverageError::Io(err)
-    }
+    #[error("coverage may be inaccurate - cleaning previous output failed")]
+    CleanIncomplete(IoErrorKind)
 }

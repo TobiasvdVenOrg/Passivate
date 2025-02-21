@@ -33,10 +33,6 @@ impl TestsStatus {
         TestsStatus::Waiting
     }
 
-    pub fn running() -> TestsStatus {
-        TestsStatus::Running
-    }
-
     pub fn completed(tests: Vec<SingleTest>) -> TestsStatus {
         TestsStatus::Completed(CompleteTestsStatus { tests })
     }

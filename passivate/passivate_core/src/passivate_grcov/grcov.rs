@@ -1,4 +1,4 @@
-use std::{fs, path::{Path, PathBuf}, process::Command};
+use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command};
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus};
 
 pub struct Grcov {
@@ -12,11 +12,12 @@ impl Grcov {
         Self { workspace_path: workspace_path.to_path_buf(), output_path: output_path.to_path_buf(), binary_path: binary_path.to_path_buf() }
     }
 }
+
 impl ComputeCoverage for Grcov {
     fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
         let lcov_info_path = self.output_path.join("lcov.info");
 
-        let _grcov = Command::new("grcov")
+        let mut grcov = Command::new("grcov")
             .current_dir(&self.workspace_path)
             .arg(&self.output_path)
             .arg("-s")
@@ -30,25 +31,31 @@ impl ComputeCoverage for Grcov {
             .arg("-o")
             .arg(&lcov_info_path)
             .spawn()
-            .unwrap()
-            .wait();
+            .map_err(|e| CoverageError::GrcovNotInstalled(e.kind()))?;
+
+        grcov.wait().map_err(|e| CoverageError::FailedToGenerate(e.kind()))?;
 
         Ok(CoverageStatus::Disabled)
     }
 
     fn clean_coverage_output(&self) -> Result<(), CoverageError> {
-        if !fs::exists(&self.output_path)? {
-            return Ok(())
+        if let Ok(false) = fs::exists(&self.output_path) {
+            return Ok(());
         }
     
-        for profraw in fs::read_dir(&self.output_path)?.flatten() {      
-            if let Some(extension) = profraw.path().extension() {
-                if extension == "profraw" {
-                    fs::remove_file(profraw.path())?;
-                }
+        remove_profraw_files(&self.output_path)
+            .map_err(|e| CoverageError::CleanIncomplete(e.kind()))
+    }
+}
+
+fn remove_profraw_files(directory: &Path) -> Result<(), IoError> {
+    for profraw in fs::read_dir(directory)?.flatten() {      
+        if let Some(extension) = profraw.path().extension() {
+            if extension == "profraw" {
+                fs::remove_file(profraw.path())?;
             }
         }
-    
-        Ok(())
     }
+
+    Ok(())
 }

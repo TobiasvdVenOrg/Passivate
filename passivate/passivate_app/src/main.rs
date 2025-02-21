@@ -15,7 +15,7 @@ use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_notify::NotifyChangeEvents;
-use passivate_core::test_execution::TestRunner;
+use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch};
 use views::{CoverageView, TestsStatusView};
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
@@ -55,7 +55,8 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
 
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-    
+    let test_runner_dispatch: TestRunnerStatusDispatch = TestRunnerStatusDispatch::new(tests_status_sender, coverage_sender);
+
     let exit_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
     let workspace_path = path.to_path_buf();
@@ -73,7 +74,7 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
         move || {
             let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
             let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
-            let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), tests_status_sender);
+            let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), test_runner_dispatch);
             while !exit_flag.load(SeqCst) {
                 if let Ok(change_event) = change_event_receiver.recv() {
                     test_execution.handle_event(change_event);
