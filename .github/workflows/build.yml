@@ -5,7 +5,8 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
     steps:
-      - run: |
+      - name: Configure rustup
+        run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-update-default-toolchain
         . "$HOME/.cargo/env"
         rustup toolchain uninstall stable
