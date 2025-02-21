@@ -5,6 +5,7 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
     steps:
+      - run: rustup self uninstall
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: rustup toolchain uninstall stable
       - run: rustup toolchain install stable
