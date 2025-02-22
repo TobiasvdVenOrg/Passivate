@@ -9,24 +9,6 @@ use std::fs;
 
 #[cfg(target_os = "windows")]
 #[test]
-pub fn change_event_causes_test_run_and_results() -> Result<(), IoError> {
-    todo!("Move this to a unit test")
-    // let path = Path::new("../../test_data/change_event_causes_test_run_and_results");
-    // let (sender, receiver) = channel();
-
-    // new_test_run(path, sender)?;
-
-    // let _running = receiver.recv().unwrap();
-    // let completed = receiver.recv().unwrap();
-
-    // let completed = assert_matches!(completed, TestsStatus::Completed);
-    // assert_eq!(3, completed.tests.len());
-
-    // Ok(())
-}
-
-#[cfg(target_os = "windows")]
-#[test]
 pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError> {
     let path = Path::new("../../test_data/test_run_outputs_coverage_file_for_project");  
     clean_passivate_dir(path)?;
