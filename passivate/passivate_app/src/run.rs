@@ -48,8 +48,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let (coverage_sender, coverage_receiver) = channel();
     let test_runner_dispatch: TestRunnerStatusDispatch = TestRunnerStatusDispatch::new(tests_status_sender, coverage_sender);
 
-    let exit_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-
     let workspace_path = path.to_path_buf();
     let passivate_path = workspace_path.join(".passivate");
     let coverage_path = passivate_path.join("coverage");
@@ -60,16 +58,15 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Absolute dir, because a relative dir will cause profraw files to be output relative to each individual project in the workspace
     let profraw_output_path = fs::canonicalize(&coverage_path)?;
 
-    let change_events_thread = thread::spawn({
-        let exit_flag = exit_flag.clone();
-        move || {
-            let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
-            let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
-            let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), test_runner_dispatch);
-            while !exit_flag.load(SeqCst) {
-                if let Ok(change_event) = change_event_receiver.recv() {
-                    test_execution.handle_event(change_event);
-                }
+    let change_events_thread = thread::spawn(move || {
+        let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
+        let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
+        let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), test_runner_dispatch);
+
+        while let Ok(change_event) = change_event_receiver.recv() {
+            match change_event {
+                ChangeEvent::File => test_execution.handle_event(change_event),
+                ChangeEvent::Exit => break,
             }
         }
     });
@@ -79,7 +76,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     run_app(Box::new(App::new(tests_view, coverage_view)), context_accessor)?;
 
     exit_event_sender.send(ChangeEvent::Exit)?;
-    exit_flag.store(true, SeqCst);
 
     let _ = change_events.stop();
     change_events_thread.join().unwrap();
