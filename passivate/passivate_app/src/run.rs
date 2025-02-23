@@ -4,6 +4,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::mpsc::channel;
 use std::{fs, thread};
+use egui::Context;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
@@ -14,24 +15,18 @@ use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
 use crate::{startup_errors::*, views};
 
-pub fn run() {
-    match run_from_args() {
-        Ok(_) => {
-            println!("Exiting...");
+pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
+    match get_path_arg() {
+        Ok(path) => {
+            run_from_path(&path, context_accessor)
         }
         Err(error) => {
-            run_app(ErrorApp::boxed(error));
+            run_app(ErrorApp::boxed(error.into()), context_accessor)
         }
     }
 }
 
-fn run_from_args() -> Result<(), StartupError> {
-    let path = get_path_arg()?;
-
-    run_from_path(&path)
-}
-
-fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
+pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
     let path = std::env::args().nth(1);
 
     match path {
@@ -40,10 +35,12 @@ fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
     }
 }
 
-fn run_from_path(path: &Path) -> Result<(), StartupError> {
+pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     let (change_event_sender, change_event_receiver) = channel();
+    let exit_event_sender = change_event_sender.clone();
 
-    change_event_sender.send(ChangeEvent {})?;
+    // Send an initial change event to trigger an immediate test run
+    change_event_sender.send(ChangeEvent::File)?;
 
     let mut change_events = NotifyChangeEvents::new(path, change_event_sender)?;
 
@@ -79,8 +76,9 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
 
     let tests_view = TestsStatusView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver);
-    run_app(Box::new(App::new(tests_view, coverage_view)));
+    run_app(Box::new(App::new(tests_view, coverage_view)), context_accessor)?;
 
+    exit_event_sender.send(ChangeEvent::Exit)?;
     exit_flag.store(true, SeqCst);
 
     let _ = change_events.stop();
@@ -89,7 +87,7 @@ fn run_from_path(path: &Path) -> Result<(), StartupError> {
     Ok(())
 }
 
-fn run_app(app: Box<dyn eframe::App>) {
+pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     let eframe_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([400.0, 300.0])
@@ -100,8 +98,12 @@ fn run_app(app: Box<dyn eframe::App>) {
     eframe::run_native(
         "Passivate",
         eframe_options,
-        Box::new(|_cc| {
+        Box::new(|cc| {
+            context_accessor(cc.egui_ctx.clone());
+
             Ok(app)
         }),
     ).expect("Failed to start Passivate!");
+
+    Ok(())
 }

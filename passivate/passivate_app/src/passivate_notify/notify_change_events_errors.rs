@@ -4,12 +4,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use notify::Error as NotifyError;
 
-#[derive(Debug)]
 pub enum NotifyChangeEventsError {
     InvalidPath(InvalidPathError)
 }
 
-#[derive(Debug)]
 pub struct InvalidPathError {
     pub path: PathBuf,
     pub notify_error: NotifyError
@@ -56,6 +54,12 @@ impl Display for NotifyChangeEventsError {
                 write!(f, "working directory: {}", Self::try_working_dir())
             }
         }
+    }
+}
+
+impl Debug for NotifyChangeEventsError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 

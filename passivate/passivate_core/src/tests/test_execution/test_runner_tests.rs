@@ -18,7 +18,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let dispatch = TestRunnerStatusDispatch::new(tests_sender, coverage_sender);
     let mut test_runner = TestRunner::new(Box::new(run_tests), Box::new(compute_coverage), dispatch);
 
-    test_runner.handle_event(ChangeEvent { });
+    test_runner.handle_event(ChangeEvent::File);
 
     let _running = tests_receiver.recv().unwrap();
     let error = tests_receiver.recv().unwrap();
@@ -44,7 +44,7 @@ pub fn when_grcov_is_not_installed_error_is_reported() {
     let dispatch = TestRunnerStatusDispatch::new(tests_sender, coverage_sender);
     let mut test_runner = TestRunner::new(Box::new(run_tests), Box::new(compute_coverage), dispatch);
 
-    test_runner.handle_event(ChangeEvent { });
+    test_runner.handle_event(ChangeEvent::File);
 
     let error = coverage_receiver.recv().unwrap();
 

@@ -104,8 +104,7 @@ fn new_test_run(path: &Path) -> Result<(), IoError> {
 }
 
 fn test_run(test_runner: &mut TestRunner) -> Result<(), IoError> {
-
-    let mock_event = ChangeEvent { };
+    let mock_event = ChangeEvent::File;
     test_runner.handle_event(mock_event);
 
     Ok(())

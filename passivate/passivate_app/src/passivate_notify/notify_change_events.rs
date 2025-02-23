@@ -33,11 +33,11 @@ impl NotifyChangeEvents {
                                     if let Ok(modified) = metadata.modified() {
                                         if let Some(last_modification) = modification_cache.get(path.as_path()) {
                                             if &modified > last_modification {
-                                                let change_event = ChangeEvent { };
+                                                let change_event = ChangeEvent::File;
                                                 let _ = sender.send(change_event);
                                             }
                                         } else {
-                                            let change_event = ChangeEvent { };
+                                            let change_event = ChangeEvent::File;
                                             let _ = sender.send(change_event);
                                         }
 

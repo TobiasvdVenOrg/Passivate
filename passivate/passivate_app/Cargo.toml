@@ -14,3 +14,11 @@ eframe = { version = "0.31", default-features = false, features = [
 egui_dock = "0.16.0"
 notify = "8.0.0"
 futures = "0.3.31"
+tokio = { version = "1.42.0", features = [ "full" ] }
+
+[dev-dependencies]
+libtest-mimic = "0.8.1"
+
+[[test]]
+name = "passivate_tests"
+harness = false

@@ -1,12 +1,5 @@
-mod app;
-mod error_app;
-mod startup_errors;
-mod views;
-mod passivate_notify;
-mod run;
+use passivate::{run, StartupError};
 
-use run::run;
-
-fn main() {
-    run();
+fn main() -> Result<(), StartupError> {
+    run(Box::new(|_context| { }))
 }

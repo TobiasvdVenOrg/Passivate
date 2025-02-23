@@ -1,4 +1,5 @@
 
-pub struct ChangeEvent {
-
+pub enum ChangeEvent {
+    File,
+    Exit
 }
