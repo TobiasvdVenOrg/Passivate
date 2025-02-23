@@ -1,5 +1,7 @@
-use std::{path::{Path, PathBuf}, process::{Command, Stdio}};
-use crate::test_execution::{RunTests, RunTestsError};
+use std::{path::{Path, PathBuf}, process::{Command, Stdio}, sync::mpsc::Sender};
+use crate::test_execution::{RunTests, RunTestsError, TestsStatus};
+
+use super::parse_status;
 
 pub struct CargoTest {
     workspace_path: PathBuf,
@@ -14,7 +16,9 @@ impl CargoTest {
 }
 
 impl RunTests for CargoTest {
-    fn run_tests(&self) -> Result<String, RunTestsError> {
+    fn run_tests(&self, sender: &Sender<TestsStatus>) -> Result<TestsStatus, RunTestsError> {
+        let _ = sender.send(TestsStatus::Running);
+        
         let output = Command::new("cargo")
             .current_dir(&self.workspace_path)
             .arg("test")
@@ -32,6 +36,9 @@ impl RunTests for CargoTest {
             String::from_utf8(output.stderr)?
         };
 
-        Ok(text)
+        let status = parse_status(&text);
+        let _ = sender.send(status.clone());
+
+        Ok(status)
     }
 }

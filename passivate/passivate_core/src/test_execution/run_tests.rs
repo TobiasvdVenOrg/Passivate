@@ -1,9 +1,10 @@
+use std::sync::mpsc::Sender;
+use super::{RunTestsError, TestsStatus};
+
 #[cfg(test)]
 use mockall::*;
 
-use super::RunTestsError;
-
 #[cfg_attr(test, automock)]
 pub trait RunTests {
-    fn run_tests(&self) -> Result<String, RunTestsError>;
+    fn run_tests(&self, sender: &Sender<TestsStatus>) -> Result<TestsStatus, RunTestsError>;
 }

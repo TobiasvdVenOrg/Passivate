@@ -2,7 +2,6 @@ use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::dispatching::Dispatch;
-use crate::passivate_cargo::*;
 use crate::test_execution::TestsStatus;
 use super::{RunTests, RunTestsErrorStatus};
 
@@ -30,17 +29,12 @@ impl TestRunner {
 
 impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        let _ = self.tests_status_sender.dispatch(TestsStatus::Running);
-
         let _ = self.coverage.clean_coverage_output();
 
-        let test_output = self.runner.run_tests();
+        let test_output = self.runner.run_tests(&self.tests_status_sender);
 
         match test_output {
-            Ok(test_output) => {
-                let tests_status = parse_status(&test_output);
-                let _ = self.tests_status_sender.dispatch(tests_status);
-
+            Ok(_) => {
                 let coverage_status = self.coverage.compute_coverage();
 
                 let _ = match coverage_status {
