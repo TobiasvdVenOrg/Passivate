@@ -1,0 +1,121 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [   
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'passivate_core'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=passivate_core"
+                ],
+                "filter": {
+                    "name": "passivate_core",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'cargo_test_tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=cargo_test_tests",
+                    "--package=passivate_core"
+                ],
+                "filter": {
+                    "name": "cargo_test_tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'grcov_tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=grcov_tests",
+                    "--package=passivate_core"
+                ],
+                "filter": {
+                    "name": "grcov_tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'passivate'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=passivate",
+                    "--package=passivate"
+                ],
+                "filter": {
+                    "name": "passivate",
+                    "kind": "bin"
+                }
+            },
+            "args": [ "F:\\Projects\\Passivate\\passivate" ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'passivate'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=passivate",
+                    "--package=passivate"
+                ],
+                "filter": {
+                    "name": "passivate",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'acceptance_tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=acceptance_tests",
+                    "--package=passivate"
+                ],
+                "filter": {
+                    "name": "acceptance_tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
