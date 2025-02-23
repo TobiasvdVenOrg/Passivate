@@ -20,8 +20,6 @@ pub mod test_execution {
     mod_use!(tests_status);
     mod_use!(run_tests);
     mod_use!(run_tests_errors);
-    mod_use!(test_runner_status);
-    mod_use!(test_runner_status_dispatch);
 }
 
 pub mod passivate_cargo {

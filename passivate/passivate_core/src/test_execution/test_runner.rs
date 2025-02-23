@@ -1,34 +1,36 @@
+use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::dispatching::Dispatch;
 use crate::passivate_cargo::*;
 use crate::test_execution::TestsStatus;
-use super::{RunTests, RunTestsErrorStatus, TestRunnerStatus, TestRunnerStatusDispatch};
+use super::{RunTests, RunTestsErrorStatus};
 
-pub struct _TestRunner<T: Dispatch<TestRunnerStatus>> {
+pub struct TestRunner {
     runner: Box<dyn RunTests>,
     coverage: Box<dyn ComputeCoverage>,
-    status_handler: T
+    tests_status_sender: Sender<TestsStatus>,
+    coverage_status_sender: Sender<CoverageStatus>
 }
 
-pub type TestRunner = _TestRunner<TestRunnerStatusDispatch>;
-
-impl<T: Dispatch<TestRunnerStatus>> _TestRunner<T> {
+impl TestRunner {
     pub fn new(
         runner: Box<dyn RunTests>,
         coverage: Box<dyn ComputeCoverage>, 
-        status_handler: T) -> Self {
+        tests_status_sender: Sender<TestsStatus>,
+        coverage_status_sender: Sender<CoverageStatus>) -> Self {
             Self {
             runner, 
             coverage, 
-            status_handler
+            tests_status_sender,
+            coverage_status_sender
         }
     }
 }
 
-impl<T: Dispatch<TestRunnerStatus>> HandleChangeEvent for _TestRunner<T> {
+impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        let _ = self.status_handler.dispatch(TestsStatus::Running.into());
+        let _ = self.tests_status_sender.dispatch(TestsStatus::Running);
 
         let _ = self.coverage.clean_coverage_output();
 
@@ -37,18 +39,18 @@ impl<T: Dispatch<TestRunnerStatus>> HandleChangeEvent for _TestRunner<T> {
         match test_output {
             Ok(test_output) => {
                 let tests_status = parse_status(&test_output);
-                let _ = self.status_handler.dispatch(tests_status.into());
+                let _ = self.tests_status_sender.dispatch(tests_status);
 
                 let coverage_status = self.coverage.compute_coverage();
 
                 let _ = match coverage_status {
-                    Ok(coverage_status) => self.status_handler.dispatch(coverage_status.into()),
-                    Err(coverage_error) => self.status_handler.dispatch(CoverageStatus::Error(coverage_error).into())
+                    Ok(coverage_status) => self.coverage_status_sender.dispatch(coverage_status),
+                    Err(coverage_error) => self.coverage_status_sender.dispatch(CoverageStatus::Error(coverage_error))
                 };
             },
             Err(test_error) => {
                 let error_status = RunTestsErrorStatus { inner_error_display: test_error.to_string() };
-                let _  = self.status_handler.dispatch(TestsStatus::RunTestsError(error_status).into());
+                let _  = self.tests_status_sender.dispatch(TestsStatus::RunTestsError(error_status));
             }
         };
     }

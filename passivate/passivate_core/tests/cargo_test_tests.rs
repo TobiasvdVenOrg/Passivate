@@ -6,7 +6,7 @@ use passivate_core::assert_matches;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch, TestsStatus};
+use passivate_core::test_execution::{TestRunner, TestsStatus};
 
 #[cfg(target_os = "windows")]
 #[test]
@@ -35,8 +35,7 @@ fn new_test_runner(path: &Path, tests_status: Sender<TestsStatus>) -> Result<Tes
     let grcov = Grcov::new(path, &coverage_path, binary_path);
     let cargo_test = CargoTest::new(path, &absolute_coverage_path);
     let (coverage_sender, _coverage_receiver) = channel();
-    let dispatch = TestRunnerStatusDispatch::new(tests_status, coverage_sender);
-    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), dispatch))
+    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), tests_status, coverage_sender))
 }
 
 fn new_test_run(path: &Path, tests_status: Sender<TestsStatus>) -> Result<(), IoError> {

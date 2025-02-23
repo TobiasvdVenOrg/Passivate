@@ -4,7 +4,7 @@ use std::sync::mpsc::channel;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch};
+use passivate_core::test_execution::TestRunner;
 use std::fs;
 
 #[cfg(target_os = "windows")]
@@ -93,8 +93,7 @@ fn new_test_runner(path: &Path) -> Result<TestRunner, IoError> {
     let cargo_test = CargoTest::new(path, &absolute_coverage_path);
     let (tests_sender, _tests_receiver) = channel();
     let (coverage_sender, _coverage_receiver) = channel();
-    let dispatch = TestRunnerStatusDispatch::new(tests_sender, coverage_sender);
-    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), dispatch))
+    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), tests_sender, coverage_sender))
 }
 
 fn new_test_run(path: &Path) -> Result<(), IoError> {

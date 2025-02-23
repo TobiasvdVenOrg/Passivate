@@ -5,7 +5,7 @@ use egui::Context;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunner, TestRunnerStatusDispatch};
+use passivate_core::test_execution::TestRunner;
 use views::{CoverageView, TestsStatusView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -43,7 +43,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-    let test_runner_dispatch: TestRunnerStatusDispatch = TestRunnerStatusDispatch::new(tests_status_sender, coverage_sender);
 
     let workspace_path = path.to_path_buf();
     let passivate_path = workspace_path.join(".passivate");
@@ -58,7 +57,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let change_events_thread = thread::spawn(move || {
         let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
         let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
-        let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), test_runner_dispatch);
+        let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), tests_status_sender, coverage_sender);
 
         while let Ok(change_event) = change_event_receiver.recv() {
             match change_event {
