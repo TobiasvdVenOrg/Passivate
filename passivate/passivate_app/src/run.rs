@@ -1,7 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::SeqCst;
 use std::sync::mpsc::channel;
 use std::{fs, thread};
 use egui::Context;
