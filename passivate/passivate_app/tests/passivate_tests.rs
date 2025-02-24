@@ -23,7 +23,7 @@ pub fn start_and_exit_passivate() -> Result<(), Failed> {
     run_from_path(Path::new("..\\..\\test_data\\start_and_exit_passivate"), Box::new(move |context: egui::Context| {
         task::spawn(async move {   
             // Asynchronously send a close window command to passivate after some delay        
-            time::sleep(Duration::from_secs(8)).await;
+            time::sleep(Duration::from_secs(4)).await;
             context.send_viewport_cmd(egui::ViewportCommand::Close);
         });
     }))?;

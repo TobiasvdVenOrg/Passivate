@@ -5,6 +5,7 @@ use egui::Context;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_grcov::Grcov;
+use passivate_core::passivate_nextest::Nextest;
 use passivate_core::test_execution::TestRunner;
 use views::{CoverageView, TestsStatusView};
 use crate::app::App;
@@ -55,9 +56,10 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let profraw_output_path = fs::canonicalize(&coverage_path)?;
 
     let change_events_thread = thread::spawn(move || {
-        let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path);
+        let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path); 
+        let nextest = Nextest::new(&workspace_path, &profraw_output_path);
         let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
-        let mut test_execution = TestRunner::new(Box::new(cargo_test), Box::new(coverage), tests_status_sender, coverage_sender);
+        let mut test_execution = TestRunner::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
 
         while let Ok(change_event) = change_event_receiver.recv() {
             match change_event {

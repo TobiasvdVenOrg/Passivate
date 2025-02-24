@@ -9,7 +9,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let mut run_tests = MockRunTests::new();
     run_tests.expect_run_tests().returning(|_sender| {
         let error = String::from_utf8(vec!(0, 159)).err().unwrap();
-        Err(RunTestsError::Output(error))
+        Err(RunTestsError::InvalidOutput(error))
     });
 
     let mut compute_coverage = MockComputeCoverage::new();
@@ -31,7 +31,7 @@ pub fn when_test_run_fails_error_is_reported() {
 pub fn when_grcov_is_not_installed_error_is_reported() {
     let mut run_tests = MockRunTests::new();
     run_tests.expect_run_tests().returning(|_sender| {
-        Ok(TestsStatus::Running)
+        Ok(())
     });
 
     let mut compute_coverage = MockComputeCoverage::new();

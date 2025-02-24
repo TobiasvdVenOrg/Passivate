@@ -9,5 +9,8 @@ pub enum RunTestsError {
     Process(#[from] IoError),
 
     #[error("test runner output was not valid UTF8")]
-    Output(#[from] FromUtf8Error)
+    InvalidOutput(#[from] FromUtf8Error),
+
+    #[error("failed to capture test run output")]
+    NoOutput
 }

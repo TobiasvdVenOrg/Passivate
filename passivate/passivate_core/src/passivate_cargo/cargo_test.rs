@@ -16,7 +16,7 @@ impl CargoTest {
 }
 
 impl RunTests for CargoTest {
-    fn run_tests(&self, sender: &Sender<TestsStatus>) -> Result<TestsStatus, RunTestsError> {
+    fn run_tests(&self, sender: &Sender<TestsStatus>) -> Result<(), RunTestsError> {
         let _ = sender.send(TestsStatus::Running);
         
         let output = Command::new("cargo")
@@ -39,6 +39,6 @@ impl RunTests for CargoTest {
         let status = parse_status(&text);
         let _ = sender.send(status.clone());
 
-        Ok(status)
+        Ok(())
     }
 }

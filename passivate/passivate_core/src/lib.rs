@@ -27,6 +27,11 @@ pub mod passivate_cargo {
     mod_use!(cargo_test_parser);
 }
 
+pub mod passivate_nextest {
+    mod_use!(nextest_run);
+    mod_use!(nextest_run_parser);
+}
+
 pub mod passivate_grcov {
     mod_use!(grcov);
 }
@@ -53,6 +58,10 @@ pub mod tests {
         mod cargo_test_parser_tests;
     }
 
+    mod passivate_nextest {
+        mod nextest_run_parser_tests;
+    }
+    
     mod test_execution {
         mod test_runner_tests;
     }
