@@ -6,10 +6,11 @@ edition = "2021"
 [dependencies]
 passivate_core = { path = "../passivate_core" }
 
-egui = "0.31"
+egui = { version = "0.31", features = [ ] }
 eframe = { version = "0.31", default-features = false, features = [
-    "default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "default_fonts",
+    "wgpu",
+    "accesskit"
 ] }
 egui_dock = "0.16.0"
 notify = "8.0.0"
@@ -18,6 +19,7 @@ tokio = { version = "1.42.0", features = [ "full" ] }
 
 [dev-dependencies]
 libtest-mimic = "0.8.1"
+egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }
 
 [[test]]
 name = "passivate_tests"
