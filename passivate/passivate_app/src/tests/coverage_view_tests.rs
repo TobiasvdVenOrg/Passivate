@@ -27,6 +27,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let configuration = event.as_configuration().unwrap();
     assert!(configuration.coverage_enabled);
 
+    harness.fit_contents();
     harness.snapshot("enable_button_when_coverage_is_disabled_triggers_configuration_event");
 }
 
@@ -58,5 +59,6 @@ pub fn when_grcov_is_not_installed_error_is_reported() {
 
     harness.run();
 
+    harness.fit_contents();
     harness.snapshot("when_grcov_is_not_installed_error_is_reported");
 }

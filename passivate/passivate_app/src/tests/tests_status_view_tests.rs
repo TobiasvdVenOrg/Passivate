@@ -18,6 +18,6 @@ pub fn tests_status_view_shows_when_tests_are_running() {
     sender.send(TestsStatus::Running).unwrap();
 
     harness.run();
-
+    harness.fit_contents();
     harness.snapshot("tests_status_view_shows_when_tests_are_running");
 }
