@@ -3,10 +3,14 @@ name = "passivate_core"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+test = [ "mocks" ]
+mocks = []
+
 [dependencies]
 futures = "0.3.31"
 fs_extra = "1.3.0"
 thiserror = "2.0.11"
+mockall = "0.13.1"
 
 [dev-dependencies]
-mockall = "0.13.1"

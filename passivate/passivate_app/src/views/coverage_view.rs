@@ -1,5 +1,5 @@
 use std::sync::mpsc::Receiver;
-use passivate_core::coverage::CoverageStatus;
+use passivate_core::coverage::{CoverageError, CoverageStatus};
 use crate::views::View;
 
 pub struct CoverageView {
@@ -19,7 +19,16 @@ impl View for CoverageView {
             self.status = status;
         }
 
-        ui.label("COVERAGE");
+        match self.status {
+            CoverageStatus::Disabled => "Coverage disabled",
+            CoverageStatus::Error(ref coverage_error) => {
+                match coverage_error {
+                    CoverageError::GrcovNotInstalled(_error_kind) => todo!(),
+                    CoverageError::FailedToGenerate(_error_kind) => todo!(),
+                    CoverageError::CleanIncomplete(_error_kind) => todo!(),
+                };
+            }
+        };
     }
 
     fn title(&self) -> String {

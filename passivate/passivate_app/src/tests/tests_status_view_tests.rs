@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 
 use egui_kittest::Harness;
-use passivate::views::{TestsStatusView, View};
+use crate::views::{TestsStatusView, View};
 use passivate_core::test_execution::TestsStatus;
 
 #[test]

@@ -24,3 +24,9 @@ pub mod passivate_notify {
 }
 
 mod_use!(run);
+
+#[cfg(test)]
+pub mod tests {
+    mod_use!(tests_status_view_tests);
+    mod_use!(coverage_view_tests);
+}

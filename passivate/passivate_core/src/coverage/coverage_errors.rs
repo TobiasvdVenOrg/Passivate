@@ -1,7 +1,5 @@
 use std::io::ErrorKind as IoErrorKind;
-
 use thiserror::Error;
-
 
 #[derive(Error, Debug, Clone)]
 pub enum CoverageError {
