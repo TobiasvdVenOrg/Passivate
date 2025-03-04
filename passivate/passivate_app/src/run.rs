@@ -40,7 +40,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Send an initial change event to trigger an immediate test run
     change_event_sender.send(ChangeEvent::File)?;
 
-    let mut change_events = NotifyChangeEvents::new(path, change_event_sender)?;
+    let mut change_events = NotifyChangeEvents::new(path, change_event_sender.clone())?;
 
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
@@ -65,12 +65,13 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
             match change_event {
                 ChangeEvent::File => test_execution.handle_event(change_event),
                 ChangeEvent::Exit => break,
+                ChangeEvent::Configuration(_passivate_config) => todo!(),
             }
         }
     });
 
     let tests_view = TestsStatusView::new(tests_status_receiver);
-    let coverage_view = CoverageView::new(coverage_receiver);
+    let coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
     run_app(Box::new(App::new(tests_view, coverage_view)), context_accessor)?;
 
     exit_event_sender.send(ChangeEvent::Exit)?;

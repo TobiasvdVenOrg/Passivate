@@ -46,6 +46,10 @@ pub mod test_helpers {
     pub mod assert_matches;
 }
 
+pub mod configuration {
+    mod_use!(passivate_config);
+}
+
 pub mod dispatching {
     mod_use!(dispatch);
     mod_use!(dispatch_error);
