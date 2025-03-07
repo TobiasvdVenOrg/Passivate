@@ -1,6 +1,0 @@
-[workspace]
-members = [
-    "project_a",
-    "project_b"
-]
-resolver = "2"

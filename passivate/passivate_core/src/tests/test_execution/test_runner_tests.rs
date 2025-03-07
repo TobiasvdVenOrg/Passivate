@@ -1,7 +1,9 @@
+#![cfg(test)]
+
 use std::sync::mpsc::channel;
 use crate::assert_matches;
 use crate::test_execution::{MockRunTests, RunTestsError, TestRunner, TestsStatus};
-use crate::coverage::{CoverageError, CoverageStatus, MockComputeCoverage};
+use crate::coverage::{CoverageStatus, MockComputeCoverage};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 
 #[test]

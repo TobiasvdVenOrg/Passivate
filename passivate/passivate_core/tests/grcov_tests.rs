@@ -1,59 +1,63 @@
 use std::io::Error as IoError;
-use std::path::Path;
-use std::sync::mpsc::channel;
-use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
-use passivate_core::passivate_cargo::CargoTest;
-use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::TestRunner;
+use std::path::{Path, PathBuf};
 use std::fs;
+mod helpers;
+use helpers::*;
+use rstest::*;
 
 #[cfg(target_os = "windows")]
-#[test]
-pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError> {
-    let path = Path::new("../../test_data/test_run_outputs_coverage_file_for_project");  
-    clean_passivate_dir(path)?;
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
+pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+    let mut runner = builder
+        .with_workspace("simple_project")
+        .with_output("test_run_outputs_coverage_file_for_project")
+        .build()?;
 
-    new_test_run(path)?;
-    
-    let expected_output_path = fs::canonicalize("../../test_data/test_run_outputs_coverage_file_for_project/.passivate/coverage/lcov.info")?;
+    test_run(&mut runner)?;
 
-    let file_data = fs::metadata(&expected_output_path);
-    assert!(file_data.is_ok(), "Expected coverage output file did not exist: {}", expected_output_path.display());
+    let file_data = expected_lcov_metadata(&builder.get_output_path());
+    assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
 
     Ok(())
 }
 
 #[cfg(target_os = "windows")]
-#[test]
-pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError> {
-    let path = Path::new("../../test_data/test_run_outputs_coverage_file_for_workspace");
-    clean_passivate_dir(path)?;
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
+pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+    let mut runner = builder
+        .with_workspace("simple_workspace")
+        .with_output("test_run_outputs_coverage_file_for_workspace")
+        .build()?;
 
-    new_test_run(path)?;
-    
-    let expected_output_path = fs::canonicalize("../../test_data/test_run_outputs_coverage_file_for_workspace/.passivate/coverage/lcov.info")?;
+    test_run(&mut runner)?;
 
-    let file_data = fs::metadata(&expected_output_path);
-    assert!(file_data.is_ok(), "Expected coverage output file did not exist: {}", expected_output_path.display());
+    let file_data = expected_lcov_metadata(&builder.get_output_path());
+    assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
 
     Ok(())
 }
 
 #[cfg(target_os = "windows")]
-#[test]
-pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError> {
-    let path = Path::new("../../test_data/repeat_test_runs_do_not_accumulate_profraw_files");
-    clean_passivate_dir(path)?;
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
+pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+    let mut runner = builder
+        .with_workspace("simple_workspace")
+        .with_output("repeat_test_runs_do_not_accumulate_profraw_files")
+        .build()?;
 
-    let mut test_runner = new_test_runner(path)?;
+    test_run(&mut runner)?;
 
-    test_run(&mut test_runner)?;
-    
-    let first_run = get_profraw_count(path)?;
+    let first_run = get_profraw_count(&builder.get_output_path())?;
 
-    test_run(&mut test_runner)?;
+    test_run(&mut runner)?;
 
-    let second_run = get_profraw_count(path)?; 
+    let second_run = get_profraw_count(&builder.get_output_path())?; 
 
     assert_ne!(0, second_run);
     assert_eq!(first_run, second_run);
@@ -61,60 +65,26 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
 }
 
 #[cfg(target_os = "windows")]
-#[test]
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
 // Temporary deletion of the lcov.info file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
-pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError> {
-    let path = Path::new("../../test_data/repeat_test_runs_do_not_delete_lcov_file");
-    clean_passivate_dir(path)?;
+pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+    let mut runner = builder
+        .with_workspace("simple_workspace")
+        .with_output("repeat_test_runs_do_not_accumulate_profraw_files")
+        .build()?;
 
-    let mut test_runner = new_test_runner(path)?;
+    test_run(&mut runner)?;
 
-    test_run(&mut test_runner)?;
-    
-    let lcov_path = path.join(".passivate").join("coverage").join("lcov.info");
-    let first_run_metadata = fs::metadata(&lcov_path)?;
+    let first_run_metadata = expected_lcov_metadata(&builder.get_output_path())?;
 
-    test_run(&mut test_runner)?;
+    test_run(&mut runner)?;
 
-    let second_run_metadata = fs::metadata(&lcov_path)?;
+    let second_run_metadata = expected_lcov_metadata(&builder.get_output_path())?;
     
     assert_eq!(first_run_metadata.created()?, second_run_metadata.created()?);
-    Ok(())
-}
-
-fn new_test_runner(path: &Path) -> Result<TestRunner, IoError> {
-    let passivate_path = path.join(".passivate");
-    let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
-    let coverage_path = path.join(".passivate").join("coverage");
-    fs::create_dir_all(&coverage_path)?;
-    let absolute_coverage_path = fs::canonicalize(passivate_path.join("coverage"))?; 
-    let grcov = Grcov::new(path, &coverage_path, binary_path);
-    let cargo_test = CargoTest::new(path, &absolute_coverage_path);
-    let (tests_sender, _tests_receiver) = channel();
-    let (coverage_sender, _coverage_receiver) = channel();
-    Ok(TestRunner::new(Box::new(cargo_test), Box::new(grcov), tests_sender, coverage_sender))
-}
-
-fn new_test_run(path: &Path) -> Result<(), IoError> {
-    let mut test_runner = new_test_runner(path)?;
-
-    test_run(&mut test_runner)
-}
-
-fn test_run(test_runner: &mut TestRunner) -> Result<(), IoError> {
-    let mock_event = ChangeEvent::File;
-    test_runner.handle_event(mock_event);
-
-    Ok(())
-}
-
-fn clean_passivate_dir(path: &Path) -> Result<(), IoError> {
-    let passivate_path = path.join(".passivate");
-    if fs::exists(&passivate_path)? {
-        fs::remove_dir_all(&passivate_path)?
-    }
-
     Ok(())
 }
 
@@ -131,4 +101,13 @@ fn get_profraw_count(path: &Path) -> Result<i32, IoError> {
     }
 
     Ok(count)
+}
+
+fn expected_lcov_path(test_name: &Path) -> PathBuf {
+    test_output_path().join(test_name).join(".passivate/coverage/lcov.info")
+}
+
+fn expected_lcov_metadata(test_name: &Path) -> Result<fs::Metadata, IoError> {
+    let path = expected_lcov_path(test_name); 
+    fs::metadata(path)
 }

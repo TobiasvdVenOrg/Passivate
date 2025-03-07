@@ -20,6 +20,7 @@ pub mod test_execution {
     mod_use!(tests_status);
     mod_use!(run_tests);
     mod_use!(run_tests_errors);
+    mod_use!(test_run_command);
 }
 
 pub mod passivate_cargo {
@@ -48,6 +49,7 @@ pub mod test_helpers {
 
 pub mod configuration {
     mod_use!(passivate_config);
+    mod_use!(test_runner);
 }
 
 pub mod dispatching {

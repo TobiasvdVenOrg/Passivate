@@ -1,0 +1,1 @@
+This directory is intended for use by integration tests that write to the disk (such as those that run cargo test). Do not put anything here manually.

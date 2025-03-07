@@ -56,8 +56,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let profraw_output_path = fs::canonicalize(&coverage_path)?;
 
     let change_events_thread = thread::spawn(move || {
-        let cargo_test = CargoTest::new(&workspace_path, &profraw_output_path); 
-        let nextest = Nextest::new(&workspace_path, &profraw_output_path);
+        let cargo_test = CargoTest::new(&workspace_path, workspace_path.join("target"), &profraw_output_path); 
+        let nextest = Nextest::new(&workspace_path, workspace_path.join("target"), &profraw_output_path);
         let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
         let mut test_execution = TestRunner::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
 

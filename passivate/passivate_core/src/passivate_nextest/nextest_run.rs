@@ -5,13 +5,14 @@ use super::parse_line;
 
 pub struct Nextest {
     workspace_path: PathBuf,
+    build_output_path: PathBuf,
     coverage_output_path: PathBuf
 }
 
 impl Nextest {
-    pub fn new(workspace_path: &Path, profraw_output_path: &Path) -> Self {
+    pub fn new(workspace_path: &Path, build_output_path: PathBuf, profraw_output_path: &Path) -> Self {
         let coverage_output_path = profraw_output_path.join("coverage-%p-%m.profraw").to_path_buf();
-        Self { workspace_path: workspace_path.to_path_buf(), coverage_output_path }
+        Self { workspace_path: workspace_path.to_path_buf(), build_output_path, coverage_output_path }
     }
 }
 
@@ -26,6 +27,8 @@ impl RunTests for Nextest {
             .arg("--no-fail-fast")
             .arg("--target")
             .arg("x86_64-pc-windows-msvc")
+            .arg("--target-dir")
+            .arg(&self.build_output_path)
             .env("RUSTFLAGS", "-C instrument-coverage")
             .env("LLVM_PROFILE_FILE", &self.coverage_output_path)
             .stdout(Stdio::piped())

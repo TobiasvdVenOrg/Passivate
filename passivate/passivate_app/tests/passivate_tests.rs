@@ -16,11 +16,14 @@ async fn main() {
     ];
 
     args.test_threads = Some(1);
+
+    // We use libtest-mimic because it allows us to run our tests on the main thread
+    // This is a requirement for these tests, which actually start passivate
     libtest_mimic::run(&args, tests).exit();
 }
 
 pub fn start_and_exit_passivate() -> Result<(), Failed> {
-    run_from_path(Path::new("..\\..\\test_data\\start_and_exit_passivate"), Box::new(move |context: egui::Context| {
+    run_from_path(Path::new("..\\..\\test_data\\simple_project"), Box::new(move |context: egui::Context| {
         task::spawn(async move {   
             // Asynchronously send a close window command to passivate after some delay        
             time::sleep(Duration::from_secs(4)).await;
