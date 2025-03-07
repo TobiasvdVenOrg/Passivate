@@ -1,13 +1,13 @@
-use project_b::add;
+use project_b::add_b;
 
 #[test]
-fn add_2_and_2_is_4() {
-    let result = add(2, 2);
+fn add_2_and_2_is_4_b() {
+    let result = add_b(2, 2);
     assert_eq!(result, 4);
 }
 
 #[test]
-fn add_2_and_4_is_6() {
-    let result = add(2, 4);
+fn add_2_and_4_is_6_b() {
+    let result = add_b(2, 4);
     assert_eq!(result, 6);
 }
