@@ -1,10 +1,10 @@
 use std::{ffi::OsStr, path::Path};
-use crate::test_execution::{SingleTest, SingleTestStatus, TestsStatus};
+use crate::test_execution::{ParseOutput, SingleTest, SingleTestStatus};
 
-pub fn parse_status(text: &str) -> TestsStatus {
-    let mut tests = Vec::new();
+pub struct CargoTestParser;
 
-    for line in text.lines() {
+impl ParseOutput for CargoTestParser {
+    fn parse_line(&self, line: &str) -> Option<SingleTest> {
         let line = line.trim();
 
         if line.starts_with("test") {
@@ -15,15 +15,12 @@ pub fn parse_status(text: &str) -> TestsStatus {
                 };
     
                 let path = Path::new(OsStr::new(""));
-                tests.push(SingleTest::new(test.to_string(), status, path, 0));
-            }
+                return Some(SingleTest::new(test.to_string(), status, path, 0))
+            };
         }
-        else if line.contains("error:") {
-            return TestsStatus::build_failure(line)
-        }
-    }
 
-    TestsStatus::completed(tests)
+        None
+    }
 }
 
 fn split_and_trim(line: &str) -> Option<(String, String)> {

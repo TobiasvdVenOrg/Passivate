@@ -1,12 +1,12 @@
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
-use std::{fs, thread};
+use std::thread;
 use egui::Context;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
-use passivate_core::passivate_cargo::CargoTest;
+use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::passivate_nextest::Nextest;
-use passivate_core::test_execution::TestRunner;
+use passivate_core::test_execution::{TestRunCommand, TestRunner};
 use views::{CoverageView, TestsStatusView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -50,14 +50,13 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let coverage_path = passivate_path.join("coverage");
     let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
 
-    fs::create_dir_all(&coverage_path)?; 
-
-    // Absolute dir, because a relative dir will cause profraw files to be output relative to each individual project in the workspace
-    let profraw_output_path = fs::canonicalize(&coverage_path)?;
-
     let change_events_thread = thread::spawn(move || {
-        let cargo_test = CargoTest::new(&workspace_path, workspace_path.join("target"), &profraw_output_path); 
-        let nextest = Nextest::new(&workspace_path, workspace_path.join("target"), &profraw_output_path);
+        let test_run_command = TestRunCommand::for_implementation(&TestRunnerImplementation::Nextest)
+            .working_dir(&workspace_path)
+            .coverage_output_dir(&coverage_path)
+            .target_dir(&workspace_path.join("target"));
+
+        let nextest = Nextest::new(test_run_command);
         let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
         let mut test_execution = TestRunner::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
 

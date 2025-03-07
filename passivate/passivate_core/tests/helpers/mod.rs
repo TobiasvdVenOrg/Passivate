@@ -4,15 +4,15 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
-use passivate_core::configuration::TestRunner;
+use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
-use passivate_core::passivate_cargo::CargoTest;
 use passivate_core::passivate_nextest::Nextest;
-use passivate_core::test_execution::RunTests;
+use passivate_core::test_execution::TestRunCommand;
+use passivate_core::test_execution::TestRunner;
 use passivate_core::{passivate_grcov::Grcov, test_execution::TestsStatus};
 
 pub struct TestRunnerBuilder {
-    test_runner: TestRunner,
+    test_runner: TestRunnerImplementation,
     tests_status_sender: Option<Sender<TestsStatus>>,
     coverage_sender: Option<Sender<CoverageStatus>>,
     base_workspace_path: PathBuf,
@@ -39,14 +39,14 @@ pub fn nextest_builder() -> TestRunnerBuilder {
 
 impl TestRunnerBuilder {
     pub fn cargo(base_workspace_path: PathBuf, base_output_path: PathBuf) -> Self {
-        Self::new(TestRunner::Cargo, base_workspace_path, base_output_path)
+        Self::new(TestRunnerImplementation::Cargo, base_workspace_path, base_output_path)
     }
 
     pub fn nextest(base_workspace_path: PathBuf, base_output_path: PathBuf) -> Self {
-        Self::new(TestRunner::Nextest, base_workspace_path, base_output_path)
+        Self::new(TestRunnerImplementation::Nextest, base_workspace_path, base_output_path)
     }
 
-    pub fn new(test_runner: TestRunner, base_workspace_path: PathBuf, base_output_path: PathBuf) -> Self {
+    pub fn new(test_runner: TestRunnerImplementation, base_workspace_path: PathBuf, base_output_path: PathBuf) -> Self {
         Self { 
             test_runner, 
             tests_status_sender: None, 
@@ -78,7 +78,7 @@ impl TestRunnerBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<passivate_core::test_execution::TestRunner, IoError> {
+    pub fn build(&self) -> Result<TestRunner, IoError> {
         let workspace_path = self.get_workspace_path();
         let output_path = self.get_output_path();
 
@@ -91,23 +91,19 @@ impl TestRunnerBuilder {
             fs::remove_dir_all(&output_path)?
         }
 
-        // FIXME
-        fs::create_dir_all(&coverage_path)?;
-
-        // FIXME
-        let absolute_coverage_path = fs::canonicalize(&coverage_path)?; 
-
         let grcov = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
-        let runner: Box<dyn RunTests> = match self.test_runner {
-            TestRunner::Cargo => Box::new(CargoTest::new(&workspace_path, output_path, &absolute_coverage_path)),
-            TestRunner::Nextest => Box::new(Nextest::new(&workspace_path, output_path, &absolute_coverage_path)),
-        };
+        let command = TestRunCommand::for_implementation(&self.test_runner)
+            .working_dir(&workspace_path)
+            .target_dir(&output_path)
+            .coverage_output_dir(&coverage_path);
+
+        let runner = Box::new(Nextest::new(command));
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
-        Ok(passivate_core::test_execution::TestRunner::new(
+        Ok(TestRunner::new(
             runner, 
             Box::new(grcov), 
             tests_status_sender, 
@@ -124,14 +120,13 @@ impl TestRunnerBuilder {
 
     fn runner_identifier(&self) -> PathBuf {
         match self.test_runner {
-            TestRunner::Cargo => PathBuf::from("cargo"),
-            TestRunner::Nextest => PathBuf::from("nextest")
+            TestRunnerImplementation::Cargo => PathBuf::from("cargo"),
+            TestRunnerImplementation::Nextest => PathBuf::from("nextest")
         }
     }
 }
 
-pub fn test_run(test_runner: &mut passivate_core::test_execution::TestRunner) -> Result<(), IoError> {
-
+pub fn test_run(test_runner: &mut TestRunner) -> Result<(), IoError> {
     let mock_event = ChangeEvent::File;
     test_runner.handle_event(mock_event);
 

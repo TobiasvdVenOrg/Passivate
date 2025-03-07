@@ -3,5 +3,5 @@ use super::{RunTestsError, TestsStatus};
 
 #[cfg_attr(feature = "mocks", mockall::automock)]
 pub trait RunTests {
-    fn run_tests(&self, sender: &Sender<TestsStatus>) -> Result<(), RunTestsError>;
+    fn run_tests(&mut self, sender: &Sender<TestsStatus>) -> Result<(), RunTestsError>;
 }

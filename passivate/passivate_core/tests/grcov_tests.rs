@@ -57,7 +57,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
 
     test_run(&mut runner)?;
 
-    let second_run = get_profraw_count(&builder.get_output_path())?; 
+    let second_run = get_profraw_count(&builder.get_output_path())?;
 
     assert_ne!(0, second_run);
     assert_eq!(first_run, second_run);
