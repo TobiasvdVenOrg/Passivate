@@ -29,7 +29,7 @@ impl TestRunner {
 
 impl HandleChangeEvent for TestRunner {
     fn handle_event(&mut self, _event: ChangeEvent) {
-        let _ = self.coverage.clean_coverage_output();
+        self.coverage.clean_coverage_output().unwrap();
 
         let test_output = self.runner.run_tests(&self.tests_status_sender);
 
