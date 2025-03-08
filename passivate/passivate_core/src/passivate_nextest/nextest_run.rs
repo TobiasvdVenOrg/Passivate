@@ -1,5 +1,5 @@
 use std::{io::{BufRead, BufReader}, sync::mpsc::Sender};
-use crate::test_execution::{ParseOutput, RunTests, RunTestsError, SingleTest, TestRunCommand, TestsStatus};
+use crate::test_execution::{RunTests, RunTestsError, SingleTest, TestRunCommand, TestsStatus};
 
 pub struct Nextest {
     test_run_command: TestRunCommand
