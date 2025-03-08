@@ -26,7 +26,7 @@ pub fn tests_status_is_completed_after_run_with_no_tests_found(#[case] mut build
     let _running = receiver.try_recv().unwrap();
     let completed = receiver.try_recv().unwrap();
 
-    let completed = assert_matches!(completed, TestRun::Completed);
+    let completed = assert_matches!(completed, TestRun::Active);
     assert_eq!(0, completed.tests.len());
 
     Ok(())
@@ -51,7 +51,7 @@ pub fn change_event_causes_test_run_and_results(#[case] mut builder: TestRunnerB
     let _test2 = receiver.try_recv().unwrap();
     let test3 = receiver.try_recv().unwrap();
 
-    let completed = assert_matches!(test3, TestRun::Completed);
+    let completed = assert_matches!(test3, TestRun::Active);
     assert_eq!(3, completed.tests.len());
 
     Ok(())

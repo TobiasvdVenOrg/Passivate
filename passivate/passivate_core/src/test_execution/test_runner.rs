@@ -2,7 +2,7 @@ use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_execution::TestRun;
-use super::{RunTests, RunTestsErrorStatus};
+use super::{FailedTestRun, RunTests};
 
 pub struct TestRunner {
     runner: Box<dyn RunTests>,
@@ -42,8 +42,8 @@ impl HandleChangeEvent for TestRunner {
                 };
             },
             Err(test_error) => {
-                let error_status = RunTestsErrorStatus { inner_error_display: test_error.to_string() };
-                let _  = self.tests_status_sender.send(TestRun::RunTestsError(error_status));
+                let error_status = FailedTestRun { inner_error_display: test_error.to_string() };
+                let _  = self.tests_status_sender.send(TestRun::Failed(error_status));
             }
         };
     }

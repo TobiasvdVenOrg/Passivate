@@ -19,7 +19,6 @@ pub mod test_execution {
     mod_use!(test_runner);
     mod_use!(test_run);
     mod_use!(run_tests);
-    mod_use!(run_tests_errors);
     mod_use!(test_run_command);
     mod_use!(parse_output);
     mod_use!(test_run_events);

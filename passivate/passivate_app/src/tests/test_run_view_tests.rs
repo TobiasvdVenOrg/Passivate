@@ -2,19 +2,19 @@ use std::sync::mpsc::channel;
 
 use egui_kittest::Harness;
 use crate::views::{TestRunView, View};
-use passivate_core::test_execution::{CompleteTestsStatus, TestRun};
+use passivate_core::test_execution::{ActiveTestRun, TestRun};
 use stdext::function_name;
 
 #[test]
-pub fn test_run_view_shows_when_tests_are_running() {
-    run_and_snapshot(TestRun::Running, &test_name(function_name!()));
+pub fn test_run_view_shows_when_test_run_is_starting() {
+    run_and_snapshot(TestRun::Starting, &test_name(function_name!()));
 }
 
 #[test]
 pub fn test_run_view_shows_when_no_tests_were_found() {
-    let completed = CompleteTestsStatus { tests: vec!() };
+    let active = ActiveTestRun { tests: vec!() };
 
-    run_and_snapshot(TestRun::Completed(completed), &test_name(function_name!()));
+    run_and_snapshot(TestRun::Active(active), &test_name(function_name!()));
 }
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {

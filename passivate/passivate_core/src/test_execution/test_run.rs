@@ -2,19 +2,19 @@ use crate::test_execution::SingleTest;
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct CompleteTestsStatus {
+pub struct ActiveTestRun {
     pub tests: Vec<SingleTest>
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct BuildFailureTestsStatus {
+pub struct BuildFailedTestRun {
     pub message: String
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct RunTestsErrorStatus {
+pub struct FailedTestRun {
     pub inner_error_display: String
 }
 
@@ -22,22 +22,12 @@ pub struct RunTestsErrorStatus {
 #[derive(Debug)]
 pub enum TestRun {
     Waiting,
-    Running,
-    Completed(CompleteTestsStatus),
-    BuildFailure(BuildFailureTestsStatus),
-    RunTestsError(RunTestsErrorStatus)
+    Starting,
+    Active(ActiveTestRun),
+    BuildFailed(BuildFailedTestRun),
+    Failed(FailedTestRun)
 }
 
 impl TestRun {
-    pub fn waiting() -> TestRun {
-        TestRun::Waiting
-    }
-
-    pub fn completed(tests: Vec<SingleTest>) -> TestRun {
-        TestRun::Completed(CompleteTestsStatus { tests })
-    }
-
-    pub fn build_failure(message: &str) -> TestRun {
-        TestRun::BuildFailure(BuildFailureTestsStatus { message: message.to_string() })
-    }
+    
 }

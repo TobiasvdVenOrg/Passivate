@@ -10,7 +10,7 @@ pub struct TestRunView {
 
 impl TestRunView {
     pub fn new(receiver: Receiver<TestRun>) -> TestRunView {
-        TestRunView { receiver, status: TestRun::waiting() }
+        TestRunView { receiver, status: TestRun::Waiting { } }
     }
 }
 
@@ -24,11 +24,11 @@ impl View for TestRunView {
             TestRun::Waiting => {
                 ui.heading("Make a change to discover tests!");
             },
-            TestRun::Running => {
-                ui.heading("Running tests...");
+            TestRun::Starting => {
+                ui.heading("Starting test run...");
             },
-            TestRun::Completed(ref completed) => {
-                for test in &completed.tests {
+            TestRun::Active(ref active) => {
+                for test in &active.tests {
                     let color = match test.status {
                         SingleTestStatus::Failed => Color32::RED,
                         SingleTestStatus::Passed => Color32::GREEN
@@ -40,17 +40,17 @@ impl View for TestRunView {
                     }
                 }
 
-                if completed.tests.is_empty() {
+                if active.tests.is_empty() {
                     ui.heading("No tests found.");
                 }
             },
-            TestRun::BuildFailure(ref build_failure) => {
+            TestRun::BuildFailed(ref build_failure) => {
                 ui.heading("Build failed.");
 
                 let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
                 ui.label(text);
             },
-            TestRun::RunTestsError(ref run_tests_error_status) => {
+            TestRun::Failed(ref run_tests_error_status) => {
                 ui.heading("Failed to run tests.");
 
                 let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);

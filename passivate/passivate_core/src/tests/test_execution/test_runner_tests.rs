@@ -2,17 +2,16 @@
 
 use std::sync::mpsc::channel;
 use crate::assert_matches;
-use crate::test_execution::{MockRunTests, RunTestsError, TestRunner, TestRun};
+use crate::test_execution::{MockRunTests, TestRunner, TestRun};
 use crate::coverage::{CoverageStatus, MockComputeCoverage};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 
 #[test]
 pub fn when_test_run_fails_error_is_reported() {   
     let mut run_tests = MockRunTests::new();
-    run_tests.expect_run_tests().returning(|_sender| {
-        let error = String::from_utf8(vec!(0, 159)).err().unwrap();
-        Err(RunTestsError::InvalidOutput(error))
-    });
+    
+    run_tests.expect_run_tests()
+        .returning(|_sender| { Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Example error")) });
 
     let mut compute_coverage = MockComputeCoverage::new();
     compute_coverage.expect_clean_coverage_output().returning(|| Ok(()));
@@ -26,5 +25,5 @@ pub fn when_test_run_fails_error_is_reported() {
 
     let error = tests_receiver.recv().unwrap();
 
-    assert_matches!(error, TestRun::RunTestsError);
+    assert_matches!(error, TestRun::Failed);
 }
