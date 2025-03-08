@@ -37,7 +37,6 @@ impl View for TestsStatusView {
                     let text = RichText::new(&test.name).size(16.0).color(color);
                     if ui.button(text).clicked() {
                         println!("Clicked on {}", test.name);
-                        //Command::new("rustrover").arg("test")
                     }
                 }
 
