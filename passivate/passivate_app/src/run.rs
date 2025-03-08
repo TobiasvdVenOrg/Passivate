@@ -48,16 +48,17 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let workspace_path = path.to_path_buf();
     let passivate_path = workspace_path.join(".passivate");
     let coverage_path = passivate_path.join("coverage");
-    let binary_path = Path::new("./target/x86_64-pc-windows-msvc/debug/");
+    let target_path = passivate_path.join("target");
+    let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
 
     let change_events_thread = thread::spawn(move || {
         let test_run_command = TestRunCommand::for_implementation(&TestRunnerImplementation::Nextest)
             .working_dir(&workspace_path)
             .coverage_output_dir(&coverage_path)
-            .target_dir(&workspace_path.join("target"));
+            .target_dir(&target_path);
 
         let nextest = Nextest::new(test_run_command);
-        let coverage = Grcov::new(&workspace_path, &coverage_path, binary_path);
+        let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
         let mut test_execution = TestRunner::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
 
         while let Ok(change_event) = change_event_receiver.recv() {
