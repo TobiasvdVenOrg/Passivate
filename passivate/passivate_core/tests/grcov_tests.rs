@@ -69,7 +69,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-// Temporary deletion of the lcov.info file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
+// Temporary deletion of the lcov file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
 pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
     let mut runner = builder
