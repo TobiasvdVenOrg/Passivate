@@ -7,7 +7,7 @@ use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::passivate_nextest::Nextest;
 use passivate_core::test_execution::{TestRunCommand, TestRunner};
-use views::{CoverageView, TestsStatusView};
+use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
@@ -70,7 +70,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
         }
     });
 
-    let tests_view = TestsStatusView::new(tests_status_receiver);
+    let tests_view = TestRunView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
     run_app(Box::new(App::new(tests_view, coverage_view)), context_accessor)?;
 

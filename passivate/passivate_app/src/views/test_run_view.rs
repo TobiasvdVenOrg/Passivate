@@ -1,33 +1,33 @@
 use egui::{Color32, RichText};
 use std::sync::mpsc::Receiver;
-use passivate_core::test_execution::{SingleTestStatus, TestsStatus};
+use passivate_core::test_execution::{SingleTestStatus, TestRun};
 use crate::views::View;
 
-pub struct TestsStatusView {
-    receiver: Receiver<TestsStatus>,
-    status: TestsStatus
+pub struct TestRunView {
+    receiver: Receiver<TestRun>,
+    status: TestRun
 }
 
-impl TestsStatusView {
-    pub fn new(receiver: Receiver<TestsStatus>) -> TestsStatusView {
-        TestsStatusView { receiver, status: TestsStatus::waiting() }
+impl TestRunView {
+    pub fn new(receiver: Receiver<TestRun>) -> TestRunView {
+        TestRunView { receiver, status: TestRun::waiting() }
     }
 }
 
-impl View for TestsStatusView {
+impl View for TestRunView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
         if let Ok(status) = self.receiver.try_recv() {
             self.status = status;
         }
 
         match self.status {
-            TestsStatus::Waiting => {
+            TestRun::Waiting => {
                 ui.heading("Make a change to discover tests!");
             },
-            TestsStatus::Running => {
+            TestRun::Running => {
                 ui.heading("Running tests...");
             },
-            TestsStatus::Completed(ref completed) => {
+            TestRun::Completed(ref completed) => {
                 for test in &completed.tests {
                     let color = match test.status {
                         SingleTestStatus::Failed => Color32::RED,
@@ -44,13 +44,13 @@ impl View for TestsStatusView {
                     ui.heading("No tests found.");
                 }
             },
-            TestsStatus::BuildFailure(ref build_failure) => {
+            TestRun::BuildFailure(ref build_failure) => {
                 ui.heading("Build failed.");
 
                 let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
                 ui.label(text);
             },
-            TestsStatus::RunTestsError(ref run_tests_error_status) => {
+            TestRun::RunTestsError(ref run_tests_error_status) => {
                 ui.heading("Failed to run tests.");
 
                 let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);

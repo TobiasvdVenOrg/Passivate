@@ -17,7 +17,7 @@ pub mod test_execution {
     mod_use!(single_test);
     mod_use!(single_test_status);
     mod_use!(test_runner);
-    mod_use!(tests_status);
+    mod_use!(test_run);
     mod_use!(run_tests);
     mod_use!(run_tests_errors);
     mod_use!(test_run_command);

@@ -14,7 +14,7 @@ mod_use!(startup_errors);
 
 pub mod views {
     mod_use!(view);
-    mod_use!(tests_status_view);
+    mod_use!(test_run_view);
     mod_use!(coverage_view);
 }
 
@@ -27,6 +27,6 @@ mod_use!(run);
 
 #[cfg(test)]
 pub mod tests {
-    mod_use!(tests_status_view_tests);
+    mod_use!(test_run_view_tests);
     mod_use!(coverage_view_tests);
 }

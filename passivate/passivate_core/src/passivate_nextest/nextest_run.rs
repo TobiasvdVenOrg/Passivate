@@ -1,5 +1,5 @@
 use std::{io::{BufRead, BufReader}, sync::mpsc::Sender};
-use crate::test_execution::{RunTests, RunTestsError, SingleTest, TestRunCommand, TestsStatus};
+use crate::test_execution::{RunTests, RunTestsError, SingleTest, TestRunCommand, TestRun};
 
 pub struct Nextest {
     test_run_command: TestRunCommand
@@ -12,8 +12,8 @@ impl Nextest {
 }
 
 impl RunTests for Nextest {
-    fn run_tests(&mut self, sender: &Sender<TestsStatus>) -> Result<(), RunTestsError> {
-        let _ = sender.send(TestsStatus::Running);
+    fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), RunTestsError> {
+        let _ = sender.send(TestRun::Running);
 
         let output = self.test_run_command.spawn()?;
 
@@ -28,13 +28,13 @@ impl RunTests for Nextest {
                 if let Some(test) = test {
                     tests.push(test);
 
-                    let new_status = TestsStatus::completed(tests.clone());
+                    let new_status = TestRun::completed(tests.clone());
                     let _ = sender.send(new_status);
                 }
             }
         };
 
-        let new_status = TestsStatus::completed(tests.clone());
+        let new_status = TestRun::completed(tests.clone());
         let _ = sender.send(new_status);
 
         Ok(())

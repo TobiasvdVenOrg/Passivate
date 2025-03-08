@@ -2,7 +2,7 @@
 
 use std::sync::mpsc::channel;
 use crate::assert_matches;
-use crate::test_execution::{MockRunTests, RunTestsError, TestRunner, TestsStatus};
+use crate::test_execution::{MockRunTests, RunTestsError, TestRunner, TestRun};
 use crate::coverage::{CoverageStatus, MockComputeCoverage};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 
@@ -26,5 +26,5 @@ pub fn when_test_run_fails_error_is_reported() {
 
     let error = tests_receiver.recv().unwrap();
 
-    assert_matches!(error, TestsStatus::RunTestsError);
+    assert_matches!(error, TestRun::RunTestsError);
 }

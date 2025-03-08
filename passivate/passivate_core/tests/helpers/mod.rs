@@ -9,11 +9,11 @@ use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_nextest::Nextest;
 use passivate_core::test_execution::TestRunCommand;
 use passivate_core::test_execution::TestRunner;
-use passivate_core::{passivate_grcov::Grcov, test_execution::TestsStatus};
+use passivate_core::{passivate_grcov::Grcov, test_execution::TestRun};
 
 pub struct TestRunnerBuilder {
     test_runner: TestRunnerImplementation,
-    tests_status_sender: Option<Sender<TestsStatus>>,
+    tests_status_sender: Option<Sender<TestRun>>,
     coverage_sender: Option<Sender<CoverageStatus>>,
     base_workspace_path: PathBuf,
     base_output_path: PathBuf,
@@ -58,7 +58,7 @@ impl TestRunnerBuilder {
         }
     }
 
-    pub fn receive_tests_status(&mut self, sender: Sender<TestsStatus>) -> &mut Self {
+    pub fn receive_tests_status(&mut self, sender: Sender<TestRun>) -> &mut Self {
         self.tests_status_sender = Some(sender);
         self
     }

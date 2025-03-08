@@ -20,7 +20,7 @@ pub struct RunTestsErrorStatus {
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub enum TestsStatus {
+pub enum TestRun {
     Waiting,
     Running,
     Completed(CompleteTestsStatus),
@@ -28,16 +28,16 @@ pub enum TestsStatus {
     RunTestsError(RunTestsErrorStatus)
 }
 
-impl TestsStatus {
-    pub fn waiting() -> TestsStatus {
-        TestsStatus::Waiting
+impl TestRun {
+    pub fn waiting() -> TestRun {
+        TestRun::Waiting
     }
 
-    pub fn completed(tests: Vec<SingleTest>) -> TestsStatus {
-        TestsStatus::Completed(CompleteTestsStatus { tests })
+    pub fn completed(tests: Vec<SingleTest>) -> TestRun {
+        TestRun::Completed(CompleteTestsStatus { tests })
     }
 
-    pub fn build_failure(message: &str) -> TestsStatus {
-        TestsStatus::BuildFailure(BuildFailureTestsStatus { message: message.to_string() })
+    pub fn build_failure(message: &str) -> TestRun {
+        TestRun::BuildFailure(BuildFailureTestsStatus { message: message.to_string() })
     }
 }
