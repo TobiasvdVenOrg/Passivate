@@ -16,3 +16,4 @@ enum-as-inner = "0.6.1"
 
 [dev-dependencies]
 rstest = "0.25.0"
+stdext = "0.3.3"

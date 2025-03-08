@@ -4,6 +4,7 @@ use std::fs;
 mod helpers;
 use helpers::*;
 use rstest::*;
+use stdext::function_name;
 
 #[cfg(target_os = "windows")]
 #[rstest]
@@ -12,8 +13,8 @@ use rstest::*;
 pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_project")
-        .with_output("test_run_outputs_coverage_file_for_project")
-        .build()?;
+        .with_output(function_name!())
+        .build();
 
     test_run(&mut runner)?;
 
@@ -30,8 +31,8 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunne
 pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_workspace")
-        .with_output("test_run_outputs_coverage_file_for_workspace")
-        .build()?;
+        .with_output(function_name!())
+        .build();
 
     test_run(&mut runner)?;
 
@@ -47,9 +48,9 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRun
 #[case::nextest(nextest_builder())]
 pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
     let mut runner = builder
-        .with_workspace("simple_workspace")
-        .with_output("repeat_test_runs_do_not_accumulate_profraw_files")
-        .build()?;
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .build();
 
     test_run(&mut runner)?;
 
@@ -72,9 +73,9 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
 // to briefly error due to "not finding the file" until a new one is created
 pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
     let mut runner = builder
-        .with_workspace("simple_workspace")
-        .with_output("repeat_test_runs_do_not_accumulate_profraw_files")
-        .build()?;
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .build();
 
     test_run(&mut runner)?;
 

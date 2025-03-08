@@ -5,6 +5,7 @@ use passivate_core::test_execution::TestsStatus;
 mod helpers;
 use helpers::*;
 use rstest::*;
+use stdext::function_name;
 
 // TODO: Rename this file without 'cargo'
 
@@ -17,8 +18,8 @@ pub fn change_event_causes_test_run_and_results(#[case] mut builder: TestRunnerB
     let mut runner = builder
         .receive_tests_status(sender)
         .with_workspace("simple_project")
-        .with_output("change_event_causes_test_run_and_results")
-        .build()?;
+        .with_output(function_name!())
+        .build();
 
     test_run(&mut runner)?;
 

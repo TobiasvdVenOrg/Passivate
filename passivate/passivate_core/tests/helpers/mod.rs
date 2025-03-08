@@ -74,11 +74,12 @@ impl TestRunnerBuilder {
     }
 
     pub fn with_output(&mut self, output_path: &str) -> &mut Self {
+        let output_path = output_path.split("::").last().expect("Failed!");
         self.output_path.push(output_path);
         self
     }
 
-    pub fn build(&self) -> Result<TestRunner, IoError> {
+    pub fn build(&self) -> TestRunner {
         let workspace_path = self.get_workspace_path();
         let output_path = self.get_output_path();
 
@@ -86,9 +87,8 @@ impl TestRunnerBuilder {
         let binary_path = output_path.join("x86_64-pc-windows-msvc/debug");
         let coverage_path = passivate_path.join("coverage");
 
-        // FIXME?
-        if fs::exists(&output_path)? {
-            fs::remove_dir_all(&output_path)?
+        if fs::exists(&output_path).expect("Failed to check if output_path exists!") {
+            fs::remove_dir_all(&output_path).expect("Failed to clear output path!")
         }
 
         let grcov = Grcov::new(&workspace_path, &coverage_path, &binary_path);
@@ -103,11 +103,11 @@ impl TestRunnerBuilder {
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
-        Ok(TestRunner::new(
+        TestRunner::new(
             runner, 
             Box::new(grcov), 
             tests_status_sender, 
-            coverage_sender))
+            coverage_sender)
     }
 
     pub fn get_workspace_path(&self) -> PathBuf {
