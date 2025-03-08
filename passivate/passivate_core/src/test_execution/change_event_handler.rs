@@ -4,14 +4,14 @@ use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_execution::TestRun;
 use super::{FailedTestRun, RunTests};
 
-pub struct TestRunner {
+pub struct ChangeEventHandler {
     runner: Box<dyn RunTests>,
     coverage: Box<dyn ComputeCoverage>,
     tests_status_sender: Sender<TestRun>,
     coverage_status_sender: Sender<CoverageStatus>
 }
 
-impl TestRunner {
+impl ChangeEventHandler {
     pub fn new(
         runner: Box<dyn RunTests>,
         coverage: Box<dyn ComputeCoverage>, 
@@ -26,7 +26,7 @@ impl TestRunner {
     }
 }
 
-impl HandleChangeEvent for TestRunner {
+impl HandleChangeEvent for ChangeEventHandler {
     fn handle_event(&mut self, _event: ChangeEvent) {
         self.coverage.clean_coverage_output().unwrap();
 

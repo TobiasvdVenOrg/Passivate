@@ -8,7 +8,7 @@ use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_nextest::Nextest;
 use passivate_core::test_execution::TestRunCommand;
-use passivate_core::test_execution::TestRunner;
+use passivate_core::test_execution::ChangeEventHandler;
 use passivate_core::{passivate_grcov::Grcov, test_execution::TestRun};
 
 pub struct TestRunnerBuilder {
@@ -79,7 +79,7 @@ impl TestRunnerBuilder {
         self
     }
 
-    pub fn build(&self) -> TestRunner {
+    pub fn build(&self) -> ChangeEventHandler {
         let workspace_path = self.get_workspace_path();
         let output_path = self.get_output_path();
 
@@ -103,7 +103,7 @@ impl TestRunnerBuilder {
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
-        TestRunner::new(
+        ChangeEventHandler::new(
             runner, 
             Box::new(grcov), 
             tests_status_sender, 
@@ -126,7 +126,7 @@ impl TestRunnerBuilder {
     }
 }
 
-pub fn test_run(test_runner: &mut TestRunner) -> Result<(), IoError> {
+pub fn test_run(test_runner: &mut ChangeEventHandler) -> Result<(), IoError> {
     let mock_event = ChangeEvent::File;
     test_runner.handle_event(mock_event);
 

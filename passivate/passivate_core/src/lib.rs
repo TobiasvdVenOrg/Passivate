@@ -16,7 +16,7 @@ pub mod change_events {
 pub mod test_execution {
     mod_use!(single_test);
     mod_use!(single_test_status);
-    mod_use!(test_runner);
+    mod_use!(change_event_handler);
     mod_use!(test_run);
     mod_use!(run_tests);
     mod_use!(test_run_command);
@@ -63,6 +63,6 @@ pub mod tests {
     }
     
     mod test_execution {
-        mod test_runner_tests;
+        mod change_event_handler_tests;
     }
 }

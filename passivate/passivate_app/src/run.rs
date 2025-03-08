@@ -6,7 +6,7 @@ use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::passivate_nextest::Nextest;
-use passivate_core::test_execution::{TestRunCommand, TestRunner};
+use passivate_core::test_execution::{TestRunCommand, ChangeEventHandler};
 use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -59,7 +59,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
         let nextest = Nextest::new(test_run_command);
         let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-        let mut test_execution = TestRunner::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
+        let mut test_execution = ChangeEventHandler::new(Box::new(nextest), Box::new(coverage), tests_status_sender, coverage_sender);
 
         while let Ok(change_event) = change_event_receiver.recv() {
             match change_event {

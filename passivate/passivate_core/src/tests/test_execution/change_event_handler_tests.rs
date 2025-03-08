@@ -2,14 +2,14 @@
 
 use std::sync::mpsc::channel;
 use crate::assert_matches;
-use crate::test_execution::{MockRunTests, TestRunner, TestRun};
+use crate::test_execution::{MockRunTests, ChangeEventHandler, TestRun};
 use crate::coverage::{CoverageStatus, MockComputeCoverage};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 
 #[test]
 pub fn when_test_run_fails_error_is_reported() {   
     let mut run_tests = MockRunTests::new();
-    
+
     run_tests.expect_run_tests()
         .returning(|_sender| { Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Example error")) });
 
@@ -19,7 +19,7 @@ pub fn when_test_run_fails_error_is_reported() {
 
     let (tests_sender, tests_receiver) = channel();
     let (coverage_sender, _coverage_receiver) = channel();
-    let mut test_runner = TestRunner::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
+    let mut test_runner = ChangeEventHandler::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
 
     test_runner.handle_event(ChangeEvent::File);
 

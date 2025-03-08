@@ -2,7 +2,7 @@ use std::sync::mpsc::channel;
 
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{CoverageView, View};
-use passivate_core::{change_events::{ChangeEvent, HandleChangeEvent}, coverage::{CoverageError, MockComputeCoverage}, test_execution::{MockRunTests, TestRunner}};
+use passivate_core::{change_events::{ChangeEvent, HandleChangeEvent}, coverage::{CoverageError, MockComputeCoverage}, test_execution::{MockRunTests, ChangeEventHandler}};
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
@@ -44,7 +44,7 @@ pub fn when_grcov_is_not_installed_error_is_reported() {
 
     let (tests_sender, _tests_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-    let mut test_runner = TestRunner::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
+    let mut test_runner = ChangeEventHandler::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
 
     test_runner.handle_event(ChangeEvent::File);
 
