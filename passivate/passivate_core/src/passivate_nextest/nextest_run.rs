@@ -17,9 +17,10 @@ impl RunTests for Nextest {
         
         let output = self.test_run_command.spawn()?;
 
+        let mut tests: Vec<SingleTest> = vec!();
+
         if let Some(out) = output.stdout {
             let reader = BufReader::new(out);
-            let mut tests: Vec<SingleTest> = vec!();
 
             for line in reader.lines().map_while(Result::ok) {
                 let test = self.test_run_command.parser.parse_line(&line);
@@ -35,7 +36,6 @@ impl RunTests for Nextest {
 
         if let Some(out) = output.stderr {
             let reader = BufReader::new(out);
-            let mut tests: Vec<SingleTest> = vec!();
 
             for line in reader.lines().map_while(Result::ok) {
                 let test = self.test_run_command.parser.parse_line(&line);
@@ -48,6 +48,9 @@ impl RunTests for Nextest {
                 }
             }
         };
+
+        let new_status = TestsStatus::completed(tests.clone());
+        let _ = sender.send(new_status);
 
         Ok(())
     }
