@@ -2,17 +2,17 @@ use std::{io::{BufRead, BufReader}, sync::mpsc::Sender};
 use crate::test_execution::{ActiveTestRun, RunTests, TestRun, TestRunCommand};
 use std::io::Error as IoError;
 
-pub struct Nextest {
+pub struct TestRunner {
     test_run_command: TestRunCommand
 }
 
-impl Nextest {
+impl TestRunner {
     pub fn new(test_run_command: TestRunCommand) -> Self {
         Self { test_run_command }
     }
 }
 
-impl RunTests for Nextest {
+impl RunTests for TestRunner {
     fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), IoError> {
         let mut test_run = ActiveTestRun { tests: vec![] };
 

@@ -22,6 +22,7 @@ pub mod test_execution {
     mod_use!(test_run_command);
     mod_use!(parse_output);
     mod_use!(test_run_events);
+    mod_use!(test_runner);
 }
 
 pub mod passivate_cargo {
@@ -29,7 +30,6 @@ pub mod passivate_cargo {
 }
 
 pub mod passivate_nextest {
-    mod_use!(nextest_run);
     mod_use!(nextest_run_parser);
 }
 

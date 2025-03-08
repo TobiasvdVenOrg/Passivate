@@ -6,9 +6,9 @@ use std::io::Error as IoError;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
-use passivate_core::passivate_nextest::Nextest;
 use passivate_core::test_execution::TestRunCommand;
 use passivate_core::test_execution::ChangeEventHandler;
+use passivate_core::test_execution::TestRunner;
 use passivate_core::{passivate_grcov::Grcov, test_execution::TestRun};
 
 pub struct TestRunnerBuilder {
@@ -98,7 +98,7 @@ impl TestRunnerBuilder {
             .target_dir(&output_path)
             .coverage_output_dir(&coverage_path);
 
-        let runner = Box::new(Nextest::new(command));
+        let runner = Box::new(TestRunner::new(command));
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
