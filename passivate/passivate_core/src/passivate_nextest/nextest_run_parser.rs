@@ -10,7 +10,10 @@ impl ParseOutput for NextestParser {
         if trimmed.starts_with("PASS") {
             let name = trimmed.split(" ").last().unwrap_or(trimmed);
             return Some(SingleTest::new(name.to_string(), SingleTestStatus::Passed, Path::new(""), 0));
-        } 
+        } else if trimmed.starts_with("FAIL") {
+            let name = trimmed.split(" ").last().unwrap_or(trimmed);
+            return Some(SingleTest::new(name.to_string(), SingleTestStatus::Failed, Path::new(""), 0));
+        }
     
         None
     }
