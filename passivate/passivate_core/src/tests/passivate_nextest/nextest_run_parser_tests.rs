@@ -17,3 +17,10 @@ pub fn parse_test_line_status_name() {
 
     assert_eq!("add_2_and_4_is_6", status.name);
 }
+
+#[test]
+pub fn parse_test_line_status_fail() {
+    let status = NextestParser.parse_line("        FAIL [   0.139s] passivate tests::coverage_view_tests::when_grcov_is_not_installed_error_is_reported").unwrap();
+
+    assert!(matches!(status.status, SingleTestStatus::Failed));
+}
