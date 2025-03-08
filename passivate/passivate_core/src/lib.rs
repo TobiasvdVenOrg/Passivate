@@ -53,12 +53,6 @@ pub mod configuration {
     mod_use!(test_runner_implementation);
 }
 
-pub mod dispatching {
-    mod_use!(dispatch);
-    mod_use!(dispatch_error);
-    mod_use!(sender_dispatch);
-}
-
 #[cfg(test)]
 pub mod tests {
     mod passivate_cargo {

@@ -1,7 +1,6 @@
 use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::{ComputeCoverage, CoverageStatus};
-use crate::dispatching::Dispatch;
 use crate::test_execution::TestRun;
 use super::{RunTests, RunTestsErrorStatus};
 
@@ -38,13 +37,13 @@ impl HandleChangeEvent for TestRunner {
                 let coverage_status = self.coverage.compute_coverage();
 
                 let _ = match coverage_status {
-                    Ok(coverage_status) => self.coverage_status_sender.dispatch(coverage_status),
-                    Err(coverage_error) => self.coverage_status_sender.dispatch(CoverageStatus::Error(coverage_error))
+                    Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
+                    Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error))
                 };
             },
             Err(test_error) => {
                 let error_status = RunTestsErrorStatus { inner_error_display: test_error.to_string() };
-                let _  = self.tests_status_sender.dispatch(TestRun::RunTestsError(error_status));
+                let _  = self.tests_status_sender.send(TestRun::RunTestsError(error_status));
             }
         };
     }
