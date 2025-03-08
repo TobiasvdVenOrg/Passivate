@@ -15,7 +15,8 @@ impl Grcov {
 
 impl ComputeCoverage for Grcov {
     fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
-        let lcov_info_path = self.output_path.join("lcov.info");
+        // Omit *.info extension, since it messes up grcov when a .info file already exists in the target directory
+        let lcov_info_path = self.output_path.join("lcov");
 
         let mut grcov = Command::new("grcov")
             .current_dir(&self.workspace_path)

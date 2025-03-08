@@ -104,7 +104,7 @@ fn get_profraw_count(path: &Path) -> Result<i32, IoError> {
 }
 
 fn expected_lcov_path(test_name: &Path) -> PathBuf {
-    test_output_path().join(test_name).join(".passivate/coverage/lcov.info")
+    test_output_path().join(test_name).join(".passivate/coverage/lcov")
 }
 
 fn expected_lcov_metadata(test_name: &Path) -> Result<fs::Metadata, IoError> {
