@@ -23,6 +23,7 @@ pub mod test_execution {
 }
 
 pub mod test_run_model {
+    mod_use!(active_test_run);
     mod_use!(single_test);
     mod_use!(single_test_status);
     mod_use!(test_run);
