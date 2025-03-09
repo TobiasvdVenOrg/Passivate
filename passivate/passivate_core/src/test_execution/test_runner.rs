@@ -1,5 +1,5 @@
 use std::{io::{BufRead, BufReader}, sync::mpsc::Sender};
-use crate::{test_execution::{RunTests, TestRunCommand}, test_run_model::{ActiveTestRun, TestRun}};
+use crate::{test_execution::{RunTests, TestRunCommand}, test_run_model::{ActiveTestRun, TestRun, TestRunEvent}};
 use std::io::Error as IoError;
 
 pub struct TestRunner {
@@ -12,16 +12,16 @@ impl TestRunner {
         Self { test_run_command, active_test_run: ActiveTestRun { tests: vec![] } }
     }
 
-    fn send_active_run(&self, sender: &Sender<TestRun>) {
-        let _ = sender.send(TestRun::Active(self.active_test_run.clone()));
+    fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {
+        if self.active_test_run.update(event) {
+            let _ = sender.send(TestRun::Active(self.active_test_run.clone()));
+        }
     }
 }
 
 impl RunTests for TestRunner {
     fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), IoError> {
-        self.active_test_run.start();
-
-        self.send_active_run(sender);
+        self.update(TestRunEvent::Start, sender);
 
         let output = self.test_run_command.spawn()?;
 
@@ -44,9 +44,7 @@ impl RunTests for TestRunner {
                     let test = self.test_run_command.parser.parse_line(&out_line);
 
                     if let Some(test) = test {
-                        self.active_test_run.tests.push(test);
-
-                        self.send_active_run(sender);
+                        self.update(test, sender);
                     }
                 } else {
                     exit += 1;
@@ -58,9 +56,7 @@ impl RunTests for TestRunner {
                     let test = self.test_run_command.parser.parse_line(&err_line);
 
                     if let Some(test) = test {
-                        self.active_test_run.tests.push(test);
-
-                        self.send_active_run(sender);
+                        self.update(test, sender);
                     }
                 } else {
                     exit += 1;
@@ -73,7 +69,7 @@ impl RunTests for TestRunner {
         };
 
         if self.active_test_run.tests.is_empty() {
-            self.send_active_run(sender);
+            self.update(TestRunEvent::NoTests, sender);
         }
 
         Ok(())

@@ -1,4 +1,4 @@
-use crate::test_run_model::{ActiveTestRun, SingleTest, SingleTestStatus};
+use crate::test_run_model::{ActiveTestRun, SingleTest, SingleTestStatus, TestRunEvent};
 
 
 #[test]
@@ -9,7 +9,6 @@ pub fn starting_a_run_clears_tests() {
             ]
         };
 
-    run.start();
-
+    assert!(run.update(TestRunEvent::Start));
     assert_eq!(0, run.tests.len());
 }

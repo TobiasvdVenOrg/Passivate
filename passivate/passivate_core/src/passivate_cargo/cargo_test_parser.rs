@@ -1,9 +1,9 @@
-use crate::{test_execution::ParseOutput, test_run_model::{SingleTest, SingleTestStatus}};
+use crate::{test_execution::ParseOutput, test_run_model::{SingleTest, SingleTestStatus, TestRunEvent}};
 
 pub struct CargoTestParser;
 
 impl ParseOutput for CargoTestParser {
-    fn parse_line(&self, line: &str) -> Option<SingleTest> {
+    fn parse_line(&self, line: &str) -> Option<TestRunEvent> {
         let line = line.trim();
 
         if line.starts_with("test") {
@@ -13,7 +13,8 @@ impl ParseOutput for CargoTestParser {
                     _ => SingleTestStatus::Failed
                 };
     
-                return Some(SingleTest { name: test.to_string(), status })
+                let test = SingleTest { name: test.to_string(), status };
+                return Some(TestRunEvent::TestFinished(test))
             };
         }
 
@@ -26,7 +27,7 @@ fn split_and_trim(line: &str) -> Option<(String, String)> {
     let mut parts = line.splitn(2, "...");
 
     // Get the first and second parts, if they exist
-    let first = parts.next()?.trim().to_string();  // Get and trim first part
+    let first = parts.next()?.trim()[5..].to_string();  // Get and trim first part
     let second = parts.next()?.trim().to_string(); // Get and trim second part
 
     Some((first, second))

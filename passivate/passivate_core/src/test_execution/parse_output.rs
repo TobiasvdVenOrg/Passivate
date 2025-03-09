@@ -1,5 +1,5 @@
-use crate::test_run_model::SingleTest;
+use crate::test_run_model::TestRunEvent;
 
 pub trait ParseOutput {
-    fn parse_line(&self, line: &str) -> Option<SingleTest>;
+    fn parse_line(&self, line: &str) -> Option<TestRunEvent>;
 }
