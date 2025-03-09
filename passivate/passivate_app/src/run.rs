@@ -58,14 +58,14 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
         let test_runner = TestRunner::new(test_run_command);
         let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-        let mut test_execution = ChangeEventHandler::new(Box::new(test_runner), Box::new(coverage), tests_status_sender, coverage_sender);
+        let mut change_handler = ChangeEventHandler::new(Box::new(test_runner), Box::new(coverage), tests_status_sender, coverage_sender);
 
         while let Ok(change_event) = change_event_receiver.recv() {
-            match change_event {
-                ChangeEvent::File => test_execution.handle_event(change_event),
-                ChangeEvent::Exit => break,
-                ChangeEvent::Configuration(_passivate_config) => todo!(),
+            if change_event.is_exit()  {
+               break; 
             }
+
+            change_handler.handle_event(change_event);
         }
     });
 
