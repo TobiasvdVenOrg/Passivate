@@ -6,10 +6,11 @@ use std::io::Error as IoError;
 use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
+use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::TestRunCommand;
 use passivate_core::test_execution::ChangeEventHandler;
 use passivate_core::test_execution::TestRunner;
-use passivate_core::{passivate_grcov::Grcov, test_execution::TestRun};
+use passivate_core::test_run_model::TestRun;
 
 pub struct TestRunnerBuilder {
     test_runner: TestRunnerImplementation,

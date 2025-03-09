@@ -1,6 +1,6 @@
 use egui::{Color32, RichText};
+use passivate_core::test_run_model::{SingleTestStatus, TestRun};
 use std::sync::mpsc::Receiver;
-use passivate_core::test_execution::{SingleTestStatus, TestRun};
 use crate::views::View;
 
 pub struct TestRunView {

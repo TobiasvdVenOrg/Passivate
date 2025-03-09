@@ -1,8 +1,8 @@
 use std::sync::mpsc::Sender;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 use crate::coverage::{ComputeCoverage, CoverageStatus};
-use crate::test_execution::TestRun;
-use super::{FailedTestRun, RunTests};
+use crate::test_run_model::{FailedTestRun, TestRun};
+use super::RunTests;
 
 pub struct ChangeEventHandler {
     runner: Box<dyn RunTests>,

@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
-use super::TestRun;
 use std::io::Error as IoError;
+use crate::test_run_model::TestRun;
 
 #[cfg_attr(feature = "mocks", mockall::automock)]
 pub trait RunTests {

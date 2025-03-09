@@ -2,7 +2,8 @@
 
 use std::sync::mpsc::channel;
 use crate::assert_matches;
-use crate::test_execution::{MockRunTests, ChangeEventHandler, TestRun};
+use crate::test_execution::{MockRunTests, ChangeEventHandler};
+use crate::test_run_model::TestRun;
 use crate::coverage::{CoverageStatus, MockComputeCoverage};
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 

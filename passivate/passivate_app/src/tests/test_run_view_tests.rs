@@ -1,8 +1,7 @@
 use std::sync::mpsc::channel;
-
 use egui_kittest::Harness;
 use crate::views::{TestRunView, View};
-use passivate_core::test_execution::{ActiveTestRun, TestRun};
+use passivate_core::test_run_model::{ActiveTestRun, TestRun};
 use stdext::function_name;
 
 #[test]

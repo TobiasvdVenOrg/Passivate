@@ -1,5 +1,4 @@
-use std::{ffi::OsStr, path::Path};
-use crate::test_execution::{ParseOutput, SingleTest, SingleTestStatus};
+use crate::{test_execution::ParseOutput, test_run_model::{SingleTest, SingleTestStatus}};
 
 pub struct CargoTestParser;
 
@@ -14,8 +13,7 @@ impl ParseOutput for CargoTestParser {
                     _ => SingleTestStatus::Failed
                 };
     
-                let path = Path::new(OsStr::new(""));
-                return Some(SingleTest::new(test.to_string(), status, path, 0))
+                return Some(SingleTest { name: test.to_string(), status })
             };
         }
 

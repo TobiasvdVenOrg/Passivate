@@ -1,4 +1,4 @@
-use crate::{passivate_nextest::NextestParser, test_execution::{ParseOutput, SingleTestStatus}};
+use crate::{passivate_nextest::NextestParser, test_execution::ParseOutput, test_run_model::SingleTestStatus};
 
 #[test]
 pub fn parse_test_line_status_pass() {

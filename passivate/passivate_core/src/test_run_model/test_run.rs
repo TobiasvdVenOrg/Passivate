@@ -1,4 +1,4 @@
-use crate::test_execution::SingleTest;
+use super::SingleTest;
 
 #[derive(Clone)]
 #[derive(Debug)]

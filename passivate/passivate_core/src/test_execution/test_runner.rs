@@ -1,5 +1,5 @@
 use std::{io::{BufRead, BufReader}, sync::mpsc::Sender};
-use crate::test_execution::{ActiveTestRun, RunTests, TestRun, TestRunCommand};
+use crate::{test_execution::{RunTests, TestRunCommand}, test_run_model::{ActiveTestRun, TestRun}};
 use std::io::Error as IoError;
 
 pub struct TestRunner {

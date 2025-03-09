@@ -1,7 +1,7 @@
 use std::io::Error as IoError;
 use std::sync::mpsc::channel;
 use passivate_core::assert_matches;
-use passivate_core::test_execution::TestRun;
+use passivate_core::test_run_model::TestRun;
 mod helpers;
 use helpers::*;
 use rstest::*;

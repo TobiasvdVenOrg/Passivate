@@ -1,4 +1,5 @@
-use crate::{passivate_cargo::CargoTestParser, test_execution::{ParseOutput, SingleTestStatus}};
+use crate::{passivate_cargo::CargoTestParser, test_execution::ParseOutput};
+use crate::test_run_model::SingleTestStatus;
 
 #[test]
 pub fn parse_test_line_status_pass() {
