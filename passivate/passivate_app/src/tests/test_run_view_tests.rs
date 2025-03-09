@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui_kittest::Harness;
 use crate::views::{TestRunView, View};
-use passivate_core::test_run_model::{ActiveTestRun, TestRun};
+use passivate_core::test_run_model::{ActiveTestRun, BuildFailedTestRun, TestRun};
 use stdext::function_name;
 
 #[test]
@@ -14,6 +14,12 @@ pub fn test_run_view_shows_when_no_tests_were_found() {
     let active = ActiveTestRun { tests: vec!() };
 
     run_and_snapshot(TestRun::Active(active), &test_name(function_name!()));
+}
+
+#[test]
+pub fn test_run_view_shows_when_build_failed() {
+    let build_failed = TestRun::BuildFailed(BuildFailedTestRun { message: "Something didn't compile!".to_string() });
+    run_and_snapshot(build_failed, &test_name(function_name!()));
 }
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {

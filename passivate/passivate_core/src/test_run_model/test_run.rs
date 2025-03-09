@@ -1,4 +1,4 @@
-use super::{ActiveTestRun, SingleTest};
+use super::ActiveTestRun;
 
 #[derive(Clone)]
 #[derive(Debug)]
