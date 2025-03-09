@@ -9,7 +9,7 @@ pub struct TestRunner {
 
 impl TestRunner {
     pub fn new(test_run_command: TestRunCommand) -> Self {
-        Self { test_run_command, active_test_run: ActiveTestRun { tests: vec![] } }
+        Self { test_run_command, active_test_run: ActiveTestRun::default() }
     }
 
     fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {

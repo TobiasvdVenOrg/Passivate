@@ -1,5 +1,5 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTestStatus, TestRun};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun};
 use std::sync::mpsc::Receiver;
 use crate::views::View;
 
@@ -11,6 +11,20 @@ pub struct TestRunView {
 impl TestRunView {
     pub fn new(receiver: Receiver<TestRun>) -> TestRunView {
         TestRunView { receiver, status: TestRun::Waiting { } }
+    }
+
+    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) {
+        let text = RichText::new(&test.name).size(16.0).color(color);
+        
+        if ui.button(text).clicked() {
+            println!("Clicked on {}", test.name);
+        }
+    }
+
+    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) {
+        let text = RichText::new(&test.name).size(16.0).color(Color32::GRAY);
+        
+        ui.label(text);
     }
 }
 
@@ -29,19 +43,15 @@ impl View for TestRunView {
             },
             TestRun::Active(ref active) => {
                 for test in &active.tests {
-                    let color = match test.status {
-                        SingleTestStatus::Failed => Color32::RED,
-                        SingleTestStatus::Passed => Color32::GREEN
+                    match test.status {
+                        SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
+                        SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+                        SingleTestStatus::Unknown => self.test_label(ui, test)
                     };
-
-                    let text = RichText::new(&test.name).size(16.0).color(color);
-                    if ui.button(text).clicked() {
-                        println!("Clicked on {}", test.name);
-                    }
                 }
 
                 if active.tests.is_empty() {
-                    ui.heading("No tests found.");
+                    ui.heading("No tests found."); 
                 }
             },
             TestRun::BuildFailed(ref build_failure) => {
