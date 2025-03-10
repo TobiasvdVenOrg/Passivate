@@ -15,13 +15,21 @@ impl ActiveTestRun {
                             test.status = SingleTestStatus::Unknown;
                         }
                         
-                        !self.tests.is_empty()
+                        true
                     },
-            TestRunEvent::TestFinished(single_test) => {
-                self.tests.push(single_test);
-                true
+            TestRunEvent::TestFinished(test) => {
+                self.add_or_update_test(test)
             },
             TestRunEvent::NoTests => true
         }
+    }
+
+    fn add_or_update_test(&mut self, test: SingleTest) -> bool {
+        match self.tests.iter_mut().find(|t| t.name == test.name) {
+            Some(existing) => *existing = test,
+            None => self.tests.push(test),
+        };
+        
+        true
     }
 }
