@@ -1,8 +1,6 @@
 use std::sync::mpsc::channel;
-
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{CoverageView, View};
-use passivate_core::{change_events::{ChangeEvent, HandleChangeEvent}, coverage::{CoverageError, MockComputeCoverage}, test_execution::{MockRunTests, ChangeEventHandler}};
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
