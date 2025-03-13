@@ -1,4 +1,4 @@
-use crate::{test_execution::ParseOutput, test_run_model::{SingleTest, SingleTestStatus, TestRunEvent}};
+use crate::{configuration::TestRunnerImplementation, test_execution::ParseOutput, test_run_model::{SingleTest, SingleTestStatus, TestRunEvent}};
 
 pub struct CargoTestParser;
 
@@ -19,6 +19,10 @@ impl ParseOutput for CargoTestParser {
         }
 
         None
+    }
+
+    fn get_implementation(&self) -> TestRunnerImplementation {
+        TestRunnerImplementation::Cargo
     }
 }
 

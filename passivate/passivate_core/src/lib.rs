@@ -16,9 +16,9 @@ pub mod change_events {
 pub mod test_execution {
     mod_use!(change_event_handler);
     mod_use!(run_tests);
-    mod_use!(test_run_command);
     mod_use!(parse_output);
     mod_use!(test_runner);
+    mod_use!(test_run_iterator);
 }
 
 pub mod test_run_model {

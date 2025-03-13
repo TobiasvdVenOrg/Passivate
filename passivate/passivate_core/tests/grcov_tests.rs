@@ -14,6 +14,7 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunne
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .clean_output()
         .build();
 
     test_run(&mut runner)?;
@@ -32,6 +33,7 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRun
     let mut runner = builder
         .with_workspace("simple_workspace")
         .with_output(function_name!())
+        .clean_output()
         .build();
 
     test_run(&mut runner)?;
@@ -50,6 +52,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .clean_output()
         .build();
 
     test_run(&mut runner)?;
@@ -75,6 +78,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerB
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .clean_output()
         .build();
 
     test_run(&mut runner)?;

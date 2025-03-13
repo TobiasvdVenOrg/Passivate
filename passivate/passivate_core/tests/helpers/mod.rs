@@ -1,3 +1,8 @@
+// Because Rust treats each .rs file in the /tests directory as its own crate for some ungodly reason,
+// functions in here can be shown by the analyzer as "unused", though they may be used in some other
+// .rs file than the one its currently decided to show analysis for
+#![allow(dead_code)]
+
 use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
@@ -7,7 +12,8 @@ use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::TestRunCommand;
+use passivate_core::test_execution::build_test_output_parser;
+use passivate_core::test_execution::ParseOutput;
 use passivate_core::test_execution::ChangeEventHandler;
 use passivate_core::test_execution::TestRunner;
 use passivate_core::test_run_model::TestRun;
@@ -81,34 +87,34 @@ impl TestRunnerBuilder {
     }
 
     pub fn build(&self) -> ChangeEventHandler {
-        let workspace_path = self.get_workspace_path();
-        let output_path = self.get_output_path();
+        let parser: Box<dyn ParseOutput> = build_test_output_parser(&self.test_runner);
 
-        let passivate_path = output_path.join(".passivate");
-        let binary_path = output_path.join("x86_64-pc-windows-msvc/debug");
-        let coverage_path = passivate_path.join("coverage");
-
-        if fs::exists(&output_path).expect("Failed to check if output_path exists!") {
-            fs::remove_dir_all(&output_path).expect("Failed to clear output path!")
-        }
-
-        let grcov = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-
-        let command = TestRunCommand::for_implementation(&self.test_runner)
-            .working_dir(&workspace_path)
-            .target_dir(&output_path)
-            .coverage_output_dir(&coverage_path);
-
-        let runner = Box::new(TestRunner::new(command));
+        let runner = Box::new(TestRunner::new(
+            parser, 
+            self.get_workspace_path().clone(), 
+            self.get_output_path().clone(), 
+            self.get_coverage_path().clone()));
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
+        let grcov = Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path());
+        
         ChangeEventHandler::new(
             runner, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender)
+    }
+
+    pub fn clean_output(&mut self) -> &mut Self {
+        let output_path = self.get_output_path();
+
+        if fs::exists(&output_path).expect("Failed to check if output_path exists!") {
+            fs::remove_dir_all(&output_path).expect("Failed to clear output path!")
+        }
+
+        self
     }
 
     pub fn get_workspace_path(&self) -> PathBuf {
@@ -117,6 +123,18 @@ impl TestRunnerBuilder {
 
     pub fn get_output_path(&self) -> PathBuf {
         self.base_output_path.join(&self.output_path).join(self.runner_identifier())
+    }
+
+    pub fn get_passivate_path(&self) -> PathBuf {
+        self.get_output_path().join(".passivate")
+    }
+
+    pub fn get_coverage_path(&self) -> PathBuf {
+        self.get_passivate_path().join("coverage")
+    }
+
+    pub fn get_binary_path(&self) -> PathBuf {
+        self.get_output_path().join("x86_64-pc-windows-msvc/debug")
     }
 
     fn runner_identifier(&self) -> PathBuf {
