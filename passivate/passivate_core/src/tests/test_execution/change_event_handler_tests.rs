@@ -1,14 +1,15 @@
-#![cfg(test)]
-
 use std::sync::mpsc::channel;
 use crate::assert_matches;
-use crate::test_execution::{MockRunTests, ChangeEventHandler};
+use crate::test_execution::ChangeEventHandler;
 use crate::test_run_model::TestRun;
-use crate::coverage::{CoverageStatus, MockComputeCoverage};
+use crate::coverage::CoverageStatus;
 use crate::change_events::{ChangeEvent, HandleChangeEvent};
 
 #[test]
-pub fn when_test_run_fails_error_is_reported() {   
+pub fn when_test_run_fails_error_is_reported() {  
+    use crate::test_execution::MockRunTests;
+    use crate::coverage::MockComputeCoverage;
+     
     let mut run_tests = MockRunTests::new();
 
     run_tests.expect_run_tests()
