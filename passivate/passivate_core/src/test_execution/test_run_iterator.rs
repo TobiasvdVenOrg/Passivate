@@ -16,21 +16,15 @@ impl TestRunIterator {
         fs::create_dir_all(coverage_output_dir)?;
         let coverage_output_dir = fs::canonicalize(coverage_output_dir)?;
 
-        let implementation_arg = match implementation {
-            TestRunnerImplementation::Cargo => "test",
-            TestRunnerImplementation::Nextest => "nextest run"
-        };
-
         let mut command = Command::new("cargo");
+        let command = command.current_dir(working_dir);
 
-        match implementation {
+        let command = match implementation {
             TestRunnerImplementation::Cargo => command.arg("test"),
             TestRunnerImplementation::Nextest => command.arg("nextest").arg("run")
         };
 
-        command
-            .current_dir(working_dir)
-            .arg(implementation_arg)
+        let process = command
             .arg("--no-fail-fast")
             .arg("--target")
             .arg("x86_64-pc-windows-msvc")
@@ -42,7 +36,7 @@ impl TestRunIterator {
             .stderr(writer_clone)
             .spawn()?;
         
-        drop(command);
+        drop(process);
 
         // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
         let out_reader = BufReader::new(reader);
