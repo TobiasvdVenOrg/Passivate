@@ -15,6 +15,7 @@ use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::build_test_output_parser;
 use passivate_core::test_execution::ParseOutput;
 use passivate_core::test_execution::ChangeEventHandler;
+use passivate_core::test_execution::TestRunProcessor;
 use passivate_core::test_execution::TestRunner;
 use passivate_core::test_run_model::TestRun;
 
@@ -88,12 +89,13 @@ impl TestRunnerBuilder {
 
     pub fn build(&self) -> ChangeEventHandler {
         let parser: Box<dyn ParseOutput> = build_test_output_parser(&self.test_runner);
-
         let runner = Box::new(TestRunner::new(
-            parser, 
             self.get_workspace_path().clone(), 
             self.get_output_path().clone(), 
-            self.get_coverage_path().clone()));
+            self.get_coverage_path().clone()
+        ));
+
+        let processor = TestRunProcessor::new(runner, parser);
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
@@ -101,7 +103,7 @@ impl TestRunnerBuilder {
         let grcov = Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path());
         
         ChangeEventHandler::new(
-            runner, 
+            processor, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender)

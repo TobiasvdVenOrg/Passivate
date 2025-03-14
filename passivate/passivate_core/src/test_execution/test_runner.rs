@@ -1,51 +1,60 @@
-use std::{path::PathBuf, sync::mpsc::Sender};
-use crate::{test_execution::RunTests, test_run_model::{ActiveTestRun, TestRun, TestRunEvent}};
-use std::io::Error as IoError;
+use std::path::PathBuf;
+use std::{fs, process::Command};
+use std::io::{BufRead, BufReader, Error as IoError};
 
-use super::{ParseOutput, TestRunIterator};
+use crate::configuration::TestRunnerImplementation;
+
+use super::{RunTests, TestRunIterator};
 
 pub struct TestRunner {
-    parse_output: Box<dyn ParseOutput>,
     working_dir: PathBuf, 
     target_dir: PathBuf, 
-    coverage_output_dir: PathBuf,
-    active_test_run: ActiveTestRun
+    coverage_output_dir: PathBuf
 }
 
 impl TestRunner {
-    pub fn new(parse_output: Box<dyn ParseOutput>, working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf) -> Self {
-        Self { parse_output, working_dir, target_dir, coverage_output_dir, active_test_run: ActiveTestRun::default() }
-    }
-
-    fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {
-        if self.active_test_run.update(event) {
-            let _ = sender.send(TestRun::Active(self.active_test_run.clone()));
-        }
+    pub fn new(working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf) -> Self {
+        Self { working_dir, target_dir, coverage_output_dir }
     }
 }
 
 impl RunTests for TestRunner {
-    fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), IoError> {
-        self.update(TestRunEvent::Start, sender);
+    // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
+    // During manual testing stdout and stderr output appeared to be interleaved in the correct order
+    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<TestRunIterator, IoError> {
+        let (reader, writer) = os_pipe::pipe()?;
+        let writer_clone = writer.try_clone()?;
 
-        let iterator = TestRunIterator::run_tests(
-            self.parse_output.get_implementation(), 
-            &self.working_dir, 
-            &self.target_dir, 
-            &self.coverage_output_dir)?;
+        fs::create_dir_all(&self.coverage_output_dir)?;
+        let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
 
-        for line in iterator {
-            let test_run_event = self.parse_output.parse_line(&line.unwrap());
+        let mut command = Command::new("cargo");
+        let command = command.current_dir(&self.working_dir);
 
-            if let Some(test_run_event) = test_run_event {
-                self.update(test_run_event, sender);
-            }
-        }
+        let command = match implementation {
+            TestRunnerImplementation::Cargo => command.arg("test"),
+            TestRunnerImplementation::Nextest => command.arg("nextest").arg("run")
+        };
 
-        if self.active_test_run.tests.is_empty() {
-            self.update(TestRunEvent::NoTests, sender);
-        }
+        let process = command
+            .arg("--no-fail-fast")
+            .arg("--target")
+            .arg("x86_64-pc-windows-msvc")
+            .arg("--target-dir")
+            .arg(&self.target_dir)
+            .env("RUSTFLAGS", "-C instrument-coverage")
+            .env("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"))    
+            .stdout(writer)
+            .stderr(writer_clone)
+            .spawn()?;
+        
+        drop(process);
 
-        Ok(())
+        // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
+        let out_reader = BufReader::new(reader);
+
+        let stdout = out_reader.lines();
+
+        Ok(TestRunIterator::new(stdout))
     }
 }

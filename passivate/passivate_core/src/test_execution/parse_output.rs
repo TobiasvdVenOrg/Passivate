@@ -1,5 +1,6 @@
 use crate::{configuration::TestRunnerImplementation, passivate_cargo::CargoTestParser, passivate_nextest::NextestParser, test_run_model::TestRunEvent};
 
+#[mockall::automock]
 pub trait ParseOutput {
     fn parse_line(&self, line: &str) -> Option<TestRunEvent>;
     fn get_implementation(&self) -> TestRunnerImplementation;

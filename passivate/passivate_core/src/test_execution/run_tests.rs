@@ -1,8 +1,9 @@
-use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
-use crate::test_run_model::TestRun;
+use crate::configuration::TestRunnerImplementation;
 
-#[cfg_attr(feature = "mocks", mockall::automock)]
+use super::TestRunIterator;
+
+#[mockall::automock]
 pub trait RunTests {
-    fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), IoError>;
+    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<TestRunIterator, IoError>;
 }
