@@ -21,7 +21,7 @@ impl TestRunner {
 impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
-    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<TestRunIterator, IoError> {
+    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, IoError> {
         let (reader, writer) = os_pipe::pipe()?;
         let writer_clone = writer.try_clone()?;
 
@@ -55,6 +55,6 @@ impl RunTests for TestRunner {
 
         let stdout = out_reader.lines();
 
-        Ok(TestRunIterator::new(stdout))
+        Ok(Box::new(TestRunIterator::new(stdout)))
     }
 }

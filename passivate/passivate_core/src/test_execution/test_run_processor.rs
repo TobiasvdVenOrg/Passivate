@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use crate::test_run_model::{ActiveTestRun, TestRun, TestRunEvent};
+use crate::test_run_model::{TestRun, TestRunEvent};
 use std::io::Error as IoError;
 
 use super::{ParseOutput, RunTests};
@@ -7,17 +7,17 @@ use super::{ParseOutput, RunTests};
 pub struct TestRunProcessor {
     run_tests: Box<dyn RunTests>,
     parse_output: Box<dyn ParseOutput>,
-    active_test_run: ActiveTestRun
+    test_run: TestRun
 }
 
 impl TestRunProcessor {
     pub fn new(run_tests: Box<dyn RunTests>, parse_output: Box<dyn ParseOutput>) -> Self {
-        Self { run_tests, parse_output, active_test_run: ActiveTestRun::default() }
+        Self { run_tests, parse_output, test_run: TestRun::default() }
     }
 
     fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {
-        if self.active_test_run.update(event) {
-            let _ = sender.send(TestRun::Active(self.active_test_run.clone()));
+        if self.test_run.update(event) {
+            let _ = sender.send(self.test_run.clone());
         }
     }
 
@@ -34,7 +34,7 @@ impl TestRunProcessor {
             }
         }
 
-        if self.active_test_run.tests.is_empty() {
+        if self.test_run.tests.is_empty() {
             self.update(TestRunEvent::NoTests, sender);
         }
 

@@ -43,7 +43,7 @@ impl HandleChangeEvent for ChangeEventHandler {
             },
             Err(test_error) => {
                 let error_status = FailedTestRun { inner_error_display: test_error.to_string() };
-                let _  = self.tests_status_sender.send(TestRun::Failed(error_status));
+                let _  = self.tests_status_sender.send(TestRun::from_failed(error_status));
             }
         };
     }

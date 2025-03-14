@@ -1,5 +1,5 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
 use std::sync::mpsc::Receiver;
 use crate::views::View;
 
@@ -10,7 +10,7 @@ pub struct TestRunView {
 
 impl TestRunView {
     pub fn new(receiver: Receiver<TestRun>) -> TestRunView {
-        TestRunView { receiver, status: TestRun::Waiting { } }
+        TestRunView { receiver, status: TestRun::default() }
     }
 
     fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) {
@@ -34,38 +34,39 @@ impl View for TestRunView {
             self.status = status;
         }
 
-        match self.status {
-            TestRun::Waiting => {
-                ui.heading("Make a change to discover tests!");
-            },
-            TestRun::Starting => {
-                ui.heading("Starting test run...");
-            },
-            TestRun::Active(ref active) => {
-                for test in &active.tests {
-                    match test.status {
-                        SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-                        SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
-                        SingleTestStatus::Unknown => self.test_label(ui, test)
-                    };
-                }
+        match self.status.state {
+            TestRunState::Waiting => {
+                        if self.status.tests.is_empty() {
+                            ui.heading("No tests found."); 
+                        }
+                    },
+            TestRunState::Starting => {
+                        ui.heading("Starting test run...");
+                    },
+            TestRunState::Building => todo!(),
+            TestRunState::Running => {
+                        
+                    },
+            TestRunState::BuildFailed(ref build_failure) => {
+                        ui.heading("Build failed.");
 
-                if active.tests.is_empty() {
-                    ui.heading("No tests found."); 
-                }
-            },
-            TestRun::BuildFailed(ref build_failure) => {
-                ui.heading("Build failed.");
+                        let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
+                        ui.label(text);
+                    },
+            TestRunState::Failed(ref run_tests_error_status) => {
+                        ui.heading("Failed to run tests.");
 
-                let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
-                ui.label(text);
-            },
-            TestRun::Failed(ref run_tests_error_status) => {
-                ui.heading("Failed to run tests.");
+                        let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);
+                        ui.label(text);
+                    }
+        }
 
-                let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);
-                ui.label(text);
-            },
+        for test in &self.status.tests {
+            match test.status {
+                SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
+                SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+                SingleTestStatus::Unknown => self.test_label(ui, test)
+            };
         }
     }
 

@@ -23,7 +23,6 @@ pub mod test_execution {
 }
 
 pub mod test_run_model {
-    mod_use!(active_test_run);
     mod_use!(single_test);
     mod_use!(single_test_status);
     mod_use!(test_run);
@@ -69,9 +68,6 @@ pub mod tests {
     
     mod test_execution {
         mod change_event_handler_tests;
-    }
-
-    mod test_run_model {
-        mod test_run_tests;
+        mod test_run_processor_tests;
     }
 }
