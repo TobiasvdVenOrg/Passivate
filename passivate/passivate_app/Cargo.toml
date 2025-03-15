@@ -7,15 +7,15 @@ edition = "2021"
 passivate_core = { path = "../passivate_core" }
 
 egui = { version = "0.31", features = [ ] }
-eframe = { version = "0.31", default-features = false, features = [
-    "default_fonts",
-    "wgpu",
-    "accesskit"
-] }
 egui_dock = "0.16.0"
 notify = "8.0.0"
 futures = "0.3.31"
 tokio = { version = "1.42.0", features = [ "full" ] }
+
+[dependencies.eframe]
+version = "0.31"
+default-features = false
+features = [ "default_fonts", "wgpu", "accesskit", "wayland" ]
 
 [dev-dependencies]
 passivate_core = { path = "../passivate_core" }
