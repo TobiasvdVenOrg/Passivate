@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use notify::{ReadDirectoryChangesWatcher, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
@@ -79,7 +79,7 @@ impl NotifyChangeEvents {
         }
     }
 
-    fn start_watcher(mut watcher: ReadDirectoryChangesWatcher, path: &Path) -> Result<ReadDirectoryChangesWatcher, NotifyChangeEventsError> {
+    fn start_watcher<T: Watcher>(mut watcher: T, path: &Path) -> Result<T, NotifyChangeEventsError> {
         let watch_result = watcher.watch(path, RecursiveMode::Recursive);
 
         match watch_result {
