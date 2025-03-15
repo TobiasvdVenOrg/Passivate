@@ -23,9 +23,20 @@ impl Iterator for TestRunIterator {
 pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerImplementation) {
     let test_run = run(implementation, "");    
 
-    let last = test_run.last().unwrap().state;
+    let idle = test_run.last().unwrap().state;
 
-    assert!(matches!(last, TestRunState::Idle));
+    assert!(matches!(idle, TestRunState::Idle));
+}
+
+#[rstest]
+#[case::cargo(TestRunnerImplementation::Cargo, "test add_2_and_2_is_4 ... ok")]
+#[case::nextest(TestRunnerImplementation::Nextest, "PASS [   0.015s] sample_project::add_tests add_2_and_4_is_6")]
+pub fn first_run_transitions_to_running(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
+    let test_run = run(implementation, test_output);
+
+    let running = test_run.last().unwrap().state;
+
+    assert!(matches!(running, TestRunState::Running));
 }
 
 fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {

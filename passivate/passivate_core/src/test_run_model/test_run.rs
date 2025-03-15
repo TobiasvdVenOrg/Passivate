@@ -48,6 +48,7 @@ impl TestRun {
                         true
                     },
             TestRunEvent::TestFinished(test) => {
+                self.state = TestRunState::Running;
                 self.add_or_update_test(test)
             },
             TestRunEvent::NoTests => true
