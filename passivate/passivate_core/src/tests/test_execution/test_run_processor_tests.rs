@@ -1,16 +1,47 @@
-use std::{io::Error as IoError, sync::mpsc::channel};
+use std::{io::Error as IoError, sync::mpsc::{channel, Receiver}};
 
-use crate::{configuration::TestRunnerImplementation, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::TestRunState};
+use rstest::rstest;
+
+use crate::{configuration::TestRunnerImplementation, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
 
 
-#[test]
-pub fn run_completes_when_no_tests_are_found() {
+struct TestRunIterator {
+    receiver: Receiver<TestRun>
+}
+
+impl Iterator for TestRunIterator {
+    type Item = TestRun;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.receiver.try_iter().next()
+    }
+}
+
+#[rstest]
+#[case::cargo(TestRunnerImplementation::Cargo)]
+#[case::nextest(TestRunnerImplementation::Nextest)]
+pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerImplementation) {
+    let test_run = run(implementation, "");    
+
+    let last = test_run.last().unwrap().state;
+
+    assert!(matches!(last, TestRunState::Waiting));
+}
+
+fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {
+    let mut processor = build_processor(implementation, test_output);    
+    let (sender, receiver) = channel();
+
+    processor.run_tests(&sender).unwrap();
+
+    TestRunIterator { receiver }
+}
+
+fn build_processor(implementation: TestRunnerImplementation, test_output: &str) -> TestRunProcessor {
     let mut run_tests = MockRunTests::new();
-    run_tests.expect_run_tests().return_once(|_implementation| {
-        let lines = r#"
-        "#;
-
-        let iterator = lines
+    let test_output = test_output.to_string();
+    run_tests.expect_run_tests().return_once(move |_implementation| {
+        let iterator = test_output
             .lines()
             .map(|line| Ok(line.to_string()))
             .collect::<Vec<Result<String, IoError>>>()
@@ -19,14 +50,6 @@ pub fn run_completes_when_no_tests_are_found() {
         Ok(Box::new(iterator))
     });
 
-    let parser = build_test_output_parser(&TestRunnerImplementation::Cargo);
-    let mut processor = TestRunProcessor::new(Box::new(run_tests), parser);
-
-    let (sender, receiver) = channel();
-
-    processor.run_tests(&sender).unwrap();
-
-    let last = receiver.try_iter().last().unwrap().state;
-
-    assert!(matches!(last, TestRunState::Waiting));
+    let parser = build_test_output_parser(&implementation);
+    TestRunProcessor::new(Box::new(run_tests), parser)
 }
