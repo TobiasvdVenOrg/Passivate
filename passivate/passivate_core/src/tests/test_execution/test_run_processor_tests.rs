@@ -25,7 +25,7 @@ pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerI
 
     let last = test_run.last().unwrap().state;
 
-    assert!(matches!(last, TestRunState::Waiting));
+    assert!(matches!(last, TestRunState::Idle));
 }
 
 fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {

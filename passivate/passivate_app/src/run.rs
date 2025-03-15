@@ -6,6 +6,7 @@ use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunProcessor, TestRunner};
+use passivate_core::test_run_model::{TestRun, TestRunState};
 use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -53,8 +54,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let change_events_thread = thread::spawn(move || {
         let test_runner = TestRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
         let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
-
-        let test_processor = TestRunProcessor::new(Box::new(test_runner), parser);
+        let test_run = TestRun::from_state(TestRunState::FirstRun);
+        let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
         let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
         let mut change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender);
 

@@ -15,8 +15,8 @@ pub struct FailedTestRun {
 #[derive(Clone)]
 #[derive(Debug)]
 pub enum TestRunState {
-    Waiting,
-    Starting,
+    FirstRun,
+    Idle,
     Building,
     Running,
     BuildFailed(BuildFailedTestRun),
@@ -66,6 +66,6 @@ impl TestRun {
 
 impl Default for TestRun {
     fn default() -> Self {
-        Self { state: TestRunState::Waiting, tests: vec![] }
+        Self { state: TestRunState::Idle, tests: vec![] }
     }
 }

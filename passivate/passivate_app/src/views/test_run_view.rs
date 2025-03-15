@@ -35,13 +35,13 @@ impl View for TestRunView {
         }
 
         match self.status.state {
-            TestRunState::Waiting => {
+            TestRunState::FirstRun => {
+                ui.heading("Starting first test run...");
+            }
+            TestRunState::Idle => {
                         if self.status.tests.is_empty() {
                             ui.heading("No tests found."); 
                         }
-                    },
-            TestRunState::Starting => {
-                        ui.heading("Starting test run...");
                     },
             TestRunState::Building => todo!(),
             TestRunState::Running => {

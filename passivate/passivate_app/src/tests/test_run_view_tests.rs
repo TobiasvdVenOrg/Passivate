@@ -5,13 +5,13 @@ use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestS
 use stdext::function_name;
 
 #[test]
-pub fn show_when_test_run_is_starting() {
-    run_and_snapshot(TestRun::from_state(TestRunState::Starting), &test_name(function_name!()));
+pub fn show_when_first_test_run_is_starting() {
+    run_and_snapshot(TestRun::from_state(TestRunState::FirstRun), &test_name(function_name!()));
 }
 
 #[test]
 pub fn show_when_no_tests_were_found() {
-    run_and_snapshot(TestRun::from_state(TestRunState::Waiting), &test_name(function_name!()));
+    run_and_snapshot(TestRun::from_state(TestRunState::Idle), &test_name(function_name!()));
 }
 
 #[test]

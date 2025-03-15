@@ -12,7 +12,11 @@ pub struct TestRunProcessor {
 
 impl TestRunProcessor {
     pub fn new(run_tests: Box<dyn RunTests>, parse_output: Box<dyn ParseOutput>) -> Self {
-        Self { run_tests, parse_output, test_run: TestRun::default() }
+        Self::from_test_run(run_tests, parse_output, TestRun::default())
+    }
+
+    pub fn from_test_run(run_tests: Box<dyn RunTests>, parse_output: Box<dyn ParseOutput>, test_run: TestRun) -> Self {
+        Self { run_tests, parse_output, test_run }
     }
 
     fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {
