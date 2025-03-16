@@ -1,12 +1,19 @@
 use std::{sync::mpsc::{channel, Sender}, thread::{self, JoinHandle}};
 
+#[derive(Default)]
 struct ExampleHandler {
-    
+    total: i32
+}
+
+impl ExampleHandler {
+    pub fn get_total(&self) -> i32 {
+        self.total
+    }
 }
 
 impl Handler<i32> for ExampleHandler {
     fn handle(&mut self, event: i32) {
-        println!("{}", event);
+        self.total += event;
     }
 }
 
@@ -15,9 +22,9 @@ enum ActorEvent<T: Send + 'static> {
     Exit
 }
 
-struct Actor<T: Send + Clone + 'static> {
+struct Actor<T: Send + Clone + 'static, THandler: Handler<T>> {
     api: Api<T>,
-    thread: Option<JoinHandle<()>>
+    thread: Option<JoinHandle<THandler>>
 }
 
 trait Handler<T: Send + 'static> : Send + 'static {
@@ -39,8 +46,8 @@ impl<T: Send + Clone + 'static> Api<T> {
     }
 }
 
-impl<T: Send + Clone + 'static> Actor<T> {
-    pub fn new<THandler: Handler<T>>(mut handler: THandler) -> Self {
+impl<T: Send + Clone + 'static, THandler: Handler<T>> Actor<T, THandler> {
+    pub fn new(mut handler: THandler) -> Self {
         let (sender, receiver) = channel();
 
         let thread = Some(thread::spawn(move || {
@@ -50,6 +57,8 @@ impl<T: Send + Clone + 'static> Actor<T> {
                     ActorEvent::Exit => break,
                 }
             }
+
+            handler
         }));
 
         let api = Api { sender };
@@ -60,17 +69,17 @@ impl<T: Send + Clone + 'static> Actor<T> {
         self.api.clone()
     }
 
-    pub fn stop(&mut self) {
+    pub fn stop(&mut self) -> THandler {
         self.api.exit();
         let thread = self.thread.take().unwrap();
 
-        thread.join().unwrap();
+        thread.join().unwrap()
     }
 }
 
 #[test]
 pub fn bla() {
-    let handler = ExampleHandler {};
+    let handler = ExampleHandler::default();
     let mut actor = Actor::new(handler);
 
     let api = actor.api();
@@ -78,5 +87,7 @@ pub fn bla() {
     api.send(16);
     api.send(32);
 
-    actor.stop();
+    let handler = actor.stop();
+
+    assert_eq!(48, handler.get_total());
 }
