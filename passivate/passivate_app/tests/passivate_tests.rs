@@ -1,5 +1,4 @@
 #![cfg(target_os = "windows")]
-#![no_main]
 
 use libtest_mimic::Arguments;
 use libtest_mimic::Trial;
