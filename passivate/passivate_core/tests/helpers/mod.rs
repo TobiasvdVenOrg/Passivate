@@ -87,6 +87,10 @@ impl TestRunnerBuilder {
         self
     }
 
+    pub fn build_grcov(&self) -> Grcov {
+        Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path())
+    }
+
     pub fn build(&self) -> ChangeEventHandler {
         let parser: Box<dyn ParseOutput> = build_test_output_parser(&self.test_runner);
         let runner = Box::new(TestRunner::new(
@@ -100,7 +104,7 @@ impl TestRunnerBuilder {
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
-        let grcov = Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path());
+        let grcov = self.build_grcov();
         
         ChangeEventHandler::new(
             processor, 
@@ -153,9 +157,3 @@ pub fn test_run(test_runner: &mut ChangeEventHandler) -> Result<(), IoError> {
 
     Ok(())
 }
-
-// TODO:
-// Add way to add arbitrary environment vars
-// So we can add CARGO_TARGET_DIR = test_output/test_name
-// Add optional override for .passivate directory (defaults to root of workspace, but can be set otherwise)
-// Pass in 2 paths per test here, test_data_path and test_output_path

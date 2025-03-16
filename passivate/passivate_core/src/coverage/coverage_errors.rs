@@ -1,4 +1,4 @@
-use std::io::ErrorKind as IoErrorKind;
+use std::{io::ErrorKind as IoErrorKind, path::PathBuf};
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
@@ -10,5 +10,20 @@ pub enum CoverageError {
     FailedToGenerate(IoErrorKind),
 
     #[error("coverage may be inaccurate - cleaning previous output failed")]
-    CleanIncomplete(IoErrorKind)
+    CleanIncomplete(IoErrorKind),
+
+    #[error("coverage did not run - no profraw files were present")]
+    NoProfrawFiles(NoProfrawFilesError)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NoProfrawFilesKind {
+    Io(IoErrorKind),
+    NoProfrawFilesExist
+}
+
+#[derive(Debug, Clone)]
+pub struct NoProfrawFilesError {
+    pub expected_path: PathBuf,
+    pub kind: NoProfrawFilesKind
 }

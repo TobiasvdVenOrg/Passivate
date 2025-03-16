@@ -1,5 +1,5 @@
 use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command};
-use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus};
+use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind};
 
 pub struct Grcov {
     workspace_path: PathBuf,
@@ -15,6 +15,26 @@ impl Grcov {
 
 impl ComputeCoverage for Grcov {
     fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
+        match get_profraw_count(&self.output_path) {
+            Ok(0) => {
+                let error = NoProfrawFilesError { 
+                    expected_path: self.output_path.clone(), 
+                    kind: NoProfrawFilesKind::NoProfrawFilesExist 
+                };
+
+                return Err(CoverageError::NoProfrawFiles(error))
+            }
+            Err(io_error) => {
+                let error = NoProfrawFilesError { 
+                    expected_path: self.output_path.clone(), 
+                    kind: NoProfrawFilesKind::Io(io_error.kind()) 
+                };
+
+                return Err(CoverageError::NoProfrawFiles(error))
+            },
+            _ => { }
+        };
+        
         // Omit *.info extension, since it messes up grcov when a .info file already exists in the target directory
         let lcov_info_path = self.output_path.join("lcov");
 
@@ -47,6 +67,20 @@ impl ComputeCoverage for Grcov {
         remove_profraw_files(&self.output_path)
             .map_err(|e| CoverageError::CleanIncomplete(e.kind()))
     }
+}
+
+pub fn get_profraw_count(path: &Path) -> Result<i32, IoError> {
+    let mut count = 0;
+
+    for profraw in fs::read_dir(path)? {
+        if let Some(extension) = profraw?.path().extension() {
+            if extension == "profraw" {
+                count += 1;
+            }
+        }
+    }
+
+    Ok(count)
 }
 
 fn remove_profraw_files(directory: &Path) -> Result<(), IoError> {

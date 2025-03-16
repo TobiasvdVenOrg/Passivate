@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::fs;
 mod helpers;
 use helpers::*;
+use passivate_core::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
+use passivate_core::passivate_grcov::get_profraw_count;
 use rstest::*;
 use stdext::function_name;
 
@@ -56,11 +58,11 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
 
     test_run(&mut runner)?;
 
-    let first_run = get_profraw_count(&builder.get_output_path())?;
+    let first_run = get_profraw_count(&builder.get_coverage_path())?;
 
     test_run(&mut runner)?;
 
-    let second_run = get_profraw_count(&builder.get_output_path())?;
+    let second_run = get_profraw_count(&builder.get_coverage_path())?;
 
     assert_ne!(0, second_run);
     assert_eq!(first_run, second_run);
@@ -91,19 +93,63 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerB
     Ok(())
 }
 
-fn get_profraw_count(path: &Path) -> Result<i32, IoError> {
-    let coverage_path = path.join(".passivate").join("coverage");
-    let mut count = 0;
+#[rstest]
+pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError> {
+    let mut builder = cargo_builder();
+    let builder = builder
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .clean_output();
 
-    for profraw in fs::read_dir(coverage_path)? {
-        if let Some(extension) = profraw?.path().extension() {
-            if extension == "profraw" {
-                count += 1;
+    fs::create_dir_all(builder.get_coverage_path())?;
+    let grcov = builder.build_grcov();
+
+    let result = grcov.compute_coverage();
+    
+    assert!(result.is_err_and(|e| {
+        match e {
+            CoverageError::NoProfrawFiles(details) => {
+                assert_eq!(builder.get_coverage_path(), details.expected_path);
+                assert_eq!(NoProfrawFilesKind::NoProfrawFilesExist, details.kind);
+
+                true
             }
+            _ => false,
         }
-    }
+    }));
 
-    Ok(count)
+    Ok(())
+}
+
+#[rstest]
+pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError> {
+    let mut builder = cargo_builder();
+    let builder = builder
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .clean_output();
+
+    let grcov = builder.build_grcov();
+
+    let result = grcov.compute_coverage();
+    
+    assert!(result.is_err_and(|e| {
+        match e {
+            CoverageError::NoProfrawFiles(details) => {
+                assert_eq!(builder.get_coverage_path(), details.expected_path);
+
+                match details.kind {
+                    NoProfrawFilesKind::Io(error_kind) => assert_eq!(std::io::ErrorKind::NotFound, error_kind),
+                    _ => panic!(),
+                };
+
+                true
+            }
+            _ => false,
+        }
+    }));
+
+    Ok(())
 }
 
 fn expected_lcov_path(test_name: &Path) -> PathBuf {
