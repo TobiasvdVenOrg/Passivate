@@ -1,16 +1,12 @@
-#![cfg(target_os = "windows")]
-
-use libtest_mimic::Arguments;
-use libtest_mimic::Trial;
-use passivate::run_from_path;
-use tokio::time;
-use std::path::Path;
-use std::time::Duration;
+#[cfg(target_os = "windows")]
 use libtest_mimic::Failed;
-use tokio::task;
 
+#[cfg(target_os = "windows")]
 #[tokio::main]
 async fn main() {
+    use libtest_mimic::Arguments;
+    use libtest_mimic::Trial;
+
     let mut args = Arguments::from_args();
 
     let tests = vec![
@@ -24,7 +20,14 @@ async fn main() {
     libtest_mimic::run(&args, tests).exit();
 }
 
+#[cfg(target_os = "windows")]
 pub fn start_and_exit_passivate() -> Result<(), Failed> {
+    use passivate::run_from_path;
+    use tokio::time;
+    use std::path::Path;
+    use std::time::Duration;
+    use tokio::task;
+
     run_from_path(Path::new("..\\..\\test_data\\simple_project"), Box::new(move |context: egui::Context| {
         task::spawn(async move {   
             // Asynchronously send a close window command to passivate after some delay        
