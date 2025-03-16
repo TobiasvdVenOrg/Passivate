@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")]
+
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -6,7 +8,6 @@ use helpers::*;
 use rstest::*;
 use stdext::function_name;
 
-#[cfg(target_os = "windows")]
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
@@ -25,7 +26,6 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunne
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
@@ -44,7 +44,6 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRun
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
@@ -68,7 +67,6 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]

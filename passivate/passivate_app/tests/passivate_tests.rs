@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")]
+
 use libtest_mimic::Arguments;
 use libtest_mimic::Trial;
 use passivate::run_from_path;
