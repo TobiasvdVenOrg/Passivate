@@ -58,6 +58,10 @@ pub mod configuration {
 
 #[cfg(test)]
 pub mod tests {
+    mod actors {
+        mod actor_tests;
+    }
+
     mod passivate_cargo {
         mod cargo_test_parser_tests;
     }
