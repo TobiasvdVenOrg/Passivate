@@ -14,6 +14,7 @@ jobs:
           rustup toolchain install stable
           rustup target add x86_64-unknown-linux-gnu
           rustup target add x86_64-pc-windows-gnu
+          rustup target add aarch64-unknown-linux-gnu
           cd passivate
-          cargo test --target x86_64-unknown-linux-gnu
+          cargo test --target aarch64-unknown-linux-gnu
           cargo build --release --target x86_64-pc-windows-gnu
