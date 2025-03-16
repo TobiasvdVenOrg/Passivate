@@ -38,3 +38,7 @@ pub fn start_and_exit_passivate() -> Result<(), Failed> {
     // The timeout is configured in .config/nextest.toml 
     Ok(())
 }
+
+#[cfg(not(target_os = "windows"))]
+fn main() {
+}
