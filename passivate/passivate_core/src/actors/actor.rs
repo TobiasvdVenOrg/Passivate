@@ -1,9 +1,9 @@
 use std::{sync::mpsc::channel, thread::{self, JoinHandle}};
 
-use super::{actor_event::ActorEvent, Api, Handler};
+use super::{actor_event::ActorEvent, ActorApi, Handler};
 
 pub struct Actor<T: Send + Clone + 'static, THandler: Handler<T>> {
-    api: Api<T>,
+    api: ActorApi<T>,
     thread: Option<JoinHandle<THandler>>
 }
 
@@ -22,11 +22,11 @@ impl<T: Send + Clone + 'static, THandler: Handler<T>> Actor<T, THandler> {
             handler
         }));
 
-        let api = Api::new(sender);
+        let api = ActorApi::new(sender);
         Self { api, thread }
     }
 
-    pub fn api(&self) -> Api<T> {
+    pub fn api(&self) -> ActorApi<T> {
         self.api.clone()
     }
 

@@ -1,13 +1,31 @@
 use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
+use passivate_core::actors::{Actor, Handler};
 use crate::views::{CoverageView, View};
+
+struct SpyHandler<T: Send + 'static> {
+    events: Vec<T>
+}
+
+impl<T: Send + 'static> Handler<T> for SpyHandler<T> {
+    fn handle(&mut self, event: T) {
+        self.events.push(event);
+    }
+}
+
+impl<T: Send + 'static> Default for SpyHandler<T> {
+    fn default() -> Self {
+        Self { events: Default::default() }
+    }
+}
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let (_coverage_sender, coverage_receiver) = channel();
-    let (change_event_sender, change_event_receiver) = channel();
+    let spy = SpyHandler::default();
+    let mut actor = Actor::new(spy);
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
+    let mut coverage_view = CoverageView::new(coverage_receiver, actor.api());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -20,7 +38,9 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
     harness.run();
 
-    let event = change_event_receiver.recv().unwrap();
+    let spy = actor.stop();
+
+    let event = spy.events.last().unwrap();
 
     let configuration = event.as_configuration().unwrap();
     assert!(configuration.coverage_enabled);

@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
-use std::thread;
 use egui::Context;
-use passivate_core::actors::Handler;
+use passivate_core::actors::Actor;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
@@ -35,48 +34,37 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 }
 
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
-    let (change_event_sender, change_event_receiver) = channel();
-    let exit_event_sender = change_event_sender.clone();
-
-    // Send an initial change event to trigger an immediate test run
-    change_event_sender.send(ChangeEvent::File)?;
-
-    let mut change_events = NotifyChangeEvents::new(path, change_event_sender.clone())?;
-
+    
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-
+    
     let workspace_path = path.to_path_buf();
     let passivate_path = workspace_path.join(".passivate");
     let coverage_path = passivate_path.join("coverage");
     let target_path = passivate_path.join("target");
     let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
-
-    let change_events_thread = thread::spawn(move || {
-        let test_runner = TestRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
-        let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
-        let test_run = TestRun::from_state(TestRunState::FirstRun);
-        let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
-        let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-        let mut change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender);
-
-        while let Ok(change_event) = change_event_receiver.recv() {
-            if change_event.is_exit()  {
-               break; 
-            }
-
-            change_handler.handle(change_event);
-        }
-    });
+    
+    let test_runner = TestRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
+    let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
+    let test_run = TestRun::from_state(TestRunState::FirstRun);
+    let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
+    let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
+    let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender);
+    let mut change_actor = Actor::new(change_handler);
+    
+    let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
     let tests_view = TestRunView::new(tests_status_receiver);
-    let coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
+    let coverage_view = CoverageView::new(coverage_receiver, change_actor.api());
+
+    // Send an initial change event to trigger the first test run
+    change_actor.api().send(ChangeEvent::File);
+
     run_app(Box::new(App::new(tests_view, coverage_view)), context_accessor)?;
 
-    exit_event_sender.send(ChangeEvent::Exit)?;
+    change_actor.stop();
 
     let _ = change_events.stop();
-    change_events_thread.join().unwrap();
 
     Ok(())
 }

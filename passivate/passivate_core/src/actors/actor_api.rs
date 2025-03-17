@@ -4,11 +4,11 @@ use super::actor_event::ActorEvent;
 
 
 #[derive(Clone)]
-pub struct Api<T: Send + Clone + 'static> {
+pub struct ActorApi<T: Send + Clone + 'static> {
     sender: Sender<ActorEvent<T>>
 }
 
-impl<T: Send + Clone + 'static> Api<T> {
+impl<T: Send + Clone + 'static> ActorApi<T> {
     pub fn new(sender: Sender<ActorEvent<T>>) -> Self {
         Self { sender }
     }
