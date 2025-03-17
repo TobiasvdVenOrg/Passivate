@@ -56,6 +56,13 @@ pub mod configuration {
     mod_use!(test_runner_implementation);
 }
 
+pub mod actors {
+    mod_use!(actor);
+    mod_use!(actor_api);
+    mod_use!(handler);
+    mod actor_event;
+}
+
 #[cfg(test)]
 pub mod tests {
     mod actors {
