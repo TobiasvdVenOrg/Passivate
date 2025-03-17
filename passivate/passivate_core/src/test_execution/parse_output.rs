@@ -6,7 +6,7 @@ pub trait ParseOutput {
     fn get_implementation(&self) -> TestRunnerImplementation;
 }
 
-pub fn build_test_output_parser(implementation: &TestRunnerImplementation) -> Box<dyn ParseOutput> {
+pub fn build_test_output_parser(implementation: &TestRunnerImplementation) -> Box<dyn ParseOutput + Send> {
     match implementation {
         TestRunnerImplementation::Cargo => Box::new(CargoTestParser),
         TestRunnerImplementation::Nextest => Box::new(NextestParser),

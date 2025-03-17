@@ -2,7 +2,8 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::thread;
 use egui::Context;
-use passivate_core::change_events::{ChangeEvent, HandleChangeEvent};
+use passivate_core::actors::Handler;
+use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunProcessor, TestRunner};
@@ -64,7 +65,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
                break; 
             }
 
-            change_handler.handle_event(change_event);
+            change_handler.handle(change_event);
         }
     });
 

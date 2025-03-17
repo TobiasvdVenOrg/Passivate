@@ -1,12 +1,13 @@
 use std::sync::mpsc::Sender;
-use crate::change_events::{ChangeEvent, HandleChangeEvent};
+use crate::actors::Handler;
+use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_run_model::{FailedTestRun, TestRun};
 use super::TestRunProcessor;
 
 pub struct ChangeEventHandler {
     runner: TestRunProcessor,
-    coverage: Box<dyn ComputeCoverage>,
+    coverage: Box<dyn ComputeCoverage + Send>,
     tests_status_sender: Sender<TestRun>,
     coverage_status_sender: Sender<CoverageStatus>
 }
@@ -14,7 +15,7 @@ pub struct ChangeEventHandler {
 impl ChangeEventHandler {
     pub fn new(
         runner: TestRunProcessor,
-        coverage: Box<dyn ComputeCoverage>, 
+        coverage: Box<dyn ComputeCoverage + Send>, 
         tests_status_sender: Sender<TestRun>,
         coverage_status_sender: Sender<CoverageStatus>) -> Self {
             Self {
@@ -26,8 +27,8 @@ impl ChangeEventHandler {
     }
 }
 
-impl HandleChangeEvent for ChangeEventHandler {
-    fn handle_event(&mut self, _event: ChangeEvent) {
+impl Handler<ChangeEvent> for ChangeEventHandler {
+    fn handle(&mut self, _event: ChangeEvent) {
         self.coverage.clean_coverage_output().unwrap();
 
         let test_output = self.runner.run_tests(&self.tests_status_sender);

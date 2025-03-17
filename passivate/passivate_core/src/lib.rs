@@ -10,7 +10,6 @@ macro_rules! mod_use {
 
 pub mod change_events {
     mod_use!(change_event);
-    mod_use!(handle_change_event);
 }
 
 pub mod test_execution {
