@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use super::actor_event::ActorEvent;
+use super::{actor_event::{ActorEvent, Cancellable}, Cancellation};
 
 
 #[derive(Clone)]
@@ -15,6 +15,10 @@ impl<T: Send + Clone + 'static> ActorApi<T> {
 
     pub fn send(&self, event: T) {
         self.sender.send(ActorEvent::Custom(event)).unwrap();
+    }
+
+    pub fn send_cancellable(&self, event: T, cancellation: Cancellation) {
+        self.sender.send(ActorEvent::Cancellable(Cancellable { event, cancellation })).unwrap();
     }
 
     pub fn exit(&self) {

@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
+use passivate_core::actors::Cancellation;
 use passivate_core::actors::Handler;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::TestRunnerImplementation;
@@ -154,7 +155,7 @@ impl TestRunnerBuilder {
 
 pub fn test_run(test_runner: &mut ChangeEventHandler) -> Result<(), IoError> {
     let mock_event = ChangeEvent::File;
-    test_runner.handle(mock_event);
+    test_runner.handle(mock_event, Cancellation::default());
 
     Ok(())
 }

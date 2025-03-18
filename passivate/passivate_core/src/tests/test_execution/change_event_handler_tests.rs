@@ -1,5 +1,5 @@
 use std::sync::mpsc::channel;
-use crate::actors::Handler;
+use crate::actors::{Cancellation, Handler};
 use crate::assert_matches;
 use crate::configuration::TestRunnerImplementation;
 use crate::test_execution::{ChangeEventHandler, TestRunProcessor};
@@ -30,7 +30,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let (coverage_sender, _coverage_receiver) = channel();
     let mut handler = ChangeEventHandler::new(processor, Box::new(compute_coverage), tests_sender, coverage_sender);
 
-    handler.handle(ChangeEvent::File);
+    handler.handle(ChangeEvent::File, Cancellation::default());
 
     let _start = tests_receiver.recv().unwrap();
     let error = tests_receiver.recv().unwrap().state;

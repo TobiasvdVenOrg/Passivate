@@ -1,6 +1,6 @@
 use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::actors::{Actor, Handler};
+use passivate_core::actors::{Actor, Cancellation, Handler};
 use crate::views::{CoverageView, View};
 
 struct SpyHandler<T: Send + 'static> {
@@ -8,7 +8,7 @@ struct SpyHandler<T: Send + 'static> {
 }
 
 impl<T: Send + 'static> Handler<T> for SpyHandler<T> {
-    fn handle(&mut self, event: T) {
+    fn handle(&mut self, event: T, _cancellation: Cancellation) {
         self.events.push(event);
     }
 }
