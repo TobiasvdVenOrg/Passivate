@@ -12,6 +12,10 @@ pub mod change_events {
     mod_use!(change_event);
 }
 
+pub mod cross_cutting {
+    mod_use!(trace_event);
+}
+
 pub mod test_execution {
     mod_use!(change_event_handler);
     mod_use!(run_tests);
