@@ -19,6 +19,7 @@ pub mod test_execution {
     mod_use!(test_runner);
     mod_use!(test_run_iterator);
     mod_use!(test_run_processor);
+    mod_use!(test_run_errors);
 }
 
 pub mod test_run_model {

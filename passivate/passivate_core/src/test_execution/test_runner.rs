@@ -4,7 +4,7 @@ use std::io::{BufRead, BufReader, Error as IoError};
 
 use crate::configuration::TestRunnerImplementation;
 
-use super::{RunTests, TestRunIterator};
+use super::{RunTests, TestRunError, TestRunIterator};
 
 pub struct TestRunner {
     working_dir: PathBuf, 
@@ -21,7 +21,7 @@ impl TestRunner {
 impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
-    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, IoError> {
+    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
         let (reader, writer) = os_pipe::pipe()?;
         let writer_clone = writer.try_clone()?;
 

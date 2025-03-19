@@ -2,7 +2,7 @@ use std::sync::mpsc::channel;
 use crate::actors::{Cancellation, Handler};
 use crate::assert_matches;
 use crate::configuration::TestRunnerImplementation;
-use crate::test_execution::{ChangeEventHandler, TestRunProcessor};
+use crate::test_execution::{ChangeEventHandler, TestRunError, TestRunProcessor};
 use crate::test_run_model::TestRunState;
 use crate::coverage::CoverageStatus;
 use crate::change_events::ChangeEvent;
@@ -15,7 +15,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let mut run_tests = MockRunTests::new();
 
     run_tests.expect_run_tests()
-        .returning(|_| { Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Example error")) });
+        .returning(|_| { Err(TestRunError::Io(std::io::ErrorKind::NotFound)) });
 
     let mut compute_coverage = MockComputeCoverage::new();
     compute_coverage.expect_clean_coverage_output().returning(|| Ok(()));

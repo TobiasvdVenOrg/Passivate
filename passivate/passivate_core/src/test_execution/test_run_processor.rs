@@ -1,8 +1,7 @@
 use std::sync::mpsc::Sender;
-use crate::test_run_model::{TestRun, TestRunEvent};
-use std::io::Error as IoError;
+use crate::{actors::Cancellation, test_run_model::{TestRun, TestRunEvent}};
 
-use super::{ParseOutput, RunTests};
+use super::{ParseOutput, RunTests, TestRunError};
 
 pub struct TestRunProcessor {
     run_tests: Box<dyn RunTests + Send>,
@@ -25,17 +24,25 @@ impl TestRunProcessor {
         }
     }
 
-    pub fn run_tests(&mut self, sender: &Sender<TestRun>) -> Result<(), IoError> {
+    pub fn run_tests(&mut self, sender: &Sender<TestRun>, cancellation: Cancellation) -> Result<(), TestRunError> {
         self.update(TestRunEvent::Start, sender);
 
+        cancellation.check()?;
+
         let iterator = self.run_tests.run_tests(self.parse_output.get_implementation())?;
+
+        cancellation.check()?;
 
         for line in iterator {
             let test_run_event = self.parse_output.parse_line(&line.unwrap());
 
+            cancellation.check()?;
+
             if let Some(test_run_event) = test_run_event {
                 self.update(test_run_event, sender);
             }
+
+            cancellation.check()?;
         }
 
         if self.test_run.tests.is_empty() {
