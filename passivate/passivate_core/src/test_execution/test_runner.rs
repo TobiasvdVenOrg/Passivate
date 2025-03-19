@@ -22,11 +22,16 @@ impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
+
+        println!("Ready to run!");
+
         let (reader, writer) = os_pipe::pipe()?;
         let writer_clone = writer.try_clone()?;
 
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
+
+        println!("Prepared output!");
 
         let mut command = Command::new("cargo");
         let command = command.current_dir(&self.working_dir);
@@ -47,13 +52,19 @@ impl RunTests for TestRunner {
             .stdout(writer)
             .stderr(writer_clone)
             .spawn()?;
-        
+
+        println!("Spawned!");
+
         drop(process);
+
+        println!("Preparing to read!");
 
         // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
         let out_reader = BufReader::new(reader);
 
         let stdout = out_reader.lines();
+
+        println!("Returning stdout!");
 
         Ok(Box::new(TestRunIterator::new(stdout)))
     }

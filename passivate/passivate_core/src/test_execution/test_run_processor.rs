@@ -29,9 +29,13 @@ impl TestRunProcessor {
 
         cancellation.check()?;
 
+        println!("Running the tests...");
+
         let iterator = self.run_tests.run_tests(self.parse_output.get_implementation())?;
 
         cancellation.check()?;
+
+        println!("Parsing the tests...");
 
         for line in iterator {
             let test_run_event = self.parse_output.parse_line(&line.unwrap());
@@ -44,6 +48,8 @@ impl TestRunProcessor {
 
             cancellation.check()?;
         }
+
+        println!("Done with the tests...");
 
         if self.test_run.tests.is_empty() {
             self.update(TestRunEvent::NoTests, sender);
