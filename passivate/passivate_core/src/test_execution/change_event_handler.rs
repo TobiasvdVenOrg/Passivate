@@ -40,6 +40,7 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
         match test_output {
             Ok(_) => {
                 let coverage_status = self.coverage.compute_coverage();
+                let coverage_status = self.coverage.compute_coverage(cancellation.clone());
 
                 let _ = match coverage_status {
                     Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),

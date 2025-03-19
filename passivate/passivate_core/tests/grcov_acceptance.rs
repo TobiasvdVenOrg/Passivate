@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::fs;
 mod helpers;
 use helpers::*;
+use passivate_core::actors::Cancellation;
 use passivate_core::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
 use passivate_core::passivate_grcov::get_profraw_count;
 use rstest::*;
@@ -104,7 +105,7 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
     fs::create_dir_all(builder.get_coverage_path())?;
     let grcov = builder.build_grcov();
 
-    let result = grcov.compute_coverage();
+    let result = grcov.compute_coverage(Cancellation::default());
     
     assert!(result.is_err_and(|e| {
         match e {
@@ -131,7 +132,7 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
 
     let grcov = builder.build_grcov();
 
-    let result = grcov.compute_coverage();
+    let result = grcov.compute_coverage(Cancellation::default());
     
     assert!(result.is_err_and(|e| {
         match e {

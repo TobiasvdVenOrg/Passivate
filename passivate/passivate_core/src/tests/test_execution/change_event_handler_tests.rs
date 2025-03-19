@@ -19,7 +19,7 @@ pub fn when_test_run_fails_error_is_reported() {
 
     let mut compute_coverage = MockComputeCoverage::new();
     compute_coverage.expect_clean_coverage_output().returning(|| Ok(()));
-    compute_coverage.expect_compute_coverage().returning(|| Ok(CoverageStatus::Disabled));
+    compute_coverage.expect_compute_coverage().returning(|_| Ok(CoverageStatus::Disabled));
 
     let mut parser = MockParseOutput::new();
     parser.expect_parse_line().returning(|_line| None);

@@ -1,5 +1,5 @@
-use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command};
-use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind};
+use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command, time::Duration};
+use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}};
 
 pub struct Grcov {
     workspace_path: PathBuf,
@@ -14,7 +14,7 @@ impl Grcov {
 }
 
 impl ComputeCoverage for Grcov {
-    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError> {
+    fn compute_coverage(&self, cancellation: Cancellation) -> Result<CoverageStatus, CoverageError> {
         match get_profraw_count(&self.output_path) {
             Ok(0) => {
                 let error = NoProfrawFilesError { 
@@ -35,6 +35,8 @@ impl ComputeCoverage for Grcov {
             _ => { }
         };
         
+        cancellation.check()?;
+
         // Omit *.info extension, since it messes up grcov when a .info file already exists in the target directory
         let lcov_info_path = self.output_path.join("lcov");
 
@@ -54,7 +56,20 @@ impl ComputeCoverage for Grcov {
             .spawn()
             .map_err(|e| CoverageError::GrcovNotInstalled(e.kind()))?;
 
-        grcov.wait().map_err(|e| CoverageError::FailedToGenerate(e.kind()))?;
+        loop {
+            std::thread::sleep(Duration::from_millis(100));
+
+            if cancellation.is_cancelled() {
+                let _ = grcov.kill();
+                break;
+            }
+
+            let exited = grcov.try_wait().map_err(|e| CoverageError::FailedToGenerate(e.kind()))?;
+
+            if exited.is_some() {
+                break;
+            }
+        }
 
         Ok(CoverageStatus::Disabled)
     }

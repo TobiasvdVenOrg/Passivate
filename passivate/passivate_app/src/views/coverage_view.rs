@@ -44,5 +44,6 @@ fn draw_error(error: &CoverageError) {
         CoverageError::FailedToGenerate(_error_kind) => todo!(),
         CoverageError::CleanIncomplete(_error_kind) => todo!(),
         CoverageError::NoProfrawFiles(_error) => todo!(),
+        CoverageError::Cancelled(_cancelled) => todo!(),
     };
 }
