@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use crate::actors::{Cancellation, Cancelled, Handler};
+use crate::actors::{Cancellation, Handler};
 use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_run_model::{FailedTestRun, TestRun};
@@ -28,14 +28,14 @@ impl ChangeEventHandler {
 }
 
 impl Handler<ChangeEvent> for ChangeEventHandler {
-    fn handle(&mut self, _event: ChangeEvent, cancellation: Cancellation) -> Result<(), Cancelled> {
+    fn handle(&mut self, _event: ChangeEvent, cancellation: Cancellation) {
         self.coverage.clean_coverage_output().unwrap();
 
-        cancellation.check()?;
+        if cancellation.is_cancelled() { return }
 
         let test_output = self.runner.run_tests(&self.tests_status_sender, cancellation.clone());
 
-        cancellation.check()?;
+        if cancellation.is_cancelled() { return }
 
         match test_output {
             Ok(_) => {
@@ -51,7 +51,5 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
                 let _  = self.tests_status_sender.send(TestRun::from_failed(error_status));
             }
         };
-
-        Ok(())
     }
 }

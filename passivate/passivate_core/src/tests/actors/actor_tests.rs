@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::actors::{Actor, Cancellation, Cancelled, Handler};
+use crate::actors::{Actor, Cancellation, Handler};
 
 #[derive(Default)]
 struct ExampleHandler {
@@ -14,10 +14,8 @@ impl ExampleHandler {
 }
 
 impl Handler<i32> for ExampleHandler {
-    fn handle(&mut self, event: i32, _cancellation: Cancellation) -> Result<(), Cancelled> {
+    fn handle(&mut self, event: i32, _cancellation: Cancellation) {
         self.total += event;
-
-        Ok(())
     }
 }
 
@@ -40,11 +38,11 @@ pub fn actor_handles_messages_and_stops_gracefully() {
 struct LoopingHandler;
 
 impl Handler<i32> for LoopingHandler {
-    fn handle(&mut self, _event: i32, cancellation: Cancellation) -> Result<(), Cancelled> {
+    fn handle(&mut self, _event: i32, cancellation: Cancellation) {
         loop {
             std::thread::sleep(Duration::from_millis(100));
 
-            cancellation.check()?;
+            if cancellation.is_cancelled() { return }
         }
     }
 }
