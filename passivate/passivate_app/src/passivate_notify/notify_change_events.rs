@@ -4,7 +4,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
-use passivate_core::actors::ActorApi;
+use passivate_core::actors::{ActorApi, Cancellation};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use passivate_core::change_events::ChangeEvent;
@@ -21,6 +21,8 @@ impl NotifyChangeEvents {
 
         let config = NotifyConfig::default().with_compare_contents(true);
 
+        let mut cancellation = Cancellation::default();
+
         let watcher = RecommendedWatcher::new(move |event: NotifyResult<NotifyEvent>| {
             match event {
                 Ok(event) => {
@@ -35,12 +37,20 @@ impl NotifyChangeEvents {
                                             if &modified > last_modification {
                                                 println!("Change event: {:?}", path);
                                                 let change_event = ChangeEvent::File;
-                                                sender.send(change_event);
+
+                                                cancellation.cancel();
+                                                cancellation = Cancellation::default();
+
+                                                sender.send_cancellable(change_event, cancellation.clone());
                                             }
                                         } else {
                                             println!("Change event: {:?}", path);
                                             let change_event = ChangeEvent::File;
-                                            sender.send(change_event);
+
+                                            cancellation.cancel();
+                                            cancellation = Cancellation::default();
+
+                                            sender.send_cancellable(change_event, cancellation.clone());
                                         }
 
                                         modification_cache.insert(path.clone(), modified);

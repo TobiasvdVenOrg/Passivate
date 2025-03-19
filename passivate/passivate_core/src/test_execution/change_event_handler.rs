@@ -9,8 +9,7 @@ pub struct ChangeEventHandler {
     runner: TestRunProcessor,
     coverage: Box<dyn ComputeCoverage + Send>,
     tests_status_sender: Sender<TestRun>,
-    coverage_status_sender: Sender<CoverageStatus>,
-    previous_run_cancellation: Option<Cancellation>
+    coverage_status_sender: Sender<CoverageStatus>
 }
 
 impl ChangeEventHandler {
@@ -23,22 +22,17 @@ impl ChangeEventHandler {
             runner, 
             coverage, 
             tests_status_sender,
-            coverage_status_sender,
-            previous_run_cancellation: None
+            coverage_status_sender
         }
     }
 }
 
 impl Handler<ChangeEvent> for ChangeEventHandler {
     fn handle(&mut self, _event: ChangeEvent, cancellation: Cancellation) {
-        if let Some(mut previous_run) = self.previous_run_cancellation.clone() {
-            previous_run.cancel();
-        }
-
-        self.previous_run_cancellation = Some(cancellation.clone());
-
         println!("Handling it!");
-        self.coverage.clean_coverage_output().unwrap();
+        if let Err(clean_error) = self.coverage.clean_coverage_output() {
+            println!("ERROR CLEANING: {:?}", clean_error);
+        }
 
         println!("Done cleaning it!");
         if cancellation.is_cancelled() { return }
