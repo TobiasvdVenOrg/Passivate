@@ -10,7 +10,7 @@ egui = { version = "0.31", features = [ ] }
 egui_dock = "0.16.0"
 notify = "8.0.0"
 futures = "0.3.31"
-tokio = { version = "1.42.0", features = [ "full" ] }
+chrono = "0.4.40"
 
 [dependencies.eframe]
 version = "0.31"
@@ -23,6 +23,7 @@ mockall = "0.13.1"
 libtest-mimic = "0.8.1"
 egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }
 stdext = "0.3.3"
+tokio = { version = "1.42.0", features = [ "full" ] }
 
 [[test]]
 name = "passivate_tests"

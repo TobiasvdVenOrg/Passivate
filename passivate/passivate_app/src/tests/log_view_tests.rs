@@ -1,22 +1,23 @@
 use std::sync::mpsc::channel;
+use chrono::{DateTime, Utc};
 use egui_kittest::Harness;
-use crate::views::{TraceView, View};
-use passivate_core::cross_cutting::TraceEvent;
+use crate::views::{LogView, View};
+use passivate_core::cross_cutting::LogEvent;
 use stdext::function_name;
 
 #[test]
-pub fn show_a_single_trace() {
+pub fn show_a_single_log() {
     let (sender, receiver)  = channel();
-    let mut trace_view = TraceView::new(receiver);
+    let mut log_view = LogView::new(receiver);
 
     let ui = |ui: &mut egui::Ui|{
-        trace_view.ui(ui);
+        log_view.ui(ui);
     };
 
     let mut harness = Harness::new_ui(ui);
 
-    let example_trace = TraceEvent::new("Hey, this is a trace!");
-    sender.send(example_trace).unwrap();
+    let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
+    sender.send(example_log).unwrap();
 
     harness.run();
     harness.fit_contents();

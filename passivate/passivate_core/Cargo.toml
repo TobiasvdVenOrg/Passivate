@@ -10,6 +10,7 @@ thiserror = "2.0.11"
 mockall = "0.13.1"
 enum-as-inner = "0.6.1"
 os_pipe = "1.2.1"
+chrono = "0.4.40"
 
 [dev-dependencies]
 rstest = "0.25.0"

@@ -13,7 +13,7 @@ pub mod change_events {
 }
 
 pub mod cross_cutting {
-    mod_use!(trace_event);
+    mod_use!(log_event);
 }
 
 pub mod test_execution {

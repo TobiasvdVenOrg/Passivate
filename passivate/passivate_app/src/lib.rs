@@ -16,7 +16,7 @@ pub mod views {
     mod_use!(view);
     mod_use!(test_run_view);
     mod_use!(coverage_view);
-    mod_use!(trace_view);
+    mod_use!(log_view);
 }
 
 pub mod passivate_notify {
@@ -30,9 +30,5 @@ mod_use!(run);
 pub mod tests {
     mod_use!(test_run_view_tests);
     mod_use!(coverage_view_tests);
-    mod_use!(trace_view_tests);
-
-    pub mod helpers {
-        mod_use!(snapshots);
-    }
+    mod_use!(log_view_tests);
 }
