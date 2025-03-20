@@ -3,18 +3,20 @@ use std::{fs, process::Command};
 use std::io::{BufRead, BufReader, Error as IoError};
 
 use crate::configuration::TestRunnerImplementation;
+use crate::cross_cutting::Log;
 
 use super::{RunTests, TestRunError, TestRunIterator};
 
 pub struct TestRunner {
     working_dir: PathBuf, 
     target_dir: PathBuf, 
-    coverage_output_dir: PathBuf
+    coverage_output_dir: PathBuf,
+    log: Box<dyn Log + Send>
 }
 
 impl TestRunner {
-    pub fn new(working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf) -> Self {
-        Self { working_dir, target_dir, coverage_output_dir }
+    pub fn new(working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf, log: Box<dyn Log + Send>) -> Self {
+        Self { working_dir, target_dir, coverage_output_dir, log }
     }
 }
 
@@ -23,7 +25,7 @@ impl RunTests for TestRunner {
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
 
-        println!("Ready to run!");
+        self.log.info("Ready to run!");
 
         let (reader, writer) = os_pipe::pipe()?;
         let writer_clone = writer.try_clone()?;
@@ -31,7 +33,7 @@ impl RunTests for TestRunner {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
 
-        println!("Prepared output!");
+        self.log.info("Prepared output!");
 
         let mut command = Command::new("cargo");
         let command = command.current_dir(&self.working_dir);
@@ -53,18 +55,18 @@ impl RunTests for TestRunner {
             .stderr(writer_clone)
             .spawn()?;
 
-        println!("Spawned!");
+            self.log.info("Spawned!");
 
         drop(process);
 
-        println!("Preparing to read!");
+        self.log.info("Preparing to read!");
 
         // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
         let out_reader = BufReader::new(reader);
 
         let stdout = out_reader.lines();
 
-        println!("Returning stdout!");
+        self.log.info("Returning stdout!");
 
         Ok(Box::new(TestRunIterator::new(stdout)))
     }

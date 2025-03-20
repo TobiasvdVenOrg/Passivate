@@ -2,6 +2,7 @@ use std::sync::mpsc::channel;
 use crate::actors::{Cancellation, Handler};
 use crate::assert_matches;
 use crate::configuration::TestRunnerImplementation;
+use crate::cross_cutting::mock_log;
 use crate::test_execution::{ChangeEventHandler, TestRunError, TestRunProcessor};
 use crate::test_run_model::TestRunState;
 use crate::coverage::CoverageStatus;
@@ -25,10 +26,10 @@ pub fn when_test_run_fails_error_is_reported() {
     parser.expect_parse_line().returning(|_line| None);
     parser.expect_get_implementation().returning(|| TestRunnerImplementation::Cargo);
 
-    let processor = TestRunProcessor::new(Box::new(run_tests), Box::new(parser));
+    let processor = TestRunProcessor::new(Box::new(run_tests), Box::new(parser), mock_log());
     let (tests_sender, tests_receiver) = channel();
     let (coverage_sender, _coverage_receiver) = channel();
-    let mut handler = ChangeEventHandler::new(processor, Box::new(compute_coverage), tests_sender, coverage_sender);
+    let mut handler = ChangeEventHandler::new(processor, Box::new(compute_coverage), tests_sender, coverage_sender, mock_log());
 
     handler.handle(ChangeEvent::File, Cancellation::default());
 

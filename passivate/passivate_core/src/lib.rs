@@ -14,6 +14,7 @@ pub mod change_events {
 
 pub mod cross_cutting {
     mod_use!(log_event);
+    mod_use!(log);
 }
 
 pub mod test_execution {
