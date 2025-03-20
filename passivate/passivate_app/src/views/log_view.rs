@@ -1,4 +1,5 @@
 use std::sync::mpsc::Receiver;
+use egui::ScrollArea;
 use passivate_core::cross_cutting::LogEvent;
 use crate::views::View;
 
@@ -26,12 +27,14 @@ impl View for LogView {
             self.logs.push(entry);
         }
 
-        for trace in &self.logs {
-            ui.horizontal(|ui| {
-                ui.label(&trace.timestamp);
-                ui.label(&trace.message);
-            });
-        }
+        ScrollArea::vertical().show(ui, |ui| {
+            for trace in &self.logs {
+                ui.horizontal(|ui| {
+                    ui.label(&trace.timestamp);
+                    ui.label(&trace.message);
+                });
+            }
+        });
     }
 
     fn title(&self) -> String {
