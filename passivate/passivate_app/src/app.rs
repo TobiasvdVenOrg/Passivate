@@ -1,6 +1,6 @@
 use eframe::Frame;
 use egui::Context;
-use crate::views::{LogView, TestRunView};
+use crate::views::{ConfigurationView, LogView, TestRunView};
 use crate::views::{CoverageView, View};
 use egui_dock::{DockArea, DockState, Style, TabViewer};
 
@@ -23,8 +23,8 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(tests_view: TestRunView, coverage_view: CoverageView, log_view: LogView) -> Self {
-        let views: Vec<Box<dyn View>> = vec!(Box::new(tests_view), Box::new(coverage_view), Box::new(log_view));
+    pub fn new(tests_view: TestRunView, coverage_view: CoverageView, configuration_view: ConfigurationView, log_view: LogView) -> Self {
+        let views: Vec<Box<dyn View>> = vec!(Box::new(tests_view), Box::new(coverage_view), Box::new(configuration_view), Box::new(log_view));
         let dock_state = DockState::new(views);
         App { dock_state }
     }

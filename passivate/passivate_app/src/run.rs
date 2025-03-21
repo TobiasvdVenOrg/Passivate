@@ -3,7 +3,7 @@ use std::sync::mpsc::channel;
 use egui::Context;
 use passivate_core::actors::Actor;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::TestRunnerImplementation;
+use passivate_core::configuration::{PassivateConfig, TestRunnerImplementation};
 use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunProcessor, TestRunner};
@@ -12,7 +12,7 @@ use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
-use crate::views::LogView;
+use crate::views::{ConfigurationView, LogView};
 use crate::{startup_errors::*, views};
 
 pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
@@ -39,6 +39,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
+    let (configuration_sender, configuration_receiver) = channel();
+    let (configuration_change_sender, configuration_change_receiver) = channel();
     let (log_sender, log_receiver) = channel();
 
     let workspace_path = path.to_path_buf();
@@ -61,12 +63,13 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let tests_view = TestRunView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver, change_actor.api());
+    let configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, PassivateConfig::default());
     let log_view = LogView::new(log_receiver);
 
     // Send an initial change event to trigger the first test run
     change_actor.api().send(ChangeEvent::File);
 
-    run_app(Box::new(App::new(tests_view, coverage_view, log_view)), context_accessor)?;
+    run_app(Box::new(App::new(tests_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     change_actor.stop();
 
