@@ -21,7 +21,9 @@ impl View for ConfigurationView {
             self.configuration = new_configuration;
         }
 
-        ui.checkbox(&mut self.configuration.coverage_enabled, "Compute Coverage");
+        if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
+            let _ = self.sender.send(ConfigurationEvent::Coverage(self.configuration.coverage_enabled));
+        }
     }
 
     fn title(&self) -> String {
