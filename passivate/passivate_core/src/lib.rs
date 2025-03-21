@@ -59,6 +59,8 @@ pub mod test_helpers {
 pub mod configuration {
     mod_use!(passivate_config);
     mod_use!(test_runner_implementation);
+    mod_use!(configuration_events);
+    mod_use!(configuration_handler);
 }
 
 pub mod actors {
@@ -72,6 +74,10 @@ pub mod actors {
 pub mod tests {
     mod actors {
         mod actor_tests;
+    }
+
+    mod configuration {
+        mod configuration_handler_tests;
     }
 
     mod passivate_cargo {
