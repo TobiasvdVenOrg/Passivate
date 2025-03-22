@@ -97,7 +97,7 @@ pub mod tests {
     }
     
     mod test_execution {
-        mod change_event_handler_tests;
+        mod test_run_handler_tests;
         mod test_run_processor_tests;
     }
 }
