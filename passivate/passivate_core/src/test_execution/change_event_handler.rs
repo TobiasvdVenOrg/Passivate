@@ -9,7 +9,7 @@ pub struct ChangeEventHandler {
 
 impl ChangeEventHandler {
     pub fn new(test_run_handler: ActorApi<ChangeEvent>, log: Box<dyn Log + Send>) -> Self {
-            Self { test_run_handler, log }
+        Self { test_run_handler, log }
     }
 }
 

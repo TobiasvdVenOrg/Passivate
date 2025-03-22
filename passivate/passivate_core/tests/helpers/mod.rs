@@ -8,7 +8,6 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
-use passivate_core::actors::Actor;
 use passivate_core::actors::Cancellation;
 use passivate_core::actors::Handler;
 use passivate_core::change_events::ChangeEvent;
@@ -18,7 +17,6 @@ use passivate_core::cross_cutting::stub_log;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::build_test_output_parser;
 use passivate_core::test_execution::ParseOutput;
-use passivate_core::test_execution::ChangeEventHandler;
 use passivate_core::test_execution::TestRunHandler;
 use passivate_core::test_execution::TestRunProcessor;
 use passivate_core::test_execution::TestRunner;
@@ -103,7 +101,7 @@ impl ChangeEventHandlerBuilder {
         Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path())
     }
 
-    pub fn build(&self) -> ChangeEventHandler {
+    pub fn build(&self) -> TestRunHandler {
         let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
         let runner = Box::new(TestRunner::new(
             self.get_workspace_path().clone(), 
@@ -119,16 +117,13 @@ impl ChangeEventHandlerBuilder {
 
         let grcov = self.build_grcov();
 
-        let test_run_handler = TestRunHandler::new(
+        TestRunHandler::new(
             processor, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender,
             stub_log(),
-            self.coverage_enabled);
-
-        let test_run_actor = Actor::new(test_run_handler);
-        ChangeEventHandler::new(test_run_actor.api(), stub_log())
+            self.coverage_enabled)
     }
 
     pub fn clean_output(&mut self) -> &mut Self {
@@ -169,7 +164,7 @@ impl ChangeEventHandlerBuilder {
     }
 }
 
-pub fn test_run(test_runner: &mut ChangeEventHandler) -> Result<(), IoError> {
+pub fn test_run(test_runner: &mut TestRunHandler) -> Result<(), IoError> {
     let mock_event = ChangeEvent::File;
     test_runner.handle(mock_event, Cancellation::default());
 
