@@ -29,7 +29,8 @@ pub struct ChangeEventHandlerBuilder {
     base_workspace_path: PathBuf,
     base_output_path: PathBuf,
     workspace_path: PathBuf,
-    output_path: PathBuf
+    output_path: PathBuf,
+    coverage_enabled: bool
 }
 
 pub fn test_data_path() -> PathBuf {
@@ -65,7 +66,8 @@ impl ChangeEventHandlerBuilder {
             base_workspace_path, 
             base_output_path,
             workspace_path: PathBuf::from(""),
-            output_path: PathBuf::from("")
+            output_path: PathBuf::from(""),
+            coverage_enabled: false
         }
     }
 
@@ -90,6 +92,11 @@ impl ChangeEventHandlerBuilder {
         self
     }
 
+    pub fn coverage_enabled(&mut self, coverage_enabled: bool) -> &mut Self {
+        self.coverage_enabled = coverage_enabled;
+        self
+    }
+
     pub fn build_grcov(&self) -> Grcov {
         Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path())
     }
@@ -109,7 +116,6 @@ impl ChangeEventHandlerBuilder {
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
         let grcov = self.build_grcov();
-        let coverage_enabled = true;
 
         ChangeEventHandler::new(
             processor, 
@@ -117,7 +123,7 @@ impl ChangeEventHandlerBuilder {
             tests_status_sender, 
             coverage_sender,
             stub_log(),
-            coverage_enabled)
+            self.coverage_enabled)
     }
 
     pub fn clean_output(&mut self) -> &mut Self {

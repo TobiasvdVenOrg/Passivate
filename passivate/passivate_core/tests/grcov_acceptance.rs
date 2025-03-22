@@ -18,6 +18,7 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: ChangeEve
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output()
         .build();
 
@@ -36,6 +37,7 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: ChangeE
     let mut runner = builder
         .with_workspace("simple_workspace")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output()
         .build();
 
@@ -54,6 +56,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Cha
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output()
         .build();
 
@@ -79,6 +82,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: ChangeEvent
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output()
         .build();
 
@@ -100,6 +104,7 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
     let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output();
 
     fs::create_dir_all(builder.get_coverage_path())?;
@@ -128,6 +133,7 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
     let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
+        .coverage_enabled(true)
         .clean_output();
 
     let grcov = builder.build_grcov();
