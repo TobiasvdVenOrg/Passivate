@@ -49,6 +49,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let target_path = passivate_path.join("target");
     let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
     
+    let configuration = PassivateConfig::default();
+
     let log = ChannelLog::new(log_sender);
 
     let test_runner = TestRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone(), Box::new(log.clone()));
@@ -56,14 +58,14 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run, Box::new(log.clone()));
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-    let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()));
+    let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
     let mut change_actor = Actor::new(change_handler);
     
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
     let tests_view = TestRunView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver, change_actor.api());
-    let configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, PassivateConfig::default());
+    let configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);
 
     // Send an initial change event to trigger the first test run

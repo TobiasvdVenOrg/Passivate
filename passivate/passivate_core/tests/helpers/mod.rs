@@ -109,13 +109,15 @@ impl TestRunnerBuilder {
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
 
         let grcov = self.build_grcov();
-        
+        let coverage_enabled = true;
+
         ChangeEventHandler::new(
             processor, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender,
-            stub_log())
+            stub_log(),
+            coverage_enabled)
     }
 
     pub fn clean_output(&mut self) -> &mut Self {
