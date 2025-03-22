@@ -1,21 +1,21 @@
 use std::sync::mpsc::Receiver;
-use passivate_core::{actors::ActorApi, configuration::ConfigurationEvent, coverage::{CoverageError, CoverageStatus}};
+use passivate_core::{actors::ActorApi, configuration::ConfigurationChangeEvent, coverage::{CoverageError, CoverageStatus}};
 use crate::views::View;
 
 pub struct CoverageView {
     receiver: Receiver<CoverageStatus>,
-    sender: ActorApi<ConfigurationEvent>,
+    sender: ActorApi<ConfigurationChangeEvent>,
     status: CoverageStatus
 }
 
 impl CoverageView {
-    pub fn new(receiver: Receiver<CoverageStatus>, sender: ActorApi<ConfigurationEvent>) -> CoverageView {
+    pub fn new(receiver: Receiver<CoverageStatus>, sender: ActorApi<ConfigurationChangeEvent>) -> CoverageView {
         CoverageView { receiver, sender, status: CoverageStatus::Disabled }
     }
 
     fn draw_disabled(&mut self, ui: &mut egui_dock::egui::Ui) {
         if ui.button("Enable").clicked() {
-            self.sender.send(ConfigurationEvent::Coverage(true));
+            self.sender.send(ConfigurationChangeEvent::Coverage(true));
         }
     }
 

@@ -40,7 +40,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
     let (configuration_sender, configuration_receiver) = channel();
-    let (configuration_change_sender, configuration_change_receiver) = channel();
     let (log_sender, log_receiver) = channel();
 
     let workspace_path = path.to_path_buf();
@@ -68,7 +67,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let tests_view = TestRunView::new(tests_status_receiver);
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
-    let configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, configuration);
+    let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);
 
     // Send an initial change event to trigger the first test run

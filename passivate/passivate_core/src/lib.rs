@@ -56,6 +56,7 @@ pub mod test_helpers {
     pub mod assert_matches;
 
     pub mod fakes {
+        mod_use!(actor_fakes);
         mod_use!(change_event_handler_fakes);
         mod_use!(channel_fakes);
     }

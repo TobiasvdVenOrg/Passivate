@@ -1,7 +1,9 @@
 use std::sync::mpsc::channel;
 
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::configuration::{ConfigurationEvent, PassivateConfig};
+use passivate_core::actors::Actor;
+use passivate_core::configuration::{ConfigurationHandler, PassivateConfig};
+use passivate_core::test_helpers::fakes::{change_event_handler_fakes, channel_fakes, stub_actor_api};
 use stdext::function_name;
 
 use crate::views::{ConfigurationView, View};
@@ -9,10 +11,9 @@ use crate::views::{ConfigurationView, View};
 
 #[test]
 pub fn show_configuration() {
-    let (configuration_change_sender, _configuration_change_receiver)  = channel();
     let (configuration_sender, configuration_receiver) = channel();
 
-    let mut configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, PassivateConfig::default());
+    let mut configuration_view = ConfigurationView::new(stub_actor_api(), configuration_receiver, PassivateConfig::default());
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);
@@ -30,10 +31,16 @@ pub fn show_configuration() {
 
 #[test]
 pub fn change_coverage_enabled() {
-    let (configuration_change_sender, configuration_change_receiver)  = channel();
-    let (_configuration_sender, configuration_receiver) = channel();
+    let change_handler: passivate_core::test_execution::ChangeEventHandler = change_event_handler_fakes::stub();
+    let mut change_actor = Actor::new(change_handler);
 
-    let mut configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, PassivateConfig::default());
+    let configuration = ConfigurationHandler::new(change_actor.api());
+    let mut configuration_actor = Actor::new(configuration);
+
+    let configuration_receiver = channel_fakes::stub_receiver();
+    
+    let initial_configuration = PassivateConfig { coverage_enabled: false };
+    let mut configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, initial_configuration);
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);
@@ -41,14 +48,19 @@ pub fn change_coverage_enabled() {
 
     let mut harness = Harness::new_ui(ui);
 
-    let toggle = harness.get_by_label("Compute Coverage");
-    toggle.click();
+    let coverage_toggle = harness.get_by_label("Compute Coverage");
+    coverage_toggle.click();
 
     harness.run();
 
-    let change_event = configuration_change_receiver.try_recv().unwrap();
+    let change_handler = change_actor.stop();
+    let configuration = configuration_actor.stop();
 
-    assert!(matches!(change_event, ConfigurationEvent::Coverage(true)));
+    assert!(change_handler.coverage_enabled());
+    assert!(configuration.configuration().coverage_enabled);
+
+    harness.fit_contents();
+    harness.snapshot("enable_button_when_coverage_is_disabled_triggers_configuration_event");
 }
 
 fn test_name(function_name: &str) -> String {

@@ -1,16 +1,16 @@
-use std::sync::mpsc::{Receiver, Sender};
-use passivate_core::configuration::{ConfigurationEvent, PassivateConfig};
+use std::sync::mpsc::Receiver;
+use passivate_core::{actors::ActorApi, configuration::{ConfigurationChangeEvent, PassivateConfig}};
 
 use crate::views::View;
 
 pub struct ConfigurationView {
-    sender: Sender<ConfigurationEvent>,
+    sender: ActorApi<ConfigurationChangeEvent>,
     receiver: Receiver<PassivateConfig>,
     configuration: PassivateConfig
 }
 
 impl ConfigurationView {
-    pub fn new(sender: Sender<ConfigurationEvent>, receiver: Receiver<PassivateConfig>, configuration: PassivateConfig) -> Self {
+    pub fn new(sender: ActorApi<ConfigurationChangeEvent>, receiver: Receiver<PassivateConfig>, configuration: PassivateConfig) -> Self {
         Self { sender, receiver, configuration }
     }
 }
@@ -22,7 +22,7 @@ impl View for ConfigurationView {
         }
 
         if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
-            let _ = self.sender.send(ConfigurationEvent::Coverage(self.configuration.coverage_enabled));
+            self.sender.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
         }
     }
 

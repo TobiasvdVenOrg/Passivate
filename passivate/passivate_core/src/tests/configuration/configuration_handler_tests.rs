@@ -1,4 +1,4 @@
-use crate::configuration::{ConfigurationEvent, ConfigurationHandler};
+use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
 use crate::actors::{Actor, Cancellation, Handler};
 use crate::test_helpers::fakes::change_event_handler_fakes;
 
@@ -11,7 +11,7 @@ pub fn coverage_enabled() {
     
     assert!(!handler.configuration().coverage_enabled);
 
-    let change = ConfigurationEvent::Coverage(true);
+    let change = ConfigurationChangeEvent::Coverage(true);
     handler.handle(change, Cancellation::default());
 
     assert!(handler.configuration().coverage_enabled);

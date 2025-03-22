@@ -1,4 +1,4 @@
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::Sender;
 
 use crate::{coverage::stub_compute_coverage, cross_cutting::stub_log, test_execution::{stub_parse_output, stub_run_tests, ChangeEventHandler, TestRunProcessor}, test_run_model::TestRun};
 
