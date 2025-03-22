@@ -27,7 +27,7 @@ impl View for LogView {
             self.logs.push(entry);
         }
 
-        ScrollArea::vertical().show(ui, |ui| {
+        ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
             for trace in &self.logs {
                 ui.horizontal(|ui| {
                     ui.label(&trace.timestamp);
