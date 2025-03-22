@@ -35,6 +35,10 @@ impl ChangeEventHandler {
     }
 
     fn run_tests(&mut self, cancellation: Cancellation) {
+        if self.coverage_enabled {
+            let _ = self.coverage_status_sender.send(CoverageStatus::Preparing);
+        }
+
         if let Err(clean_error) = self.coverage.clean_coverage_output() {
             self.log.info(&format!("ERROR CLEANING: {:?}", clean_error));
         }
@@ -65,6 +69,8 @@ impl ChangeEventHandler {
     }
 
     fn compute_coverage(&self, cancellation: Cancellation) {
+        let _ = self.coverage_status_sender.send(CoverageStatus::Running);
+
         let coverage_status = self.coverage.compute_coverage(cancellation.clone());
 
         self.log.info("Done covering it!");

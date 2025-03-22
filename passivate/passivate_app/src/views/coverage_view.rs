@@ -37,8 +37,21 @@ impl View for CoverageView {
         }
 
         match self.status {
-            CoverageStatus::Disabled => self.draw_disabled(ui),
-            CoverageStatus::Error(ref coverage_error) => self.draw_error(coverage_error.clone())
+            CoverageStatus::Disabled => {
+                self.draw_disabled(ui);
+            },
+            CoverageStatus::Error(ref coverage_error) => {
+                self.draw_error(coverage_error.clone());
+            },
+            CoverageStatus::Preparing => {
+                ui.heading("Preparing...");
+            },
+            CoverageStatus::Running => {
+                ui.heading("Running...");
+            },
+            CoverageStatus::Done => {
+                ui.heading("Done");
+            }
         };
     }
 

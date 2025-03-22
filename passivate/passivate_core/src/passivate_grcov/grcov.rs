@@ -71,7 +71,7 @@ impl ComputeCoverage for Grcov {
             }
         }
 
-        Ok(CoverageStatus::Disabled)
+        Ok(CoverageStatus::Done)
     }
 
     fn clean_coverage_output(&self) -> Result<(), CoverageError> {

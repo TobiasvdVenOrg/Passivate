@@ -4,5 +4,8 @@ use super::CoverageError;
 #[derive(Debug)]
 pub enum CoverageStatus {
     Disabled,
+    Preparing,
+    Running,
+    Done,
     Error(CoverageError)
 }
