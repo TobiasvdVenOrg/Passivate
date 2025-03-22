@@ -2,7 +2,7 @@ use std::{io::Error as IoError, sync::mpsc::{channel, Receiver}};
 
 use rstest::rstest;
 
-use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::mock_log, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
+use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
 
 
 struct TestRunIterator {
@@ -63,5 +63,5 @@ fn build_processor(implementation: TestRunnerImplementation, test_output: &str) 
 
     let parser = build_test_output_parser(&implementation);
 
-    TestRunProcessor::new(Box::new(run_tests), parser, mock_log())
+    TestRunProcessor::new(Box::new(run_tests), parser, stub_log())
 }

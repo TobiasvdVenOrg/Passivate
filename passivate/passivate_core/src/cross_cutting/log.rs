@@ -9,7 +9,7 @@ pub trait Log {
     fn info(&self, message: &str);
 }
 
-pub fn mock_log() -> Box<MockLog> {
+pub fn stub_log() -> Box<MockLog> {
     let mut log = MockLog::new();
     log.expect_info().returning(|_|{});
 

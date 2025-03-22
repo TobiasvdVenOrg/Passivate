@@ -13,7 +13,7 @@ use passivate_core::actors::Handler;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::TestRunnerImplementation;
 use passivate_core::coverage::CoverageStatus;
-use passivate_core::cross_cutting::mock_log;
+use passivate_core::cross_cutting::stub_log;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::build_test_output_parser;
 use passivate_core::test_execution::ParseOutput;
@@ -100,10 +100,10 @@ impl TestRunnerBuilder {
             self.get_workspace_path().clone(), 
             self.get_output_path().clone(), 
             self.get_coverage_path().clone(),
-            mock_log()
+            stub_log()
         ));
 
-        let processor = TestRunProcessor::new(runner, parser, mock_log());
+        let processor = TestRunProcessor::new(runner, parser, stub_log());
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
         let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
@@ -115,7 +115,7 @@ impl TestRunnerBuilder {
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender,
-            mock_log())
+            stub_log())
     }
 
     pub fn clean_output(&mut self) -> &mut Self {

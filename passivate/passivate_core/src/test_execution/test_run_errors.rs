@@ -1,12 +1,12 @@
-use std::io::{Error as IoError, ErrorKind as IoErrorKind};
+use std::io::Error as IoError;
 use thiserror::Error;
 
 use crate::actors::Cancelled;
 
 #[derive(Error, Debug, Clone)]
 pub enum TestRunError {
-    #[error("test run failed")]
-    Io(IoErrorKind),
+    #[error("{0}")]
+    Io(String),
 
     #[error("test run cancelled")]
     Cancelled(#[from] Cancelled)
@@ -14,6 +14,6 @@ pub enum TestRunError {
 
 impl From<IoError> for TestRunError {
     fn from(value: IoError) -> Self {
-        TestRunError::Io(value.kind())
+        TestRunError::Io(value.to_string())
     }
 }

@@ -2,18 +2,21 @@ use super::{SingleTest, SingleTestStatus, TestRunEvent};
 
 #[derive(Clone)]
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub struct BuildFailedTestRun {
     pub message: String
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub struct FailedTestRun {
     pub inner_error_display: String
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub enum TestRunState {
     FirstRun,
     Idle,
