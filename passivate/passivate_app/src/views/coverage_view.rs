@@ -14,6 +14,8 @@ impl CoverageView {
     }
 
     fn draw_disabled(&mut self, ui: &mut egui_dock::egui::Ui) {
+        ui.heading("Code coverage is disabled");
+
         if ui.button("Enable").clicked() {
             self.sender.send(ConfigurationChangeEvent::Coverage(true));
         }
