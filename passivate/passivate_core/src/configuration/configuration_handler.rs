@@ -1,5 +1,3 @@
-use std::{sync::mpsc::Receiver, thread::{self, JoinHandle}};
-
 use crate::{actors::{ActorApi, Handler}, change_events::ChangeEvent};
 
 use super::{ConfigurationEvent, PassivateConfig};
@@ -24,7 +22,10 @@ impl Handler<ConfigurationEvent> for ConfigurationHandler {
     fn handle(&mut self, event: ConfigurationEvent, _cancellation: crate::actors::Cancellation) {
         match event {
             ConfigurationEvent::Update(passivate_config) => todo!(),
-            ConfigurationEvent::Coverage(enabled) => self.configuration.coverage_enabled = enabled,
+            ConfigurationEvent::Coverage(enabled) => {
+                self.configuration.coverage_enabled = enabled;
+                self.change_handler.send(ChangeEvent::Configuration(self.configuration.clone()));           
+            }
         }
     }
 }

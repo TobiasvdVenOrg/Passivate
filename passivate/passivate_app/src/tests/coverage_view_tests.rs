@@ -1,31 +1,18 @@
-use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::actors::{Actor, Cancellation, Handler};
+use passivate_core::{actors::Actor, configuration::ConfigurationHandler, test_helpers::fakes::{change_event_handler_fakes, channel_fakes}};
 use crate::views::{CoverageView, View};
-
-struct SpyHandler<T: Send + 'static> {
-    events: Vec<T>
-}
-
-impl<T: Send + 'static> Handler<T> for SpyHandler<T> {
-    fn handle(&mut self, event: T, _cancellation: Cancellation) {
-        self.events.push(event);
-    }
-}
-
-impl<T: Send + 'static> Default for SpyHandler<T> {
-    fn default() -> Self {
-        Self { events: Default::default() }
-    }
-}
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
-    let (_coverage_sender, coverage_receiver) = channel();
-    let spy = SpyHandler::default();
-    let mut actor = Actor::new(spy);
+    let change_handler: passivate_core::test_execution::ChangeEventHandler = change_event_handler_fakes::stub();
+    let mut change_actor = Actor::new(change_handler);
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, actor.api());
+    let configuration = ConfigurationHandler::new(change_actor.api());
+    let mut configuration_actor = Actor::new(configuration);
+
+    let coverage_receiver = channel_fakes::stub_receiver();
+    
+    let mut coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -38,12 +25,11 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
     harness.run();
 
-    let spy = actor.stop();
+    let change_handler = change_actor.stop();
+    let configuration = configuration_actor.stop();
 
-    let event = spy.events.last().unwrap();
-
-    let configuration = event.as_configuration().unwrap();
-    assert!(configuration.coverage_enabled);
+    assert!(change_handler.coverage_enabled());
+    assert!(configuration.configuration().coverage_enabled);
 
     harness.fit_contents();
     harness.snapshot("enable_button_when_coverage_is_disabled_triggers_configuration_event");

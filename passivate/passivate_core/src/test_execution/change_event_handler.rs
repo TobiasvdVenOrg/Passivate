@@ -33,11 +33,8 @@ impl ChangeEventHandler {
             coverage_enabled
         }
     }
-}
 
-impl Handler<ChangeEvent> for ChangeEventHandler {
-    fn handle(&mut self, _event: ChangeEvent, cancellation: Cancellation) {
-        self.log.info("Handling it!");
+    fn run_tests(&mut self, cancellation: Cancellation) {
         if let Err(clean_error) = self.coverage.clean_coverage_output() {
             self.log.info(&format!("ERROR CLEANING: {:?}", clean_error));
         }
@@ -62,7 +59,25 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
                 let _  = self.tests_status_sender.send(TestRun::from_failed(error_status));
             }
         };
+    }
+}
 
+impl Handler<ChangeEvent> for ChangeEventHandler {
+    fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation) {
+        self.log.info("Handling it!");
+
+        match event {
+            ChangeEvent::File => self.run_tests(cancellation.clone()),
+            ChangeEvent::Configuration(passivate_config) => {
+                let run_required = self.coverage_enabled != passivate_config.coverage_enabled && passivate_config.coverage_enabled;
+                self.coverage_enabled = passivate_config.coverage_enabled;
+
+                if run_required {
+                    self.run_tests(cancellation.clone());
+                }
+            },
+        }
+        
         self.log.info("Done sending it!");
     }
 }
@@ -78,4 +93,6 @@ impl ChangeEventHandler {
                     Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error))
                 };
     }
+
+    pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
 }

@@ -3,7 +3,7 @@ use std::sync::mpsc::channel;
 use egui::Context;
 use passivate_core::actors::Actor;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{PassivateConfig, TestRunnerImplementation};
+use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
 use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunProcessor, TestRunner};
@@ -61,10 +61,13 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
     let mut change_actor = Actor::new(change_handler);
     
+    let configuration_handler = ConfigurationHandler::new(change_actor.api());
+    let mut configuration_actor = Actor::new(configuration_handler);
+
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
     let tests_view = TestRunView::new(tests_status_receiver);
-    let coverage_view = CoverageView::new(coverage_receiver, change_actor.api());
+    let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
     let configuration_view = ConfigurationView::new(configuration_change_sender, configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);
 
@@ -73,6 +76,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     run_app(Box::new(App::new(tests_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
+    configuration_actor.stop();
     change_actor.stop();
 
     let _ = change_events.stop();

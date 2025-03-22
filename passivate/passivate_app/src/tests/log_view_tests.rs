@@ -1,4 +1,4 @@
-use std::{fmt::Write, sync::mpsc::channel, time::Duration};
+use std::{sync::mpsc::channel, time::Duration};
 use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};

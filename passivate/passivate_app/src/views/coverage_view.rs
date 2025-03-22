@@ -1,23 +1,32 @@
 use std::sync::mpsc::Receiver;
-use passivate_core::{actors::ActorApi, change_events::ChangeEvent, configuration::PassivateConfig, coverage::{CoverageError, CoverageStatus}};
+use passivate_core::{actors::ActorApi, configuration::ConfigurationEvent, coverage::{CoverageError, CoverageStatus}};
 use crate::views::View;
 
 pub struct CoverageView {
     receiver: Receiver<CoverageStatus>,
-    sender: ActorApi<ChangeEvent>,
+    sender: ActorApi<ConfigurationEvent>,
     status: CoverageStatus
 }
 
 impl CoverageView {
-    pub fn new(receiver: Receiver<CoverageStatus>, sender: ActorApi<ChangeEvent>) -> CoverageView {
+    pub fn new(receiver: Receiver<CoverageStatus>, sender: ActorApi<ConfigurationEvent>) -> CoverageView {
         CoverageView { receiver, sender, status: CoverageStatus::Disabled }
     }
 
     fn draw_disabled(&mut self, ui: &mut egui_dock::egui::Ui) {
         if ui.button("Enable").clicked() {
-            let config = PassivateConfig { coverage_enabled: true };
-            self.sender.send(ChangeEvent::Configuration(config));
+            self.sender.send(ConfigurationEvent::Coverage(true));
         }
+    }
+
+    fn draw_error(&mut self, error: CoverageError) {
+        match error {
+            CoverageError::GrcovNotInstalled(_error_kind) => todo!(),
+            CoverageError::FailedToGenerate(_error_kind) => todo!(),
+            CoverageError::CleanIncomplete(_error_kind) => todo!(),
+            CoverageError::NoProfrawFiles(_error) => todo!(),
+            CoverageError::Cancelled(_cancelled) => todo!(),
+        };
     }
 }
 
@@ -29,21 +38,11 @@ impl View for CoverageView {
 
         match self.status {
             CoverageStatus::Disabled => self.draw_disabled(ui),
-            CoverageStatus::Error(ref coverage_error) => draw_error(coverage_error)
+            CoverageStatus::Error(ref coverage_error) => self.draw_error(coverage_error.clone())
         };
     }
 
     fn title(&self) -> String {
         "Coverage".to_string()
     }
-}
-
-fn draw_error(error: &CoverageError) {
-    match error {
-        CoverageError::GrcovNotInstalled(_error_kind) => todo!(),
-        CoverageError::FailedToGenerate(_error_kind) => todo!(),
-        CoverageError::CleanIncomplete(_error_kind) => todo!(),
-        CoverageError::NoProfrawFiles(_error) => todo!(),
-        CoverageError::Cancelled(_cancelled) => todo!(),
-    };
 }
