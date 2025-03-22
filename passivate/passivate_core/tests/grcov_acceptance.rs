@@ -14,7 +14,7 @@ use stdext::function_name;
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
@@ -32,7 +32,7 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: TestRunne
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_workspace")
         .with_output(function_name!())
@@ -50,7 +50,7 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: TestRun
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
@@ -75,7 +75,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Tes
 #[case::nextest(nextest_builder())]
 // Temporary deletion of the lcov file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
-pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: TestRunnerBuilder) -> Result<(), IoError> {
+pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())

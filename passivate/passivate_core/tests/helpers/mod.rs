@@ -22,7 +22,7 @@ use passivate_core::test_execution::TestRunProcessor;
 use passivate_core::test_execution::TestRunner;
 use passivate_core::test_run_model::TestRun;
 
-pub struct TestRunnerBuilder {
+pub struct ChangeEventHandlerBuilder {
     test_runner: TestRunnerImplementation,
     tests_status_sender: Option<Sender<TestRun>>,
     coverage_sender: Option<Sender<CoverageStatus>>,
@@ -40,15 +40,15 @@ pub fn test_output_path() -> PathBuf {
     fs::canonicalize(PathBuf::from("../../test_output")).expect("Test output path did not exist!")
 }
 
-pub fn cargo_builder() -> TestRunnerBuilder {
-    TestRunnerBuilder::cargo(test_data_path(), test_output_path())
+pub fn cargo_builder() -> ChangeEventHandlerBuilder {
+    ChangeEventHandlerBuilder::cargo(test_data_path(), test_output_path())
 }
 
-pub fn nextest_builder() -> TestRunnerBuilder {
-    TestRunnerBuilder::nextest(test_data_path(), test_output_path())
+pub fn nextest_builder() -> ChangeEventHandlerBuilder {
+    ChangeEventHandlerBuilder::nextest(test_data_path(), test_output_path())
 }
 
-impl TestRunnerBuilder {
+impl ChangeEventHandlerBuilder {
     pub fn cargo(base_workspace_path: PathBuf, base_output_path: PathBuf) -> Self {
         Self::new(TestRunnerImplementation::Cargo, base_workspace_path, base_output_path)
     }
