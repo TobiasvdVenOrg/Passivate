@@ -23,7 +23,7 @@ impl TestRunner {
 impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
-    fn run_tests(&self, implementation: TestRunnerImplementation) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
+    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
 
         self.log.info("Ready to run!");
 
@@ -43,19 +43,25 @@ impl RunTests for TestRunner {
             TestRunnerImplementation::Nextest => command.arg("nextest").arg("run")
         };
 
-        let process = command
+        command
             .arg("--no-fail-fast")
             .arg("--target")
             .arg("x86_64-pc-windows-msvc")
             .arg("--target-dir")
-            .arg(&self.target_dir)
-            .env("RUSTFLAGS", "-C instrument-coverage")
-            .env("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"))    
+            .arg(&self.target_dir);
+
+        if instrument_coverage {
+            command
+                .env("RUSTFLAGS", "-C instrument-coverage")
+                .env("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));  
+        }
+
+        let process = command
             .stdout(writer)
             .stderr(writer_clone)
             .spawn()?;
 
-            self.log.info("Spawned!");
+        self.log.info("Spawned!");
 
         drop(process);
 

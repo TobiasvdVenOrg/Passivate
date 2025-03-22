@@ -159,6 +159,28 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
     Ok(())
 }
 
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
+pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let mut runner = builder
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .coverage_enabled(false)
+        .clean_output()
+        .build();
+
+    test_run(&mut runner)?;
+
+    let profraw_count = get_profraw_count(&builder.get_coverage_path())?;
+    assert_eq!(0, profraw_count);
+    
+    let exists = fs::exists(expected_lcov_path(&builder.get_output_path()))?;
+    assert!(!exists, "lcov file existed unexpectedly");
+
+    Ok(())
+}
+
 fn expected_lcov_path(test_name: &Path) -> PathBuf {
     test_output_path().join(test_name).join(".passivate/coverage/lcov")
 }

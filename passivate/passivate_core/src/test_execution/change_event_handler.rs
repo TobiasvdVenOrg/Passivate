@@ -1,11 +1,10 @@
 use std::sync::mpsc::Sender;
 use crate::actors::{Cancellation, Handler};
 use crate::change_events::ChangeEvent;
-use crate::coverage::{stub_compute_coverage, ComputeCoverage, CoverageStatus};
-use crate::cross_cutting::{stub_log, Log};
-use crate::test_helpers::fakes::stub_sender;
+use crate::coverage::{ComputeCoverage, CoverageStatus};
+use crate::cross_cutting::Log;
 use crate::test_run_model::{FailedTestRun, TestRun};
-use super::{stub_parse_output, stub_run_tests, TestRunProcessor};
+use super::TestRunProcessor;
 
 pub struct ChangeEventHandler {
     runner: TestRunProcessor,
@@ -46,7 +45,7 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
         self.log.info("Done cleaning it!");
         if cancellation.is_cancelled() { return }
 
-        let test_output = self.runner.run_tests(&self.tests_status_sender, cancellation.clone());
+        let test_output = self.runner.run_tests(&self.tests_status_sender, self.coverage_enabled, cancellation.clone());
 
         self.log.info("Done running it!");
 

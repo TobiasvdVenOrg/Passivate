@@ -42,8 +42,9 @@ pub fn first_run_transitions_to_running(#[case] implementation: TestRunnerImplem
 fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {
     let mut processor = build_processor(implementation, test_output);    
     let (sender, receiver) = channel();
+    let instrument_coverage = true;
 
-    processor.run_tests(&sender, Cancellation::default()).unwrap();
+    processor.run_tests(&sender, instrument_coverage, Cancellation::default()).unwrap();
 
     TestRunIterator { receiver }
 }
@@ -51,7 +52,7 @@ fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIt
 fn build_processor(implementation: TestRunnerImplementation, test_output: &str) -> TestRunProcessor {
     let mut run_tests = MockRunTests::new();
     let test_output = test_output.to_string();
-    run_tests.expect_run_tests().return_once(move |_implementation| {
+    run_tests.expect_run_tests().return_once(move |_implementation, _instrument_coverage| {
         let iterator = test_output
             .lines()
             .map(|line| Ok(line.to_string()))

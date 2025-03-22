@@ -12,7 +12,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let mut run_tests = mock_run_tests();
 
     run_tests.expect_run_tests()
-        .returning(|_| { Err(TestRunError::Io("example error".to_string())) });
+        .returning(|_, _| { Err(TestRunError::Io("example error".to_string())) });
 
     let processor = TestRunProcessor::new(run_tests, stub_parse_output(), stub_log());
     let (tests_sender, tests_receiver) = channel();

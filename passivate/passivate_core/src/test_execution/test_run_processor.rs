@@ -25,14 +25,14 @@ impl TestRunProcessor {
         }
     }
 
-    pub fn run_tests(&mut self, sender: &Sender<TestRun>, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_tests(&mut self, sender: &Sender<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         self.update(TestRunEvent::Start, sender);
 
         cancellation.check()?;
 
         self.log.info("Running the tests...");
 
-        let iterator = self.run_tests.run_tests(self.parse_output.get_implementation())?;
+        let iterator = self.run_tests.run_tests(self.parse_output.get_implementation(), instrument_coverage)?;
 
         cancellation.check()?;
 
