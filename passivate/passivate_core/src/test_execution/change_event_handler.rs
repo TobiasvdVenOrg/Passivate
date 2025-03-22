@@ -51,7 +51,10 @@ impl ChangeEventHandler {
         match test_output {
             Ok(_) => {
                 if self.coverage_enabled {
+                    self.log.info("Coverage enabled!");
                     self.compute_coverage(cancellation.clone());
+                } else {
+                    self.log.info("Coverage disabled!");
                 }
             },
             Err(test_error) => {
@@ -60,6 +63,19 @@ impl ChangeEventHandler {
             }
         };
     }
+
+    fn compute_coverage(&self, cancellation: Cancellation) {
+        let coverage_status = self.coverage.compute_coverage(cancellation.clone());
+
+        self.log.info("Done covering it!");
+
+        let _ = match coverage_status {
+            Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
+            Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error))
+        };
+    }
+
+    pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
 }
 
 impl Handler<ChangeEvent> for ChangeEventHandler {
@@ -80,19 +96,4 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
         
         self.log.info("Done sending it!");
     }
-}
-
-impl ChangeEventHandler {
-    fn compute_coverage(&self, cancellation: Cancellation) {
-        let coverage_status = self.coverage.compute_coverage(cancellation.clone());
-
-                self.log.info("Done covering it!");
-
-                let _ = match coverage_status {
-                    Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
-                    Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error))
-                };
-    }
-
-    pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
 }

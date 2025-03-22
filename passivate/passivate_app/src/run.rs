@@ -36,7 +36,6 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 }
 
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
-    
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
     let (configuration_sender, configuration_receiver) = channel();
