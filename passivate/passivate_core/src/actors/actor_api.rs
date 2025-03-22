@@ -14,14 +14,14 @@ impl<T: Send + Clone + 'static> ActorApi<T> {
     }
 
     pub fn send(&self, event: T) {
-        self.sender.send(ActorEvent::Custom(event)).unwrap();
+        let _ = self.sender.send(ActorEvent::Custom(event));
     }
 
     pub fn send_cancellable(&self, event: T, cancellation: Cancellation) {
-        self.sender.send(ActorEvent::Cancellable(Cancellable { event, cancellation })).unwrap();
+        let _ = self.sender.send(ActorEvent::Cancellable(Cancellable { event, cancellation }));
     }
 
     pub fn exit(&self) {
-        self.sender.send(ActorEvent::Exit).unwrap();
+        let _ = self.sender.send(ActorEvent::Exit);
     }
 }

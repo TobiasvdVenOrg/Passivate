@@ -1,5 +1,6 @@
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::{actors::Actor, configuration::ConfigurationHandler, test_helpers::fakes::{change_event_handler_fakes, channel_fakes}};
+use passivate_core::{actors::Actor, configuration::ConfigurationHandler, test_helpers::fakes::{change_event_handler_fakes, channel_fakes, stub_sender}};
+use stdext::function_name;
 use crate::views::{CoverageView, View};
 
 #[test]
@@ -7,7 +8,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let change_handler: passivate_core::test_execution::ChangeEventHandler = change_event_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(change_actor.api());
+    let configuration = ConfigurationHandler::new(change_actor.api(), stub_sender());
     let mut configuration_actor = Actor::new(configuration);
 
     let coverage_receiver = channel_fakes::stub_receiver();
@@ -32,7 +33,11 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     assert!(configuration.configuration().coverage_enabled);
 
     harness.fit_contents();
-    harness.snapshot("enable_button_when_coverage_is_disabled_triggers_configuration_event");
+    harness.snapshot(&test_name(function_name!()));
+}
+
+fn test_name(function_name: &str) -> String {
+    function_name.split("::").last().unwrap_or(function_name).to_string()
 }
 
 // #[test]

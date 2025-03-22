@@ -1,18 +1,18 @@
+use std::sync::mpsc::channel;
+
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
-use crate::actors::{Actor, Cancellation, Handler};
-use crate::test_helpers::fakes::change_event_handler_fakes;
+use crate::actors::{Cancellation, Handler};
+use crate::test_helpers::fakes::stub_actor_api;
 
 
 #[test]
-pub fn coverage_enabled() {
-    let change_event_handler = change_event_handler_fakes::stub();
-    let actor = Actor::new(change_event_handler);
-    let mut handler = ConfigurationHandler::new(actor.api());
-    
-    assert!(!handler.configuration().coverage_enabled);
+pub fn configuration_change_is_broadcasted() {
+    let (configuration_sender, configuration_receiver) = channel();
+    let mut handler = ConfigurationHandler::new(stub_actor_api(), configuration_sender);
 
-    let change = ConfigurationChangeEvent::Coverage(true);
-    handler.handle(change, Cancellation::default());
+    handler.handle(ConfigurationChangeEvent::Coverage(true), Cancellation::default());
 
-    assert!(handler.configuration().coverage_enabled);
+    let broadcast = configuration_receiver.try_iter().last().unwrap();
+
+    assert!(broadcast.coverage_enabled);
 }

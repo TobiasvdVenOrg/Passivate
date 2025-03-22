@@ -60,7 +60,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
     let mut change_actor = Actor::new(change_handler);
     
-    let configuration_handler = ConfigurationHandler::new(change_actor.api());
+    let configuration_handler = ConfigurationHandler::new(change_actor.api(), configuration_sender);
     let mut configuration_actor = Actor::new(configuration_handler);
 
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;

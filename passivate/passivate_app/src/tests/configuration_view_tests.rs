@@ -3,7 +3,7 @@ use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
 use passivate_core::actors::Actor;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig};
-use passivate_core::test_helpers::fakes::{change_event_handler_fakes, channel_fakes, stub_actor_api};
+use passivate_core::test_helpers::fakes::{change_event_handler_fakes, channel_fakes, stub_actor_api, stub_sender};
 use stdext::function_name;
 
 use crate::views::{ConfigurationView, View};
@@ -30,11 +30,11 @@ pub fn show_configuration() {
 }
 
 #[test]
-pub fn change_coverage_enabled() {
+pub fn configure_coverage_enabled() {
     let change_handler: passivate_core::test_execution::ChangeEventHandler = change_event_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(change_actor.api());
+    let configuration = ConfigurationHandler::new(change_actor.api(), stub_sender());
     let mut configuration_actor = Actor::new(configuration);
 
     let configuration_receiver = channel_fakes::stub_receiver();
@@ -60,7 +60,7 @@ pub fn change_coverage_enabled() {
     assert!(configuration.configuration().coverage_enabled);
 
     harness.fit_contents();
-    harness.snapshot("enable_button_when_coverage_is_disabled_triggers_configuration_event");
+    harness.snapshot(&test_name(function_name!()));
 }
 
 fn test_name(function_name: &str) -> String {
