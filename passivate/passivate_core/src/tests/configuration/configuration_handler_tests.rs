@@ -2,7 +2,7 @@ use std::sync::mpsc::channel;
 
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
 use crate::actors::{Cancellation, Handler};
-use crate::test_helpers::fakes::stub_actor_api;
+use crate::test_helpers::fakes::actor_fakes::stub_actor_api;
 
 
 #[test]

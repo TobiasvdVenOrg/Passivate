@@ -25,6 +25,7 @@ pub mod test_execution {
     mod_use!(test_run_iterator);
     mod_use!(test_run_processor);
     mod_use!(test_run_errors);
+    mod_use!(test_run_handler);
 }
 
 pub mod test_run_model {
@@ -56,9 +57,10 @@ pub mod test_helpers {
     pub mod assert_matches;
 
     pub mod fakes {
-        mod_use!(actor_fakes);
-        mod_use!(change_event_handler_fakes);
-        mod_use!(channel_fakes);
+        pub mod actor_fakes;
+        pub mod change_event_handler_fakes;
+        pub mod channel_fakes;
+        pub mod test_run_handler_fakes;
     }
 }
 

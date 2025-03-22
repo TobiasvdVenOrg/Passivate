@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
+use passivate_core::actors::Actor;
 use passivate_core::actors::Cancellation;
 use passivate_core::actors::Handler;
 use passivate_core::change_events::ChangeEvent;
@@ -18,6 +19,7 @@ use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::build_test_output_parser;
 use passivate_core::test_execution::ParseOutput;
 use passivate_core::test_execution::ChangeEventHandler;
+use passivate_core::test_execution::TestRunHandler;
 use passivate_core::test_execution::TestRunProcessor;
 use passivate_core::test_execution::TestRunner;
 use passivate_core::test_run_model::TestRun;
@@ -117,13 +119,16 @@ impl ChangeEventHandlerBuilder {
 
         let grcov = self.build_grcov();
 
-        ChangeEventHandler::new(
+        let test_run_handler = TestRunHandler::new(
             processor, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender,
             stub_log(),
-            self.coverage_enabled)
+            self.coverage_enabled);
+
+        let test_run_actor = Actor::new(test_run_handler);
+        ChangeEventHandler::new(test_run_actor.api(), stub_log())
     }
 
     pub fn clean_output(&mut self) -> &mut Self {

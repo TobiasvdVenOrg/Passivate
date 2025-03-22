@@ -6,7 +6,7 @@ use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
 use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunProcessor, TestRunner};
+use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunHandler, TestRunProcessor, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
 use views::{CoverageView, TestRunView};
 use crate::app::App;
@@ -56,7 +56,11 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run, Box::new(log.clone()));
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
-    let change_handler = ChangeEventHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
+
+    let test_run_handler = TestRunHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
+    let mut test_run_actor = Actor::new(test_run_handler);
+
+    let change_handler = ChangeEventHandler::new(test_run_actor.api(), Box::new(log.clone()));
     let mut change_actor = Actor::new(change_handler);
     
     let configuration_handler = ConfigurationHandler::new(change_actor.api(), configuration_sender);
@@ -74,6 +78,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     run_app(Box::new(App::new(tests_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
+    test_run_actor.stop();
     configuration_actor.stop();
     change_actor.stop();
 

@@ -3,7 +3,9 @@ use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
 use passivate_core::actors::Actor;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig};
-use passivate_core::test_helpers::fakes::{change_event_handler_fakes, channel_fakes, stub_actor_api, stub_sender};
+use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
+use passivate_core::test_helpers::fakes::channel_fakes::stub_sender;
+use passivate_core::test_helpers::fakes::{channel_fakes, test_run_handler_fakes};
 use stdext::function_name;
 
 use crate::views::{ConfigurationView, View};
@@ -31,7 +33,7 @@ pub fn show_configuration() {
 
 #[test]
 pub fn configure_coverage_enabled() {
-    let change_handler: passivate_core::test_execution::ChangeEventHandler = change_event_handler_fakes::stub();
+    let change_handler = test_run_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
     let configuration = ConfigurationHandler::new(change_actor.api(), stub_sender());
