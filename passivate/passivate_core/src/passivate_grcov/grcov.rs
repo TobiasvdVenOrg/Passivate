@@ -48,11 +48,11 @@ impl ComputeCoverage for Grcov {
             .arg("--binary-path")
             .arg(&self.binary_path)
             .arg("-t")
-            .arg("lcov")
+            .arg("covdir,lcov")
             .arg("--branch")
             .arg("--ignore-not-existing")
             .arg("-o")
-            .arg(&lcov_info_path)
+            .arg(&self.output_path)
             .spawn()
             .map_err(|e| CoverageError::GrcovNotInstalled(e.kind()))?;
 
