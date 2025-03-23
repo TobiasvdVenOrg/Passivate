@@ -1,7 +1,117 @@
+use std::{collections::HashMap, sync::mpsc::channel};
+
+use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::{actors::Actor, configuration::ConfigurationHandler, test_helpers::fakes::{channel_fakes::{self, stub_sender}, test_run_handler_fakes}};
+use passivate_core::{actors::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson, test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_sender}, test_run_handler_fakes}};
 use stdext::function_name;
 use crate::views::{CoverageView, View};
+
+#[test]
+pub fn show_coverage_hierarchy_fully_collapsed() {
+    let (coverage_sender, coverage_receiver) = channel();
+
+    let mut coverage_view = CoverageView::new(coverage_receiver, stub_actor_api());
+
+    let ui = |ui: &mut egui::Ui|{
+        coverage_view.ui(ui);
+    };
+
+    let mut harness = Harness::new_ui(ui);
+
+    let coverage_info = CovdirJson {
+        children: Some(HashMap::new()),
+        coverage_percent: 88.0,
+        lines_covered: 64,
+        lines_missed: 16,
+        lines_total: 80,
+        name: "example.rs".to_string(),
+    };
+
+    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info))).unwrap();
+
+    harness.run();
+    harness.fit_contents();
+    harness.snapshot(&test_name(function_name!()));
+}
+
+#[test]
+pub fn show_coverage_hierarchy_expand_children() {
+    let (coverage_sender, coverage_receiver) = channel();
+
+    let mut coverage_view = CoverageView::new(coverage_receiver, stub_actor_api());
+
+    let ui = |ui: &mut egui::Ui|{
+        coverage_view.ui(ui);
+    };
+
+    let mut harness = Harness::new_ui(ui);
+
+    let coverage_info = CovdirJson {
+        children: Some(HashMap::from([
+            ("child1.rs".to_string(), CovdirJson {
+                children: None,
+                coverage_percent: 88.0,
+                lines_covered: 64,
+                lines_missed: 16,
+                lines_total: 80,
+                name: "child1.rs".to_string()
+            }),
+            ("child2.rs".to_string(), CovdirJson {
+                children: Some(HashMap::from([
+                    ("nested1.rs".to_string(), CovdirJson {
+                        children: None,
+                        coverage_percent: 12.0,
+                        lines_covered: 64,
+                        lines_missed: 16,
+                        lines_total: 80,
+                        name: "nested1.rs".to_string()
+                    }),
+                    ("nested2.rs".to_string(), CovdirJson {
+                        children: None,
+                        coverage_percent: 24.0,
+                        lines_covered: 64,
+                        lines_missed: 16,
+                        lines_total: 80,
+                        name: "nested2.rs".to_string()
+                    })
+                ])),
+                coverage_percent: 100.0,
+                lines_covered: 64,
+                lines_missed: 16,
+                lines_total: 80,
+                name: "child2.rs".to_string()
+            })
+        ])),
+        coverage_percent: 69.0,
+        lines_covered: 64,
+        lines_missed: 16,
+        lines_total: 80,
+        name: "example.rs".to_string(),
+    };
+
+    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info))).unwrap();
+
+    harness.run();
+
+    let top_level_header = harness.get_by_role(Role::Unknown);
+    top_level_header.click();
+
+    let top_level_header_id = top_level_header.id();
+
+    harness.run();
+    
+    for header in harness.get_all_by_role(Role::Unknown) {
+        if header.id() == top_level_header_id {
+            continue;
+        }
+
+        header.click();
+    }
+
+    harness.run();
+    harness.fit_contents();
+    harness.snapshot(&test_name(function_name!()));
+}
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
