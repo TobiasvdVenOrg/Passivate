@@ -7,7 +7,7 @@ pub struct Cancellation {
     flag: Arc<AtomicBool>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cancelled;
 
 impl Cancellation {

@@ -44,6 +44,7 @@ pub mod passivate_nextest {
 }
 
 pub mod passivate_grcov {
+    mod_use!(covdir_json);
     mod_use!(grcov);
 }
 
@@ -88,6 +89,10 @@ pub mod tests {
         mod configuration_handler_tests;
     }
 
+    mod passivate_grcov {
+        mod covdir_json_tests;
+    }
+    
     mod passivate_cargo {
         mod cargo_test_parser_tests;
     }

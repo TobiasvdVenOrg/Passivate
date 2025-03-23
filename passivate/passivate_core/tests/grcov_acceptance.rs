@@ -1,8 +1,8 @@
 #![cfg(target_os = "windows")]
 
+use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
-use std::fs;
 mod helpers;
 use helpers::*;
 use passivate_core::actors::Cancellation;
@@ -10,6 +10,39 @@ use passivate_core::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKin
 use passivate_core::passivate_grcov::get_profraw_count;
 use rstest::*;
 use stdext::function_name;
+use std::sync::mpsc::channel;
+use passivate_core::coverage::CoverageStatus;
+use pretty_assertions::assert_eq;
+
+#[rstest]
+#[case::cargo(cargo_builder())]
+#[case::nextest(nextest_builder())]
+pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let (coverage_sender, coverage_receiver) = channel();
+    let mut runner = builder
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .coverage_enabled(true)
+        .receive_coverage_status(coverage_sender)
+        .clean_output()
+        .build();
+
+    test_run(&mut runner)?;
+
+    let result = coverage_receiver.try_iter().last().unwrap();
+
+    match result {
+        CoverageStatus::Disabled => panic!(),
+        CoverageStatus::Preparing => panic!(),
+        CoverageStatus::Running => panic!(),
+        CoverageStatus::Done(covdir_json) => {
+            assert_eq!(100.0, covdir_json.coverage_percent);
+        },
+        CoverageStatus::Error(_) => panic!(),
+    };
+
+    Ok(())
+}
 
 #[rstest]
 #[case::cargo(cargo_builder())]

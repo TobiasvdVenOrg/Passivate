@@ -1,5 +1,8 @@
 use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command, time::Duration};
+
 use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}};
+
+use super::CovdirJson;
 
 pub struct Grcov {
     workspace_path: PathBuf,
@@ -37,9 +40,6 @@ impl ComputeCoverage for Grcov {
         
         cancellation.check()?;
 
-        // Omit *.info extension, since it messes up grcov when a .info file already exists in the target directory
-        let lcov_info_path = self.output_path.join("lcov");
-
         let mut grcov = Command::new("grcov")
             .current_dir(&self.workspace_path)
             .arg(&self.output_path)
@@ -71,7 +71,11 @@ impl ComputeCoverage for Grcov {
             }
         }
 
-        Ok(CoverageStatus::Done)
+        let covdir_path = self.output_path.join("covdir");
+        let json = fs::read_to_string(covdir_path).map_err(|e| CoverageError::CovdirRead(e.kind()))?;
+        let parsed: CovdirJson = parse_covdir(&json)?;
+
+        Ok(CoverageStatus::Done(Box::new(parsed)))
     }
 
     fn clean_coverage_output(&self) -> Result<(), CoverageError> {
@@ -82,6 +86,10 @@ impl ComputeCoverage for Grcov {
         remove_profraw_files(&self.output_path)
             .map_err(|e| CoverageError::CleanIncomplete(e.kind()))
     }
+}
+
+pub fn parse_covdir(json: &str) -> Result<CovdirJson, CoverageError> {
+    serde_json::from_str(json).map_err(|e| CoverageError::CovdirParse(e.to_string()))
 }
 
 pub fn get_profraw_count(path: &Path) -> Result<i32, IoError> {

@@ -28,6 +28,8 @@ impl CoverageView {
             CoverageError::CleanIncomplete(_error_kind) => todo!(),
             CoverageError::NoProfrawFiles(_error) => todo!(),
             CoverageError::Cancelled(_cancelled) => todo!(),
+            CoverageError::CovdirRead(_error_kind) => todo!(),
+            CoverageError::CovdirParse(_) => todo!(),
         };
     }
 }
@@ -38,7 +40,7 @@ impl View for CoverageView {
             self.status = status;
         }
 
-        match self.status {
+        match &self.status {
             CoverageStatus::Disabled => {
                 self.draw_disabled(ui);
             },
@@ -51,7 +53,7 @@ impl View for CoverageView {
             CoverageStatus::Running => {
                 ui.heading("Running...");
             },
-            CoverageStatus::Done => {
+            CoverageStatus::Done(json) => {
                 ui.heading("Done");
             }
         };

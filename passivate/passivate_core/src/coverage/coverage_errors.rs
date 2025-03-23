@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use crate::actors::Cancelled;
 
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum CoverageError {
     #[error("grcov is not installed")]
     GrcovNotInstalled(IoErrorKind),
@@ -17,6 +17,12 @@ pub enum CoverageError {
     #[error("coverage did not run - no profraw files were present")]
     NoProfrawFiles(NoProfrawFilesError),
 
+    #[error("failed to read covdir output")]
+    CovdirRead(IoErrorKind),
+
+    #[error("failed to parse covdir output")]
+    CovdirParse(String),
+
     #[error("coverage was cancelled")]
     Cancelled(#[from] Cancelled)
 }
@@ -27,7 +33,7 @@ pub enum NoProfrawFilesKind {
     NoProfrawFilesExist
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NoProfrawFilesError {
     pub expected_path: PathBuf,
     pub kind: NoProfrawFilesKind
