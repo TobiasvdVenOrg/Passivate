@@ -1,6 +1,6 @@
 name: Build Passivate
 run-name: Build Passivate
-on: [push]
+on: [push, workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
     runs-on: self-hosted
