@@ -55,8 +55,8 @@ pub fn configure_coverage_enabled() {
 
     harness.run();
 
-    let change_handler = change_actor.stop();
     let configuration = configuration_actor.stop();
+    let change_handler = change_actor.stop();
 
     assert!(change_handler.coverage_enabled());
     assert!(configuration.configuration().coverage_enabled);
