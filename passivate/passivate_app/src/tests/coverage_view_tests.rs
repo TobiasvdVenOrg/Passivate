@@ -1,10 +1,10 @@
-use std::{collections::HashMap, sync::mpsc::channel};
-
+use std::sync::mpsc::channel;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
 use passivate_core::{actors::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson, test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_sender}, test_run_handler_fakes}};
 use stdext::function_name;
 use crate::views::{CoverageView, View};
+use indexmap::IndexMap;
 
 #[test]
 pub fn show_coverage_hierarchy_fully_collapsed() {
@@ -19,7 +19,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
     let mut harness = Harness::new_ui(ui);
 
     let coverage_info = CovdirJson {
-        children: Some(HashMap::new()),
+        children: Some(IndexMap::new()),
         coverage_percent: 88.0,
         lines_covered: 64,
         lines_missed: 16,
@@ -47,7 +47,7 @@ pub fn show_coverage_hierarchy_expand_children() {
     let mut harness = Harness::new_ui(ui);
 
     let coverage_info = CovdirJson {
-        children: Some(HashMap::from([
+        children: Some(IndexMap::from([
             ("child1.rs".to_string(), CovdirJson {
                 children: None,
                 coverage_percent: 88.0,
@@ -57,7 +57,7 @@ pub fn show_coverage_hierarchy_expand_children() {
                 name: "child1.rs".to_string()
             }),
             ("child2.rs".to_string(), CovdirJson {
-                children: Some(HashMap::from([
+                children: Some(IndexMap::from([
                     ("nested1.rs".to_string(), CovdirJson {
                         children: None,
                         coverage_percent: 12.0,

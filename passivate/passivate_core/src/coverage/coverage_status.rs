@@ -2,7 +2,7 @@ use crate::passivate_grcov::CovdirJson;
 
 use super::CoverageError;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum CoverageStatus {
     Disabled,
     Preparing,
