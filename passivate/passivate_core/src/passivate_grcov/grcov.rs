@@ -1,7 +1,7 @@
 use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command, time::Duration};
 
 use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}};
-
+use crate::passivate_cargo::cargo_metadata;
 use super::CovdirJson;
 
 pub struct Grcov {
@@ -40,8 +40,11 @@ impl ComputeCoverage for Grcov {
         
         cancellation.check()?;
 
-        let mut grcov = Command::new("grcov")
-            .current_dir(&self.workspace_path)
+        let projects = cargo_metadata::projects(&self.workspace_path);
+
+        let mut command = Command::new("grcov");
+
+        command.current_dir(&self.workspace_path)
             .arg(&self.output_path)
             .arg("-s")
             .arg(".")
@@ -52,8 +55,14 @@ impl ComputeCoverage for Grcov {
             .arg("--branch")
             .arg("--ignore-not-existing")
             .arg("-o")
-            .arg(&self.output_path)
-            .spawn()
+            .arg(&self.output_path);
+
+        for project in projects {
+            let keep = PathBuf::from(project.file_name().unwrap()).join("src").join("*");
+            command.arg("--keep-only").arg(keep);
+        }
+
+        let mut grcov = command.spawn()
             .map_err(|e| CoverageError::GrcovNotInstalled(e.kind()))?;
 
         loop {
@@ -72,7 +81,7 @@ impl ComputeCoverage for Grcov {
         }
 
         let covdir_path = self.output_path.join("covdir");
-        let json = fs::read_to_string(covdir_path).map_err(|e| CoverageError::CovdirRead(e.kind()))?;
+        let json = fs::read_to_string(&covdir_path).map_err(|e| CoverageError::CovdirRead(e.kind()))?;
         let parsed: CovdirJson = parse_covdir(&json)?;
 
         Ok(CoverageStatus::Done(Box::new(parsed)))
