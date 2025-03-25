@@ -37,6 +37,7 @@ pub mod test_run_model {
 
 pub mod passivate_cargo {
     mod_use!(cargo_test_parser);
+    mod_use!(cargo_metadata);
 }
 
 pub mod passivate_nextest {
@@ -56,6 +57,7 @@ pub mod coverage {
 
 pub mod test_helpers {
     pub mod assert_matches;
+    pub mod builder;
 
     pub mod fakes {
         pub mod actor_fakes;
@@ -95,6 +97,7 @@ pub mod tests {
     
     mod passivate_cargo {
         mod cargo_test_parser_tests;
+        mod cargo_metadata_tests;
     }
 
     mod passivate_nextest {
