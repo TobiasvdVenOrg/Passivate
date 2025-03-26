@@ -58,7 +58,7 @@ impl ComputeCoverage for Grcov {
             .arg(&self.output_path);
 
         for project in projects {
-            let keep = PathBuf::from(project.file_name().unwrap()).join("src").join("*");
+            let keep = project.strip_prefix(&self.workspace_path).unwrap().join("src").join("*");
             command.arg("--keep-only").arg(keep);
         }
 
