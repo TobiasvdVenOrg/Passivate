@@ -136,8 +136,8 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
     harness.run();
 
-    let change_handler = change_actor.stop();
     let configuration = configuration_actor.stop();
+    let change_handler = change_actor.stop();
 
     assert!(change_handler.coverage_enabled());
     assert!(configuration.configuration().coverage_enabled);
