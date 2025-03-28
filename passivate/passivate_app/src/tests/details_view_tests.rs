@@ -20,10 +20,10 @@ pub fn show_a_failing_test() {
 
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
-    let mut log_view = DetailsView::new(receiver);
+    let mut details_view = DetailsView::new(receiver);
 
     let ui = |ui: &mut egui::Ui|{
-        log_view.ui(ui);
+        details_view.ui(ui);
     };
 
     let mut harness = Harness::new_ui(ui);
