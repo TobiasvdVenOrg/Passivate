@@ -37,7 +37,8 @@ pub mod test_run_model {
 
 pub mod passivate_cargo {
     mod_use!(cargo_test_parser);
-    mod_use!(cargo_metadata);
+    mod_use!(cargo_workspace);
+    mod_use!(cargo_workspace_errors);
 }
 
 pub mod passivate_nextest {

@@ -1,7 +1,6 @@
 use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command, time::Duration};
 
-use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}};
-use crate::passivate_cargo::cargo_metadata;
+use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}, passivate_cargo::cargo_workspace};
 use super::CovdirJson;
 
 pub struct Grcov {
@@ -40,7 +39,7 @@ impl ComputeCoverage for Grcov {
         
         cancellation.check()?;
 
-        let projects = cargo_metadata::projects(&self.workspace_path);
+        let projects = cargo_workspace::projects(&self.workspace_path)?;
 
         let mut command = Command::new("grcov");
 
