@@ -40,6 +40,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let (coverage_sender, coverage_receiver) = channel();
     let (configuration_sender, configuration_receiver) = channel();
     let (log_sender, log_receiver) = channel();
+    let (details_sender, details_receiver) = channel();
 
     let workspace_path = path.to_path_buf();
     let passivate_path = workspace_path.join(".passivate");
@@ -68,7 +69,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
-    let tests_view = TestRunView::new(tests_status_receiver);
+    let tests_view = TestRunView::new(tests_status_receiver, details_sender);
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
     let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);

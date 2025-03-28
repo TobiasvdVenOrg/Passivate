@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui_kittest::Harness;
 use crate::views::{TestRunView, View};
-use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunState};
+use passivate_core::{test_helpers::fakes::channel_fakes::stub_sender, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunState}};
 use stdext::function_name;
 
 #[test]
@@ -33,7 +33,7 @@ pub fn show_tests_with_unknown_status_greyed_out() {
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {
     let (sender, receiver)  = channel();
-    let mut tests_status_view = TestRunView::new(receiver);
+    let mut tests_status_view = TestRunView::new(receiver, stub_sender());
 
     let ui = |ui: &mut egui::Ui|{
         tests_status_view.ui(ui);

@@ -1,23 +1,24 @@
 use egui::{Color32, RichText};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{Receiver, Sender};
 use crate::views::View;
 
 pub struct TestRunView {
     receiver: Receiver<TestRun>,
+    test_details: Sender<SingleTest>,
     status: TestRun
 }
 
 impl TestRunView {
-    pub fn new(receiver: Receiver<TestRun>) -> TestRunView {
-        TestRunView { receiver, status: TestRun::default() }
+    pub fn new(receiver: Receiver<TestRun>, test_details: Sender<SingleTest>) -> TestRunView {
+        TestRunView { receiver, test_details, status: TestRun::default() }
     }
 
     fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) {
         let text = RichText::new(&test.name).size(16.0).color(color);
         
         if ui.button(text).clicked() {
-            println!("Clicked on {}", test.name);
+            self.test_details.send(test.clone());
         }
     }
 
