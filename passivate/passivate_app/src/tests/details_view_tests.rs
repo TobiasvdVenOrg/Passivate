@@ -6,6 +6,19 @@ use stdext::function_name;
 
 #[test]
 pub fn show_a_passing_test() {
+    let failing_test = SingleTest { name: "ExampleTest".to_string(), status: SingleTestStatus::Passed };
+    
+    show_test(&test_name(function_name!()), failing_test);
+}
+
+#[test]
+pub fn show_a_failing_test() {
+    let failing_test = SingleTest { name: "ExampleTest".to_string(), status: SingleTestStatus::Failed };
+    
+    show_test(&test_name(function_name!()), failing_test);
+}
+
+fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
     let mut log_view = DetailsView::new(receiver);
 
@@ -15,12 +28,11 @@ pub fn show_a_passing_test() {
 
     let mut harness = Harness::new_ui(ui);
 
-    let passing_test = SingleTest { name: "ExampleTest".to_string(), status: SingleTestStatus::Passed };
-    sender.send(passing_test).unwrap();
+    sender.send(single_test).unwrap();
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(test_name);
 }
 
 fn test_name(function_name: &str) -> String {

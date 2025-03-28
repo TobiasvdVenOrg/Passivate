@@ -24,7 +24,13 @@ impl View for DetailsView {
         }
 
         if let Some(single_test) = &self.single_test {
-            let text = RichText::new(&single_test.name).size(16.0).color(Color32::GREEN);
+            let color = match single_test.status {
+                passivate_core::test_run_model::SingleTestStatus::Passed => Color32::GREEN,
+                passivate_core::test_run_model::SingleTestStatus::Failed => Color32::RED,
+                passivate_core::test_run_model::SingleTestStatus::Unknown => Color32::GRAY,
+            };
+
+            let text = RichText::new(&single_test.name).size(16.0).color(color);
             ui.heading(text);
         }
     }
