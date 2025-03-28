@@ -26,7 +26,7 @@ pub fn show_when_build_failed() {
 #[test]
 pub fn show_tests_with_unknown_status_greyed_out() {
     let mut active = TestRun::default();
-    active.tests.push(SingleTest { name: "example_test".to_string(), status: SingleTestStatus::Unknown });
+    active.tests.push(SingleTest::new("example_test".to_string(), SingleTestStatus::Unknown));
 
     run_and_snapshot(active, &test_name(function_name!()));
 }

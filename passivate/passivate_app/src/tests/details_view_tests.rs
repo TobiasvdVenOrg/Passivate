@@ -6,14 +6,14 @@ use stdext::function_name;
 
 #[test]
 pub fn show_a_passing_test() {
-    let failing_test = SingleTest { name: "ExampleTest".to_string(), status: SingleTestStatus::Passed };
+    let failing_test = SingleTest::new("ExampleTest".to_string(), SingleTestStatus::Passed);
     
     show_test(&test_name(function_name!()), failing_test);
 }
 
 #[test]
 pub fn show_a_failing_test() {
-    let failing_test = SingleTest { name: "ExampleTest".to_string(), status: SingleTestStatus::Failed };
+    let failing_test = SingleTest::new("ExampleTest".to_string(), SingleTestStatus::Failed);
     
     show_test(&test_name(function_name!()), failing_test);
 }
@@ -35,7 +35,7 @@ pub fn selecting_a_test_shows_it_in_details_view() {
     });
 
     let mut test_run = TestRun::default();
-    test_run.tests.push(SingleTest { name: "example_test".to_string(), status: SingleTestStatus::Failed });
+    test_run.tests.push(SingleTest::new("example_test".to_string(), SingleTestStatus::Failed));
     test_run_sender.send(test_run).unwrap();
 
     test_run_ui.run();
@@ -48,6 +48,13 @@ pub fn selecting_a_test_shows_it_in_details_view() {
 
     details_ui.fit_contents();
     details_ui.snapshot(&test_name(function_name!()));
+}
+
+#[test]
+pub fn show_snapshot_if_one_exists_matching_the_test_name() {
+    let failing_test = SingleTest::new("ExampleTest".to_string(), SingleTestStatus::Passed);
+    
+    show_test(&test_name(function_name!()), failing_test);
 }
 
 fn show_test(test_name: &str, single_test: SingleTest) {

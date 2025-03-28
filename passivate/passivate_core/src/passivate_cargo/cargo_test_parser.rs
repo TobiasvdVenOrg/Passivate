@@ -13,7 +13,7 @@ impl ParseOutput for CargoTestParser {
                     _ => SingleTestStatus::Failed
                 };
     
-                let test = SingleTest { name: test.to_string(), status };
+                let test = SingleTest::new(test.to_string(), status);
                 return Some(TestRunEvent::TestFinished(test))
             };
         }

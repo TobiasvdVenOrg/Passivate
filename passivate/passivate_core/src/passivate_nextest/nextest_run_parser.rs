@@ -8,12 +8,12 @@ impl ParseOutput for NextestParser {
         
         if trimmed.starts_with("PASS") {
             let name = trimmed.split(" ").last().unwrap_or(trimmed);
-            let test = SingleTest { name: name.to_string(), status: SingleTestStatus::Passed };
+            let test = SingleTest::new(name.to_string(), SingleTestStatus::Passed);
 
             return Some(TestRunEvent::TestFinished(test));
         } else if trimmed.starts_with("FAIL") {
             let name = trimmed.split(" ").last().unwrap_or(trimmed);
-            let test = SingleTest { name: name.to_string(), status: SingleTestStatus::Failed };
+            let test = SingleTest::new(name.to_string(), SingleTestStatus::Failed);
             
             return Some(TestRunEvent::TestFinished(test));
         }
