@@ -52,7 +52,7 @@ pub fn cargo_toml_file_that_is_lower_case_is_user_error() {
     let result = cargo_workspace::projects(&workspace_path).unwrap_err();
 
     assert_that!(&result, has_structure!(CargoWorkspaceError::IncorrectTomlCasing {
-        path: eq(PathBuf::from("\\\\?\\F:\\Projects\\Passivate\\test_data\\incorrect_toml_casing")),
+        path: eq(workspace_path.to_path_buf()),
         found: eq(OsString::from("cargo.toml"))
     }));
 }

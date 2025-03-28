@@ -98,7 +98,7 @@ pub mod tests {
     
     mod passivate_cargo {
         mod cargo_test_parser_tests;
-        mod cargo_metadata_tests;
+        mod cargo_workspace_tests;
     }
 
     mod passivate_nextest {
