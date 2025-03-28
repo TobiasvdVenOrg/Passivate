@@ -1,9 +1,9 @@
 use std::{io::ErrorKind as IoErrorKind, path::PathBuf};
 use thiserror::Error;
 
-use crate::actors::Cancelled;
+use crate::{actors::Cancelled, passivate_cargo::CargoWorkspaceError};
 
-#[derive(Error, Debug, Clone, PartialEq)]
+#[derive(Error, Debug)]
 pub enum CoverageError {
     #[error("grcov is not installed")]
     GrcovNotInstalled(IoErrorKind),
@@ -24,7 +24,10 @@ pub enum CoverageError {
     CovdirParse(String),
 
     #[error("coverage was cancelled")]
-    Cancelled(#[from] Cancelled)
+    Cancelled(#[from] Cancelled),
+
+    #[error("unexpected failure parsing workspace metadata")]
+    Workspace(#[from] CargoWorkspaceError)
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -146,6 +146,25 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     harness.snapshot(&test_name(function_name!()));
 }
 
+#[test]
+pub fn show_error() {
+    let configuration_api = stub_actor_api();
+    let (coverage_sender, coverage_receiver) = channel();
+    let mut coverage_view = CoverageView::new(coverage_receiver, configuration_api);
+
+    let ui = |ui: &mut egui::Ui|{
+        coverage_view.ui(ui);
+    };
+
+    coverage_sender.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string())).unwrap();
+    
+    let mut harness = Harness::new_ui(ui);
+    harness.run();
+
+    harness.fit_contents();
+    harness.snapshot(&test_name(function_name!()));
+}
+
 fn test_name(function_name: &str) -> String {
     function_name.split("::").last().unwrap_or(function_name).to_string()
 }

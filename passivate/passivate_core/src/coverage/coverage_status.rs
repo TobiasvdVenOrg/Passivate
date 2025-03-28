@@ -1,6 +1,5 @@
 use crate::passivate_grcov::CovdirJson;
 
-use super::CoverageError;
 
 #[derive(Clone, PartialEq)]
 pub enum CoverageStatus {
@@ -8,5 +7,5 @@ pub enum CoverageStatus {
     Preparing,
     Running,
     Done(Box<CovdirJson>),
-    Error(CoverageError)
+    Error(String)
 }

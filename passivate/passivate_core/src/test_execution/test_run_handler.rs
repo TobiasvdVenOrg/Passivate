@@ -74,7 +74,9 @@ impl TestRunHandler {
 
         let _ = match coverage_status {
             Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
-            Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error))
+            Err(coverage_error) => {
+                self.coverage_status_sender.send(CoverageStatus::Error(coverage_error.to_string()))
+            }
         };
     }
 
