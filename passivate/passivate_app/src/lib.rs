@@ -18,6 +18,7 @@ pub mod views {
     mod_use!(coverage_view);
     mod_use!(log_view);
     mod_use!(configuration_view);
+    mod_use!(details_view);
 }
 
 pub mod passivate_notify {
@@ -33,4 +34,5 @@ pub mod tests {
     mod_use!(coverage_view_tests);
     mod_use!(log_view_tests);
     mod_use!(configuration_view_tests);
+    mod_use!(details_view_tests);
 }
