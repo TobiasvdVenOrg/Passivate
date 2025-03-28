@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 use std::fs;
-use std::path::PathBuf;
 
 use crate::test_helpers::builder::cargo_builder;
 use crate::passivate_cargo::cargo_workspace;
