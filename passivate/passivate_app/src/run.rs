@@ -12,7 +12,7 @@ use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
-use crate::views::{ConfigurationView, LogView};
+use crate::views::{ConfigurationView, DetailsView, LogView};
 use crate::{startup_errors::*, views};
 
 pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
@@ -70,6 +70,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
+    let details_view = DetailsView::new(details_receiver);
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
     let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);
@@ -77,7 +78,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Send an initial change event to trigger the first test run
     change_actor.api().send(ChangeEvent::File);
 
-    run_app(Box::new(App::new(tests_view, coverage_view, configuration_view, log_view)), context_accessor)?;
+    run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     test_run_actor.stop();
     configuration_actor.stop();
