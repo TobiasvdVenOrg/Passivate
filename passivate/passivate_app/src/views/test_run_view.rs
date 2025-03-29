@@ -18,7 +18,7 @@ impl TestRunView {
         let text = RichText::new(&test.name).size(16.0).color(color);
         
         if ui.button(text).clicked() {
-            self.test_details.send(test.clone());
+            self.test_details.send(test.clone()).unwrap();
         }
     }
 
