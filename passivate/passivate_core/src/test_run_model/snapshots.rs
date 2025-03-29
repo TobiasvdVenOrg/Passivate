@@ -20,8 +20,11 @@ pub enum SnapshotError {
     #[error("snapshot data did not match expected size")]
     InvalidData,
 
-    #[error("io error occurred loading snapshot")]
-    Io(#[from] IoError)
+    #[error("io error occurred loading snapshot:\n{error}\n{path}")]
+    Io {
+        error: IoError,
+        path: PathBuf
+    }
 }
 
 impl Snapshots {
@@ -96,7 +99,7 @@ impl Snapshots {
                     return None
                 }
 
-                Some(Err(SnapshotError::Io(error)))
+                Some(Err(SnapshotError::Io { error, path: path.to_path_buf() }))
             },
         }
     }

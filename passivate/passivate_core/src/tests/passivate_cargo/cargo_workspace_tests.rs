@@ -5,7 +5,6 @@ use crate::test_helpers::builder::cargo_builder;
 use crate::passivate_cargo::cargo_workspace;
 use crate::passivate_cargo::cargo_workspace_errors::CargoWorkspaceError;
 use galvanic_assert::assert_that;
-use galvanic_assert::has_structure;
 use galvanic_assert::matchers::eq;
 use galvanic_assert::structure;
 use galvanic_assert::matchers::collection::*;
@@ -50,7 +49,7 @@ pub fn cargo_toml_file_that_is_lower_case_is_user_error() {
 
     let result = cargo_workspace::projects(&workspace_path).unwrap_err();
 
-    assert_that!(&result, has_structure!(CargoWorkspaceError::IncorrectTomlCasing {
+    assert_that!(&result, structure!(CargoWorkspaceError::IncorrectTomlCasing {
         path: eq(workspace_path.to_path_buf()),
         found: eq(OsString::from("cargo.toml"))
     }));
