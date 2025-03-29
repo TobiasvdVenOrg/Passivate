@@ -16,6 +16,8 @@ impl ParseOutput for NextestParser {
             let test = SingleTest::new(name.to_string(), SingleTestStatus::Failed);
             
             return Some(TestRunEvent::TestFinished(test));
+        } else if trimmed.starts_with("Compiling") {
+            return Some(TestRunEvent::Compiling(trimmed.to_string()));
         }
     
         None

@@ -35,7 +35,7 @@ impl View for TestRunView {
             self.status = status;
         }
 
-        match self.status.state {
+        match &self.status.state {
             TestRunState::FirstRun => {
                 ui.heading("Starting first test run...");
             }
@@ -44,7 +44,7 @@ impl View for TestRunView {
                             ui.heading("No tests found."); 
                         }
                     },
-            TestRunState::Building => todo!(),
+            TestRunState::Building(message) => todo!(),
             TestRunState::Running => {
                         
                     },

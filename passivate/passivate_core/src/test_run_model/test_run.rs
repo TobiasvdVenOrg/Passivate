@@ -20,7 +20,7 @@ pub struct FailedTestRun {
 pub enum TestRunState {
     FirstRun,
     Idle,
-    Building,
+    Building(String),
     Running,
     BuildFailed(BuildFailedTestRun),
     Failed(FailedTestRun)
@@ -44,17 +44,21 @@ impl TestRun {
     pub fn update(&mut self, event: TestRunEvent) -> bool {
         match event {
             TestRunEvent::Start => {
-                        for test in &mut self.tests {
-                            test.status = SingleTestStatus::Unknown;
-                        }
-                        
-                        true
-                    },
+                for test in &mut self.tests {
+                    test.status = SingleTestStatus::Unknown;
+                }
+        
+                true
+            },
             TestRunEvent::TestFinished(test) => {
                 self.state = TestRunState::Running;
                 self.add_or_update_test(test)
             },
-            TestRunEvent::NoTests => true
+            TestRunEvent::NoTests => true,
+            TestRunEvent::Compiling(message) => {
+                self.state = TestRunState::Building(message.clone());
+                true
+            },
         }
     }
 

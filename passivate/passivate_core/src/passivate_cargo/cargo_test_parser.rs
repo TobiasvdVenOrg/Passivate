@@ -16,6 +16,8 @@ impl ParseOutput for CargoTestParser {
                 let test = SingleTest::new(test.to_string(), status);
                 return Some(TestRunEvent::TestFinished(test))
             };
+        } else if line.starts_with("Compiling") {
+            return Some(TestRunEvent::Compiling(line.to_string()));
         }
 
         None

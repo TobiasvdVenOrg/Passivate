@@ -1,5 +1,6 @@
 use std::{io::Error as IoError, sync::mpsc::{channel, Receiver}};
-
+use galvanic_assert::is_variant;
+use galvanic_assert::assert_that;
 use rstest::rstest;
 
 use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
@@ -37,6 +38,17 @@ pub fn first_run_transitions_to_running(#[case] implementation: TestRunnerImplem
     let running = test_run.last().unwrap().state;
 
     assert!(matches!(running, TestRunState::Running));
+}
+
+#[rstest]
+#[case::cargo(TestRunnerImplementation::Cargo, "   Compiling some-dependency v1.2.3")]
+#[case::nextest(TestRunnerImplementation::Nextest, "   Compiling some-dependency v1.2.3")]
+pub fn build_output_is_captured_for_building_state(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
+    let test_run = run(implementation, test_output);
+
+    let running = test_run.last().unwrap().state;
+
+    assert_that!(&running, is_variant!(TestRunState::Building));
 }
 
 fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {
