@@ -43,7 +43,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let (details_sender, details_receiver) = channel();
 
     let workspace_path = path.to_path_buf();
-    let passivate_path = workspace_path.join(".passivate");
+    let passivate_path = workspace_path.join("..").join(".passivate");
     let coverage_path = passivate_path.join("coverage");
     let target_path = passivate_path.join("target");
     let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
