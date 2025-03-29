@@ -7,7 +7,7 @@ use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestR
 use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunHandler, TestRunProcessor, TestRunner};
-use passivate_core::test_run_model::{TestRun, TestRunState};
+use passivate_core::test_run_model::{Snapshots, TestRun, TestRunState};
 use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -70,7 +70,11 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let mut change_events = NotifyChangeEvents::new(path, change_actor.api())?;
 
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver);
+
+    let hacky_snapshots = Snapshots::new(workspace_path.join("passivate_app").join("tests").join("snapshots"));
+    let mut details_view = DetailsView::new(details_receiver);
+    details_view.set_snapshots(hacky_snapshots);
+
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
     let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, configuration);
     let log_view = LogView::new(log_receiver);
