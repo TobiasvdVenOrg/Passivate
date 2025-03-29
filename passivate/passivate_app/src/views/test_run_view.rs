@@ -44,7 +44,12 @@ impl View for TestRunView {
                             ui.heading("No tests found."); 
                         }
                     },
-            TestRunState::Building(message) => todo!(),
+            TestRunState::Building(message) => {
+                ui.heading("Building");
+
+                let text = RichText::new(message).size(12.0).color(Color32::YELLOW);
+                ui.label(text);
+            },
             TestRunState::Running => {
                         
                     },

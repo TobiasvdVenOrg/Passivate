@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui_kittest::Harness;
 use crate::views::{TestRunView, View};
-use passivate_core::{test_helpers::fakes::channel_fakes::stub_sender, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunState}};
+use passivate_core::{test_helpers::fakes::channel_fakes::stub_sender, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
 use stdext::function_name;
 
 #[test]
@@ -27,6 +27,15 @@ pub fn show_when_build_failed() {
 pub fn show_tests_with_unknown_status_greyed_out() {
     let mut active = TestRun::default();
     active.tests.push(SingleTest::new("example_test".to_string(), SingleTestStatus::Unknown));
+
+    run_and_snapshot(active, &test_name(function_name!()));
+}
+
+#[test]
+pub fn show_build_status_above_tests_while_compiling() {
+    let mut active = TestRun::default();
+    active.tests.push(SingleTest::new("example_test".to_string(), SingleTestStatus::Unknown));
+    active.update(TestRunEvent::Compiling("The build is working on something right now!".to_string()));
 
     run_and_snapshot(active, &test_name(function_name!()));
 }
