@@ -15,6 +15,8 @@ serde = { version = "1.0", features = [ "derive" ] }
 serde_json = { version = "1.0", features = [ "preserve_order" ] }
 indexmap = { version = "2.8.0", features = [ "serde" ] }
 cargo_metadata = "0.19.2"
+epaint = "0.31"
+png = "0.17.16"
 
 [dev-dependencies]
 rstest = "0.25.0"

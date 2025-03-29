@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{DetailsView, TestRunView, View};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun};
 use passivate_core::test_helpers::builder::test_data_path;
 use stdext::function_name;
 
@@ -53,23 +53,23 @@ pub fn selecting_a_test_shows_it_in_details_view() {
 
 #[test]
 pub fn show_snapshot_associated_with_test_rgb() {
-    let example_snapshot = test_data_path().join("example_snapshot_rgb.png");
-    let failing_test = SingleTest::with_snapshot("ExampleTest".to_string(), SingleTestStatus::Failed, example_snapshot);
+    let failing_test = SingleTest::new("example_snapshot_rgb".to_string(), SingleTestStatus::Failed);
     
     show_test(&test_name(function_name!()), failing_test);
 }
 
 #[test]
 pub fn show_snapshot_associated_with_test_rgba() {
-    let example_snapshot = test_data_path().join("example_snapshot_rgba.png");
-    let failing_test = SingleTest::with_snapshot("ExampleTest".to_string(), SingleTestStatus::Failed, example_snapshot);
+    let failing_test = SingleTest::new("example_snapshot_rgba".to_string(), SingleTestStatus::Failed);
     
     show_test(&test_name(function_name!()), failing_test);
 }
 
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
+
     let mut details_view = DetailsView::new(receiver);
+    details_view.set_snapshots(Snapshots::new(test_data_path()));
 
     let ui = |ui: &mut egui::Ui|{
         details_view.ui(ui);

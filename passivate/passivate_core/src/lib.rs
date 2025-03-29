@@ -33,6 +33,7 @@ pub mod test_run_model {
     mod_use!(single_test_status);
     mod_use!(test_run);
     mod_use!(test_run_events);
+    mod_use!(snapshots);
 }
 
 pub mod passivate_cargo {
