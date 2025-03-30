@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::{ffi::OsString, rc::Rc};
 use std::path::PathBuf;
 use std::fs;
 use std::io::Error as IoError;
@@ -26,7 +26,7 @@ impl TestRunner {
 impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
-    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
+    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<Rc<String>, IoError>>>, TestRunError> {
         self.log.info("Ready to run!");
 
         fs::create_dir_all(&self.coverage_output_dir)?;

@@ -1,11 +1,12 @@
-use std::{io::Error as IoError, iter};
+use std::{io::Error as IoError, iter, rc::Rc};
 use crate::configuration::TestRunnerImplementation;
 
 use super::TestRunError;
 
 #[mockall::automock]
 pub trait RunTests {
-    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError>;
+    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) 
+        -> Result<Box<dyn Iterator<Item = Result<Rc<String>, IoError>>>, TestRunError>;
 }
 
 pub fn mock_run_tests() -> Box<MockRunTests> {

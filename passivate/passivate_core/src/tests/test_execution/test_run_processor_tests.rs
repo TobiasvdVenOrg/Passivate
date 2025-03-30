@@ -1,4 +1,4 @@
-use std::{io::Error as IoError, sync::mpsc::{channel, Receiver}};
+use std::{io::Error as IoError, rc::Rc, sync::mpsc::{channel, Receiver}};
 use galvanic_assert::is_variant;
 use galvanic_assert::assert_that;
 use rstest::rstest;
@@ -67,8 +67,8 @@ fn build_processor(implementation: TestRunnerImplementation, test_output: &str) 
     run_tests.expect_run_tests().return_once(move |_implementation, _instrument_coverage| {
         let iterator = test_output
             .lines()
-            .map(|line| Ok(line.to_string()))
-            .collect::<Vec<Result<String, IoError>>>()
+            .map(|line| Ok(Rc::new(line.to_string())))
+            .collect::<Vec<Result<Rc<String>, IoError>>>()
             .into_iter();
 
         Ok(Box::new(iterator))
