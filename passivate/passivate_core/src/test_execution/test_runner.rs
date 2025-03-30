@@ -1,6 +1,9 @@
+use std::ffi::OsString;
 use std::path::PathBuf;
-use std::{fs, process::Command};
+use std::fs;
 use std::io::{BufRead, BufReader, Error as IoError};
+
+use duct::cmd;
 
 use crate::configuration::TestRunnerImplementation;
 use crate::cross_cutting::Log;
@@ -24,56 +27,44 @@ impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<String, IoError>>>, TestRunError> {
-
         self.log.info("Ready to run!");
-
-        let (reader, writer) = os_pipe::pipe()?;
-        let writer_clone = writer.try_clone()?;
 
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
 
         self.log.info("Prepared output!");
 
-        let mut command = Command::new("cargo");
-        let command = command.current_dir(&self.working_dir);
-
-        let command = match implementation {
-            TestRunnerImplementation::Cargo => command.arg("test"),
-            TestRunnerImplementation::Nextest => command.arg("nextest").arg("run")
+        let mut args: Vec<OsString> = vec![];
+        match implementation {
+            TestRunnerImplementation::Cargo => args.push(OsString::from("test")),
+            TestRunnerImplementation::Nextest => {
+                args.push(OsString::from("nextest"));
+                args.push(OsString::from("run"));
+            }
         };
 
-        command
-            .arg("--no-fail-fast")
-            .arg("--target")
-            .arg("x86_64-pc-windows-msvc")
-            .arg("--target-dir")
-            .arg(&self.target_dir);
+        args.push(OsString::from("--no-fail-fast"));
+        args.push(OsString::from("--target"));
+        args.push(OsString::from("x86_64-pc-windows-msvc"));
+        args.push(OsString::from("--target-dir"));
+        args.push(OsString::from(&self.target_dir));
 
-        if instrument_coverage {
+        let command = cmd("cargo", args).dir(&self.working_dir);
+
+        let command = if instrument_coverage {
             command
                 .env("RUSTFLAGS", "-C instrument-coverage")
-                .env("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));  
-        }
+                .env("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"))
+        } else {
+            command
+        };
 
-        let process = command
-            .stdout(writer)
-            .stderr(writer_clone)
-            .spawn()?;
-
-        self.log.info("Spawned!");
-
-        drop(process);
-
-        self.log.info("Preparing to read!");
+        let stdout = command.stderr_to_stdout().reader()?;
 
         // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
-        let out_reader = BufReader::new(reader);
+        let out_reader = BufReader::new(stdout);
+        let output = out_reader.lines();
 
-        let stdout = out_reader.lines();
-
-        self.log.info("Returning stdout!");
-
-        Ok(Box::new(TestRunIterator::new(stdout)))
+        Ok(Box::new(TestRunIterator::new(output)))
     }
 }
