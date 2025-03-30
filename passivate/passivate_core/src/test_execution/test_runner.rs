@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::fs;
-use std::io::{BufRead, BufReader, Error as IoError};
+use std::io::Error as IoError;
 
 use duct::cmd;
 
@@ -61,10 +61,6 @@ impl RunTests for TestRunner {
 
         let stdout = command.stderr_to_stdout().reader()?;
 
-        // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
-        let out_reader = BufReader::new(stdout);
-        let output = out_reader.lines();
-
-        Ok(Box::new(TestRunIterator::new(output)))
+        Ok(Box::new(TestRunIterator::new(stdout)))
     }
 }
