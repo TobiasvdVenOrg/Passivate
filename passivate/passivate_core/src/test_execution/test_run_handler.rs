@@ -82,8 +82,13 @@ impl TestRunHandler {
 
     pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
     
-    fn run_test(&self, id: crate::test_run_model::TestId, update_snapshots: bool, cancellation: Cancellation) {
+    fn run_test(&mut self, id: crate::test_run_model::TestId, update_snapshots: bool, cancellation: Cancellation) {
         let result = self.runner.run_test(&self.tests_status_sender, id, update_snapshots, cancellation);
+
+        if let Err(error) = result {
+            let error_status = FailedTestRun { inner_error_display: error.to_string() };
+            let _  = self.tests_status_sender.send(TestRun::from_failed(error_status));
+        }
     }
 }
 

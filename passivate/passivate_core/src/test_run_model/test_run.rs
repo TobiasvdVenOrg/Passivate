@@ -47,7 +47,7 @@ impl TestRun {
                 for test in &mut self.tests {
                     test.status = SingleTestStatus::Unknown;
                 }
-        
+
                 true
             },
             TestRunEvent::TestFinished(test) => {
@@ -59,6 +59,10 @@ impl TestRun {
             TestRunEvent::NoTests => true,
             TestRunEvent::Compiling(message) => {
                 self.state = TestRunState::Building(message.clone());
+                true
+            },
+            TestRunEvent::TestsCompleted => {
+                self.state = TestRunState::Idle;
                 true
             },
         }

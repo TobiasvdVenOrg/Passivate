@@ -2,12 +2,16 @@ use core::slice;
 
 use super::{SingleTest, TestId};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct TestCollection {
     tests: Vec<SingleTest>
 }
 
 impl TestCollection {
+    pub fn iter(&self) -> impl Iterator<Item=&SingleTest> {
+        self.tests.iter()
+    }
+
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut SingleTest> {
         self.tests.iter_mut()
     }

@@ -64,4 +64,35 @@ impl RunTests for TestRunner {
 
         Ok(Box::new(TestRunIterator::new(stdout, cancellation)))
     }
+    
+    fn run_test(&self, implementation: TestRunnerImplementation, test_name: &str, update_snapshots: bool, cancellation: Cancellation) 
+        -> Result<Box<dyn Iterator<Item = Result<Rc<String>,TestRunError>>>,TestRunError> {
+            let mut args: Vec<OsString> = vec![];
+            match implementation {
+                TestRunnerImplementation::Cargo => args.push(OsString::from("test")),
+                TestRunnerImplementation::Nextest => {
+                    args.push(OsString::from("nextest"));
+                    args.push(OsString::from("run"));
+                }
+            };
+    
+            args.push(OsString::from(&test_name));
+            args.push(OsString::from("--no-fail-fast"));
+            args.push(OsString::from("--target"));
+            args.push(OsString::from("x86_64-pc-windows-msvc"));
+            args.push(OsString::from("--target-dir"));
+            args.push(OsString::from(&self.target_dir));
+
+            let command = cmd("cargo", args).dir(&self.working_dir);
+
+            let command = if update_snapshots {
+                command.env("UPDATE_SNAPSHOTS", "1")
+            } else {
+                command
+            };
+
+            let stdout = command.stderr_to_stdout().reader()?;
+    
+            Ok(Box::new(TestRunIterator::new(stdout, cancellation)))
+    }
 }

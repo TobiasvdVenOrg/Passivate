@@ -54,12 +54,34 @@ impl TestRunProcessor {
 
         if self.test_run.tests.is_empty() {
             self.update(TestRunEvent::NoTests, sender);
+        } else {
+            self.update(TestRunEvent::TestsCompleted, sender);
         }
 
         Ok(())
     }
     
-    pub fn run_test(&self, tests_status_sender: &Sender<TestRun>, id: TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
-        todo!()
+    pub fn run_test(&mut self, sender: &Sender<TestRun>, id: TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+        if let Some(test) = self.test_run.tests.find(&id) {
+            let iterator = self.run_tests.run_test(self.parse_output.get_implementation(), &test.name, update_snapshots, cancellation.clone())?;
+
+            cancellation.check()?;
+
+            for line in iterator {
+                let test_run_event = self.parse_output.parse_line(&line.unwrap());
+
+                cancellation.check()?;
+
+                if let Some(test_run_event) = test_run_event {
+                    self.update(test_run_event, sender);
+                }
+
+                cancellation.check()?;
+            }
+
+            self.update(TestRunEvent::TestsCompleted, sender);
+        }
+
+        Ok(())
     }
 }
