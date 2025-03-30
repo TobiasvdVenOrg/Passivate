@@ -81,6 +81,10 @@ impl TestRunHandler {
     }
 
     pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
+    
+    fn run_test(&self, id: crate::test_run_model::TestId, update_snapshots: bool, cancellation: Cancellation) {
+        let result = self.runner.run_test(&self.tests_status_sender, id, update_snapshots, cancellation);
+    }
 }
 
 impl Handler<ChangeEvent> for TestRunHandler {
@@ -90,17 +94,18 @@ impl Handler<ChangeEvent> for TestRunHandler {
         match event {
             ChangeEvent::File => self.run_tests(cancellation.clone()),
             ChangeEvent::Configuration(passivate_config) => {
-                let configuration_changed = self.coverage_enabled != passivate_config.coverage_enabled;
-                self.coverage_enabled = passivate_config.coverage_enabled;
+                        let configuration_changed = self.coverage_enabled != passivate_config.coverage_enabled;
+                        self.coverage_enabled = passivate_config.coverage_enabled;
 
-                if self.coverage_enabled {
-                    if configuration_changed {
-                        self.run_tests(cancellation.clone());
-                    }
-                } else {
-                    let _ = self.coverage_status_sender.send(CoverageStatus::Disabled);
-                }
-            },
+                        if self.coverage_enabled {
+                            if configuration_changed {
+                                self.run_tests(cancellation.clone());
+                            }
+                        } else {
+                            let _ = self.coverage_status_sender.send(CoverageStatus::Disabled);
+                        }
+                    },
+            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(id, update_snapshots, cancellation.clone()),
         }
         
         self.log.info("Done sending it!");

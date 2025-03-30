@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use crate::{actors::Cancellation, cross_cutting::Log, test_run_model::{TestRun, TestRunEvent}};
+use crate::{actors::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent}};
 
 use super::{ParseOutput, RunTests, TestRunError};
 
@@ -57,5 +57,9 @@ impl TestRunProcessor {
         }
 
         Ok(())
+    }
+    
+    pub fn run_test(&self, tests_status_sender: &Sender<TestRun>, id: TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+        todo!()
     }
 }
