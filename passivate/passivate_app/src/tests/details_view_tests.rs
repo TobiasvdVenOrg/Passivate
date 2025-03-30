@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{DetailsView, TestRunView, View};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
 use passivate_core::test_helpers::builder::test_data_path;
 use stdext::function_name;
 
@@ -36,13 +36,51 @@ pub fn selecting_a_test_shows_it_in_details_view() {
     });
 
     let mut test_run = TestRun::default();
-    test_run.tests.push(SingleTest::new("example_test".to_string(), SingleTestStatus::Failed));
+    test_run.tests.add(SingleTest::new("example_test".to_string(), SingleTestStatus::Failed));
     test_run_sender.send(test_run).unwrap();
 
     test_run_ui.run();
 
     let test_entry = test_run_ui.get_by_label("example_test");
     test_entry.click();
+
+    test_run_ui.run();
+    details_ui.run();
+
+    details_ui.fit_contents();
+    details_ui.snapshot(&test_name(function_name!()));
+}
+
+#[test]
+pub fn when_a_test_is_selected_and_updates_the_details_view_also_updates() {
+    let (test_run_sender, test_run_receiver)  = channel();
+    let (details_sender, details_receiver)  = channel();
+
+    let mut details_view = DetailsView::new(details_receiver);
+    let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
+
+    let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
+        test_run_view.ui(ui);
+    });
+
+    let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui|{
+        details_view.ui(ui);
+    });
+
+    let mut test_run = TestRun::default();
+    test_run.update(TestRunEvent::TestFinished(SingleTest::new("example_test".to_string(), SingleTestStatus::Failed)));
+    test_run_sender.send(test_run.clone()).unwrap();
+
+    test_run_ui.run();
+
+    let test_entry = test_run_ui.get_by_label("example_test");
+    test_entry.click();
+
+    test_run_ui.run();
+    details_ui.run();
+
+    test_run.update(TestRunEvent::TestFinished(SingleTest::new("example_test".to_string(), SingleTestStatus::Passed)));
+    test_run_sender.send(test_run).unwrap();
 
     test_run_ui.run();
     details_ui.run();
@@ -77,7 +115,7 @@ fn show_test(test_name: &str, single_test: SingleTest) {
 
     let mut harness = Harness::new_ui(ui);
 
-    sender.send(single_test).unwrap();
+    sender.send(Some(single_test)).unwrap();
 
     harness.run();
     harness.fit_contents();

@@ -1,25 +1,28 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState};
 use std::sync::mpsc::{Receiver, Sender};
 use crate::views::View;
 
 pub struct TestRunView {
     receiver: Receiver<TestRun>,
-    test_details: Sender<SingleTest>,
-    status: TestRun
+    test_details: Sender<Option<SingleTest>>,
+    status: TestRun,
+    selected_test: Option<TestId>
 }
 
 impl TestRunView {
-    pub fn new(receiver: Receiver<TestRun>, test_details: Sender<SingleTest>) -> TestRunView {
-        TestRunView { receiver, test_details, status: TestRun::default() }
+    pub fn new(receiver: Receiver<TestRun>, test_details: Sender<Option<SingleTest>>) -> TestRunView {
+        TestRunView { receiver, test_details, status: TestRun::default(), selected_test: None }
     }
 
-    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) {
+    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest> {
         let text = RichText::new(&test.name).size(16.0).color(color);
         
         if ui.button(text).clicked() {
-            self.test_details.send(test.clone()).unwrap();
+            return Some(test.clone());
         }
+
+        None
     }
 
     fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) {
@@ -27,12 +30,27 @@ impl TestRunView {
         
         ui.label(text);
     }
+
+    fn send_selected_test_details(&self) {
+        if let Some(selected_test) = &self.selected_test {
+            let _ = self.test_details.send(self.status.tests.find(selected_test));
+        }
+    }
+
+    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) -> Option<SingleTest> {
+        match test.status {
+            SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
+            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+            SingleTestStatus::Unknown => { self.test_label(ui, test); None }
+        }
+    }
 }
 
 impl View for TestRunView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
         if let Ok(status) = self.receiver.try_recv() {
             self.status = status;
+            self.send_selected_test_details();
         }
 
         match &self.status.state {
@@ -68,11 +86,10 @@ impl View for TestRunView {
         }
 
         for test in &self.status.tests {
-            match test.status {
-                SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-                SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
-                SingleTestStatus::Unknown => self.test_label(ui, test)
-            };
+            if let Some(new_selection) = self.show_test(ui, test) {
+                self.selected_test = Some(new_selection.id());
+                self.send_selected_test_details();
+            }
         }
     }
 

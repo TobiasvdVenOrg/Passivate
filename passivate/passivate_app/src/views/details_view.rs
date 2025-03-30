@@ -7,14 +7,14 @@ use super::View;
 
 
 pub struct DetailsView {
-    receiver: Receiver<SingleTest>,
+    receiver: Receiver<Option<SingleTest>>,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
     snapshot: Option<Result<TextureHandle, SnapshotError>>
 }
 
 impl DetailsView {
-    pub fn new(receiver: Receiver<SingleTest>) -> Self {
+    pub fn new(receiver: Receiver<Option<SingleTest>>) -> Self {
         Self { receiver, single_test: None, snapshots: None, snapshot: None }
     }
 
@@ -37,14 +37,16 @@ impl View for DetailsView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
         if let Ok(new_test) = self.receiver.try_recv() {
             if let Some(snapshots) = &self.snapshots {
-                if let Some(snapshot) = snapshots.from_test(&new_test) {
-                    self.snapshot = Some(snapshot.map(|s| ui.ctx().load_texture("snapshot", s, TextureOptions::LINEAR)));
-                } else {
-                    self.snapshot = None;
+                if let Some(new_test) = &new_test {
+                    if let Some(snapshot) = snapshots.from_test(new_test) {
+                        self.snapshot = Some(snapshot.map(|s| ui.ctx().load_texture("snapshot", s, TextureOptions::LINEAR)));
+                    } else {
+                        self.snapshot = None;
+                    }
                 }
             }
 
-            self.single_test = Some(new_test);
+            self.single_test = new_test;
         }
 
         if let Some(single_test) = &self.single_test {

@@ -1,4 +1,4 @@
-use super::{SingleTest, SingleTestStatus, TestRunEvent};
+use super::{SingleTestStatus, TestCollection, TestRunEvent};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -29,12 +29,12 @@ pub enum TestRunState {
 #[derive(Clone)]
 pub struct TestRun {
     pub state: TestRunState,
-    pub tests: Vec<SingleTest>
+    pub tests: TestCollection
 }
 
 impl TestRun {
     pub fn from_state(state: TestRunState) -> Self {
-        Self { state, tests: vec![] }
+        Self { state, tests: TestCollection::default() }
     }
 
     pub fn from_failed(failure: FailedTestRun) -> Self {
@@ -52,7 +52,9 @@ impl TestRun {
             },
             TestRunEvent::TestFinished(test) => {
                 self.state = TestRunState::Running;
-                self.add_or_update_test(test)
+                self.tests.add_or_update(test);
+
+                true
             },
             TestRunEvent::NoTests => true,
             TestRunEvent::Compiling(message) => {
@@ -61,19 +63,10 @@ impl TestRun {
             },
         }
     }
-
-    fn add_or_update_test(&mut self, test: SingleTest) -> bool {
-        match self.tests.iter_mut().find(|t| t.name == test.name) {
-            Some(existing) => *existing = test,
-            None => self.tests.push(test),
-        };
-        
-        true
-    }
 }
 
 impl Default for TestRun {
     fn default() -> Self {
-        Self { state: TestRunState::Idle, tests: vec![] }
+        Self { state: TestRunState::Idle, tests: TestCollection::default() }
     }
 }
