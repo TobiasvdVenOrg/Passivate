@@ -3,16 +3,15 @@
 use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
-mod helpers;
-use helpers::*;
-use passivate_core::actors::Cancellation;
-use passivate_core::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
-use passivate_core::passivate_grcov::get_profraw_count;
+use crate::actors::Cancellation;
+use crate::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
+use crate::passivate_grcov::get_profraw_count;
 use rstest::*;
 use stdext::function_name;
 use std::sync::mpsc::channel;
-use passivate_core::coverage::CoverageStatus;
+use crate::coverage::CoverageStatus;
 use pretty_assertions::assert_eq;
+use crate::test_helpers::builder::*;
 
 #[rstest]
 #[case::cargo(cargo_builder())]

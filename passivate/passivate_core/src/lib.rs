@@ -97,6 +97,7 @@ pub mod tests {
 
     mod passivate_grcov {
         mod covdir_json_tests;
+        mod grcov_tests;
     }
     
     mod passivate_cargo {
