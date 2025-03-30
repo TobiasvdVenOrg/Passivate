@@ -3,7 +3,7 @@ use galvanic_assert::is_variant;
 use galvanic_assert::assert_that;
 use rstest::rstest;
 
-use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
+use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunError, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
 
 
 struct TestRunIterator {
@@ -64,11 +64,11 @@ fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIt
 fn build_processor(implementation: TestRunnerImplementation, test_output: &str) -> TestRunProcessor {
     let mut run_tests = MockRunTests::new();
     let test_output = test_output.to_string();
-    run_tests.expect_run_tests().return_once(move |_implementation, _instrument_coverage| {
+    run_tests.expect_run_tests().return_once(move |_implementation, _instrument_coverage, _cancellation| {
         let iterator = test_output
             .lines()
             .map(|line| Ok(Rc::new(line.to_string())))
-            .collect::<Vec<Result<Rc<String>, IoError>>>()
+            .collect::<Vec<Result<Rc<String>, TestRunError>>>()
             .into_iter();
 
         Ok(Box::new(iterator))

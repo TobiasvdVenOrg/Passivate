@@ -5,6 +5,7 @@ use std::io::Error as IoError;
 
 use duct::cmd;
 
+use crate::actors::Cancellation;
 use crate::configuration::TestRunnerImplementation;
 use crate::cross_cutting::Log;
 
@@ -26,7 +27,8 @@ impl TestRunner {
 impl RunTests for TestRunner {
     // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
-    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) -> Result<Box<dyn Iterator<Item = Result<Rc<String>, IoError>>>, TestRunError> {
+    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool, cancellation: Cancellation) 
+        -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError> {
         self.log.info("Ready to run!");
 
         fs::create_dir_all(&self.coverage_output_dir)?;
@@ -61,6 +63,6 @@ impl RunTests for TestRunner {
 
         let stdout = command.stderr_to_stdout().reader()?;
 
-        Ok(Box::new(TestRunIterator::new(stdout)))
+        Ok(Box::new(TestRunIterator::new(stdout, cancellation)))
     }
 }

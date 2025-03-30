@@ -1,12 +1,12 @@
-use std::{io::Error as IoError, iter, rc::Rc};
-use crate::configuration::TestRunnerImplementation;
+use std::{iter, rc::Rc};
+use crate::{actors::Cancellation, configuration::TestRunnerImplementation};
 
 use super::TestRunError;
 
 #[mockall::automock]
 pub trait RunTests {
-    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool) 
-        -> Result<Box<dyn Iterator<Item = Result<Rc<String>, IoError>>>, TestRunError>;
+    fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool, cancellation: Cancellation) 
+        -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError>;
 }
 
 pub fn mock_run_tests() -> Box<MockRunTests> {
@@ -15,7 +15,7 @@ pub fn mock_run_tests() -> Box<MockRunTests> {
 
 pub fn stub_run_tests() -> Box<MockRunTests> {
     let mut mock = mock_run_tests();
-    mock.expect_run_tests().returning(|_implementation, _instrument_coverage| { Ok(Box::new(iter::empty())) });
+    mock.expect_run_tests().returning(|_implementation, _instrument_coverage, _cancellation| { Ok(Box::new(iter::empty())) });
 
     mock
 }

@@ -4,16 +4,21 @@ use std::rc::Rc;
 
 use duct::ReaderHandle;
 
+use crate::actors::{Cancellation, Cancelled};
+
+use super::TestRunError;
+
 pub struct TestRunIterator {
     stdout: Option<BufReader<ReaderHandle>>,
-    buffer: Rc<String>
+    buffer: Rc<String>,
+    cancellation: Cancellation
 }
 
 impl TestRunIterator {
-    pub fn new(reader_handle: ReaderHandle) -> Self {
+    pub fn new(reader_handle: ReaderHandle, cancellation: Cancellation) -> Self {
         // TODO: Consider rewriting without BufReader, buffering may slow down responsiveness?
         let reader = BufReader::new(reader_handle);
-        Self { stdout: Some(reader), buffer: Rc::new(String::new()) }
+        Self { stdout: Some(reader), buffer: Rc::new(String::new()), cancellation }
     }
 
     pub fn kill(&mut self) -> Result<(), IoError> {
@@ -23,9 +28,14 @@ impl TestRunIterator {
 }
 
 impl Iterator for TestRunIterator {
-    type Item = Result<Rc<String>, IoError>;
+    type Item = Result<Rc<String>, TestRunError>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.cancellation.is_cancelled() {
+            let _ = self.kill();
+            return Some(Err(TestRunError::Cancelled(Cancelled)))
+        }
+
         if let Some(reader) = &mut self.stdout {
             let buffer = match Rc::get_mut(&mut self.buffer) {
                 Some(buffer) => { buffer.clear(); buffer },
@@ -41,7 +51,7 @@ impl Iterator for TestRunIterator {
             return match result {
                 Ok(0) => None,
                 Ok(_size) => Some(Ok(Rc::clone(&self.buffer))),
-                Err(error) => Some(Err(error)),
+                Err(error) => Some(Err(TestRunError::Io(error))),
             }
         }
 

@@ -32,7 +32,7 @@ impl TestRunProcessor {
 
         self.log.info("Running the tests...");
 
-        let iterator = self.run_tests.run_tests(self.parse_output.get_implementation(), instrument_coverage)?;
+        let iterator = self.run_tests.run_tests(self.parse_output.get_implementation(), instrument_coverage, cancellation.clone())?;
 
         cancellation.check()?;
 
