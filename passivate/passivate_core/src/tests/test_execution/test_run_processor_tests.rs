@@ -32,12 +32,12 @@ pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerI
 #[rstest]
 #[case::cargo(TestRunnerImplementation::Cargo, "test add_2_and_2_is_4 ... ok")]
 #[case::nextest(TestRunnerImplementation::Nextest, "PASS [   0.015s] sample_project::add_tests add_2_and_4_is_6")]
-pub fn first_run_transitions_to_running(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
+pub fn run_transitions_to_idle_after_tests_complete(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
     let test_run = run(implementation, test_output);
 
-    let running = test_run.last().unwrap().state;
+    let state = test_run.last().unwrap().state;
 
-    assert!(matches!(running, TestRunState::Running));
+    assert_that!(&state, is_variant!(TestRunState::Idle));
 }
 
 #[rstest]
