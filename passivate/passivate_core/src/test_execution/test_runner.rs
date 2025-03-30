@@ -1,7 +1,6 @@
 use std::{ffi::OsString, rc::Rc};
 use std::path::PathBuf;
 use std::fs;
-use std::io::Error as IoError;
 
 use duct::cmd;
 

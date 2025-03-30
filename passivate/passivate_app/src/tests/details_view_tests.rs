@@ -91,23 +91,30 @@ pub fn when_a_test_is_selected_and_updates_the_details_view_also_updates() {
 
 #[test]
 pub fn show_snapshot_associated_with_test_rgb() {
-    let failing_test = SingleTest::new("example_snapshot_rgb".to_string(), SingleTestStatus::Failed);
+    let test_with_snapshot = SingleTest::new("example_snapshot_rgb".to_string(), SingleTestStatus::Failed);
     
-    show_test(&test_name(function_name!()), failing_test);
+    show_test(&test_name(function_name!()), test_with_snapshot);
 }
 
 #[test]
 pub fn show_snapshot_associated_with_test_rgba() {
-    let failing_test = SingleTest::new("example_snapshot_rgba".to_string(), SingleTestStatus::Failed);
+    let test_with_snapshot = SingleTest::new("example_snapshot_rgba".to_string(), SingleTestStatus::Failed);
     
-    show_test(&test_name(function_name!()), failing_test);
+    show_test(&test_name(function_name!()), test_with_snapshot);
+}
+
+#[test]
+pub fn show_current_and_new_snapshots_associated_with_test() {
+    let test_with_changed_snapshot = SingleTest::new("example_snapshot_changed".to_string(), SingleTestStatus::Failed);
+    
+    show_test(&test_name(function_name!()), test_with_changed_snapshot);
 }
 
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
 
     let mut details_view = DetailsView::new(receiver);
-    details_view.set_snapshots(Snapshots::new(test_data_path()));
+    details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{
         details_view.ui(ui);

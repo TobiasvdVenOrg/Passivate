@@ -1,4 +1,4 @@
-use std::{io::Error as IoError, rc::Rc, sync::mpsc::{channel, Receiver}};
+use std::{rc::Rc, sync::mpsc::{channel, Receiver}};
 use galvanic_assert::is_variant;
 use galvanic_assert::assert_that;
 use rstest::rstest;
