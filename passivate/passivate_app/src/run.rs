@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use egui::Context;
@@ -52,7 +53,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let log = ChannelLog::new(log_sender);
 
-    let test_runner = TestRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone(), Box::new(log.clone()));
+    let target = OsString::from("x86_64-pc-windows-msvc");
+    let test_runner = TestRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone(), Box::new(log.clone()));
     let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
     let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run, Box::new(log.clone()));

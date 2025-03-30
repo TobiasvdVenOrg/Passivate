@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
@@ -97,14 +98,21 @@ impl ChangeEventHandlerBuilder {
     }
 
     pub fn build(&self) -> TestRunHandler {
-        let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
+        #[cfg(target_os = "windows")]
+        let target = OsString::from("x86_64-pc-windows-msvc");
+
+        #[cfg(target_os = "linux")]
+        let target = OsString::from("aarch64-unknown-linux-gnu");
+
         let runner = Box::new(TestRunner::new(
+            target,
             self.get_workspace_path().clone(), 
             self.get_output_path().clone(), 
             self.get_coverage_path().clone(),
             stub_log()
         ));
-
+        
+        let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
         let processor = TestRunProcessor::new(runner, parser, stub_log());
 
         let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);

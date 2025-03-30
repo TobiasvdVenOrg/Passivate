@@ -11,6 +11,7 @@ use crate::cross_cutting::Log;
 use super::{RunTests, TestRunError, TestRunIterator};
 
 pub struct TestRunner {
+    target: OsString,
     working_dir: PathBuf, 
     target_dir: PathBuf, 
     coverage_output_dir: PathBuf,
@@ -18,8 +19,8 @@ pub struct TestRunner {
 }
 
 impl TestRunner {
-    pub fn new(working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf, log: Box<dyn Log + Send>) -> Self {
-        Self { working_dir, target_dir, coverage_output_dir, log }
+    pub fn new(target: OsString, working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf, log: Box<dyn Log + Send>) -> Self {
+        Self { target, working_dir, target_dir, coverage_output_dir, log }
     }
 }
 
@@ -46,7 +47,7 @@ impl RunTests for TestRunner {
 
         args.push(OsString::from("--no-fail-fast"));
         args.push(OsString::from("--target"));
-        args.push(OsString::from("x86_64-pc-windows-msvc"));
+        args.push(self.target.clone());
         args.push(OsString::from("--target-dir"));
         args.push(OsString::from(&self.target_dir));
 
