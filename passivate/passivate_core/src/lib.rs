@@ -82,7 +82,7 @@ pub mod actors {
     mod_use!(actor);
     mod_use!(actor_api);
     mod_use!(handler);
-    mod actor_event;
+    mod_use!(actor_event);
 }
 
 #[cfg(test)]

@@ -1,26 +1,29 @@
 use std::sync::mpsc::Receiver;
 
-use egui::{Color32, ColorImage, RichText, TextureHandle, TextureOptions};
-use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
+use egui::{Color32, RichText, TextureHandle, TextureOptions};
+use passivate_core::{actors::ActorApi, change_events::ChangeEvent};
+use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 
 use super::View;
 
 struct SnapshotHandles {
     pub current: Option<Result<TextureHandle, SnapshotError>>,
     pub new: Option<Result<TextureHandle, SnapshotError>>,
-    pub are_identical: bool
+    pub are_identical: bool,
+    pub test_id: TestId
 }
 
 pub struct DetailsView {
     receiver: Receiver<Option<SingleTest>>,
+    change_event_api: ActorApi<ChangeEvent>,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
     snapshot_handles: Option<SnapshotHandles>
 }
 
 impl DetailsView {
-    pub fn new(receiver: Receiver<Option<SingleTest>>) -> Self {
-        Self { receiver, single_test: None, snapshots: None, snapshot_handles: None }
+    pub fn new(receiver: Receiver<Option<SingleTest>>, change_event_api: ActorApi<ChangeEvent>) -> Self {
+        Self { receiver, change_event_api, single_test: None, snapshots: None, snapshot_handles: None }
     }
 
     pub fn set_snapshots(&mut self, snapshots: Snapshots) {
@@ -40,12 +43,12 @@ impl DetailsView {
                 let current = snapshot.current.map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
                 let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
 
-                self.snapshot_handles = Some(SnapshotHandles { current, new, are_identical });
+                self.snapshot_handles = Some(SnapshotHandles { current, new, are_identical, test_id: new_test.id().clone() });
             }
         }
     }
 
-    fn draw_snapshots(ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles) {
+    fn draw_snapshots(&self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles) {
         if let Some(current) = &snapshot_handles.current {
             if snapshot_handles.are_identical {
                 Self::draw_snapshot(ui, current);
@@ -60,7 +63,18 @@ impl DetailsView {
         }
 
         if let Some(new) = &snapshot_handles.new {
-            ui.heading("New");
+            ui.horizontal(|ui| {
+                ui.heading("New");
+
+                let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
+                if ui.button(approve).clicked() {
+                    self.change_event_api.send(ChangeEvent::SingleTest { 
+                        id: snapshot_handles.test_id.clone(), 
+                        update_snapshots: true 
+                    });
+                }
+            });
+
             Self::draw_snapshot(ui, new);
         }
     }
@@ -95,7 +109,7 @@ impl View for DetailsView {
         }
 
         if let Some(snapshot_handles) = &self.snapshot_handles {
-            Self::draw_snapshots(ui, snapshot_handles);
+            self.draw_snapshots(ui, snapshot_handles);
         }
     }
 

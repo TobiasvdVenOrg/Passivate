@@ -1,9 +1,15 @@
 use std::sync::mpsc::channel;
 use egui_kittest::{Harness, kittest::Queryable};
+use galvanic_assert::*;
+use galvanic_assert::matchers::*;
+use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
+use passivate_core::actors::ActorApi;
 use crate::views::{DetailsView, TestRunView, View};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
 use passivate_core::test_helpers::builder::test_data_path;
 use stdext::function_name;
+use rstest::*;
+use passivate_core::{change_events::ChangeEvent, test_run_model::TestId};
 
 #[test]
 pub fn show_a_passing_test() {
@@ -24,7 +30,7 @@ pub fn selecting_a_test_shows_it_in_details_view() {
     let (test_run_sender, test_run_receiver)  = channel();
     let (details_sender, details_receiver)  = channel();
 
-    let mut details_view = DetailsView::new(details_receiver);
+    let mut details_view = DetailsView::new(details_receiver, stub_actor_api());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -52,11 +58,11 @@ pub fn selecting_a_test_shows_it_in_details_view() {
 }
 
 #[test]
-pub fn when_a_test_is_selected_and_updates_the_details_view_also_updates() {
+pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates() {
     let (test_run_sender, test_run_receiver)  = channel();
     let (details_sender, details_receiver)  = channel();
 
-    let mut details_view = DetailsView::new(details_receiver);
+    let mut details_view = DetailsView::new(details_receiver, stub_actor_api());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -124,10 +130,47 @@ pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identica
     show_test(&test_name(function_name!()), test_run_identical_snapshot);
 }
 
+#[rstest]
+#[case::current_and_new("example_snapshot_changed")]
+#[case::only_new("example_snapshot_only_new")]
+pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] test: &str) {
+    use passivate_core::actors::ActorEvent;
+
+    let snapshot_test = SingleTest::new(test.to_string(), SingleTestStatus::Failed);
+    
+    let (details_sender, details_receiver)  = channel();
+    let (test_run_sender, test_run_receiver) = channel();
+    
+    let mut details_view = DetailsView::new(details_receiver, ActorApi::new(test_run_sender));
+    details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
+
+    let ui = |ui: &mut egui::Ui|{
+        details_view.ui(ui);
+    };
+
+    let mut harness = Harness::new_ui(ui);
+
+    details_sender.send(Some(snapshot_test)).unwrap();
+    harness.run();
+
+    let approve = harness.get_by_label("Approve");
+    approve.click();
+    harness.run();
+
+    let approval_run = test_run_receiver.try_iter().last().unwrap();
+
+    assert_that!(&approval_run, has_structure!(ActorEvent::Custom [
+        has_structure!(ChangeEvent::SingleTest {
+            id: eq(TestId::new(test.to_string())),
+            update_snapshots: eq(true)
+        })
+    ]));
+}
+
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
 
-    let mut details_view = DetailsView::new(receiver);
+    let mut details_view = DetailsView::new(receiver, stub_actor_api());
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{
