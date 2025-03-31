@@ -6,7 +6,7 @@ use super::SingleTest;
 use thiserror::Error;
 
 pub struct Snapshot {
-    pub current: Result<ColorImage, SnapshotError>,
+    pub current: Option<Result<ColorImage, SnapshotError>>,
     pub new: Option<Result<ColorImage, SnapshotError>>
 }
 
@@ -36,20 +36,11 @@ impl Snapshots {
         Self { snapshot_directory }
     }
 
-    pub fn from_test(&self, single_test: &SingleTest) -> Option<Snapshot> {
+    pub fn from_test(&self, single_test: &SingleTest) -> Snapshot {
         let current = self.from_file(PathBuf::from(&single_test.name).with_extension("png"));
+        let new = self.from_file(PathBuf::from(&single_test.name).with_extension("new.png"));
         
-        if let Some(current) = current {
-            if let Ok(current) = current {
-                let new = self.from_file(PathBuf::from(&single_test.name).with_extension("new.png"));
-
-                return Some(Snapshot { current: Ok(current), new });
-            }
-
-            return Some(Snapshot { current, new: None });
-        }
-
-        None
+        Snapshot { current, new }
     }
 
     pub fn from_file(&self, file: PathBuf) -> Option<Result<ColorImage, SnapshotError>> {

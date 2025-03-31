@@ -6,7 +6,7 @@ use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use super::View;
 
 struct SnapshotHandles {
-    pub current: Result<TextureHandle, SnapshotError>,
+    pub current: Option<Result<TextureHandle, SnapshotError>>,
     pub new: Option<Result<TextureHandle, SnapshotError>>
 }
 
@@ -29,35 +29,38 @@ impl DetailsView {
     fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_test: &Option<SingleTest>) {
         if let Some(snapshots) = &self.snapshots {
             if let Some(new_test) = new_test {
-                if let Some(snapshot) = snapshots.from_test(new_test) {
-                    let current = snapshot.current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR));
+                let snapshot = snapshots.from_test(new_test);
 
-                    let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
+                let current = snapshot.current.map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
+                let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
 
-                    self.snapshot_handles = Some(SnapshotHandles { current, new });
-                } else {
-                    self.snapshot_handles = None;
-                }
+                self.snapshot_handles = Some(SnapshotHandles { current, new });
             }
         }
     }
 
     fn draw_snapshots(ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles) {
-        match &snapshot_handles.current {
+        if let Some(current) = &snapshot_handles.current {
+            if snapshot_handles.new.is_some() {
+                ui.heading("Current");
+            }
+            
+            Self::draw_snapshot(ui, current);
+        }
+
+        if let Some(new) = &snapshot_handles.new {
+            ui.heading("New");
+            Self::draw_snapshot(ui, new);
+        }
+    }
+
+    fn draw_snapshot(ui: &mut egui_dock::egui::Ui, snapshot: &Result<TextureHandle, SnapshotError>) {
+        match &snapshot {
             Ok(snapshot) => { ui.image(snapshot); },
             Err(error) => {
                 let text = RichText::new(error.to_string()).size(16.0).color(Color32::RED);
                 ui.heading(text);
             }
-        };
-
-        match &snapshot_handles.new {
-            Some(Ok(snapshot)) => { ui.image(snapshot); },
-            Some(Err(error)) => {
-                let text = RichText::new(error.to_string()).size(16.0).color(Color32::RED);
-                ui.heading(text);
-            },
-            None => {}
         };
     }
 }
