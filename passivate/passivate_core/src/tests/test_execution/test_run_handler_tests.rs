@@ -9,6 +9,9 @@ use crate::change_events::ChangeEvent;
 use galvanic_assert::{assert_that, is_variant};
 use pretty_assertions::assert_eq;
 use stdext::function_name;
+use std::io::Error as IoError;
+use std::fs;
+use crate::test_run_model::TestId;
 
 #[test]
 #[cfg(target_os = "windows")]
@@ -53,6 +56,33 @@ pub fn handle_single_test_run() {
     assert!(final_state.tests.iter().all(|test| {
         test.status == SingleTestStatus::Passed
     }));
+}
+
+#[test]
+#[cfg(target_os = "windows")]
+pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snapshot_with_approved() -> Result<(), IoError> {
+    let mut builder = nextest_builder();
+    let builder = builder
+        .with_workspace("project_snapshot_tests")
+        .with_output(function_name!())
+        .clean_snapshots();
+
+    let mut handler = builder.build();
+
+    // Run all tests first to generate a new snapshot
+    handler.handle(ChangeEvent::File, Cancellation::default());
+
+    let snapshot_test_id = TestId::new("snapshot_test".to_string());
+
+    handler.handle(ChangeEvent::SingleTest {
+        id: snapshot_test_id,
+        update_snapshots: true
+    }, Cancellation::default());
+
+    let expected_approved_snapshot = builder.get_snapshots_path().join("example_snapshot.png");
+    assert_that!(fs::exists(expected_approved_snapshot)?);
+
+    Ok(())
 }
 
 #[test]

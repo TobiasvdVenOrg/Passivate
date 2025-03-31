@@ -139,6 +139,16 @@ impl ChangeEventHandlerBuilder {
         self
     }
 
+    pub fn clean_snapshots(&mut self) -> &mut Self {
+        let snapshots_path = self.get_snapshots_path();
+
+        if fs::exists(&snapshots_path).expect("Failed to check if output_path exists!") {
+            fs::remove_dir_all(&snapshots_path).expect("Failed to clear output path!")
+        }
+
+        self
+    }
+
     pub fn get_workspace_path(&self) -> PathBuf {
         self.base_workspace_path.join(&self.workspace_path)
     }
@@ -157,6 +167,10 @@ impl ChangeEventHandlerBuilder {
 
     pub fn get_binary_path(&self) -> PathBuf {
         self.get_output_path().join("x86_64-pc-windows-msvc/debug")
+    }
+
+    pub fn get_snapshots_path(&self) -> PathBuf {
+        self.get_workspace_path().join("tests").join("snapshots")
     }
 
     fn runner_identifier(&self) -> PathBuf {
