@@ -1,13 +1,14 @@
 use std::sync::mpsc::Receiver;
 
-use egui::{Color32, RichText, TextureHandle, TextureOptions};
+use egui::{Color32, ColorImage, RichText, TextureHandle, TextureOptions};
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 
 use super::View;
 
 struct SnapshotHandles {
     pub current: Option<Result<TextureHandle, SnapshotError>>,
-    pub new: Option<Result<TextureHandle, SnapshotError>>
+    pub new: Option<Result<TextureHandle, SnapshotError>>,
+    pub are_identical: bool
 }
 
 pub struct DetailsView {
@@ -30,21 +31,31 @@ impl DetailsView {
         if let Some(snapshots) = &self.snapshots {
             if let Some(new_test) = new_test {
                 let snapshot = snapshots.from_test(new_test);
+                let mut are_identical = false;
+
+                if let (Some(Ok(current)), Some(Ok(new))) = (&snapshot.current, &snapshot.new) {
+                    are_identical = current == new;
+                }
 
                 let current = snapshot.current.map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
                 let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
 
-                self.snapshot_handles = Some(SnapshotHandles { current, new });
+                self.snapshot_handles = Some(SnapshotHandles { current, new, are_identical });
             }
         }
     }
 
     fn draw_snapshots(ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles) {
         if let Some(current) = &snapshot_handles.current {
+            if snapshot_handles.are_identical {
+                Self::draw_snapshot(ui, current);
+                return;
+            }
+
             if snapshot_handles.new.is_some() {
                 ui.heading("Current");
             }
-            
+
             Self::draw_snapshot(ui, current);
         }
 

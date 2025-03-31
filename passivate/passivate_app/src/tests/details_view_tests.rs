@@ -117,6 +117,13 @@ pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snap
     show_test(&test_name(function_name!()), test_first_run);
 }
 
+#[test]
+pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identical() {
+    let test_run_identical_snapshot = SingleTest::new("example_snapshot_identical".to_string(), SingleTestStatus::Failed);
+    
+    show_test(&test_name(function_name!()), test_run_identical_snapshot);
+}
+
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
 
