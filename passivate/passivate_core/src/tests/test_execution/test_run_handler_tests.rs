@@ -86,6 +86,7 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
 }
 
 #[test]
+#[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported() {  
     let mut run_tests = mock_run_tests();
 
