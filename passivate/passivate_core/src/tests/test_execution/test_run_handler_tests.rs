@@ -11,6 +11,7 @@ use pretty_assertions::assert_eq;
 use stdext::function_name;
 
 #[test]
+#[cfg(target_os = "windows")]
 pub fn handle_single_test_run() {
     let (test_run_sender, test_run_receiver) = channel();
     let mut handler = nextest_builder()
