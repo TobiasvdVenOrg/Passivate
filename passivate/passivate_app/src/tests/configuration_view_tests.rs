@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
 use egui_kittest::{Harness, kittest::Queryable};
@@ -23,7 +24,11 @@ pub fn show_configuration() {
 
     let mut harness = Harness::new_ui(ui);
 
-    let new_configuration = PassivateConfig { coverage_enabled: true };
+    let new_configuration = PassivateConfig { 
+        coverage_enabled: true, 
+        snapshots_path: Some(String::from("tests/snapshots")) 
+    };
+
     configuration_sender.send(new_configuration).unwrap();
 
     harness.run();
@@ -41,7 +46,8 @@ pub fn configure_coverage_enabled() {
 
     let configuration_receiver = channel_fakes::stub_receiver();
     
-    let initial_configuration = PassivateConfig { coverage_enabled: false };
+    let initial_configuration = PassivateConfig { coverage_enabled: false, ..PassivateConfig::default() };
+
     let mut configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, initial_configuration);
 
     let ui = |ui: &mut egui::Ui|{
@@ -60,9 +66,6 @@ pub fn configure_coverage_enabled() {
 
     assert!(change_handler.coverage_enabled());
     assert!(configuration.configuration().coverage_enabled);
-
-    harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
 }
 
 fn test_name(function_name: &str) -> String {

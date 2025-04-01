@@ -1,4 +1,4 @@
-use std::sync::mpsc::Receiver;
+use std::{path::{Path, PathBuf}, sync::mpsc::Receiver};
 use passivate_core::{actors::ActorApi, configuration::{ConfigurationChangeEvent, PassivateConfig}};
 
 use crate::views::View;
@@ -23,6 +23,16 @@ impl View for ConfigurationView {
 
         if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
             self.sender.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
+        }
+
+        let mut snapshots_path = String::new();
+
+        if let Some(configured_snapshots_path) = &self.configuration.snapshots_path {
+            snapshots_path.clone_from(configured_snapshots_path);
+        }
+
+        if ui.text_edit_singleline(&mut snapshots_path).changed() {
+            todo!()
         }
     }
 
