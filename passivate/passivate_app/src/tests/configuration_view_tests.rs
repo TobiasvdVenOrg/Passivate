@@ -93,10 +93,13 @@ pub fn configure_snapshots_path() {
 
     let mut harness = Harness::new_ui(ui);
 
-    let coverage_toggle = harness.get_by_role(Role::TextInput);
-    coverage_toggle.type_text("Some/Path/To/Snapshots");
-
+    harness.get_by_role(Role::TextInput).type_text("Some/Path/");
     harness.run();
+
+    // Simulate typing across multiple frames...
+    harness.get_by_role(Role::TextInput).type_text("To/Snapshots");
+    harness.run();
+
     drop(harness);
 
     assert_that!(&details_view.get_snapshots(), structure!(Option<Snapshots>::Some [

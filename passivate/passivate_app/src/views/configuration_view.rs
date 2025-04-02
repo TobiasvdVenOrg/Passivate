@@ -5,12 +5,14 @@ use crate::views::View;
 pub struct ConfigurationView {
     sender: ActorApi<ConfigurationChangeEvent>,
     receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
-    configuration: PassivateConfig
+    configuration: PassivateConfig,
+
+    snapshots_path_field: String
 }
 
 impl ConfigurationView {
     pub fn new(sender: ActorApi<ConfigurationChangeEvent>, receiver: crossbeam_channel::Receiver<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
-        Self { sender, receiver, configuration }
+        Self { sender, receiver, configuration, snapshots_path_field: String::new() }
     }
 }
 
@@ -24,17 +26,15 @@ impl View for ConfigurationView {
             self.sender.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
         }
 
-        let mut snapshots_path = String::new();
-
         if let Some(configured_snapshots_path) = &self.configuration.snapshots_path {
-            snapshots_path.clone_from(configured_snapshots_path);
+            self.snapshots_path_field.clone_from(configured_snapshots_path);
         }
 
         ui.horizontal(|ui| {
             ui.label("Snapshots Path:");
 
-            if ui.text_edit_singleline(&mut snapshots_path).changed() {
-                self.sender.send(ConfigurationChangeEvent::SnapshotsPath(snapshots_path));
+            if ui.text_edit_singleline(&mut self.snapshots_path_field).changed() {
+                self.sender.send(ConfigurationChangeEvent::SnapshotsPath(self.snapshots_path_field.clone()));
             }
         });
     }
