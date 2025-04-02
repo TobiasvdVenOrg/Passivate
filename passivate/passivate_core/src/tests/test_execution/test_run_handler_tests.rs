@@ -1,8 +1,10 @@
 use std::sync::mpsc::channel;
 use crate::actors::{Cancellation, Cancelled, Handler};
+use crate::configuration::PassivateConfig;
 use crate::cross_cutting::stub_log;
 use crate::test_execution::{mock_run_tests, stub_parse_output, TestRunError, TestRunProcessor};
 use crate::test_helpers::builder::nextest_builder;
+use crate::test_helpers::fakes::channel_fakes::stub_sender;
 use crate::test_helpers::fakes::test_run_handler_fakes;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 use crate::change_events::ChangeEvent;
@@ -102,4 +104,17 @@ pub fn when_test_run_fails_error_is_reported() {
     let last = tests_receiver.try_iter().last().unwrap().state;
 
     assert_eq!(last, TestRunState::Failed(FailedTestRun { inner_error_display: "test run cancelled".to_string() }));
+}
+
+#[test]
+pub fn when_configuration_changes_tests_are_run() {  
+    let mut run_tests = mock_run_tests();
+
+    run_tests.expect_run_tests().once().returning(|_, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
+    run_tests.expect_run_test().returning(|_, _, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
+
+    let processor = TestRunProcessor::new(run_tests, stub_parse_output(), stub_log());
+    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, stub_sender());
+
+    handler.handle(ChangeEvent::Configuration(PassivateConfig::default()), Cancellation::default());
 }

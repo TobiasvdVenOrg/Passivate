@@ -99,16 +99,14 @@ impl Handler<ChangeEvent> for TestRunHandler {
         match event {
             ChangeEvent::File => self.run_tests(cancellation.clone()),
             ChangeEvent::Configuration(passivate_config) => {
-                        let configuration_changed = self.coverage_enabled != passivate_config.coverage_enabled;
+                        let coverage_changed = self.coverage_enabled != passivate_config.coverage_enabled;
                         self.coverage_enabled = passivate_config.coverage_enabled;
-
-                        if self.coverage_enabled {
-                            if configuration_changed {
-                                self.run_tests(cancellation.clone());
-                            }
-                        } else {
+                        
+                        if coverage_changed && !self.coverage_enabled {
                             let _ = self.coverage_status_sender.send(CoverageStatus::Disabled);
                         }
+
+                        self.run_tests(cancellation.clone());
                     },
             ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(id, update_snapshots, cancellation.clone()),
         }
