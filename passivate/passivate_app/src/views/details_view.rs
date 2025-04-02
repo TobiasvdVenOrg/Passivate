@@ -1,6 +1,8 @@
+use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
+use passivate_core::configuration::ConfigurationEvent;
 use passivate_core::{actors::ActorApi, change_events::ChangeEvent};
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 
@@ -16,14 +18,29 @@ struct SnapshotHandles {
 pub struct DetailsView {
     receiver: Receiver<Option<SingleTest>>,
     change_event_api: ActorApi<ChangeEvent>,
+    configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
     snapshot_handles: Option<SnapshotHandles>
 }
 
 impl DetailsView {
-    pub fn new(receiver: Receiver<Option<SingleTest>>, change_event_api: ActorApi<ChangeEvent>) -> Self {
-        Self { receiver, change_event_api, single_test: None, snapshots: None, snapshot_handles: None }
+    pub fn new(
+        receiver: Receiver<Option<SingleTest>>, 
+        change_event_api: ActorApi<ChangeEvent>, 
+        configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>) -> Self {
+        Self { 
+            receiver,
+            change_event_api,
+            configuration_receiver,
+            single_test: None, 
+            snapshots: None, 
+            snapshot_handles: None 
+        }
+    }
+
+    pub fn get_snapshots(&self) -> Option<Snapshots> {
+        self.snapshots.clone()
     }
 
     pub fn set_snapshots(&mut self, snapshots: Snapshots) {
@@ -92,6 +109,12 @@ impl DetailsView {
 
 impl View for DetailsView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
+        if let Ok(configuration) = self.configuration_receiver.try_recv() {
+            if let Some(snapshots_path) = configuration.new.snapshots_path {
+                self.snapshots = Some(Snapshots { snapshot_directory: PathBuf::from(snapshots_path) })
+            }
+        }
+
         if let Ok(new_test) = self.receiver.try_recv() {
             self.check_for_snapshots(ui, &new_test);
             self.single_test = new_test;

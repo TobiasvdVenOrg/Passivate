@@ -4,6 +4,7 @@ use galvanic_assert::*;
 use galvanic_assert::matchers::*;
 use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
 use passivate_core::actors::ActorApi;
+use passivate_core::test_helpers::fakes::channel_fakes::stub_crossbeam_receiver;
 use crate::views::{DetailsView, TestRunView, View};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
 use passivate_core::test_helpers::builder::test_data_path;
@@ -30,7 +31,7 @@ pub fn selecting_a_test_shows_it_in_details_view() {
     let (test_run_sender, test_run_receiver)  = channel();
     let (details_sender, details_receiver)  = channel();
 
-    let mut details_view = DetailsView::new(details_receiver, stub_actor_api());
+    let mut details_view = DetailsView::new(details_receiver, stub_actor_api(), stub_crossbeam_receiver());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -62,7 +63,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
     let (test_run_sender, test_run_receiver)  = channel();
     let (details_sender, details_receiver)  = channel();
 
-    let mut details_view = DetailsView::new(details_receiver, stub_actor_api());
+    let mut details_view = DetailsView::new(details_receiver, stub_actor_api(), stub_crossbeam_receiver());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -141,7 +142,7 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
     let (details_sender, details_receiver)  = channel();
     let (test_run_sender, test_run_receiver) = channel();
     
-    let mut details_view = DetailsView::new(details_receiver, ActorApi::new(test_run_sender));
+    let mut details_view = DetailsView::new(details_receiver, ActorApi::new(test_run_sender), stub_crossbeam_receiver());
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{
@@ -170,7 +171,7 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (sender, receiver)  = channel();
 
-    let mut details_view = DetailsView::new(receiver, stub_actor_api());
+    let mut details_view = DetailsView::new(receiver, stub_actor_api(), stub_crossbeam_receiver());
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{

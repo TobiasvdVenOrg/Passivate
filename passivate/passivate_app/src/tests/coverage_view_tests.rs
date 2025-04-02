@@ -1,7 +1,8 @@
 use std::sync::mpsc::channel;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::{actors::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson, test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_sender}, test_run_handler_fakes}};
+use passivate_core::{actors::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_core::test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_crossbeam_sender}, test_run_handler_fakes};
 use stdext::function_name;
 use crate::views::{CoverageView, View};
 use indexmap::IndexMap;
@@ -118,7 +119,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let change_handler = test_run_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(change_actor.api(), stub_sender());
+    let configuration = ConfigurationHandler::new(change_actor.api(), stub_crossbeam_sender());
     let mut configuration_actor = Actor::new(configuration);
 
     let coverage_receiver = channel_fakes::stub_receiver();

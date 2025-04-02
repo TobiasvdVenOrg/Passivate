@@ -15,6 +15,7 @@ use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
 use crate::views::{ConfigurationView, DetailsView, LogView};
 use crate::{startup_errors::*, views};
+use crossbeam_channel;
 
 pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     match get_path_arg() {
@@ -39,7 +40,7 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-    let (configuration_sender, configuration_receiver) = channel();
+    let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
     let (log_sender, log_receiver) = channel();
     let (details_sender, details_receiver) = channel();
 
@@ -74,11 +75,11 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
 
     let hacky_snapshots = Snapshots::new(workspace_path.join("passivate_app").join("tests").join("snapshots"));
-    let mut details_view = DetailsView::new(details_receiver, change_actor.api());
+    let mut details_view = DetailsView::new(details_receiver, change_actor.api(), configuration_receiver.clone());
     details_view.set_snapshots(hacky_snapshots);
 
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
-    let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, configuration);
+    let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver.clone(), configuration);
     let log_view = LogView::new(log_receiver);
 
     // Send an initial change event to trigger the first test run

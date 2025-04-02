@@ -10,8 +10,9 @@ pub struct Snapshot {
     pub new: Option<Result<ColorImage, SnapshotError>>
 }
 
+#[derive(Clone)]
 pub struct Snapshots {
-    snapshot_directory: PathBuf
+    pub snapshot_directory: PathBuf
 }
 
 #[derive(Error, Debug)]

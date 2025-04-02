@@ -1,16 +1,15 @@
-use std::{path::{Path, PathBuf}, sync::mpsc::Receiver};
-use passivate_core::{actors::ActorApi, configuration::{ConfigurationChangeEvent, PassivateConfig}};
+use passivate_core::{actors::ActorApi, configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}};
 
 use crate::views::View;
 
 pub struct ConfigurationView {
     sender: ActorApi<ConfigurationChangeEvent>,
-    receiver: Receiver<PassivateConfig>,
+    receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
     configuration: PassivateConfig
 }
 
 impl ConfigurationView {
-    pub fn new(sender: ActorApi<ConfigurationChangeEvent>, receiver: Receiver<PassivateConfig>, configuration: PassivateConfig) -> Self {
+    pub fn new(sender: ActorApi<ConfigurationChangeEvent>, receiver: crossbeam_channel::Receiver<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
         Self { sender, receiver, configuration }
     }
 }
@@ -18,7 +17,7 @@ impl ConfigurationView {
 impl View for ConfigurationView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
         if let Ok(new_configuration) = self.receiver.try_recv() {
-            self.configuration = new_configuration;
+            self.configuration = new_configuration.new;
         }
 
         if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
@@ -31,9 +30,13 @@ impl View for ConfigurationView {
             snapshots_path.clone_from(configured_snapshots_path);
         }
 
-        if ui.text_edit_singleline(&mut snapshots_path).changed() {
-            todo!()
-        }
+        ui.horizontal(|ui| {
+            ui.label("Snapshots Path:");
+
+            if ui.text_edit_singleline(&mut snapshots_path).changed() {
+                self.sender.send(ConfigurationChangeEvent::SnapshotsPath(snapshots_path));
+            }
+        });
     }
 
     fn title(&self) -> String {
