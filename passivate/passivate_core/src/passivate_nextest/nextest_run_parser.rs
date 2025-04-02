@@ -20,8 +20,6 @@ impl ParseOutput for NextestParser {
     fn parse_line(&mut self, line: &str) -> Option<TestRunEvent> {
         let trimmed = line.trim();
         
-        println!("line: {}", line);
-
         if trimmed.starts_with("PASS") {
             self.state = State::Normal;
             let name = trimmed.split(" ").last().unwrap_or(trimmed);
