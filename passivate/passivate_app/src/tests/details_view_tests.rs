@@ -27,6 +27,16 @@ pub fn show_a_failing_test() {
 }
 
 #[test]
+pub fn show_a_failing_test_with_output() {
+    let failing_test = SingleTest::new("ExampleTest".to_string(), SingleTestStatus::Failed, vec![
+        "this is some error output".to_string(),
+        "you messed up".to_string()
+    ]);
+    
+    show_test(&test_name(function_name!()), failing_test);
+}
+
+#[test]
 pub fn selecting_a_test_shows_it_in_details_view() {
     let (test_run_sender, test_run_receiver)  = channel();
     let (details_sender, details_receiver)  = channel();

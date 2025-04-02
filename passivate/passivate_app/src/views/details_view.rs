@@ -129,6 +129,15 @@ impl View for DetailsView {
 
             let text = RichText::new(&single_test.name).size(16.0).color(color);
             ui.heading(text);
+
+            if !single_test.output.is_empty() {
+                ui.add_space(16.0);
+    
+                for output in &single_test.output {
+                    let output_line = RichText::new(output).size(12.0).color(color);
+                    ui.label(output_line);
+                }
+            }
         }
 
         if let Some(snapshot_handles) = &self.snapshot_handles {
