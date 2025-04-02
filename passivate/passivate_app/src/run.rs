@@ -74,9 +74,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
 
-    let hacky_snapshots = Snapshots::new(workspace_path.join("passivate_app").join("tests").join("snapshots"));
-    let mut details_view = DetailsView::new(details_receiver, change_actor.api(), configuration_receiver.clone());
-    details_view.set_snapshots(hacky_snapshots);
+    let details_view = DetailsView::new(details_receiver, change_actor.api(), configuration_receiver.clone());
 
     let coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
     let configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver.clone(), configuration);
