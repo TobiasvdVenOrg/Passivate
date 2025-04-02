@@ -33,7 +33,7 @@ impl View for ConfigurationView {
         ui.horizontal(|ui| {
             ui.label("Snapshots Path:");
 
-            if ui.text_edit_singleline(&mut self.snapshots_path_field).changed() {
+            if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus() {
                 self.sender.send(ConfigurationChangeEvent::SnapshotsPath(self.snapshots_path_field.clone()));
             }
         });

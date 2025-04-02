@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use egui::accesskit::Role;
+use egui_kittest::kittest::Key;
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
@@ -98,6 +99,7 @@ pub fn configure_snapshots_path() {
 
     // Simulate typing across multiple frames...
     harness.get_by_role(Role::TextInput).type_text("To/Snapshots");
+    harness.get_by_role(Role::TextInput).press_keys(&[ Key::Enter ]);
     harness.run();
 
     drop(harness);
