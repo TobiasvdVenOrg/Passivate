@@ -50,13 +50,16 @@ impl TestRun {
 
                 true
             },
-            TestRunEvent::TestFinished(test) => {
+            TestRunEvent::TestFinished(mut test) => {
                 self.state = TestRunState::Running;
 
                 let existing = self.tests.find(&test.id());
-
+                
                 match existing {
-                    Some(existing) => self.tests.add_or_update(existing),
+                    Some(existing) => {
+                        test.output = existing.output;
+                        self.tests.add_or_update(test);
+                    },
                     None => self.tests.add_or_update(test),
                 };
 
