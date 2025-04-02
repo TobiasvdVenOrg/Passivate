@@ -30,18 +30,16 @@ impl TestRunProcessor {
 
         cancellation.check()?;
 
-        self.log.info("Running the tests...");
-
         let iterator = self.run_tests.run_tests(self.parse_output.get_implementation(), instrument_coverage, cancellation.clone())?;
 
         cancellation.check()?;
-
-        self.log.info("Parsing the tests...");
 
         for line in iterator {
             match line {
                 Ok(line) => {
                     let test_run_event = self.parse_output.parse_line(&line);
+
+                    self.log.info(&line);
 
                     cancellation.check()?;
 

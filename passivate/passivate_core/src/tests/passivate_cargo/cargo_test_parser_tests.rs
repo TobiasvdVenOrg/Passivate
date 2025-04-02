@@ -4,7 +4,7 @@ use crate::test_run_model::{SingleTestStatus, TestRunEvent};
 
 #[test]
 pub fn parse_test_line_status_pass() {
-    let parser = CargoTestParser;
+    let mut parser = CargoTestParser;
     let event = parser.parse_line("test add_2_and_2_is_4 ... ok").unwrap();
 
     let test = assert_matches!(event, TestRunEvent::TestFinished);
@@ -14,7 +14,7 @@ pub fn parse_test_line_status_pass() {
 
 #[test]
 pub fn test_with_error_in_its_name_is_not_considered_a_build_failure() {
-    let parser = CargoTestParser;
+    let mut parser = CargoTestParser;
     let event = parser.parse_line("test some_test_with_error ... ok").unwrap();
 
     let test = assert_matches!(event, TestRunEvent::TestFinished);

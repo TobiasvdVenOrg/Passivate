@@ -8,7 +8,7 @@ use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestR
 use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunHandler, TestRunProcessor, TestRunner};
-use passivate_core::test_run_model::{Snapshots, TestRun, TestRunState};
+use passivate_core::test_run_model::{TestRun, TestRunState};
 use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;

@@ -6,12 +6,13 @@ use super::{SingleTestStatus, TestId};
 pub struct SingleTest {
     id: TestId,
     pub name: String,
-    pub status: SingleTestStatus
+    pub status: SingleTestStatus,
+    pub output: Vec<String>
 }
 
 impl SingleTest {
-    pub fn new(name: String, status: SingleTestStatus) -> Self {
-        Self { id: TestId::new(name.clone()), name, status }
+    pub fn new(name: String, status: SingleTestStatus, output: Vec<String>) -> Self {
+        Self { id: TestId::new(name.clone()), name, status, output }
     }
 
     pub fn id(&self) -> TestId {

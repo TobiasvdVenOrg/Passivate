@@ -1,4 +1,4 @@
-use super::{SingleTestStatus, TestCollection, TestRunEvent};
+use super::{SingleTest, SingleTestStatus, TestCollection, TestRunEvent};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -52,7 +52,13 @@ impl TestRun {
             },
             TestRunEvent::TestFinished(test) => {
                 self.state = TestRunState::Running;
-                self.tests.add_or_update(test);
+
+                let existing = self.tests.find(&test.id());
+
+                match existing {
+                    Some(existing) => self.tests.add_or_update(existing),
+                    None => self.tests.add_or_update(test),
+                };
 
                 true
             },
@@ -65,6 +71,17 @@ impl TestRun {
                 self.state = TestRunState::Idle;
                 true
             },
+            TestRunEvent::ErrorOutput { test, message } => {
+                if !message.is_empty() {
+                    if let Some(mut updated_test) = self.tests.find(&test) {
+                        updated_test.output.push(message);
+                        self.tests.add_or_update(updated_test);
+                        return true;
+                    }
+                }
+
+                false
+            }
         }
     }
 }

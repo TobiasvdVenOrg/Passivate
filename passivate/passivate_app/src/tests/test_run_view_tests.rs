@@ -26,7 +26,7 @@ pub fn show_when_build_failed() {
 #[test]
 pub fn show_tests_with_unknown_status_greyed_out() {
     let mut active = TestRun::default();
-    active.tests.add(SingleTest::new("example_test".to_string(), SingleTestStatus::Unknown));
+    active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
 
     run_and_snapshot(active, &test_name(function_name!()));
 }
@@ -34,7 +34,7 @@ pub fn show_tests_with_unknown_status_greyed_out() {
 #[test]
 pub fn show_build_status_above_tests_while_compiling() {
     let mut active = TestRun::default();
-    active.tests.add(SingleTest::new("example_test".to_string(), SingleTestStatus::Unknown));
+    active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
     active.update(TestRunEvent::Compiling("The build is working on something right now!".to_string()));
 
     run_and_snapshot(active, &test_name(function_name!()));
@@ -59,4 +59,8 @@ fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {
 
 fn test_name(function_name: &str) -> String {
     function_name.split("::").last().unwrap_or(function_name).to_string()
+}
+
+fn example_test(name: &str, status: SingleTestStatus) -> SingleTest {
+    SingleTest::new(name.to_string(), status, vec![])
 }

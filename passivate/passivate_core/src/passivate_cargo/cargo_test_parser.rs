@@ -3,7 +3,7 @@ use crate::{configuration::TestRunnerImplementation, test_execution::ParseOutput
 pub struct CargoTestParser;
 
 impl ParseOutput for CargoTestParser {
-    fn parse_line(&self, line: &str) -> Option<TestRunEvent> {
+    fn parse_line(&mut self, line: &str) -> Option<TestRunEvent> {
         let line = line.trim();
 
         if line.starts_with("test") {
@@ -13,7 +13,7 @@ impl ParseOutput for CargoTestParser {
                     _ => SingleTestStatus::Failed
                 };
     
-                let test = SingleTest::new(test.to_string(), status);
+                let test = SingleTest::new(test.to_string(), status, vec!["".to_string()]);
                 return Some(TestRunEvent::TestFinished(test))
             };
         } else if line.starts_with("Compiling") {

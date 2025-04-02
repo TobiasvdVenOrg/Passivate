@@ -51,6 +51,33 @@ pub fn build_output_is_captured_for_building_state(#[case] implementation: TestR
     assert_that!(&running, is_variant!(TestRunState::Building));
 }
 
+#[rstest]
+#[case::nextest(TestRunnerImplementation::Nextest, r#"
+FAIL some_test
+STDERR
+a
+b
+"#)]
+pub fn error_output_is_captured_for_failed_test(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
+    use galvanic_assert::matchers::collection::contains_in_order;
+
+    use crate::test_run_model::{SingleTest, SingleTestStatus};
+
+    let test_run = run(implementation, test_output);
+
+    let test_run = test_run.last().unwrap();
+
+    assert_that!(&test_run.tests, contains_in_order(vec![
+        SingleTest::new(
+            "some_test".to_string(),
+            SingleTestStatus::Failed,
+            vec![
+                "a".to_string(),
+                "b".to_string()
+            ])
+    ]));
+}
+
 fn run(implementation: TestRunnerImplementation, test_output: &str) -> TestRunIterator {
     let mut processor = build_processor(implementation, test_output);    
     let (sender, receiver) = channel();

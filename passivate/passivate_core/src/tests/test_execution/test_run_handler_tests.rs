@@ -8,7 +8,7 @@ use crate::test_helpers::fakes::channel_fakes::stub_sender;
 use crate::test_helpers::fakes::test_run_handler_fakes;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 use crate::change_events::ChangeEvent;
-use galvanic_assert::{assert_that, is_variant};
+use galvanic_assert::{assert_that, is_variant, matchers::collection::contains_in_order};
 use pretty_assertions::assert_eq;
 use stdext::function_name;
 use std::io::Error as IoError;
@@ -83,6 +83,38 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
 
     let expected_approved_snapshot = builder.get_snapshots_path().join("example_snapshot.png");
     assert_that!(fs::exists(expected_approved_snapshot)?);
+
+    Ok(())
+}
+
+#[test]
+#[cfg(target_os = "windows")]
+pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError> {
+    let (sender, receiver) = channel();
+    let mut builder = nextest_builder();
+    let builder = builder
+        .with_workspace("simple_project_failing_tests")
+        .with_output(function_name!())
+        .receive_tests_status(sender)
+        .clean_output();
+
+    let mut handler = builder.build();
+
+    // Run all tests first to generate a new snapshot
+    handler.handle(ChangeEvent::File, Cancellation::default());
+
+    let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
+
+    let state = receiver.try_iter().last().unwrap();
+
+    let failed_test = state.tests.find(&failed_test).unwrap();
+    assert_that!(&failed_test.output, contains_in_order(vec![
+        "thread 'multiply_2_and_2_is_4' panicked at tests\\multiply_tests.rs:6:5:".to_string(),
+        "assertion `left == right` failed".to_string(),
+        "left: 5".to_string(),
+        "right: 4".to_string(),
+        "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
+    ]));
 
     Ok(())
 }

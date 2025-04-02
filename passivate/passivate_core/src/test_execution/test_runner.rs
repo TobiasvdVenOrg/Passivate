@@ -29,12 +29,9 @@ impl RunTests for TestRunner {
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     fn run_tests(&self, implementation: TestRunnerImplementation, instrument_coverage: bool, cancellation: Cancellation) 
         -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError> {
-        self.log.info("Ready to run!");
 
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
-
-        self.log.info("Prepared output!");
 
         let mut args: Vec<OsString> = vec![];
         match implementation {
@@ -51,7 +48,7 @@ impl RunTests for TestRunner {
         args.push(OsString::from("--target-dir"));
         args.push(OsString::from(&self.target_dir));
 
-        let command = cmd("cargo", args).dir(&self.working_dir);
+        let command = cmd("cargo", args).dir(&self.working_dir).env("RUST_BACKTRACE", "0");
 
         let command = if instrument_coverage {
             command
