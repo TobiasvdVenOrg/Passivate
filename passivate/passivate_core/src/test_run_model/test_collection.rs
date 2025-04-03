@@ -31,6 +31,10 @@ impl TestCollection {
         self.tests.iter().find(|t| t.id() == *id).cloned()
     }
 
+    pub fn clear(&mut self) {
+        self.tests.clear();
+    }
+
     pub fn is_empty(&self) -> bool {
         self.tests.is_empty()
     }

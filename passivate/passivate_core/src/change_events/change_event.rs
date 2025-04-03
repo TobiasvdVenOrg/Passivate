@@ -10,5 +10,8 @@ pub enum ChangeEvent {
     SingleTest {
         id: TestId,
         update_snapshots: bool
+    },
+    PinTest {
+        id: TestId
     }
 }

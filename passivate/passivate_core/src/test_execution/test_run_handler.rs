@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::{actors::{Cancellation, Handler}, change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}, cross_cutting::Log, test_run_model::{FailedTestRun, TestRun}};
+use crate::{actors::{Cancellation, Handler}, change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}, cross_cutting::Log, test_run_model::{FailedTestRun, TestId, TestRun}};
 
 use super::TestRunProcessor;
 
@@ -10,7 +10,8 @@ pub struct TestRunHandler {
     tests_status_sender: Sender<TestRun>,
     coverage_status_sender: Sender<CoverageStatus>,
     log: Box<dyn Log + Send>,
-    coverage_enabled: bool
+    coverage_enabled: bool,
+    pinned_test: Option<TestId>
 }
 
 impl TestRunHandler {
@@ -27,11 +28,18 @@ impl TestRunHandler {
             tests_status_sender,
             coverage_status_sender,
             log,
-            coverage_enabled
+            coverage_enabled,
+            pinned_test: None
         }
     }
 
     fn run_tests(&mut self, cancellation: Cancellation) {
+        if let Some(pinned_test) = self.pinned_test.clone() {
+            let update_snapshots = false;
+            self.run_test(&pinned_test, update_snapshots, cancellation.clone());
+            return;
+        }
+
         if self.coverage_enabled {
             let _ = self.coverage_status_sender.send(CoverageStatus::Preparing);
         }
@@ -82,7 +90,7 @@ impl TestRunHandler {
 
     pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
     
-    fn run_test(&mut self, id: crate::test_run_model::TestId, update_snapshots: bool, cancellation: Cancellation) {
+    fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation) {
         let result = self.runner.run_test(&self.tests_status_sender, id, update_snapshots, cancellation);
 
         if let Err(error) = result {
@@ -94,8 +102,6 @@ impl TestRunHandler {
 
 impl Handler<ChangeEvent> for TestRunHandler {
     fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation) {
-        self.log.info("Handling it!");
-
         match event {
             ChangeEvent::File => self.run_tests(cancellation.clone()),
             ChangeEvent::Configuration(passivate_config) => {
@@ -108,7 +114,11 @@ impl Handler<ChangeEvent> for TestRunHandler {
 
                         self.run_tests(cancellation.clone());
                     },
-            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(id, update_snapshots, cancellation.clone()),
+            ChangeEvent::PinTest { id } => {
+                self.pinned_test = Some(id);
+                self.run_tests(cancellation.clone());
+            },
+            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(&id, update_snapshots, cancellation.clone()),
         }
         
         self.log.info("Done sending it!");

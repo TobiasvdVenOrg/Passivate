@@ -44,6 +44,7 @@ impl TestRun {
     pub fn update(&mut self, event: TestRunEvent) -> bool {
         match event {
             TestRunEvent::Start => {
+                self.state = TestRunState::Running;
                 for test in &mut self.tests {
                     test.status = SingleTestStatus::Unknown;
                     test.output.clear();
@@ -51,10 +52,16 @@ impl TestRun {
 
                 true
             },
-            TestRunEvent::StartSingle(test_id) => {
-                if let Some(mut test) = self.tests.find(&test_id) {
+            TestRunEvent::StartSingle { test, clear_tests } => {
+                if let Some(mut test) = self.tests.find(&test) {
+                    self.state = TestRunState::Running;
                     test.status = SingleTestStatus::Unknown;
                     test.output.clear();
+
+                    if clear_tests {
+                        self.tests.clear();
+                        self.tests.add_or_update(test);
+                    }
 
                     return true;
                 }
@@ -76,7 +83,10 @@ impl TestRun {
 
                 true
             },
-            TestRunEvent::NoTests => true,
+            TestRunEvent::NoTests => {
+                self.state = TestRunState::Idle;
+                true
+            }
             TestRunEvent::Compiling(message) => {
                 self.state = TestRunState::Building(message.clone());
                 true

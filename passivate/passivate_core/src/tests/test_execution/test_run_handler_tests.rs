@@ -62,6 +62,36 @@ pub fn handle_single_test_run() {
 
 #[test]
 #[cfg(target_os = "windows")]
+pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled() {
+    let (test_run_sender, test_run_receiver) = channel();
+    let mut handler = nextest_builder()
+        .with_workspace("simple_project")
+        .with_output(function_name!())
+        .receive_tests_status(test_run_sender)
+        .clean_output()
+        .build();
+
+    // Run all tests first, single test running currently relies on knowing the test id of an existing test
+    handler.handle(ChangeEvent::File, Cancellation::default());
+
+    let all_tests = test_run_receiver.try_iter().last().unwrap();
+
+    let pinned_test = all_tests.tests.iter().next().unwrap().to_owned();
+
+    handler.handle(ChangeEvent::PinTest { id: pinned_test.id() }, Cancellation::default());
+    handler.handle(ChangeEvent::File, Cancellation::default());
+
+    let pinned_run = test_run_receiver.try_iter().next().unwrap();
+    // Assert that all tests are unknown, except the pinned test, which is passing
+    assert!(pinned_run.tests.iter().all(|test| {
+        (test.id() == pinned_test.id() && test.status == SingleTestStatus::Passed) 
+        ||
+        test.status == SingleTestStatus::Unknown
+    }));
+}
+
+#[test]
+#[cfg(target_os = "windows")]
 pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snapshot_with_approved() -> Result<(), IoError> {
     let mut builder = nextest_builder();
     let builder = builder

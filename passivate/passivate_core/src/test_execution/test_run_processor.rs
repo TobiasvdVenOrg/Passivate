@@ -73,8 +73,13 @@ impl TestRunProcessor {
         Ok(())
     }
     
-    pub fn run_test(&mut self, sender: &Sender<TestRun>, id: TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_test(&mut self, sender: &Sender<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         if let Some(test) = self.test_run.tests.find(&id) {
+            self.update(TestRunEvent::StartSingle {
+                test: id.clone(),
+                clear_tests: !update_snapshots // if we're just updating a snapshot we don't need to clear the other tests
+            }, sender);
+
             let iterator = self.run_tests.run_test(self.parse_output.get_implementation(), &test.name, update_snapshots, cancellation.clone())?;
 
             cancellation.check()?;

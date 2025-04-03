@@ -46,9 +46,9 @@ pub fn run_transitions_to_idle_after_tests_complete(#[case] implementation: Test
 #[case::cargo(TestRunnerImplementation::Cargo, "   Compiling some-dependency v1.2.3")]
 #[case::nextest(TestRunnerImplementation::Nextest, "   Compiling some-dependency v1.2.3")]
 pub fn build_output_is_captured_for_building_state(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
-    let test_run = run(&implementation, test_output);
+    let mut test_run = run(&implementation, test_output);
 
-    let running = test_run.last().unwrap().state;
+    let running = test_run.nth(1).unwrap().state;
 
     assert_that!(&running, is_variant!(TestRunState::Building));
 }
