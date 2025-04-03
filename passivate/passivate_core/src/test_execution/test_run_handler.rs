@@ -118,6 +118,10 @@ impl Handler<ChangeEvent> for TestRunHandler {
                 self.pinned_test = Some(id);
                 self.run_tests(cancellation.clone());
             },
+            ChangeEvent::ClearPinnedTests => {
+                self.pinned_test = None;
+                self.run_tests(cancellation.clone());
+            }
             ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(&id, update_snapshots, cancellation.clone()),
         }
         

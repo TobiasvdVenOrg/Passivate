@@ -13,5 +13,6 @@ pub enum ChangeEvent {
     },
     PinTest {
         id: TestId
-    }
+    },
+    ClearPinnedTests
 }
