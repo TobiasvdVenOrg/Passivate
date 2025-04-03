@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use crate::{actors::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent}};
+use crate::{actors::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
 
 use super::{ParseOutput, RunTests, TestRunError};
 
@@ -57,11 +57,18 @@ impl TestRunProcessor {
 
         self.log.info("Done with the tests...");
 
-        if self.test_run.tests.is_empty() {
-            self.update(TestRunEvent::NoTests, sender);
-        } else {
-            self.update(TestRunEvent::TestsCompleted, sender);
-        }
+        match self.test_run.state {
+            TestRunState::BuildFailed(_) => {
+                
+            },
+            _ => {
+                if self.test_run.tests.is_empty() {
+                    self.update(TestRunEvent::NoTests, sender);
+                } else {
+                    self.update(TestRunEvent::TestsCompleted, sender);
+                }
+            }
+        }     
 
         Ok(())
     }
