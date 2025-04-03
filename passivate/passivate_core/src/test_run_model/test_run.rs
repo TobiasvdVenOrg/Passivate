@@ -46,9 +46,20 @@ impl TestRun {
             TestRunEvent::Start => {
                 for test in &mut self.tests {
                     test.status = SingleTestStatus::Unknown;
+                    test.output.clear();
                 }
 
                 true
+            },
+            TestRunEvent::StartSingle(test_id) => {
+                if let Some(mut test) = self.tests.find(&test_id) {
+                    test.status = SingleTestStatus::Unknown;
+                    test.output.clear();
+
+                    return true;
+                }
+                
+                false
             },
             TestRunEvent::TestFinished(mut test) => {
                 self.state = TestRunState::Running;
