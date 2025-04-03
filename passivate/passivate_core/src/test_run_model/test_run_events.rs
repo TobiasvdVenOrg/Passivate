@@ -3,6 +3,7 @@ use super::{SingleTest, TestId};
 pub enum TestRunEvent {
     Start,
     Compiling(String),
+    BuildError(String),
     TestFinished(SingleTest),
     TestsCompleted,
     NoTests,

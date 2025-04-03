@@ -74,6 +74,10 @@ impl TestRun {
                 self.state = TestRunState::Idle;
                 true
             },
+            TestRunEvent::BuildError(message) => {
+                self.state = TestRunState::BuildFailed(BuildFailedTestRun { message });
+                true
+            },
             TestRunEvent::ErrorOutput { test, message } => {
                 if !message.is_empty() {
                     if let Some(mut updated_test) = self.tests.find(&test) {

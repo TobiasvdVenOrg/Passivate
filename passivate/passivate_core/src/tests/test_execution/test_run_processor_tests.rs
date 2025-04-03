@@ -52,6 +52,16 @@ pub fn build_output_is_captured_for_building_state(#[case] implementation: TestR
 }
 
 #[rstest]
+#[case::nextest(TestRunnerImplementation::Nextest, "error[E0425]: cannot find value `asdf` in this scope")]
+pub fn build_output_is_captured_for_build_failed_state(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str) {
+    let test_run = run(implementation, test_output);
+
+    let build_failed = test_run.last().unwrap().state;
+
+    assert_that!(&build_failed, is_variant!(TestRunState::BuildFailed));
+}
+
+#[rstest]
 #[case::nextest(TestRunnerImplementation::Nextest, r#"
 FAIL some_test
 STDERR

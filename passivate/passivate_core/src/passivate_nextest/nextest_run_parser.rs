@@ -42,6 +42,8 @@ impl ParseOutput for NextestParser {
             return Some(TestRunEvent::Compiling(trimmed.to_string()));
         } else if trimmed.contains("STDERR") {
             self.state = State::ErrorOutput;
+        } else if trimmed.starts_with("error[") {
+            return Some(TestRunEvent::BuildError(trimmed.to_string()));
         } else if trimmed.contains("────────────") || trimmed.starts_with("Summary") {
 
         } else if let (State::ErrorOutput, Some(current_test)) = (&self.state, &self.current_test) {
