@@ -127,8 +127,18 @@ impl View for DetailsView {
                 passivate_core::test_run_model::SingleTestStatus::Unknown => Color32::GRAY,
             };
 
-            let text = RichText::new(&single_test.name).size(16.0).color(color);
-            ui.heading(text);
+            ui.horizontal(|ui| {
+                let text = RichText::new(&single_test.name).size(16.0).color(color);
+                ui.heading(text);
+
+                if ui.button("Pin").clicked() {
+                    self.change_event_api.send(ChangeEvent::PinTest { id: single_test.id() });
+                }
+
+                if ui.button("Unpin").clicked() {
+                    self.change_event_api.send(ChangeEvent::ClearPinnedTests);
+                }
+            });
 
             if !single_test.output.is_empty() {
                 ui.add_space(16.0);

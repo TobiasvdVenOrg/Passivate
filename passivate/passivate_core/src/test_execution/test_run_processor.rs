@@ -85,14 +85,23 @@ impl TestRunProcessor {
             cancellation.check()?;
 
             for line in iterator {
-                let test_run_event = self.parse_output.parse_line(&line.unwrap());
-
-                cancellation.check()?;
-
-                if let Some(test_run_event) = test_run_event {
-                    self.update(test_run_event, sender);
+                match line {
+                    Ok(line) => {
+                        let test_run_event = self.parse_output.parse_line(&line);
+    
+                        self.log.info(&line);
+    
+                        cancellation.check()?;
+    
+                        if let Some(test_run_event) = test_run_event {
+                            self.update(test_run_event, sender);
+                        }
+                    },
+                    Err(_error) => {
+                        break;
+                    },
                 }
-
+    
                 cancellation.check()?;
             }
 
