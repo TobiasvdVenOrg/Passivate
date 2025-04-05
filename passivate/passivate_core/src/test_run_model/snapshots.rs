@@ -59,7 +59,7 @@ impl Snapshots {
 
     fn decode_image(file: File) -> Result<ColorImage, SnapshotError> {
         let decoder = png::Decoder::new(file);
-        let mut reader = decoder.read_info().unwrap();
+        let mut reader = decoder.read_info().map_err(|e| SnapshotError::InvalidData)?;
         let mut buffer = vec![0; reader.output_buffer_size()];
         let info = reader.next_frame(&mut buffer).unwrap();
 
