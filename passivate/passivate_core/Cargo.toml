@@ -24,3 +24,15 @@ rstest = "0.25.0"
 stdext = "0.3.3"
 pretty_assertions = "1.4.1"
 galvanic-assert = "0.8.7"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[profile.test]
+panic = "abort"
+
+[profile.bench]
+panic = "abort"

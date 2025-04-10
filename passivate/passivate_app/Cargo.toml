@@ -3,6 +3,9 @@ name = "passivate"
 version = "0.1.0"
 edition = "2021"
 
+[profile]
+
+
 [dependencies]
 passivate_core = { path = "../passivate_core" }
 
@@ -35,3 +38,15 @@ galvanic-assert = "0.8.7"
 [[test]]
 name = "passivate_tests"
 harness = false
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[profile.test]
+panic = "abort"
+
+[profile.bench]
+panic = "abort"
