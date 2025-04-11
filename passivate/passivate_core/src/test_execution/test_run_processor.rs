@@ -74,7 +74,7 @@ impl TestRunProcessor {
     }
     
     pub fn run_test(&mut self, sender: &Sender<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
-        if let Some(test) = self.test_run.tests.find(&id) {
+        if let Some(test) = self.test_run.tests.find(id) {
             self.update(TestRunEvent::StartSingle {
                 test: id.clone(),
                 clear_tests: !update_snapshots // if we're just updating a snapshot we don't need to clear the other tests

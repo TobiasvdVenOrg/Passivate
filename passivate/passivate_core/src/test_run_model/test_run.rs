@@ -1,4 +1,4 @@
-use super::{SingleTest, SingleTestStatus, TestCollection, TestRunEvent};
+use super::{SingleTestStatus, TestCollection, TestRunEvent};
 
 #[derive(Clone)]
 #[derive(Debug)]
