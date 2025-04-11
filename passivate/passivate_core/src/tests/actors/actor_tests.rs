@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::delegation::{Actor, Cancellation, Handler};
+use crate::delegation::{Actor, Cancellation, Give, Handler, Loan};
 
 #[derive(Default)]
 struct ExampleHandler {
@@ -24,7 +24,7 @@ pub fn actor_handles_messages_and_stops_gracefully() {
     let handler = ExampleHandler::default();
     let mut actor = Actor::new(handler);
 
-    let api = actor.api();
+    let api = actor.give();
 
     api.send(16);
     api.send(32);
@@ -53,7 +53,7 @@ pub fn actor_handle_can_be_cancelled() {
     let mut cancellation = Cancellation::default();
     let mut actor = Actor::new(handler);
 
-    actor.api().send_cancellable(64, cancellation.clone());
+    actor.loan().send(64, cancellation.clone());
 
     cancellation.cancel();
 

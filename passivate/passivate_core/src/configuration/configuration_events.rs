@@ -1,6 +1,6 @@
 use super::PassivateConfig;
 
-
+#[derive(Clone)]
 pub struct ConfigurationEvent {
     pub old: Option<PassivateConfig>,
     pub new: PassivateConfig

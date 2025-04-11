@@ -1,27 +1,22 @@
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{SendError, Sender};
 
 use super::{actor_event::{ActorEvent, Cancellable}, Cancellation};
 
 
-#[derive(Clone)]
-pub struct ActorApi<T: Send + Clone + 'static> {
+pub struct ActorApi<T: Send + 'static> {
     sender: Sender<ActorEvent<T>>
 }
 
-impl<T: Send + Clone + 'static> ActorApi<T> {
+impl<T: Send + 'static> ActorApi<T> {
     pub fn new(sender: Sender<ActorEvent<T>>) -> Self {
         Self { sender }
     }
 
-    pub fn send(&self, event: T) {
-        let _ = self.sender.send(ActorEvent::Custom(event));
+    pub fn send(&self, event: T) -> Result<(), SendError<ActorEvent<T>>> {
+        self.sender.send(ActorEvent::Custom(event))
     }
 
-    pub fn send_cancellable(&self, event: T, cancellation: Cancellation) {
-        let _ = self.sender.send(ActorEvent::Cancellable(Cancellable { event, cancellation }));
-    }
-
-    pub fn exit(&self) {
-        let _ = self.sender.send(ActorEvent::Exit);
+    pub fn send_cancellable(&self, event: T, cancellation: Cancellation) -> Result<(), SendError<ActorEvent<T>>> {
+        self.sender.send(ActorEvent::Cancellable(Cancellable { event, cancellation }))
     }
 }

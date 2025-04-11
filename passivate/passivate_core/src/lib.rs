@@ -64,7 +64,6 @@ pub mod test_helpers {
     pub mod builder;
 
     pub mod fakes {
-        pub mod actor_fakes;
         pub mod change_event_handler_fakes;
         pub mod channel_fakes;
         pub mod test_run_handler_fakes;
@@ -83,6 +82,8 @@ pub mod delegation {
     mod_use!(actor_api);
     mod_use!(handler);
     mod_use!(actor_event);
+    mod_use!(give);
+    mod_use!(loan);
 }
 
 #[cfg(test)]

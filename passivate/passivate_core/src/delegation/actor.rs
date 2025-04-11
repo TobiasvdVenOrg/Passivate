@@ -1,6 +1,6 @@
-use std::{error::Error, fmt::Display, sync::{atomic::{AtomicBool, Ordering}, mpsc::channel, Arc}, thread::{self, JoinHandle}};
+use std::{error::Error, fmt::Display, sync::{atomic::{AtomicBool, Ordering}, mpsc::{channel, Sender}, Arc}, thread::{self, JoinHandle}};
 
-use super::{actor_event::ActorEvent, ActorApi, Handler};
+use super::{actor_event::ActorEvent, ActorApi, Give, Handler, Loan};
 
 #[derive(Default, Clone)]
 pub struct Cancellation {
@@ -38,12 +38,12 @@ impl Display for Cancelled {
     }
 }
 
-pub struct Actor<T: Send + Clone + 'static, THandler: Handler<T>> {
-    api: ActorApi<T>,
+pub struct Actor<T: Send + 'static, THandler: Handler<T>> {
+    sender: Sender<ActorEvent<T>>,
     thread: Option<JoinHandle<THandler>>
 }
 
-impl<T: Send + Clone + 'static, THandler: Handler<T>> Actor<T, THandler> {
+impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler> {
     pub fn new(mut handler: THandler) -> Self {
         let (sender, receiver) = channel();
 
@@ -59,18 +59,21 @@ impl<T: Send + Clone + 'static, THandler: Handler<T>> Actor<T, THandler> {
             handler
         }));
 
-        let api = ActorApi::new(sender);
-        Self { api, thread }
+        Self { sender, thread }
     }
 
-    pub fn api(&self) -> ActorApi<T> {
-        self.api.clone()
+    pub fn give(&self) -> impl Give<T> {
+        ActorApi::new(self.sender.clone())
+    }
+
+    pub fn loan(&self) -> impl Loan<T> {
+        ActorApi::new(self.sender.clone())
     }
 
     pub fn stop(&mut self) -> THandler {
-        self.api.exit();
-        let thread = self.thread.take().unwrap();
+        self.sender.send(ActorEvent::Exit).expect("failed to stop actor!");
+        let thread = self.thread.take().expect("failed to acquire actor thread handle!");
 
-        thread.join().unwrap()
+        thread.join().expect("failed to join actor thread!")
     }
 }

@@ -1,12 +1,10 @@
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
-use crate::delegation::{Cancellation, Handler};
-use crate::test_helpers::fakes::actor_fakes::stub_actor_api;
-
+use crate::delegation::{stub_give, Cancellation, Handler};
 
 #[test]
 pub fn configuration_change_is_broadcasted() {
     let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
-    let mut handler = ConfigurationHandler::new(stub_actor_api(), configuration_sender);
+    let mut handler = ConfigurationHandler::new(stub_give(), Box::new(configuration_sender));
 
     handler.handle(ConfigurationChangeEvent::Coverage(true), Cancellation::default());
 

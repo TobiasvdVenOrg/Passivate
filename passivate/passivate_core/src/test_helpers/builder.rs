@@ -1,27 +1,19 @@
 use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::Sender;
 use std::io::Error as IoError;
-use crate::delegation::Cancellation;
-use crate::delegation::Handler;
-use crate::change_events::ChangeEvent;
+use crate::{change_events::ChangeEvent, delegation::{stub_give, Cancellation, Give, Handler}};
 use crate::configuration::TestRunnerImplementation;
 use crate::coverage::CoverageStatus;
 use crate::cross_cutting::stub_log;
 use crate::passivate_grcov::Grcov;
-use crate::test_execution::build_test_output_parser;
-use crate::test_execution::ParseOutput;
-use crate::test_execution::TestRunHandler;
-use crate::test_execution::TestRunProcessor;
-use crate::test_execution::TestRunner;
+use crate::test_execution::{build_test_output_parser, ParseOutput, TestRunHandler, TestRunProcessor, TestRunner};
 use crate::test_run_model::TestRun;
 
 pub struct ChangeEventHandlerBuilder {
     test_runner: TestRunnerImplementation,
-    tests_status_sender: Option<Sender<TestRun>>,
-    coverage_sender: Option<Sender<CoverageStatus>>,
+    tests_status_sender: Option<Box<dyn Give<TestRun>>>,
+    coverage_sender: Option<Box<dyn Give<CoverageStatus>>>,
     base_workspace_path: PathBuf,
     base_output_path: PathBuf,
     workspace_path: PathBuf,
@@ -67,12 +59,12 @@ impl ChangeEventHandlerBuilder {
         }
     }
 
-    pub fn receive_tests_status(&mut self, sender: Sender<TestRun>) -> &mut Self {
+    pub fn receive_tests_status(&mut self, sender: Box<dyn Give<TestRun>>) -> &mut Self {
         self.tests_status_sender = Some(sender);
         self
     }
 
-    pub fn receive_coverage_status(&mut self, sender: Sender<CoverageStatus>) -> &mut Self {
+    pub fn receive_coverage_status(&mut self, sender: Box<dyn Give<CoverageStatus>>) -> &mut Self {
         self.coverage_sender = Some(sender);
         self
     }
@@ -97,7 +89,7 @@ impl ChangeEventHandlerBuilder {
         Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path())
     }
 
-    pub fn build(&self) -> TestRunHandler {
+    pub fn build(&mut self) -> TestRunHandler {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");
 
@@ -112,10 +104,10 @@ impl ChangeEventHandlerBuilder {
         ));
         
         let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
-        let processor = TestRunProcessor::new(runner, parser, stub_log());
+        let processor = TestRunProcessor::new(runner, parser);
 
-        let tests_status_sender = self.tests_status_sender.clone().unwrap_or(channel().0);
-        let coverage_sender = self.coverage_sender.clone().unwrap_or(channel().0);
+        let tests_status_sender = self.tests_status_sender.take().unwrap_or(stub_give());
+        let coverage_sender = self.coverage_sender.take().unwrap_or(stub_give());
 
         let grcov = self.build_grcov();
 

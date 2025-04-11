@@ -1,10 +1,8 @@
 use std::sync::mpsc::channel;
-use crate::delegation::{Cancellation, Cancelled, Handler};
-use crate::configuration::PassivateConfig;
-use crate::cross_cutting::stub_log;
+use crate::delegation::{stub_give, Cancellation, Cancelled, Handler};
+use crate::configuration::{ConfigurationEvent, PassivateConfig};
 use crate::test_execution::{mock_run_tests, stub_parse_output, TestRunError, TestRunProcessor};
 use crate::test_helpers::builder::nextest_builder;
-use crate::test_helpers::fakes::channel_fakes::stub_sender;
 use crate::test_helpers::fakes::test_run_handler_fakes;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 use crate::change_events::ChangeEvent;
@@ -22,7 +20,7 @@ pub fn handle_single_test_run() {
     let mut handler = nextest_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
-        .receive_tests_status(test_run_sender)
+        .receive_tests_status(Box::new(test_run_sender))
         .clean_output()
         .build();
 
@@ -67,7 +65,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled() {
     let mut handler = nextest_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
-        .receive_tests_status(test_run_sender)
+        .receive_tests_status(Box::new(test_run_sender))
         .clean_output()
         .build();
 
@@ -97,7 +95,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled() {
     let mut handler = nextest_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
-        .receive_tests_status(test_run_sender)
+        .receive_tests_status(Box::new(test_run_sender))
         .clean_output()
         .build();
 
@@ -150,12 +148,12 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
 #[test]
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError> {
-    let (sender, receiver) = channel();
+    let (test_run_sender, test_run_receiver) = channel();
     let mut builder = nextest_builder();
     let builder = builder
         .with_workspace("simple_project_failing_tests")
         .with_output(function_name!())
-        .receive_tests_status(sender)
+        .receive_tests_status(Box::new(test_run_sender))
         .clean_output();
 
     let mut handler = builder.build();
@@ -165,7 +163,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError> {
 
     let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
 
-    let state = receiver.try_iter().last().unwrap();
+    let state = test_run_receiver.try_iter().last().unwrap();
 
     let failed_test = state.tests.find(&failed_test).unwrap();
     assert_that!(&failed_test.output, contains_in_order(vec![
@@ -187,9 +185,9 @@ pub fn when_test_run_fails_error_is_reported() {
     run_tests.expect_run_tests()
         .returning(|_, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
 
-    let processor = TestRunProcessor::new(run_tests, stub_parse_output(), stub_log());
+    let processor = TestRunProcessor::new(run_tests, stub_parse_output());
     let (tests_sender, tests_receiver) = channel();
-    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, tests_sender);
+    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, Box::new(tests_sender));
 
     handler.handle(ChangeEvent::File, Cancellation::default());
 
@@ -205,8 +203,8 @@ pub fn when_configuration_changes_tests_are_run() {
     run_tests.expect_run_tests().once().returning(|_, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
     run_tests.expect_run_test().returning(|_, _, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
 
-    let processor = TestRunProcessor::new(run_tests, stub_parse_output(), stub_log());
-    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, stub_sender());
+    let processor = TestRunProcessor::new(run_tests, stub_parse_output());
+    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, stub_give());
 
-    handler.handle(ChangeEvent::Configuration(PassivateConfig::default()), Cancellation::default());
+    handler.handle(ChangeEvent::Configuration(ConfigurationEvent { old: None, new: PassivateConfig::default() }), Cancellation::default());
 }

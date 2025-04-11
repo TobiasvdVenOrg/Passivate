@@ -1,8 +1,9 @@
 use std::sync::mpsc::channel;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
+use passivate_core::delegation::stub_give;
+use passivate_core::test_helpers::fakes::{channel_fakes, test_run_handler_fakes};
 use passivate_core::{delegation::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
-use passivate_core::test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_crossbeam_sender}, test_run_handler_fakes};
 use stdext::function_name;
 use crate::views::{CoverageView, View};
 use indexmap::IndexMap;
@@ -11,7 +12,7 @@ use indexmap::IndexMap;
 pub fn show_coverage_hierarchy_fully_collapsed() {
     let (coverage_sender, coverage_receiver) = channel();
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, stub_actor_api());
+    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -39,7 +40,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
 pub fn show_coverage_hierarchy_expand_children() {
     let (coverage_sender, coverage_receiver) = channel();
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, stub_actor_api());
+    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -119,12 +120,12 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let change_handler = test_run_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(change_actor.api(), stub_crossbeam_sender());
+    let configuration = ConfigurationHandler::new(Box::new(change_actor.give()), stub_give());
     let mut configuration_actor = Actor::new(configuration);
 
     let coverage_receiver = channel_fakes::stub_receiver();
     
-    let mut coverage_view = CoverageView::new(coverage_receiver, configuration_actor.api());
+    let mut coverage_view = CoverageView::new(coverage_receiver, Box::new(configuration_actor.give()));
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -149,9 +150,8 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
 #[test]
 pub fn show_error() {
-    let configuration_api = stub_actor_api();
     let (coverage_sender, coverage_receiver) = channel();
-    let mut coverage_view = CoverageView::new(coverage_receiver, configuration_api);
+    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);

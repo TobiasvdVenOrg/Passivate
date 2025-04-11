@@ -1,9 +1,9 @@
-use passivate_core::{delegation::ActorApi, configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}};
+use passivate_core::{configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}, delegation::Give};
 
 use crate::views::View;
 
 pub struct ConfigurationView {
-    sender: ActorApi<ConfigurationChangeEvent>,
+    stakeholder: Box<dyn Give<ConfigurationChangeEvent>>,
     receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
     configuration: PassivateConfig,
 
@@ -11,8 +11,8 @@ pub struct ConfigurationView {
 }
 
 impl ConfigurationView {
-    pub fn new(sender: ActorApi<ConfigurationChangeEvent>, receiver: crossbeam_channel::Receiver<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
-        Self { sender, receiver, configuration, snapshots_path_field: String::new() }
+    pub fn new(stakeholder: Box<dyn Give<ConfigurationChangeEvent>>, receiver: crossbeam_channel::Receiver<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
+        Self { stakeholder, receiver, configuration, snapshots_path_field: String::new() }
     }
 }
 
@@ -23,7 +23,7 @@ impl View for ConfigurationView {
         }
 
         if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
-            self.sender.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
+            self.stakeholder.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
         }
 
         if let Some(configured_snapshots_path) = &self.configuration.snapshots_path {
@@ -34,7 +34,7 @@ impl View for ConfigurationView {
             ui.label("Snapshots Path:");
 
             if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus() {
-                self.sender.send(ConfigurationChangeEvent::SnapshotsPath(self.snapshots_path_field.clone()));
+                self.stakeholder.send(ConfigurationChangeEvent::SnapshotsPath(self.snapshots_path_field.clone()));
             }
         });
     }

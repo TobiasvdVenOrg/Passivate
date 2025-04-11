@@ -3,7 +3,8 @@ use std::sync::mpsc::Receiver;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::configuration::ConfigurationEvent;
-use passivate_core::{delegation::ActorApi, change_events::ChangeEvent};
+use passivate_core::delegation::Give;
+use passivate_core::change_events::ChangeEvent;
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 
 use super::View;
@@ -16,8 +17,8 @@ struct SnapshotHandles {
 }
 
 pub struct DetailsView {
-    receiver: Receiver<Option<SingleTest>>,
-    change_event_api: ActorApi<ChangeEvent>,
+    test_receiver: Receiver<Option<SingleTest>>,
+    change_events: Box<dyn Give<ChangeEvent>>,
     configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
@@ -26,12 +27,12 @@ pub struct DetailsView {
 
 impl DetailsView {
     pub fn new(
-        receiver: Receiver<Option<SingleTest>>, 
-        change_event_api: ActorApi<ChangeEvent>, 
+        test_receiver: Receiver<Option<SingleTest>>, 
+        change_events: Box<dyn Give<ChangeEvent>>, 
         configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>) -> Self {
         Self { 
-            receiver,
-            change_event_api,
+            test_receiver,
+            change_events,
             configuration_receiver,
             single_test: None, 
             snapshots: None, 
@@ -85,7 +86,7 @@ impl DetailsView {
 
                 let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
                 if ui.button(approve).clicked() {
-                    self.change_event_api.send(ChangeEvent::SingleTest { 
+                    self.change_events.send(ChangeEvent::SingleTest { 
                         id: snapshot_handles.test_id.clone(), 
                         update_snapshots: true 
                     });
@@ -115,7 +116,7 @@ impl View for DetailsView {
             }
         }
 
-        if let Ok(new_test) = self.receiver.try_recv() {
+        if let Ok(new_test) = self.test_receiver.try_recv() {
             self.check_for_snapshots(ui, &new_test);
             self.single_test = new_test;
         }
@@ -132,11 +133,11 @@ impl View for DetailsView {
                 ui.heading(text);
 
                 if ui.button("Pin").clicked() {
-                    self.change_event_api.send(ChangeEvent::PinTest { id: single_test.id() });
+                    self.change_events.send(ChangeEvent::PinTest { id: single_test.id() });
                 }
 
                 if ui.button("Unpin").clicked() {
-                    self.change_event_api.send(ChangeEvent::ClearPinnedTests);
+                    self.change_events.send(ChangeEvent::ClearPinnedTests);
                 }
             });
 

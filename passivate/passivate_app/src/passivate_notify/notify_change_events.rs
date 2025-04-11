@@ -4,7 +4,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
-use passivate_core::delegation::ActorApi;
+use passivate_core::delegation::Give;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use passivate_core::change_events::ChangeEvent;
@@ -16,7 +16,7 @@ pub struct NotifyChangeEvents {
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &Path, sender: ActorApi<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
+    pub fn new(path: &Path, change_events: Box<dyn Give<ChangeEvent>>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
         let config = NotifyConfig::default().with_compare_contents(true);
@@ -33,16 +33,14 @@ impl NotifyChangeEvents {
                                     if let Ok(modified) = metadata.modified() {
                                         if let Some(last_modification) = modification_cache.get(path.as_path()) {
                                             if &modified > last_modification {
-                                                println!("Change event: {:?}", path);
                                                 let change_event = ChangeEvent::File;
 
-                                                sender.send(change_event);
+                                                change_events.send(change_event);
                                             }
                                         } else {
-                                            println!("Change event: {:?}", path);
                                             let change_event = ChangeEvent::File;
 
-                                            sender.send(change_event);
+                                            change_events.send(change_event);
                                         }
 
                                         modification_cache.insert(path.clone(), modified);

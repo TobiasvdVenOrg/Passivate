@@ -5,10 +5,9 @@ use egui_kittest::kittest::Key;
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
-use passivate_core::delegation::Actor;
+use passivate_core::delegation::{stub_give, Actor};
 use passivate_core::configuration::{ConfigurationEvent, ConfigurationHandler, PassivateConfig};
-use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
-use passivate_core::test_helpers::fakes::channel_fakes::{stub_crossbeam_receiver, stub_crossbeam_sender, stub_receiver};
+use passivate_core::test_helpers::fakes::channel_fakes::{stub_crossbeam_receiver, stub_receiver};
 use passivate_core::test_helpers::fakes::{channel_fakes, test_run_handler_fakes};
 use passivate_core::test_run_model::Snapshots;
 use stdext::function_name;
@@ -20,7 +19,7 @@ use crate::views::{ConfigurationView, DetailsView, View};
 pub fn show_configuration() {
     let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
 
-    let mut configuration_view = ConfigurationView::new(stub_actor_api(), configuration_receiver, PassivateConfig::default());
+    let mut configuration_view = ConfigurationView::new(stub_give(), configuration_receiver, PassivateConfig::default());
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);
@@ -48,14 +47,14 @@ pub fn configure_coverage_enabled() {
     let change_handler = test_run_handler_fakes::stub();
     let mut change_actor = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(change_actor.api(), stub_crossbeam_sender());
+    let configuration = ConfigurationHandler::new(Box::new(change_actor.give()), stub_give());
     let mut configuration_actor = Actor::new(configuration);
 
     let configuration_receiver = channel_fakes::stub_crossbeam_receiver();
     
     let initial_configuration = PassivateConfig { coverage_enabled: false, ..PassivateConfig::default() };
 
-    let mut configuration_view = ConfigurationView::new(configuration_actor.api(), configuration_receiver, initial_configuration);
+    let mut configuration_view = ConfigurationView::new(Box::new(configuration_actor.give()), configuration_receiver, initial_configuration);
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);
@@ -81,11 +80,11 @@ pub fn configure_snapshots_path() {
 
     let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
 
-    let configuration = ConfigurationHandler::new(stub_actor_api(), configuration_sender);
+    let configuration = ConfigurationHandler::new(stub_give(), Box::new(configuration_sender));
     let configuration_actor = Actor::new(configuration);
 
-    let mut configuration_view = ConfigurationView::new(configuration_actor.api(), stub_crossbeam_receiver(), initial_configuration);
-    let mut details_view = DetailsView::new(stub_receiver(), stub_actor_api(), configuration_receiver);
+    let mut configuration_view = ConfigurationView::new(Box::new(configuration_actor.give()), stub_crossbeam_receiver(), initial_configuration);
+    let mut details_view = DetailsView::new(stub_receiver(), stub_give(), configuration_receiver);
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);

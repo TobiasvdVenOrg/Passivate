@@ -1,31 +1,29 @@
-use std::sync::mpsc::Sender;
-use crate::{delegation::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
+use crate::{delegation::{Cancellation, Give}, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
 
 use super::{ParseOutput, RunTests, TestRunError};
 
 pub struct TestRunProcessor {
     run_tests: Box<dyn RunTests + Send>,
     parse_output: Box<dyn ParseOutput + Send>,
-    test_run: TestRun,
-    log: Box<dyn Log + Send>
+    test_run: TestRun
 }
 
 impl TestRunProcessor {
-    pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>, log: Box<dyn Log + Send>) -> Self {
-        Self::from_test_run(run_tests, parse_output, TestRun::default(), log)
+    pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>) -> Self {
+        Self::from_test_run(run_tests, parse_output, TestRun::default())
     }
 
-    pub fn from_test_run(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>, test_run: TestRun, log: Box<dyn Log + Send>) -> Self {
-        Self { run_tests, parse_output, test_run, log }
+    pub fn from_test_run(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>, test_run: TestRun) -> Self {
+        Self { run_tests, parse_output, test_run }
     }
 
-    fn update(&mut self, event: TestRunEvent, sender: &Sender<TestRun>) {
+    fn update(&mut self, event: TestRunEvent, sender: &dyn Give<TestRun>) {
         if self.test_run.update(event) {
-            let _ = sender.send(self.test_run.clone());
+            sender.send(self.test_run.clone());
         }
     }
 
-    pub fn run_tests(&mut self, sender: &Sender<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_tests(&mut self, sender: &dyn Give<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         self.update(TestRunEvent::Start, sender);
 
         cancellation.check()?;
@@ -38,8 +36,6 @@ impl TestRunProcessor {
             match line {
                 Ok(line) => {
                     let test_run_event = self.parse_output.parse_line(&line);
-
-                    self.log.info(&line);
 
                     cancellation.check()?;
 
@@ -54,8 +50,6 @@ impl TestRunProcessor {
 
             cancellation.check()?;
         }
-
-        self.log.info("Done with the tests...");
 
         match self.test_run.state {
             TestRunState::BuildFailed(_) => {
@@ -73,7 +67,7 @@ impl TestRunProcessor {
         Ok(())
     }
     
-    pub fn run_test(&mut self, sender: &Sender<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_test(&mut self, sender: &dyn Give<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         if let Some(test) = self.test_run.tests.find(id) {
             self.update(TestRunEvent::StartSingle {
                 test: id.clone(),
@@ -88,8 +82,6 @@ impl TestRunProcessor {
                 match line {
                     Ok(line) => {
                         let test_run_event = self.parse_output.parse_line(&line);
-    
-                        self.log.info(&line);
     
                         cancellation.check()?;
     

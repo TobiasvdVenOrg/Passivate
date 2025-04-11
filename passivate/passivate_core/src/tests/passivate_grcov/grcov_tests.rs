@@ -22,7 +22,7 @@ pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBui
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .receive_coverage_status(coverage_sender)
+        .receive_coverage_status(Box::new(coverage_sender))
         .clean_output()
         .build();
 

@@ -1,17 +1,17 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState};
-use std::sync::mpsc::{Receiver, Sender};
+use passivate_core::{delegation::Give, test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState}};
+use std::sync::mpsc::Receiver;
 use crate::views::View;
 
 pub struct TestRunView {
     receiver: Receiver<TestRun>,
-    test_details: Sender<Option<SingleTest>>,
+    test_details: Box<dyn Give<Option<SingleTest>>>,
     status: TestRun,
     selected_test: Option<TestId>
 }
 
 impl TestRunView {
-    pub fn new(receiver: Receiver<TestRun>, test_details: Sender<Option<SingleTest>>) -> TestRunView {
+    pub fn new(receiver: Receiver<TestRun>, test_details: Box<dyn Give<Option<SingleTest>>>) -> TestRunView {
         TestRunView { receiver, test_details, status: TestRun::default(), selected_test: None }
     }
 
@@ -33,7 +33,7 @@ impl TestRunView {
 
     fn send_selected_test_details(&self) {
         if let Some(selected_test) = &self.selected_test {
-            let _ = self.test_details.send(self.status.tests.find(selected_test));
+            self.test_details.send(self.status.tests.find(selected_test));
         }
     }
 

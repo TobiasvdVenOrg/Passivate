@@ -1,17 +1,17 @@
 use std::sync::mpsc::Receiver;
 use egui::{collapsing_header::CollapsingState, Color32, RichText};
-use passivate_core::{delegation::ActorApi, configuration::ConfigurationChangeEvent, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, delegation::Give, passivate_grcov::CovdirJson};
 use crate::views::View;
 
 pub struct CoverageView {
     receiver: Receiver<CoverageStatus>,
-    sender: ActorApi<ConfigurationChangeEvent>,
+    configuration: Box<dyn Give<ConfigurationChangeEvent>>,
     status: CoverageStatus
 }
 
 impl CoverageView {
-    pub fn new(receiver: Receiver<CoverageStatus>, sender: ActorApi<ConfigurationChangeEvent>) -> CoverageView {
-        CoverageView { receiver, sender, status: CoverageStatus::Disabled }
+    pub fn new(receiver: Receiver<CoverageStatus>, configuration: Box<dyn Give<ConfigurationChangeEvent>>) -> CoverageView {
+        CoverageView { receiver, configuration, status: CoverageStatus::Disabled }
     }
 
     fn draw_coverage(ui: &mut egui_dock::egui::Ui, coverage: &CovdirJson, id: egui::Id) {
@@ -44,7 +44,7 @@ impl CoverageView {
         ui.heading("Code coverage is disabled");
 
         if ui.button("Enable").clicked() {
-            self.sender.send(ConfigurationChangeEvent::Coverage(true));
+            self.configuration.send(ConfigurationChangeEvent::Coverage(true));
         }
     }
 }
