@@ -108,8 +108,7 @@ impl ChangeEventHandlerBuilder {
             target,
             self.get_workspace_path().clone(), 
             self.get_output_path().clone(), 
-            self.get_coverage_path().clone(),
-            stub_log()
+            self.get_coverage_path().clone()
         ));
         
         let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);

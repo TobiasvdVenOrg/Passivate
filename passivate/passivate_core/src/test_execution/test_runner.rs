@@ -6,7 +6,6 @@ use duct::cmd;
 
 use crate::delegation::Cancellation;
 use crate::configuration::TestRunnerImplementation;
-use crate::cross_cutting::Log;
 
 use super::{RunTests, TestRunError, TestRunIterator};
 
@@ -14,13 +13,12 @@ pub struct TestRunner {
     target: OsString,
     working_dir: PathBuf, 
     target_dir: PathBuf, 
-    coverage_output_dir: PathBuf,
-    log: Box<dyn Log + Send>
+    coverage_output_dir: PathBuf
 }
 
 impl TestRunner {
-    pub fn new(target: OsString, working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf, log: Box<dyn Log + Send>) -> Self {
-        Self { target, working_dir, target_dir, coverage_output_dir, log }
+    pub fn new(target: OsString, working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf) -> Self {
+        Self { target, working_dir, target_dir, coverage_output_dir }
     }
 }
 
