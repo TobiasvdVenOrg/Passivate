@@ -3,7 +3,7 @@
 use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
-use crate::actors::Cancellation;
+use crate::delegation::Cancellation;
 use crate::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
 use rstest::*;

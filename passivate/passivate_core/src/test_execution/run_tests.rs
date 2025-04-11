@@ -1,5 +1,5 @@
 use std::{iter, rc::Rc};
-use crate::{actors::Cancellation, configuration::TestRunnerImplementation};
+use crate::{delegation::Cancellation, configuration::TestRunnerImplementation};
 
 use super::TestRunError;
 

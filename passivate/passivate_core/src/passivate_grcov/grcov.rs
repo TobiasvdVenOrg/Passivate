@@ -1,6 +1,6 @@
 use std::{fs, io::Error as IoError, path::{Path, PathBuf}, process::Command, time::Duration};
 
-use crate::{actors::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}, passivate_cargo::cargo_workspace};
+use crate::{delegation::Cancellation, coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind}, passivate_cargo::cargo_workspace};
 use super::CovdirJson;
 
 pub struct Grcov {

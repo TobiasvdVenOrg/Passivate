@@ -1,4 +1,4 @@
-use crate::actors::Cancellation;
+use crate::delegation::Cancellation;
 
 use super::{CoverageError, CoverageStatus};
 

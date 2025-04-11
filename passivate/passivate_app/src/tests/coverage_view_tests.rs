@@ -1,7 +1,7 @@
 use std::sync::mpsc::channel;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::{actors::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_core::{delegation::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
 use passivate_core::test_helpers::fakes::{actor_fakes::stub_actor_api, channel_fakes::{self, stub_crossbeam_sender}, test_run_handler_fakes};
 use stdext::function_name;
 use crate::views::{CoverageView, View};

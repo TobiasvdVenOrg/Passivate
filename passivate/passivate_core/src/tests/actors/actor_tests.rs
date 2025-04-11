@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::actors::{Actor, Cancellation, Handler};
+use crate::delegation::{Actor, Cancellation, Handler};
 
 #[derive(Default)]
 struct ExampleHandler {

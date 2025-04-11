@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use egui::Context;
-use passivate_core::actors::Actor;
+use passivate_core::delegation::Actor;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
 use passivate_core::cross_cutting::ChannelLog;

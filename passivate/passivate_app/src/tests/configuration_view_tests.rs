@@ -5,7 +5,7 @@ use egui_kittest::kittest::Key;
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
-use passivate_core::actors::Actor;
+use passivate_core::delegation::Actor;
 use passivate_core::configuration::{ConfigurationEvent, ConfigurationHandler, PassivateConfig};
 use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
 use passivate_core::test_helpers::fakes::channel_fakes::{stub_crossbeam_receiver, stub_crossbeam_sender, stub_receiver};

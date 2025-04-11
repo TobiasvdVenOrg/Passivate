@@ -1,4 +1,4 @@
-use crate::actors::ActorApi;
+use crate::delegation::ActorApi;
 
 use super::channel_fakes::stub_sender;
 

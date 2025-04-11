@@ -1,4 +1,4 @@
-use crate::{actors::{ActorApi, Handler}, change_events::ChangeEvent};
+use crate::{change_events::ChangeEvent, delegation::{ActorApi, Cancellation, Handler}};
 
 use super::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig};
 
@@ -20,7 +20,7 @@ impl ConfigurationHandler {
 }
 
 impl Handler<ConfigurationChangeEvent> for ConfigurationHandler {
-    fn handle(&mut self, event: ConfigurationChangeEvent, _cancellation: crate::actors::Cancellation) {
+    fn handle(&mut self, event: ConfigurationChangeEvent, _cancellation: Cancellation) {
         match event {
             ConfigurationChangeEvent::Coverage(enabled) => {
                 let old = self.configuration.clone();

@@ -4,7 +4,7 @@ use std::fs;
 
 use duct::cmd;
 
-use crate::actors::Cancellation;
+use crate::delegation::Cancellation;
 use crate::configuration::TestRunnerImplementation;
 use crate::cross_cutting::Log;
 

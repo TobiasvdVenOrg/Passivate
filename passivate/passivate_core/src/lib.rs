@@ -78,7 +78,7 @@ pub mod configuration {
     mod_use!(configuration_handler);
 }
 
-pub mod actors {
+pub mod delegation {
     mod_use!(actor);
     mod_use!(actor_api);
     mod_use!(handler);

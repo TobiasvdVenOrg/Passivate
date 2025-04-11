@@ -1,4 +1,4 @@
-use passivate_core::{actors::ActorApi, configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}};
+use passivate_core::{delegation::ActorApi, configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}};
 
 use crate::views::View;
 

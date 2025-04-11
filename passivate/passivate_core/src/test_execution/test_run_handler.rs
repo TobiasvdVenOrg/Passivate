@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::{actors::{Cancellation, Handler}, change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}, cross_cutting::Log, test_run_model::{FailedTestRun, TestId, TestRun}};
+use crate::{delegation::{Cancellation, Handler}, change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}, cross_cutting::Log, test_run_model::{FailedTestRun, TestId, TestRun}};
 
 use super::TestRunProcessor;
 

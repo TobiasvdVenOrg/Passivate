@@ -1,5 +1,5 @@
 use std::sync::mpsc::channel;
-use crate::actors::{Cancellation, Cancelled, Handler};
+use crate::delegation::{Cancellation, Cancelled, Handler};
 use crate::configuration::PassivateConfig;
 use crate::cross_cutting::stub_log;
 use crate::test_execution::{mock_run_tests, stub_parse_output, TestRunError, TestRunProcessor};

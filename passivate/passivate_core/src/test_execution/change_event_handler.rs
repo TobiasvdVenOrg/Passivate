@@ -1,4 +1,4 @@
-use crate::actors::{ActorApi, Cancellation, Handler};
+use crate::delegation::{ActorApi, Cancellation, Handler};
 use crate::change_events::ChangeEvent;
 use crate::cross_cutting::Log;
 

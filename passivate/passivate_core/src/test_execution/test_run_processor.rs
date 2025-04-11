@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use crate::{actors::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
+use crate::{delegation::Cancellation, cross_cutting::Log, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
 
 use super::{ParseOutput, RunTests, TestRunError};
 

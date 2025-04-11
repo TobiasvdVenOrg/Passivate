@@ -1,5 +1,5 @@
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
-use crate::actors::{Cancellation, Handler};
+use crate::delegation::{Cancellation, Handler};
 use crate::test_helpers::fakes::actor_fakes::stub_actor_api;
 
 

@@ -3,7 +3,7 @@ use std::sync::mpsc::Receiver;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::configuration::ConfigurationEvent;
-use passivate_core::{actors::ActorApi, change_events::ChangeEvent};
+use passivate_core::{delegation::ActorApi, change_events::ChangeEvent};
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 
 use super::View;

@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::{actors::Actor, cross_cutting::stub_log, test_execution::{ChangeEventHandler, TestRunProcessor}, test_run_model::TestRun};
+use crate::{delegation::Actor, cross_cutting::stub_log, test_execution::{ChangeEventHandler, TestRunProcessor}, test_run_model::TestRun};
 
 use super::test_run_handler_fakes;
 

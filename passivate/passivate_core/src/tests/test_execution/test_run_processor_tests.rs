@@ -5,7 +5,7 @@ use galvanic_assert::matchers::collection::contains_in_order;
 use rstest::rstest;
 
 use crate::test_run_model::{SingleTest, SingleTestStatus};
-use crate::{actors::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunError, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
+use crate::{delegation::Cancellation, configuration::TestRunnerImplementation, cross_cutting::stub_log, test_execution::{build_test_output_parser, MockRunTests, TestRunError, TestRunProcessor}, test_run_model::{TestRun, TestRunState}};
 
 
 struct TestRunIterator {

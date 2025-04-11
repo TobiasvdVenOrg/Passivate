@@ -3,7 +3,7 @@ use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::*;
 use galvanic_assert::matchers::*;
 use passivate_core::test_helpers::fakes::actor_fakes::stub_actor_api;
-use passivate_core::actors::ActorApi;
+use passivate_core::delegation::ActorApi;
 use passivate_core::test_helpers::fakes::channel_fakes::stub_crossbeam_receiver;
 use crate::views::{DetailsView, TestRunView, View};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
@@ -145,7 +145,7 @@ pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identica
 #[case::current_and_new("example_snapshot_changed")]
 #[case::only_new("example_snapshot_only_new")]
 pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] test: &str) {
-    use passivate_core::actors::ActorEvent;
+    use passivate_core::delegation::ActorEvent;
 
     let snapshot_test = example_test(test, SingleTestStatus::Failed);
     

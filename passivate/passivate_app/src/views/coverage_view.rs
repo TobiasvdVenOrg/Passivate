@@ -1,6 +1,6 @@
 use std::sync::mpsc::Receiver;
 use egui::{collapsing_header::CollapsingState, Color32, RichText};
-use passivate_core::{actors::ActorApi, configuration::ConfigurationChangeEvent, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_core::{delegation::ActorApi, configuration::ConfigurationChangeEvent, coverage::CoverageStatus, passivate_grcov::CovdirJson};
 use crate::views::View;
 
 pub struct CoverageView {
