@@ -1,8 +1,7 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::channel;
 use egui::Context;
-use passivate_core::delegation::{Actor, Give};
+use passivate_core::delegation::{channel, Actor, Cancellation, Rx, Tx};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
 use passivate_core::cross_cutting::ChannelLog;
@@ -40,7 +39,7 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     let (tests_status_sender, tests_status_receiver) = channel();
     let (coverage_sender, coverage_receiver) = channel();
-    let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
+    let (configuration_sender, configuration_receiver) = channel();
     let (log_sender, log_receiver) = channel();
     let (details_sender, details_receiver) = channel();
 
@@ -61,33 +60,29 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
-    let test_run_handler = TestRunHandler::new(test_processor, Box::new(coverage), Box::new(tests_status_sender), Box::new(coverage_sender), Box::new(log.clone()), configuration.coverage_enabled);
-    let mut test_run_actor = Actor::new(test_run_handler);
+    let test_run_handler = TestRunHandler::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
+    let (test_run_actor_tx, test_run_actor) = Actor::new(test_run_handler);
 
-    let change_handler = ChangeEventHandler::new(Box::new(test_run_actor.loan()));
-    let mut change_actor = Actor::new(change_handler);
+    let change_handler = ChangeEventHandler::new(test_run_actor_tx);
+    let (change_actor_tx, change_actor) = Actor::new(change_handler);
     
-    let configuration_handler = ConfigurationHandler::new(Box::new(change_actor.give()), Box::new(configuration_sender));
-    let mut configuration_actor = Actor::new(configuration_handler);
+    let configuration_handler = ConfigurationHandler::new(Tx::from_actor(change_actor_tx.clone()), configuration_sender);
+    let (configuration_actor_tx, configuration_actor) = Actor::new(configuration_handler);
 
-    let mut change_events = NotifyChangeEvents::new(path, Box::new(change_actor.give()))?;
+    let mut change_events = NotifyChangeEvents::new(path, Tx::from_actor(change_actor_tx.clone()))?;
 
-    let tests_view = TestRunView::new(tests_status_receiver, Box::new(details_sender));
+    let tests_view = TestRunView::new(tests_status_receiver, details_sender);
 
-    let details_view = DetailsView::new(details_receiver, Box::new(change_actor.give()), configuration_receiver.clone());
+    let details_view = DetailsView::new(details_receiver, Tx::from_actor(change_actor_tx.clone()), configuration_receiver.clone());
 
-    let coverage_view = CoverageView::new(coverage_receiver, Box::new(configuration_actor.give()));
-    let configuration_view = ConfigurationView::new(Box::new(configuration_actor.give()), configuration_receiver.clone(), configuration);
+    let coverage_view = CoverageView::new(coverage_receiver, Tx::from_actor(configuration_actor_tx.clone()));
+    let configuration_view = ConfigurationView::new(Tx::from_actor(configuration_actor_tx), configuration_receiver.clone(), configuration);
     let log_view = LogView::new(log_receiver);
 
     // Send an initial change event to trigger the first test run
-    change_actor.give().send(ChangeEvent::File);
+    Tx::from_actor(change_actor_tx).send(ChangeEvent::File);
 
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
-
-    test_run_actor.stop();
-    configuration_actor.stop();
-    change_actor.stop();
 
     let _ = change_events.stop();
 

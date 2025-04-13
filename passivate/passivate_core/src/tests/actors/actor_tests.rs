@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::delegation::{Actor, Cancellation, Give, Handler, Loan};
+use crate::delegation::{Actor, Cancellation, Handler, Tx};
 
 #[derive(Default)]
 struct ExampleHandler {
@@ -22,14 +22,15 @@ impl Handler<i32> for ExampleHandler {
 #[test]
 pub fn actor_handles_messages_and_stops_gracefully() {
     let handler = ExampleHandler::default();
-    let mut actor = Actor::new(handler);
+    let (actor_tx, mut actor) = Actor::new(handler);
 
-    let api = actor.give();
+    let tx = Tx::from_actor(actor_tx);
+    
+    tx.send(16);
+    tx.send(32);
 
-    api.send(16);
-    api.send(32);
-
-    let handler = actor.stop();
+    drop(tx);
+    let handler = actor.into_inner();
 
     assert_eq!(48, handler.get_total());
 }
@@ -51,11 +52,11 @@ impl Handler<i32> for LoopingHandler {
 pub fn actor_handle_can_be_cancelled() {
     let handler = LoopingHandler;
     let mut cancellation = Cancellation::default();
-    let mut actor = Actor::new(handler);
+    let (tx, _actor) = Actor::new(handler);
 
-    actor.loan().send(64, cancellation.clone());
+    tx.send(64, cancellation.clone()).unwrap();
 
     cancellation.cancel();
 
-    actor.stop();
+    drop(tx);
 }

@@ -1,16 +1,18 @@
-use std::{rc::Rc, sync::mpsc::{channel, Receiver}};
+use std::rc::Rc;
 use galvanic_assert::is_variant;
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
 use rstest::rstest;
 
+use crate::delegation::channel;
+use crate::delegation::Rx;
 use crate::test_run_model::{SingleTest, SingleTestStatus};
 use crate::{delegation::Cancellation, configuration::TestRunnerImplementation, test_run_model::{TestRun, TestRunState}};
 use crate::test_execution::{build_test_output_parser, MockRunTests, TestRunError, TestRunProcessor};
 
 
 struct TestRunIterator {
-    receiver: Receiver<TestRun>
+    receiver: Rx<TestRun>
 }
 
 impl Iterator for TestRunIterator {

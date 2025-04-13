@@ -1,16 +1,15 @@
-use std::sync::mpsc::Receiver;
 use egui::{collapsing_header::CollapsingState, Color32, RichText};
-use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, delegation::Give, passivate_grcov::CovdirJson};
+use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, delegation::{Rx, Tx}, passivate_grcov::CovdirJson};
 use crate::views::View;
 
 pub struct CoverageView {
-    receiver: Receiver<CoverageStatus>,
-    configuration: Box<dyn Give<ConfigurationChangeEvent>>,
+    receiver: Rx<CoverageStatus>,
+    configuration: Tx<ConfigurationChangeEvent>,
     status: CoverageStatus
 }
 
 impl CoverageView {
-    pub fn new(receiver: Receiver<CoverageStatus>, configuration: Box<dyn Give<ConfigurationChangeEvent>>) -> CoverageView {
+    pub fn new(receiver: Rx<CoverageStatus>, configuration: Tx<ConfigurationChangeEvent>) -> CoverageView {
         CoverageView { receiver, configuration, status: CoverageStatus::Disabled }
     }
 

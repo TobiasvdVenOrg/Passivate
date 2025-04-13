@@ -1,6 +1,6 @@
-use std::sync::mpsc::Sender;
-
 use chrono::Utc;
+
+use crate::delegation::Tx;
 
 use super::LogEvent;
 
@@ -16,19 +16,24 @@ pub fn stub_log() -> Box<MockLog> {
     Box::new(log)
 }
 
-#[derive(Clone)]
 pub struct ChannelLog {
-    sender: Sender<LogEvent>
+    sender: Tx<LogEvent>
 }
 
 impl ChannelLog {
-    pub fn new(sender: Sender<LogEvent>) -> Self {
+    pub fn new(sender: Tx<LogEvent>) -> Self {
         Self { sender }
+    }
+}
+
+impl Clone for ChannelLog {
+    fn clone(&self) -> Self {
+        Self { sender: self.sender.clone() }
     }
 }
 
 impl Log for ChannelLog {
     fn info(&self, message: &str) {
-        let _ = self.sender.send(LogEvent { message: message.to_string(), timestamp: Utc::now() });
+        self.sender.send(LogEvent { message: message.to_string(), timestamp: Utc::now() });
     }
 }

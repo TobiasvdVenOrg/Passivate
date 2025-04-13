@@ -1,14 +1,14 @@
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
-use crate::delegation::{stub_give, Cancellation, Handler};
+use crate::delegation::{channel, Cancellation, Handler, Tx};
 
 #[test]
 pub fn configuration_change_is_broadcasted() {
-    let (configuration_sender, configuration_receiver) = crossbeam_channel::unbounded();
-    let mut handler = ConfigurationHandler::new(stub_give(), Box::new(configuration_sender));
+    let (configuration_sender, configuration_receiver) = channel();
+    let mut handler = ConfigurationHandler::new(Tx::stub(), configuration_sender);
 
     handler.handle(ConfigurationChangeEvent::Coverage(true), Cancellation::default());
 
-    let broadcast = configuration_receiver.try_iter().last().unwrap();
+    let broadcast = configuration_receiver.try_recv().unwrap();
 
     assert!(broadcast.new.coverage_enabled);
 }

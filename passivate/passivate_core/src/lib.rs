@@ -59,17 +59,6 @@ pub mod coverage {
     mod_use!(coverage_errors);
 }
 
-pub mod test_helpers {
-    pub mod assert_matches;
-    pub mod builder;
-
-    pub mod fakes {
-        pub mod change_event_handler_fakes;
-        pub mod channel_fakes;
-        pub mod test_run_handler_fakes;
-    }
-}
-
 pub mod configuration {
     mod_use!(passivate_config);
     mod_use!(test_runner_implementation);
@@ -82,8 +71,18 @@ pub mod delegation {
     mod_use!(actor_api);
     mod_use!(handler);
     mod_use!(actor_event);
-    mod_use!(give);
-    mod_use!(loan);
+    mod_use!(tx_rx);
+    mod_use!(channel);
+}
+
+pub mod test_helpers {
+    pub mod assert_matches;
+    pub mod builder;
+
+    pub mod fakes {
+        pub mod change_event_handler_fakes;
+        pub mod test_run_handler_fakes;
+    }
 }
 
 #[cfg(test)]

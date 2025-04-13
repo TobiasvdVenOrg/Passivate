@@ -1,8 +1,7 @@
-use std::sync::mpsc::channel;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::delegation::stub_give;
-use passivate_core::test_helpers::fakes::{channel_fakes, test_run_handler_fakes};
+use passivate_core::delegation::{channel, Rx, Tx};
+use passivate_core::test_helpers::fakes::test_run_handler_fakes;
 use passivate_core::{delegation::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
 use stdext::function_name;
 use crate::views::{CoverageView, View};
@@ -12,7 +11,7 @@ use indexmap::IndexMap;
 pub fn show_coverage_hierarchy_fully_collapsed() {
     let (coverage_sender, coverage_receiver) = channel();
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
+    let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -29,7 +28,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
         name: "example.rs".to_string(),
     };
 
-    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info))).unwrap();
+    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
 
     harness.run();
     harness.fit_contents();
@@ -40,7 +39,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
 pub fn show_coverage_hierarchy_expand_children() {
     let (coverage_sender, coverage_receiver) = channel();
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
+    let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -91,7 +90,7 @@ pub fn show_coverage_hierarchy_expand_children() {
         name: "example.rs".to_string(),
     };
 
-    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info))).unwrap();
+    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
 
     harness.run();
 
@@ -118,14 +117,12 @@ pub fn show_coverage_hierarchy_expand_children() {
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     let change_handler = test_run_handler_fakes::stub();
-    let mut change_actor = Actor::new(change_handler);
+    let (change_tx, mut change_actor) = Actor::new(change_handler);
 
-    let configuration = ConfigurationHandler::new(Box::new(change_actor.give()), stub_give());
-    let mut configuration_actor = Actor::new(configuration);
+    let configuration = ConfigurationHandler::new(Tx::from_actor(change_tx), Tx::stub());
+    let (configuration_tx, mut configuration_actor) = Actor::new(configuration);
 
-    let coverage_receiver = channel_fakes::stub_receiver();
-    
-    let mut coverage_view = CoverageView::new(coverage_receiver, Box::new(configuration_actor.give()));
+    let mut coverage_view = CoverageView::new(Rx::stub(), Tx::from_actor(configuration_tx));
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -138,8 +135,8 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
     harness.run();
 
-    let configuration = configuration_actor.stop();
-    let change_handler = change_actor.stop();
+    let configuration = configuration_actor.into_inner();
+    let change_handler = change_actor.into_inner();
 
     assert!(change_handler.coverage_enabled());
     assert!(configuration.configuration().coverage_enabled);
@@ -151,13 +148,13 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 #[test]
 pub fn show_error() {
     let (coverage_sender, coverage_receiver) = channel();
-    let mut coverage_view = CoverageView::new(coverage_receiver, stub_give());
+    let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
     };
 
-    coverage_sender.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string())).unwrap();
+    coverage_sender.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string()));
     
     let mut harness = Harness::new_ui(ui);
     harness.run();

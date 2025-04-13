@@ -1,7 +1,8 @@
-use std::sync::mpsc::channel;
 use egui_kittest::Harness;
+use passivate_core::delegation::channel;
 use crate::views::{TestRunView, View};
-use passivate_core::{delegation::stub_give, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
+use passivate_core::{delegation::Tx};
+use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState};
 use stdext::function_name;
 
 #[test]
@@ -42,7 +43,7 @@ pub fn show_build_status_above_tests_while_compiling() {
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {
     let (sender, receiver)  = channel();
-    let mut tests_status_view = TestRunView::new(receiver, stub_give());
+    let mut tests_status_view = TestRunView::new(receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui|{
         tests_status_view.ui(ui);
@@ -50,7 +51,7 @@ fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str) {
 
     let mut harness = Harness::new_ui(ui);
 
-    sender.send(tests_status).unwrap();
+    sender.send(tests_status);
 
     harness.run();
     harness.fit_contents();

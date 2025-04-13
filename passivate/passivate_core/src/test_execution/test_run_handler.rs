@@ -1,6 +1,6 @@
 use crate::{change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}};
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
-use crate::delegation::{Cancellation, Give, Handler};
+use crate::delegation::{Cancellation, Tx, Handler};
 use crate::cross_cutting::Log;
 
 use super::TestRunProcessor;
@@ -8,8 +8,8 @@ use super::TestRunProcessor;
 pub struct TestRunHandler {
     runner: TestRunProcessor,
     coverage: Box<dyn ComputeCoverage + Send>, 
-    tests_status_sender: Box<dyn Give<TestRun>>,
-    coverage_status_sender: Box<dyn Give<CoverageStatus>>,
+    tests_status_sender: Tx<TestRun>,
+    coverage_status_sender: Tx<CoverageStatus>,
     log: Box<dyn Log + Send>,
     coverage_enabled: bool,
     pinned_test: Option<TestId>
@@ -19,8 +19,8 @@ impl TestRunHandler {
     pub fn new(
         runner: TestRunProcessor,
         coverage: Box<dyn ComputeCoverage + Send>, 
-        tests_status_sender: Box<dyn Give<TestRun>>,
-        coverage_status_sender: Box<dyn Give<CoverageStatus>>,
+        tests_status_sender: Tx<TestRun>,
+        coverage_status_sender: Tx<CoverageStatus>,
         log: Box<dyn Log + Send>,
         coverage_enabled: bool) -> Self {
             Self {
@@ -51,7 +51,7 @@ impl TestRunHandler {
 
         if cancellation.is_cancelled() { return }
 
-        let test_output = self.runner.run_tests(self.tests_status_sender.as_ref(), self.coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(&self.tests_status_sender, self.coverage_enabled, cancellation.clone());
 
         if cancellation.is_cancelled() { return }
 
@@ -89,7 +89,7 @@ impl TestRunHandler {
     pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
     
     fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation) {
-        let result = self.runner.run_test(self.tests_status_sender.as_ref(), id, update_snapshots, cancellation);
+        let result = self.runner.run_test(&self.tests_status_sender, id, update_snapshots, cancellation);
 
         if let Err(error) = result {
             let error_status = FailedTestRun { inner_error_display: error.to_string() };

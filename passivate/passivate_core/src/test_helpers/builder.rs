@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
 use std::io::Error as IoError;
-use crate::{change_events::ChangeEvent, delegation::{stub_give, Cancellation, Give, Handler}};
+use crate::{change_events::ChangeEvent, delegation::{Cancellation, Tx, Handler}};
 use crate::configuration::TestRunnerImplementation;
 use crate::coverage::CoverageStatus;
 use crate::cross_cutting::stub_log;
@@ -12,8 +12,8 @@ use crate::test_run_model::TestRun;
 
 pub struct ChangeEventHandlerBuilder {
     test_runner: TestRunnerImplementation,
-    tests_status_sender: Option<Box<dyn Give<TestRun>>>,
-    coverage_sender: Option<Box<dyn Give<CoverageStatus>>>,
+    tests_status_sender: Option<Tx<TestRun>>,
+    coverage_sender: Option<Tx<CoverageStatus>>,
     base_workspace_path: PathBuf,
     base_output_path: PathBuf,
     workspace_path: PathBuf,
@@ -59,12 +59,12 @@ impl ChangeEventHandlerBuilder {
         }
     }
 
-    pub fn receive_tests_status(&mut self, sender: Box<dyn Give<TestRun>>) -> &mut Self {
+    pub fn receive_tests_status(&mut self, sender: Tx<TestRun>) -> &mut Self {
         self.tests_status_sender = Some(sender);
         self
     }
 
-    pub fn receive_coverage_status(&mut self, sender: Box<dyn Give<CoverageStatus>>) -> &mut Self {
+    pub fn receive_coverage_status(&mut self, sender: Tx<CoverageStatus>) -> &mut Self {
         self.coverage_sender = Some(sender);
         self
     }
@@ -106,8 +106,8 @@ impl ChangeEventHandlerBuilder {
         let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
         let processor = TestRunProcessor::new(runner, parser);
 
-        let tests_status_sender = self.tests_status_sender.take().unwrap_or(stub_give());
-        let coverage_sender = self.coverage_sender.take().unwrap_or(stub_give());
+        let tests_status_sender = self.tests_status_sender.take().unwrap_or(Tx::stub());
+        let coverage_sender = self.coverage_sender.take().unwrap_or(Tx::stub());
 
         let grcov = self.build_grcov();
 

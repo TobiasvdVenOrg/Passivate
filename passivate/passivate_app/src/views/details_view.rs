@@ -1,9 +1,8 @@
 use std::path::PathBuf;
-use std::sync::mpsc::Receiver;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::configuration::ConfigurationEvent;
-use passivate_core::delegation::Give;
+use passivate_core::delegation::{Rx, Tx};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 
@@ -17,9 +16,9 @@ struct SnapshotHandles {
 }
 
 pub struct DetailsView {
-    test_receiver: Receiver<Option<SingleTest>>,
-    change_events: Box<dyn Give<ChangeEvent>>,
-    configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
+    test_receiver: Rx<Option<SingleTest>>,
+    change_events: Tx<ChangeEvent>,
+    configuration_receiver: Rx<ConfigurationEvent>,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
     snapshot_handles: Option<SnapshotHandles>
@@ -27,9 +26,9 @@ pub struct DetailsView {
 
 impl DetailsView {
     pub fn new(
-        test_receiver: Receiver<Option<SingleTest>>, 
-        change_events: Box<dyn Give<ChangeEvent>>, 
-        configuration_receiver: crossbeam_channel::Receiver<ConfigurationEvent>) -> Self {
+        test_receiver: Rx<Option<SingleTest>>, 
+        change_events: Tx<ChangeEvent>, 
+        configuration_receiver: Rx<ConfigurationEvent>) -> Self {
         Self { 
             test_receiver,
             change_events,

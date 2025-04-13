@@ -31,7 +31,9 @@ mod_use!(run);
 #[cfg(test)]
 pub mod tests {
     mod_use!(test_run_view_tests);
-    mod_use!(coverage_view_tests);
+    //mod_use!(coverage_view_tests);
+    pub mod coverage_view_tests;
+    pub use coverage_view_tests::*;
     mod_use!(log_view_tests);
     mod_use!(configuration_view_tests);
     mod_use!(details_view_tests);

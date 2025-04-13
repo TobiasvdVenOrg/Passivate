@@ -1,5 +1,5 @@
-use std::{iter, rc::Rc};
-use crate::{delegation::Cancellation, configuration::TestRunnerImplementation};
+use std::rc::Rc;
+use crate::{configuration::TestRunnerImplementation, delegation::Cancellation};
 
 use super::TestRunError;
 
@@ -17,6 +17,8 @@ pub fn mock_run_tests() -> Box<MockRunTests> {
 }
 
 pub fn stub_run_tests() -> Box<MockRunTests> {
+    use std::iter;
+
     let mut mock = mock_run_tests();
     mock.expect_run_tests().returning(|_implementation, _instrument_coverage, _cancellation| { Ok(Box::new(iter::empty())) });
 

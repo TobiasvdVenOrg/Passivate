@@ -4,7 +4,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
-use passivate_core::delegation::Give;
+use passivate_core::delegation::Tx;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use passivate_core::change_events::ChangeEvent;
@@ -16,7 +16,7 @@ pub struct NotifyChangeEvents {
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &Path, change_events: Box<dyn Give<ChangeEvent>>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
+    pub fn new(path: &Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
         let config = NotifyConfig::default().with_compare_contents(true);

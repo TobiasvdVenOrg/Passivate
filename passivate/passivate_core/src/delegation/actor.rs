@@ -1,6 +1,6 @@
-use std::{error::Error, fmt::Display, sync::{atomic::{AtomicBool, Ordering}, mpsc::{channel, Sender}, Arc}, thread::{self, JoinHandle}};
+use std::{error::Error, fmt::Display, marker::PhantomData, sync::{atomic::{AtomicBool, Ordering}, Arc}, thread::{self, JoinHandle}};
 
-use super::{actor_event::ActorEvent, ActorApi, Give, Handler, Loan};
+use super::{ActorEvent, ActorTx, Handler};
 
 #[derive(Default, Clone)]
 pub struct Cancellation {
@@ -39,39 +39,28 @@ impl Display for Cancelled {
 }
 
 pub struct Actor<T: Send + 'static, THandler: Handler<T>> {
-    sender: Sender<ActorEvent<T>>,
-    thread: Option<JoinHandle<THandler>>
+    thread: Option<JoinHandle<THandler>>,
+    _phantom: PhantomData<T>
 }
 
 impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler> {
-    pub fn new(mut handler: THandler) -> Self {
-        let (sender, receiver) = channel();
+    pub fn new(mut handler: THandler) -> (ActorTx<T>, Actor<T, THandler>) {
+        let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
         let thread = Some(thread::spawn(move || {
-            while let Ok(event) = receiver.recv() {
-                match event {
-                    ActorEvent::Custom(custom) => handler.handle(custom, Cancellation::default()),
-                    ActorEvent::Cancellable(cancellable) => handler.handle(cancellable.event, cancellable.cancellation),
-                    ActorEvent::Exit => break,
-                };
+            while let Ok(event) = rx.recv() {
+                handler.handle(event.event, event.cancellation);
             }
 
             handler
         }));
 
-        Self { sender, thread }
+        let actor_tx = ActorTx::new(tx);
+        let actor = Self { thread, _phantom: PhantomData { } };
+        ( actor_tx, actor )
     }
 
-    pub fn give(&self) -> impl Give<T> {
-        ActorApi::new(self.sender.clone())
-    }
-
-    pub fn loan(&self) -> impl Loan<T> {
-        ActorApi::new(self.sender.clone())
-    }
-
-    pub fn stop(&mut self) -> THandler {
-        self.sender.send(ActorEvent::Exit).expect("failed to stop actor!");
+    pub fn into_inner(&mut self) -> THandler {
         let thread = self.thread.take().expect("failed to acquire actor thread handle!");
 
         thread.join().expect("failed to join actor thread!")

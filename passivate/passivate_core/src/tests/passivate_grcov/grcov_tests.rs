@@ -8,7 +8,6 @@ use crate::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
 use rstest::*;
 use stdext::function_name;
-use std::sync::mpsc::channel;
 use crate::coverage::CoverageStatus;
 use pretty_assertions::assert_eq;
 use crate::test_helpers::builder::*;
@@ -17,12 +16,14 @@ use crate::test_helpers::builder::*;
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
 pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    use crate::delegation::channel;
+
     let (coverage_sender, coverage_receiver) = channel();
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .receive_coverage_status(Box::new(coverage_sender))
+        .receive_coverage_status(coverage_sender)
         .clean_output()
         .build();
 

@@ -1,14 +1,14 @@
-use crate::delegation::{Cancellation, Handler, Loan};
+use crate::delegation::{ActorTx, Cancellation, Handler};
 use crate::change_events::ChangeEvent;
 
 pub struct ChangeEventHandler {
-    decoratee: Box<dyn Loan<ChangeEvent>>,
+    actor: ActorTx<ChangeEvent>,
     cancellation: Cancellation
 }
 
 impl ChangeEventHandler {
-    pub fn new(decoratee: Box<dyn Loan<ChangeEvent>>) -> Self {
-        Self { decoratee, cancellation: Cancellation::default() }
+    pub fn new(actor: ActorTx<ChangeEvent>) -> Self {
+        Self { actor, cancellation: Cancellation::default() }
     }
 }
 
@@ -17,6 +17,6 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
         self.cancellation.cancel();
         self.cancellation = Cancellation::default();
 
-        self.decoratee.send(event, self.cancellation.clone());
+        self.actor.send(event, self.cancellation.clone()).expect("failed to send change event to actor!");
     }
 }

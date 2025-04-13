@@ -1,16 +1,16 @@
-use crate::{change_events::ChangeEvent, delegation::{Cancellation, Give, Handler}};
+use crate::{change_events::ChangeEvent, delegation::{Cancellation, Tx, Handler}};
 
 use super::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig};
 
 
 pub struct ConfigurationHandler {
     configuration: PassivateConfig,
-    change_handler: Box<dyn Give<ChangeEvent>>,
-    configuration_handler: Box<dyn Give<ConfigurationEvent>>
+    change_handler: Tx<ChangeEvent>,
+    configuration_handler: Tx<ConfigurationEvent>
 }
 
 impl ConfigurationHandler {
-    pub fn new(change_handler: Box<dyn Give<ChangeEvent>>, configuration_handler: Box<dyn Give<ConfigurationEvent>>) -> Self {
+    pub fn new(change_handler: Tx<ChangeEvent>, configuration_handler: Tx<ConfigurationEvent>) -> Self {
         Self { configuration: PassivateConfig::default(), change_handler, configuration_handler }
     }
 

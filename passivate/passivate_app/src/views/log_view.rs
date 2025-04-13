@@ -1,10 +1,9 @@
-use std::sync::mpsc::Receiver;
 use egui::ScrollArea;
-use passivate_core::cross_cutting::LogEvent;
+use passivate_core::{cross_cutting::LogEvent, delegation::Rx};
 use crate::views::View;
 
 pub struct LogView {
-    receiver: Receiver<LogEvent>,
+    receiver: Rx<LogEvent>,
     logs: Vec<LogEntry>
 }
 
@@ -14,7 +13,7 @@ struct LogEntry {
 }
 
 impl LogView {
-    pub fn new(receiver: Receiver<LogEvent>) -> Self {
+    pub fn new(receiver: Rx<LogEvent>) -> Self {
         Self { receiver, logs: vec![] }
     }
 }

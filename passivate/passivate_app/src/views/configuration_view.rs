@@ -1,17 +1,17 @@
-use passivate_core::{configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}, delegation::Give};
+use passivate_core::{configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}, delegation::{Rx, Tx}};
 
 use crate::views::View;
 
 pub struct ConfigurationView {
-    stakeholder: Box<dyn Give<ConfigurationChangeEvent>>,
-    receiver: crossbeam_channel::Receiver<ConfigurationEvent>,
+    stakeholder: Tx<ConfigurationChangeEvent>,
+    receiver: Rx<ConfigurationEvent>,
     configuration: PassivateConfig,
 
     snapshots_path_field: String
 }
 
 impl ConfigurationView {
-    pub fn new(stakeholder: Box<dyn Give<ConfigurationChangeEvent>>, receiver: crossbeam_channel::Receiver<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
+    pub fn new(stakeholder: Tx<ConfigurationChangeEvent>, receiver: Rx<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
         Self { stakeholder, receiver, configuration, snapshots_path_field: String::new() }
     }
 }

@@ -1,9 +1,9 @@
-use std::{sync::mpsc::channel, time::Duration};
+use std::time::Duration;
 use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{LogView, View};
-use passivate_core::cross_cutting::LogEvent;
+use passivate_core::{cross_cutting::LogEvent, delegation::channel};
 use stdext::function_name;
 
 #[test]
@@ -18,7 +18,7 @@ pub fn show_a_single_log() {
     let mut harness = Harness::new_ui(ui);
 
     let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
-    sender.send(example_log).unwrap();
+    sender.send(example_log);
 
     harness.run();
     harness.fit_contents();
@@ -42,7 +42,7 @@ pub fn many_logs_are_scrollable() {
         timestamp += Duration::from_secs(n);
 
         let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", timestamp);
-        sender.send(example_log).unwrap();
+        sender.send(example_log);
 
         harness.run();
     }
