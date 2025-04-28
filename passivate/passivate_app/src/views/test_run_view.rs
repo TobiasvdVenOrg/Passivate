@@ -1,5 +1,6 @@
 use egui::{Color32, RichText};
-use passivate_core::{delegation::{Rx, Tx}, test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState}};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState};
+use passivate_delegation::{Rx, Tx};
 use crate::views::View;
 
 pub struct TestRunView {
@@ -70,13 +71,13 @@ impl View for TestRunView {
             TestRunState::Running => {
                         
                     },
-            TestRunState::BuildFailed(ref build_failure) => {
+            TestRunState::BuildFailed(build_failure) => {
                         ui.heading("Build failed.");
 
                         let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
                         ui.label(text);
                     },
-            TestRunState::Failed(ref run_tests_error_status) => {
+            TestRunState::Failed(run_tests_error_status) => {
                         ui.heading("Failed to run tests.");
 
                         let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);

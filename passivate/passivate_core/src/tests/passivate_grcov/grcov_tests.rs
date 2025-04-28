@@ -3,7 +3,7 @@
 use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
-use crate::delegation::Cancellation;
+use passivate_delegation::Cancellation;
 use crate::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
 use rstest::*;
@@ -16,7 +16,7 @@ use crate::test_helpers::builder::*;
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
 pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    use crate::delegation::channel;
+    use passivate_delegation::channel;
 
     let (coverage_sender, coverage_receiver) = channel();
     let mut runner = builder

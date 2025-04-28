@@ -26,6 +26,7 @@ pub mod test_execution {
     mod_use!(test_run_processor);
     mod_use!(test_run_errors);
     mod_use!(test_run_handler);
+    mod_use!(test_run_actor);
 }
 
 pub mod test_run_model {
@@ -66,22 +67,13 @@ pub mod configuration {
     mod_use!(configuration_handler);
 }
 
-pub mod delegation {
-    mod_use!(actor);
-    mod_use!(actor_api);
-    mod_use!(handler);
-    mod_use!(actor_event);
-    mod_use!(tx_rx);
-    mod_use!(channel);
-}
-
 pub mod test_helpers {
     pub mod assert_matches;
     pub mod builder;
 
     pub mod fakes {
         pub mod change_event_handler_fakes;
-        pub mod test_run_handler_fakes;
+        pub mod test_run_actor_fakes;
     }
 }
 

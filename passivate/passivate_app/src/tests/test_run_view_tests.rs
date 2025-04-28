@@ -1,7 +1,7 @@
 use egui_kittest::Harness;
-use passivate_core::delegation::channel;
+use passivate_delegation::channel;
 use crate::views::{TestRunView, View};
-use passivate_core::{delegation::Tx};
+use passivate_delegation::Tx;
 use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState};
 use stdext::function_name;
 

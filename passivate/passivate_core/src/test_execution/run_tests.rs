@@ -1,5 +1,6 @@
 use std::rc::Rc;
-use crate::{configuration::TestRunnerImplementation, delegation::Cancellation};
+use crate::configuration::TestRunnerImplementation;
+use passivate_delegation::Cancellation;
 
 use super::TestRunError;
 

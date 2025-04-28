@@ -1,5 +1,5 @@
 use crate::configuration::{ConfigurationChangeEvent, ConfigurationHandler};
-use crate::delegation::{channel, Cancellation, Handler, Tx};
+use passivate_delegation::{channel, Cancellation, Handler, Tx};
 
 #[test]
 pub fn configuration_change_is_broadcasted() {

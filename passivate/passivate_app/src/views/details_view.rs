@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::configuration::ConfigurationEvent;
-use passivate_core::delegation::{Rx, Tx};
+use passivate_delegation::{Rx, Tx};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
 

@@ -1,7 +1,7 @@
 use std::io::Error as IoError;
 use thiserror::Error;
 
-use crate::delegation::Cancelled;
+use passivate_delegation::Cancelled;
 
 #[derive(Error, Debug)]
 pub enum TestRunError {

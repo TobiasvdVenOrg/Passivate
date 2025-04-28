@@ -1,8 +1,8 @@
-use crate::delegation::{Cancellation, Cancelled, Handler, Tx, channel};
+use passivate_delegation::{Cancellation, Cancelled, Handler, Tx, channel};
 use crate::configuration::{ConfigurationEvent, PassivateConfig};
 use crate::test_execution::{mock_run_tests, stub_parse_output, TestRunError, TestRunProcessor};
 use crate::test_helpers::builder::nextest_builder;
-use crate::test_helpers::fakes::test_run_handler_fakes;
+use crate::test_helpers::fakes::test_run_actor_fakes;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 use crate::change_events::ChangeEvent;
 use galvanic_assert::{assert_that, is_variant, matchers::collection::contains_in_order};
@@ -186,7 +186,7 @@ pub fn when_test_run_fails_error_is_reported() {
 
     let processor = TestRunProcessor::new(run_tests, stub_parse_output());
     let (tests_sender, tests_receiver) = channel();
-    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, tests_sender);
+    let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, tests_sender);
 
     handler.handle(ChangeEvent::File, Cancellation::default());
 
@@ -203,7 +203,7 @@ pub fn when_configuration_changes_tests_are_run() {
     run_tests.expect_run_test().returning(|_, _, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
 
     let processor = TestRunProcessor::new(run_tests, stub_parse_output());
-    let mut handler = test_run_handler_fakes::stub_with_test_run_processor_and_tests_sender(processor, Tx::stub());
+    let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, Tx::stub());
 
     handler.handle(ChangeEvent::Configuration(ConfigurationEvent { old: None, new: PassivateConfig::default() }), Cancellation::default());
 }

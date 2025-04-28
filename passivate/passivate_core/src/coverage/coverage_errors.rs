@@ -1,7 +1,8 @@
 use std::{io::ErrorKind as IoErrorKind, path::PathBuf};
 use thiserror::Error;
 
-use crate::{delegation::Cancelled, passivate_cargo::CargoWorkspaceError};
+use crate::passivate_cargo::CargoWorkspaceError;
+use passivate_delegation::Cancelled;
 
 #[derive(Error, Debug)]
 pub enum CoverageError {

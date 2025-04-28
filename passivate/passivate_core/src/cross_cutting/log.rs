@@ -1,6 +1,6 @@
 use chrono::Utc;
 
-use crate::delegation::Tx;
+use passivate_delegation::Tx;
 
 use super::LogEvent;
 

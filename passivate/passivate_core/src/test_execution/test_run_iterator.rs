@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use duct::ReaderHandle;
 
-use crate::delegation::{Cancellation, Cancelled};
+use passivate_delegation::{Cancellation, Cancelled};
 
 use super::TestRunError;
 

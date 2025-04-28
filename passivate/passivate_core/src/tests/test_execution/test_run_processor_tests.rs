@@ -4,10 +4,11 @@ use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
 use rstest::rstest;
 
-use crate::delegation::channel;
-use crate::delegation::Rx;
+use passivate_delegation::channel;
+use passivate_delegation::Rx;
 use crate::test_run_model::{SingleTest, SingleTestStatus};
-use crate::{delegation::Cancellation, configuration::TestRunnerImplementation, test_run_model::{TestRun, TestRunState}};
+use crate::{configuration::TestRunnerImplementation, test_run_model::{TestRun, TestRunState}};
+use passivate_delegation::Cancellation;
 use crate::test_execution::{build_test_output_parser, MockRunTests, TestRunError, TestRunProcessor};
 
 

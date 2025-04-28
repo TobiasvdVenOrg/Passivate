@@ -43,7 +43,38 @@ pub struct Actor<T: Send + 'static, THandler: Handler<T>> {
     _phantom: PhantomData<T>
 }
 
+
 impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler> {
+    /// An actor will asynchronously listen for events posted on the 'tx' returned by 'new'.
+    /// Similar to channels, all tx instances (including clones) must be dropped for the actor the shut down gracefully.
+    /// Dropping an actor while an associated tx instance is still alive may cause a deadlock.
+    /// The most reliable way to prevent this from happening is to immediately move the tx instance after acquisition.
+    /// This will guarantee that it is dropped before the actor reaches the end of the scope, for example:
+    /// ```
+    /// # use passivate_delegation::{Actor, ActorTx, Cancellation, Handler, Tx};
+    /// # 
+    /// # struct ExampleHandler;
+    /// # 
+    /// # impl Handler<i32> for ExampleHandler {
+    /// #     fn handle(&mut self, event: i32, _cancellation: Cancellation) {
+    /// #         
+    /// #     }
+    /// # }
+    /// # 
+    /// # fn do_something(tx: ActorTx<i32>) {
+    /// #     tx.send(16, Cancellation::default());
+    /// # }
+    /// # 
+    /// {
+    ///     let handler = ExampleHandler { };
+    ///     let (tx, actor) = Actor::new(handler);
+    /// 
+    ///     // Move 'tx' here
+    ///     do_something(tx);
+    /// 
+    ///     // 'tx' is guaranteed to be dropped when 'actor' is dropped at the end of the scope
+    /// }
+    /// ```
     pub fn new(mut handler: THandler) -> (ActorTx<T>, Actor<T, THandler>) {
         let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
@@ -64,5 +95,13 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler> {
         let thread = self.thread.take().expect("failed to acquire actor thread handle!");
 
         thread.join().expect("failed to join actor thread!")
+    }
+}
+
+impl<T: Send + 'static, THandler: Handler<T>> Drop for Actor<T, THandler> {
+    fn drop(&mut self) {
+        if let Some(thread) = self.thread.take() {
+            let _handler = thread.join().expect("failed to join actor thread!");
+        }
     }
 }

@@ -4,7 +4,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use notify::Config as NotifyConfig;
 use notify::Event as NotifyEvent;
 use notify::Result as NotifyResult;
-use passivate_core::delegation::Tx;
+use passivate_delegation::Tx;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use passivate_core::change_events::ChangeEvent;

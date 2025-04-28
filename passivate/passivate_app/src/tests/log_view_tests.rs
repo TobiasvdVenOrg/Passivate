@@ -3,7 +3,8 @@ use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
 use crate::views::{LogView, View};
-use passivate_core::{cross_cutting::LogEvent, delegation::channel};
+use passivate_core::cross_cutting::LogEvent;
+use passivate_delegation::channel;
 use stdext::function_name;
 
 #[test]

@@ -1,8 +1,9 @@
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::delegation::{channel, Rx, Tx};
-use passivate_core::test_helpers::fakes::test_run_handler_fakes;
-use passivate_core::{delegation::Actor, configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_delegation::{channel, Rx, Tx};
+use passivate_core::test_helpers::fakes::test_run_actor_fakes;
+use passivate_core::{configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_delegation::Actor;
 use stdext::function_name;
 use crate::views::{CoverageView, View};
 use indexmap::IndexMap;
@@ -116,10 +117,9 @@ pub fn show_coverage_hierarchy_expand_children() {
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
-    let change_handler = test_run_handler_fakes::stub();
-    let (change_tx, mut change_actor) = Actor::new(change_handler);
+    let (test_run_tx, mut test_run_actor) = test_run_actor_fakes::stub();
 
-    let configuration = ConfigurationHandler::new(Tx::from_actor(change_tx), Tx::stub());
+    let configuration = ConfigurationHandler::new(Tx::from_actor(test_run_tx), Tx::stub());
     let (configuration_tx, mut configuration_actor) = Actor::new(configuration);
 
     let mut coverage_view = CoverageView::new(Rx::stub(), Tx::from_actor(configuration_tx));
@@ -136,9 +136,9 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
     harness.run();
 
     let configuration = configuration_actor.into_inner();
-    let change_handler = change_actor.into_inner();
+    let test_run_handler = test_run_actor.into_inner();
 
-    assert!(change_handler.coverage_enabled());
+    assert!(test_run_handler.coverage_enabled());
     assert!(configuration.configuration().coverage_enabled);
 
     harness.fit_contents();

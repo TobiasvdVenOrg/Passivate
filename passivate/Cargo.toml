@@ -1,7 +1,9 @@
 [workspace]
 members = [
     "passivate_core",
-    "passivate_app"
+    "passivate_app",
+    "passivate_delegation",
+    "passivate_delegation_proc"
 ]
 resolver = "2"
 

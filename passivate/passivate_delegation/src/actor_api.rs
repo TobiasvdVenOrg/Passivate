@@ -1,4 +1,4 @@
-use crossbeam_channel::{SendError, Sender};
+use crossbeam_channel::Sender;
 
 use super::{actor_event::ActorEvent, Cancellation};
 
@@ -33,11 +33,11 @@ impl<T: Send + 'static> ActorTx<T> {
         Self { implementation: ActorTxImplementation::Channel(sender) }
     }
 
-    pub fn send(&self, event: T, cancellation: Cancellation) -> Result<(), SendError<ActorEvent<T>>> {
+    pub fn send(&self, event: T, cancellation: Cancellation) {
         match &self.implementation {
-            ActorTxImplementation::Channel(sender) => sender.send(ActorEvent { event, cancellation }),
+            ActorTxImplementation::Channel(sender) => sender.send(ActorEvent { event, cancellation }).expect("failed to send event to actor"),
 
-            ActorTxImplementation::Stub => Ok(()),
+            ActorTxImplementation::Stub => { }
         }
     }
 

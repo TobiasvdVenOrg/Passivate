@@ -46,7 +46,7 @@ impl<T: Send + 'static> Tx<T> {
     pub fn send(&self, event: T) {
         match &self.implementation {
             TxImplementation::Channel(sender) => sender.send(event).expect("'Tx' failed, receiver is invalid!"),
-            TxImplementation::Actor(actor_api) => actor_api.send(event, Cancellation::default()).expect("'Tx' failed, actor is invalid!"),
+            TxImplementation::Actor(actor_api) => actor_api.send(event, Cancellation::default()),
 
             TxImplementation::Stub => { },
         }

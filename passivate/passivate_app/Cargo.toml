@@ -1,10 +1,11 @@
 [package]
 name = "passivate"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 passivate_core = { path = "../passivate_core" }
+passivate_delegation = { path = "../passivate_delegation" }
 
 egui = { version = "0.31", features = [ ] }
 egui_dock = "0.16.0"
@@ -22,7 +23,6 @@ default-features = false
 features = [ "default_fonts", "wgpu", "accesskit", "wayland" ]
 
 [dev-dependencies]
-passivate_core = { path = "../passivate_core" }
 mockall = "0.13.1"
 libtest-mimic = "0.8.1"
 egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }

@@ -1,4 +1,5 @@
-use crate::{delegation::{Cancellation, Tx}, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
+use crate::test_run_model::{TestId, TestRun, TestRunEvent, TestRunState};
+use passivate_delegation::{Cancellation, Tx};
 
 use super::{ParseOutput, RunTests, TestRunError};
 

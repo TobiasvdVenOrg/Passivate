@@ -1,6 +1,6 @@
 use crate::{change_events::ChangeEvent, coverage::{ComputeCoverage, CoverageStatus}};
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
-use crate::delegation::{Cancellation, Tx, Handler};
+use passivate_delegation::{Cancellation, Tx, Handler};
 use crate::cross_cutting::Log;
 
 use super::TestRunProcessor;

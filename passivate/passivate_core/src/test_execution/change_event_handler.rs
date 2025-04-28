@@ -1,4 +1,4 @@
-use crate::delegation::{ActorTx, Cancellation, Handler};
+use passivate_delegation::{ActorTx, Cancellation, Handler};
 use crate::change_events::ChangeEvent;
 
 pub struct ChangeEventHandler {
@@ -17,6 +17,6 @@ impl Handler<ChangeEvent> for ChangeEventHandler {
         self.cancellation.cancel();
         self.cancellation = Cancellation::default();
 
-        self.actor.send(event, self.cancellation.clone()).expect("failed to send change event to actor!");
+        self.actor.send(event, self.cancellation.clone());
     }
 }

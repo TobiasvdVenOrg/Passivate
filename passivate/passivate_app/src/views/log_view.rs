@@ -1,5 +1,6 @@
 use egui::ScrollArea;
-use passivate_core::{cross_cutting::LogEvent, delegation::Rx};
+use passivate_core::cross_cutting::LogEvent;
+use passivate_delegation::Rx;
 use crate::views::View;
 
 pub struct LogView {

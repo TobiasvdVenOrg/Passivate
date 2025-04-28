@@ -1,5 +1,6 @@
 use egui::{collapsing_header::CollapsingState, Color32, RichText};
-use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, delegation::{Rx, Tx}, passivate_grcov::CovdirJson};
+use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_delegation::{Rx, Tx};
 use crate::views::View;
 
 pub struct CoverageView {
@@ -56,7 +57,7 @@ impl View for CoverageView {
 
         match &self.status {
             CoverageStatus::Disabled => self.draw_disabled(ui),
-            CoverageStatus::Error(ref coverage_error) => { 
+            CoverageStatus::Error(coverage_error) => { 
                 let text = RichText::new(coverage_error).size(16.0).color(Color32::RED);
                 ui.heading(text); 
             },

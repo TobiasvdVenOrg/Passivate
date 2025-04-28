@@ -5,9 +5,9 @@ use egui_kittest::kittest::Key;
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
-use passivate_core::delegation::{channel, Actor, Rx, Tx};
-use passivate_core::configuration::{ConfigurationEvent, ConfigurationHandler, PassivateConfig};
-use passivate_core::test_helpers::fakes::test_run_handler_fakes;
+use passivate_delegation::{channel, Actor, ActorTx, Rx, Tx};
+use passivate_core::configuration::{ConfigurationChangeEvent, ConfigurationEvent, ConfigurationHandler, PassivateConfig};
+use passivate_core::test_helpers::fakes::test_run_actor_fakes;
 use passivate_core::test_run_model::Snapshots;
 use stdext::function_name;
 
@@ -43,12 +43,23 @@ pub fn show_configuration() {
 
 #[test]
 pub fn configure_coverage_enabled() {
-    let change_handler = test_run_handler_fakes::stub();
-    let (change_tx, mut change_actor) = Actor::new(change_handler);
+    let (test_run_tx, mut test_run_actor) = test_run_actor_fakes::stub();
 
-    let configuration = ConfigurationHandler::new(Tx::from_actor(change_tx), Tx::stub());
+    let configuration = ConfigurationHandler::new(Tx::from_actor(test_run_tx), Tx::stub());
     let (configuration_tx, mut configuration_actor) = Actor::new(configuration);
 
+    run_configure_coverage_enabled(configuration_tx);
+
+    let configuration_handler = configuration_actor.into_inner();
+    assert!(configuration_handler.configuration().coverage_enabled);
+    drop(configuration_handler);
+    
+    let test_run_handler = test_run_actor.into_inner();
+
+    assert!(test_run_handler.coverage_enabled());
+}
+
+fn run_configure_coverage_enabled(configuration_tx: ActorTx<ConfigurationChangeEvent>) {
     let initial_configuration = PassivateConfig { coverage_enabled: false, ..PassivateConfig::default() };
 
     let mut configuration_view = ConfigurationView::new(Tx::from_actor(configuration_tx), Rx::stub(), initial_configuration);
@@ -63,12 +74,6 @@ pub fn configure_coverage_enabled() {
     coverage_toggle.click();
 
     harness.run();
-
-    let configuration = configuration_actor.into_inner();
-    let change_handler = change_actor.into_inner();
-
-    assert!(change_handler.coverage_enabled());
-    assert!(configuration.configuration().coverage_enabled);
 }
 
 #[test]

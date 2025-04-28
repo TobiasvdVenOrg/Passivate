@@ -4,7 +4,7 @@ use std::fs;
 
 use duct::cmd;
 
-use crate::delegation::Cancellation;
+use passivate_delegation::Cancellation;
 use crate::configuration::TestRunnerImplementation;
 
 use super::{RunTests, TestRunError, TestRunIterator};

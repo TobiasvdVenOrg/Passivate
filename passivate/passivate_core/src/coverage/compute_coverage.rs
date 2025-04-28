@@ -1,4 +1,4 @@
-use crate::delegation::Cancellation;
+use passivate_delegation::Cancellation;
 
 use super::{CoverageError, CoverageStatus};
 

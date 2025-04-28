@@ -1,4 +1,5 @@
-use crate::{change_events::ChangeEvent, delegation::{Cancellation, Tx, Handler}};
+use crate::change_events::ChangeEvent;
+use passivate_delegation::{Cancellation, Tx, Handler};
 
 use super::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig};
 
