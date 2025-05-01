@@ -1,4 +1,4 @@
-use passivate_core::{configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig}};
+use passivate_core::configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig};
 use passivate_delegation::{Rx, Tx};
 
 use crate::views::View;
