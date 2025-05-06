@@ -33,7 +33,7 @@ impl Handler<ConfigurationChangeEvent> for ConfigurationHandler {
             }
         }
 
-        let configuration_event = ConfigurationEvent { old: Some(old), new: self.configuration.clone() };
+        let configuration_event = ConfigurationEvent { old, new: self.configuration.clone() };
 
         self.change_handler.send(ChangeEvent::Configuration(configuration_event.clone()));
         self.configuration_handler.send(configuration_event);

@@ -32,7 +32,7 @@ pub fn show_configuration() {
     };
 
     configuration_sender.send(ConfigurationEvent {
-        old: None,
+        old: PassivateConfig::default(),
         new: new_configuration
     });
 

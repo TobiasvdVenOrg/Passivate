@@ -205,5 +205,5 @@ pub fn when_configuration_changes_tests_are_run() {
     let processor = TestRunProcessor::new(run_tests, stub_parse_output());
     let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, Tx::stub());
 
-    handler.handle(ChangeEvent::Configuration(ConfigurationEvent { old: None, new: PassivateConfig::default() }), Cancellation::default());
+    handler.handle(ChangeEvent::Configuration(ConfigurationEvent { old: PassivateConfig::default(), new: PassivateConfig::default() }), Cancellation::default());
 }
