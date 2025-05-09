@@ -21,7 +21,7 @@ impl Handler<i32> for LoopingHandler {
 pub fn actor_handle_can_be_cancelled() {
     let handler = LoopingHandler;
     let mut cancellation = Cancellation::default();
-    let (tx, _actor) = Actor::new(handler);
+    let (_actor, tx) = Actor::new(handler);
     
     send(tx, cancellation.clone());
     

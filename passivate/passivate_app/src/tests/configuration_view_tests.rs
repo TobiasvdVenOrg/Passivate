@@ -5,7 +5,7 @@ use egui_kittest::kittest::Key;
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
-use passivate_delegation::{channel, Actor, ActorTx, Rx, Tx};
+use passivate_delegation::{tx_1_rx_1, Actor, ActorTx, Rx, Tx};
 use passivate_core::configuration::{ConfigurationChangeEvent, ConfigurationEvent, ConfigurationHandler, PassivateConfig};
 use passivate_core::test_helpers::fakes::test_run_actor_fakes;
 use passivate_core::test_run_model::Snapshots;
@@ -16,7 +16,7 @@ use crate::views::{ConfigurationView, DetailsView, View};
 
 #[test]
 pub fn show_configuration() {
-    let (configuration_sender, configuration_receiver) = channel();
+    let (mut configuration_sender, configuration_receiver) = tx_1_rx_1();
 
     let mut configuration_view = ConfigurationView::new(Tx::stub(), configuration_receiver, PassivateConfig::default());
 
@@ -43,10 +43,10 @@ pub fn show_configuration() {
 
 #[test]
 pub fn configure_coverage_enabled() {
-    let (test_run_tx, mut test_run_actor) = test_run_actor_fakes::stub();
+    let (mut test_run_actor, test_run_tx) = test_run_actor_fakes::stub();
 
-    let configuration = ConfigurationHandler::new(Tx::from_actor(test_run_tx), Tx::stub());
-    let (configuration_tx, mut configuration_actor) = Actor::new(configuration);
+    let configuration = ConfigurationHandler::new(test_run_tx.into(), Tx::stub());
+    let (mut configuration_actor, configuration_tx) = Actor::new(configuration);
 
     run_configure_coverage_enabled(configuration_tx);
 
@@ -62,7 +62,7 @@ pub fn configure_coverage_enabled() {
 fn run_configure_coverage_enabled(configuration_tx: ActorTx<ConfigurationChangeEvent>) {
     let initial_configuration = PassivateConfig { coverage_enabled: false, ..PassivateConfig::default() };
 
-    let mut configuration_view = ConfigurationView::new(Tx::from_actor(configuration_tx), Rx::stub(), initial_configuration);
+    let mut configuration_view = ConfigurationView::new(configuration_tx.into(), Rx::stub(), initial_configuration);
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);
@@ -80,13 +80,13 @@ fn run_configure_coverage_enabled(configuration_tx: ActorTx<ConfigurationChangeE
 pub fn configure_snapshots_path() {
     let initial_configuration = PassivateConfig::default();
 
-    let (configuration_sender, configuration_receiver) = channel();
+    let (configuration_tx, configuration_rx) = tx_1_rx_1();
 
-    let configuration = ConfigurationHandler::new(Tx::stub(), configuration_sender);
-    let (configuration_tx, configuration_actor) = Actor::new(configuration);
+    let configuration = ConfigurationHandler::new(Tx::stub(), configuration_tx);
+    let (_configuration_actor, configuration_actor_tx) = Actor::new(configuration);
 
-    let mut configuration_view = ConfigurationView::new(Tx::from_actor(configuration_tx), Rx::stub(), initial_configuration);
-    let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration_receiver);
+    let mut configuration_view = ConfigurationView::new(configuration_actor_tx.into(), Rx::stub(), initial_configuration);
+    let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration_rx);
 
     let ui = |ui: &mut egui::Ui|{
         configuration_view.ui(ui);

@@ -8,24 +8,8 @@ enum ActorTxImplementation<T: Send + 'static> {
     Stub
 }
 
-impl<T: Send + 'static> Clone for ActorTxImplementation<T> {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Channel(channel) => Self::Channel(channel.clone()),
-
-            Self::Stub => Self::Stub,
-        }
-    }
-}
-
 pub struct ActorTx<T: Send + 'static> {
     implementation: ActorTxImplementation<ActorEvent<T>>
-}
-
-impl<T: Send + 'static> Clone for ActorTx<T> {
-    fn clone(&self) -> Self {
-        Self { implementation: self.implementation.clone() }
-    }
 }
 
 impl<T: Send + 'static> ActorTx<T> {

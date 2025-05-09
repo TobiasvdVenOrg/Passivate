@@ -18,13 +18,13 @@ impl TestRunProcessor {
         Self { run_tests, parse_output, test_run }
     }
 
-    fn update(&mut self, event: TestRunEvent, sender: &Tx<TestRun>) {
+    fn update(&mut self, event: TestRunEvent, sender: &mut Tx<TestRun>) {
         if self.test_run.update(event) {
             sender.send(self.test_run.clone());
         }
     }
 
-    pub fn run_tests(&mut self, sender: &Tx<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_tests(&mut self, sender: &mut Tx<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         self.update(TestRunEvent::Start, sender);
 
         cancellation.check()?;
@@ -68,7 +68,7 @@ impl TestRunProcessor {
         Ok(())
     }
     
-    pub fn run_test(&mut self, sender: &Tx<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
+    pub fn run_test(&mut self, sender: &mut Tx<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError> {
         if let Some(test) = self.test_run.tests.find(id) {
             self.update(TestRunEvent::StartSingle {
                 test: id.clone(),

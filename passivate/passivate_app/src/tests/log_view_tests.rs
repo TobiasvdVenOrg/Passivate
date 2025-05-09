@@ -2,14 +2,14 @@ use std::time::Duration;
 use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
+use passivate_delegation::tx_1_rx_1;
 use crate::views::{LogView, View};
 use passivate_core::cross_cutting::LogEvent;
-use passivate_delegation::channel;
 use stdext::function_name;
 
 #[test]
 pub fn show_a_single_log() {
-    let (sender, receiver)  = channel();
+    let (mut sender, receiver)  = tx_1_rx_1();
     let mut log_view = LogView::new(receiver);
 
     let ui = |ui: &mut egui::Ui|{
@@ -28,7 +28,7 @@ pub fn show_a_single_log() {
 
 #[test]
 pub fn many_logs_are_scrollable() {
-    let (sender, receiver)  = channel();
+    let (mut sender, receiver)  = tx_1_rx_1();
     let mut log_view = LogView::new(receiver);
 
     let ui = |ui: &mut egui::Ui|{

@@ -65,34 +65,36 @@ impl DetailsView {
         }
     }
 
-    fn draw_snapshots(&self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles) {
-        if let Some(current) = &snapshot_handles.current {
-            if snapshot_handles.are_identical {
-                Self::draw_snapshot(ui, current);
-                return;
-            }
-
-            if snapshot_handles.new.is_some() {
-                ui.heading("Current");
-            }
-
-            Self::draw_snapshot(ui, current);
-        }
-
-        if let Some(new) = &snapshot_handles.new {
-            ui.horizontal(|ui| {
-                ui.heading("New");
-
-                let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
-                if ui.button(approve).clicked() {
-                    self.change_events.send(ChangeEvent::SingleTest { 
-                        id: snapshot_handles.test_id.clone(), 
-                        update_snapshots: true 
-                    });
+    fn draw_snapshots(&mut self, ui: &mut egui_dock::egui::Ui) {
+        if let Some(snapshot_handles) = &mut self.snapshot_handles {
+            if let Some(current) = &snapshot_handles.current {
+                if snapshot_handles.are_identical {
+                    Self::draw_snapshot(ui, current);
+                    return;
                 }
-            });
 
-            Self::draw_snapshot(ui, new);
+                if snapshot_handles.new.is_some() {
+                    ui.heading("Current");
+                }
+
+                Self::draw_snapshot(ui, current);
+            }
+
+            if let Some(new) = &snapshot_handles.new {
+                ui.horizontal(|ui| {
+                    ui.heading("New");
+    
+                    let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
+                    if ui.button(approve).clicked() {
+                        self.change_events.send(ChangeEvent::SingleTest { 
+                            id: snapshot_handles.test_id.clone(), 
+                            update_snapshots: true 
+                        });
+                    }
+                });
+    
+                Self::draw_snapshot(ui, new);
+            }
         }
     }
 
@@ -149,10 +151,8 @@ impl View for DetailsView {
                 }
             }
         }
-
-        if let Some(snapshot_handles) = &self.snapshot_handles {
-            self.draw_snapshots(ui, snapshot_handles);
-        }
+        
+        self.draw_snapshots(ui);
     }
 
     fn title(&self) -> String {

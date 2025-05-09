@@ -1,13 +1,13 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use egui::Context;
-use passivate_delegation::{channel, Actor, Tx};
+use passivate_delegation::{tx_1_rx_1, tx_1_rx_2, Actor, Cancellation};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
-use passivate_core::cross_cutting::ChannelLog;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
+use passivate_core::cross_cutting::*;
 use views::{CoverageView, TestRunView};
 use crate::app::App;
 use crate::error_app::ErrorApp;
@@ -37,11 +37,11 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
 
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
     // Channels
-    let (tests_status_sender, tests_status_receiver) = channel();
-    let (coverage_sender, coverage_receiver) = channel();
-    let (configuration_sender, configuration_receiver) = channel();
-    let (log_sender, log_receiver) = channel();
-    let (details_sender, details_receiver) = channel();
+    let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
+    let (coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (configuration_sender, configuration_rx1, configuration_rx2) = tx_1_rx_2();
+    let (log_tx, log_rx) = tx_1_rx_1();
+    let (details_sender, details_receiver) = tx_1_rx_1();
 
     // Paths
     let workspace_path = path.to_path_buf();
@@ -52,8 +52,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     
     let configuration = PassivateConfig::default();
 
-    let log = ChannelLog::new(log_sender);
-
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
     let test_runner = TestRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone());
@@ -63,26 +61,26 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
     // Actors
-    let (test_run_tx, _test_run_actor) = TestRunActor::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, Box::new(log.clone()), configuration.coverage_enabled);
+    let (_test_run_actor, test_run_tx) = TestRunActor::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, ChannelLog::boxed(log_tx), configuration.coverage_enabled);
 
     let change_handler = ChangeEventHandler::new(test_run_tx);
-    let (change_actor_tx, _change_actor) = Actor::new(change_handler);
+    let (_change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler);
     
-    let configuration_handler = ConfigurationHandler::new(Tx::from_actor(change_actor_tx.clone()), configuration_sender);
-    let (configuration_actor_tx, _configuration_actor) = Actor::new(configuration_handler);
+    // Send an initial change event to trigger the first test run
+    change_actor_tx1.send(ChangeEvent::File, Cancellation::default());
+
+    let configuration_handler = ConfigurationHandler::new(change_actor_tx1.into(), configuration_sender);
+    let (_configuration_actor, configuration_actor_tx1, configuration_actor_tx2) = Actor::new_2(configuration_handler);
 
     // Notify
-    let mut change_events = NotifyChangeEvents::new(path, Tx::from_actor(change_actor_tx.clone()))?;
+    let mut change_events = NotifyChangeEvents::new(path, change_actor_tx2.into())?;
 
     // Views
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver, Tx::from_actor(change_actor_tx.clone()), configuration_receiver.clone());
-    let coverage_view = CoverageView::new(coverage_receiver, Tx::from_actor(configuration_actor_tx.clone()));
-    let configuration_view = ConfigurationView::new(Tx::from_actor(configuration_actor_tx), configuration_receiver.clone(), configuration);
-    let log_view = LogView::new(log_receiver);
-
-    // Send an initial change event to trigger the first test run
-    Tx::from_actor(change_actor_tx).send(ChangeEvent::File);
+    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration_rx1);
+    let coverage_view = CoverageView::new(coverage_receiver, configuration_actor_tx1.into());
+    let configuration_view = ConfigurationView::new(configuration_actor_tx2.into(), configuration_rx2, configuration);
+    let log_view = LogView::new(log_rx);
 
     // Block until app closes
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;

@@ -5,8 +5,8 @@ use passivate_delegation::Tx;
 use super::LogEvent;
 
 #[mockall::automock]
-pub trait Log {
-    fn info(&self, message: &str);
+pub trait Log : Send {
+    fn info(&mut self, message: &str);
 }
 
 pub fn stub_log() -> Box<MockLog> {
@@ -24,16 +24,20 @@ impl ChannelLog {
     pub fn new(sender: Tx<LogEvent>) -> Self {
         Self { sender }
     }
+
+    pub fn boxed(sender: Tx<LogEvent>) -> Box<Self> {
+        Box::new(Self::new(sender))
+    }
 }
 
-impl Clone for ChannelLog {
-    fn clone(&self) -> Self {
-        Self { sender: self.sender.clone() }
+impl From<ChannelLog> for Box<Tx<LogEvent>> {
+    fn from(log: ChannelLog) -> Self {
+        Box::new(log.sender)
     }
 }
 
 impl Log for ChannelLog {
-    fn info(&self, message: &str) {
+    fn info(&mut self, message: &str) {
         self.sender.send(LogEvent { message: message.to_string(), timestamp: Utc::now() });
     }
 }

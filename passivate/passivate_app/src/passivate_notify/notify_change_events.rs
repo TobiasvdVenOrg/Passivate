@@ -16,7 +16,7 @@ pub struct NotifyChangeEvents {
 }
 
 impl NotifyChangeEvents {
-    pub fn new(path: &Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
+    pub fn new(path: &Path, mut change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError> {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
         let config = NotifyConfig::default().with_compare_contents(true);

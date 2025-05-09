@@ -1,7 +1,7 @@
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::*;
 use galvanic_assert::matchers::*;
-use passivate_delegation::{channel, Rx, Tx};
+use passivate_delegation::{tx_1_rx_1, Rx, Tx};
 use crate::views::{DetailsView, TestRunView, View};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
 use passivate_core::test_helpers::builder::test_data_path;
@@ -35,8 +35,8 @@ pub fn show_a_failing_test_with_output() {
 
 #[test]
 pub fn selecting_a_test_shows_it_in_details_view() {
-    let (test_run_sender, test_run_receiver)  = channel();
-    let (details_sender, details_receiver)  = channel();
+    let (mut test_run_sender, test_run_receiver)  = tx_1_rx_1();
+    let (details_sender, details_receiver)  = tx_1_rx_1();
 
     let mut details_view = DetailsView::new(details_receiver, Tx::stub(), Rx::stub());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
@@ -67,8 +67,8 @@ pub fn selecting_a_test_shows_it_in_details_view() {
 
 #[test]
 pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates() {
-    let (test_run_sender, test_run_receiver)  = channel();
-    let (details_sender, details_receiver)  = channel();
+    let (mut test_run_sender, test_run_receiver)  = tx_1_rx_1();
+    let (details_sender, details_receiver)  = tx_1_rx_1();
 
     let mut details_view = DetailsView::new(details_receiver, Tx::stub(), Rx::stub());
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
@@ -146,8 +146,8 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
     let snapshot_test = example_test(test, SingleTestStatus::Failed);
     
-    let (details_sender, details_receiver)  = channel();
-    let (test_run_sender, test_run_receiver) = channel();
+    let (mut details_sender, details_receiver)  = tx_1_rx_1();
+    let (test_run_sender, test_run_receiver) = tx_1_rx_1();
     
     let mut details_view = DetailsView::new(details_receiver, test_run_sender, Rx::stub());
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
@@ -174,7 +174,7 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 }
 
 fn show_test(test_name: &str, single_test: SingleTest) {
-    let (sender, receiver)  = channel();
+    let (mut sender, receiver)  = tx_1_rx_1();
 
     let mut details_view = DetailsView::new(receiver, Tx::stub(), Rx::stub());
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));

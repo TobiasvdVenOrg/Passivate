@@ -13,4 +13,3 @@ mod_use!(actor_api);
 mod_use!(handler);
 mod_use!(actor_event);
 mod_use!(tx_rx);
-mod_use!(channel);

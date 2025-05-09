@@ -14,8 +14,8 @@ impl TestRunActor {
         coverage: Box<dyn ComputeCoverage + Send>, 
         tests_status_sender: Tx<TestRun>,
         coverage_status_sender: Tx<CoverageStatus>,
-        log: Box<dyn Log + Send>,
-        coverage_enabled: bool) -> (ActorTx<ChangeEvent>, Self) {
+        log: Box<dyn Log>,
+        coverage_enabled: bool) -> (Self, ActorTx<ChangeEvent>) {
         let handler = TestRunHandler::new(
             runner, 
             coverage, 
@@ -25,9 +25,9 @@ impl TestRunActor {
             coverage_enabled
             );
 
-        let (tx, actor) = Actor::new(handler);
+        let (actor, tx) = Actor::new(handler);
 
-        ( tx, Self { actor } )
+        ( Self { actor }, tx )
     }
 
     pub fn into_inner(&mut self) -> TestRunHandler {

@@ -22,7 +22,10 @@ impl ConfigurationManager {
 
         updater(&mut configuration);
 
-        self.configuration_tx.send(ConfigurationEvent { old, new: configuration.clone() });
+        let new = configuration.clone();
+
+        drop(configuration);
+        self.configuration_tx.send(ConfigurationEvent { old, new });
     }
 
     pub fn snapshots_path(&self) -> Option<String> {

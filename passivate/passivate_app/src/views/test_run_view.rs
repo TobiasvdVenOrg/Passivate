@@ -31,7 +31,7 @@ impl TestRunView {
         ui.label(text);
     }
 
-    fn send_selected_test_details(&self) {
+    fn send_selected_test_details(&mut self) {
         if let Some(selected_test) = &self.selected_test {
             self.test_details.send(self.status.tests.find(selected_test));
         }
@@ -85,11 +85,17 @@ impl View for TestRunView {
                     }
         }
 
+        let mut send = false;
+
         for test in &self.status.tests {
             if let Some(new_selection) = self.show_test(ui, test) {
                 self.selected_test = Some(new_selection.id());
-                self.send_selected_test_details();
+                send = true;
             }
+        }
+
+        if send {
+            self.send_selected_test_details();
         }
     }
 

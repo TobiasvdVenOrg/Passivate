@@ -1,6 +1,6 @@
 use egui::accesskit::Role;
 use egui_kittest::{Harness, kittest::Queryable};
-use passivate_delegation::{channel, Rx, Tx};
+use passivate_delegation::{tx_1_rx_1, Rx, Tx};
 use passivate_core::test_helpers::fakes::test_run_actor_fakes;
 use passivate_core::{configuration::ConfigurationHandler, coverage::CoverageStatus, passivate_grcov::CovdirJson};
 use passivate_delegation::Actor;
@@ -10,7 +10,7 @@ use indexmap::IndexMap;
 
 #[test]
 pub fn show_coverage_hierarchy_fully_collapsed() {
-    let (coverage_sender, coverage_receiver) = channel();
+    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
 
     let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
@@ -38,7 +38,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
 
 #[test]
 pub fn show_coverage_hierarchy_expand_children() {
-    let (coverage_sender, coverage_receiver) = channel();
+    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
 
     let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
@@ -117,12 +117,12 @@ pub fn show_coverage_hierarchy_expand_children() {
 
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
-    let (test_run_tx, mut test_run_actor) = test_run_actor_fakes::stub();
+    let (mut test_run_actor, test_run_tx) = test_run_actor_fakes::stub();
 
-    let configuration = ConfigurationHandler::new(Tx::from_actor(test_run_tx), Tx::stub());
-    let (configuration_tx, mut configuration_actor) = Actor::new(configuration);
+    let configuration = ConfigurationHandler::new(test_run_tx.into(), Tx::stub());
+    let (mut configuration_actor, configuration_tx) = Actor::new(configuration);
 
-    let mut coverage_view = CoverageView::new(Rx::stub(), Tx::from_actor(configuration_tx));
+    let mut coverage_view = CoverageView::new(Rx::stub(), configuration_tx.into());
 
     let ui = |ui: &mut egui::Ui|{
         coverage_view.ui(ui);
@@ -147,7 +147,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 
 #[test]
 pub fn show_error() {
-    let (coverage_sender, coverage_receiver) = channel();
+    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
     let mut coverage_view = CoverageView::new(coverage_receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui|{
@@ -178,13 +178,13 @@ fn test_name(function_name: &str) -> String {
 //         Err(CoverageError::GrcovNotInstalled(std::io::ErrorKind::NotFound))
 //     });
 
-//     let (tests_sender, _tests_receiver) = channel();
-//     let (coverage_sender, coverage_receiver) = channel();
+//     let (tests_sender, _tests_receiver) = tx_1_rx_1();
+//     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
 //     let mut test_runner = ChangeEventHandler::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
 
 //     test_runner.handle_event(ChangeEvent::File);
 
-//     let (change_event_sender, _change_event_receiver) = channel();
+//     let (change_event_sender, _change_event_receiver) = tx_1_rx_1();
 //     let mut coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
 
 //     let ui = |ui: &mut egui::Ui|{

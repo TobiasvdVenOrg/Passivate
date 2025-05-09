@@ -10,7 +10,7 @@ pub struct TestRunHandler {
     coverage: Box<dyn ComputeCoverage + Send>, 
     tests_status_sender: Tx<TestRun>,
     coverage_status_sender: Tx<CoverageStatus>,
-    log: Box<dyn Log + Send>,
+    log: Box<dyn Log>,
     coverage_enabled: bool,
     pinned_test: Option<TestId>
 }
@@ -21,7 +21,7 @@ impl TestRunHandler {
         coverage: Box<dyn ComputeCoverage + Send>, 
         tests_status_sender: Tx<TestRun>,
         coverage_status_sender: Tx<CoverageStatus>,
-        log: Box<dyn Log + Send>,
+        log: Box<dyn Log>,
         coverage_enabled: bool) -> Self {
             Self {
             runner, 
@@ -51,7 +51,7 @@ impl TestRunHandler {
 
         if cancellation.is_cancelled() { return }
 
-        let test_output = self.runner.run_tests(&self.tests_status_sender, self.coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(&mut self.tests_status_sender, self.coverage_enabled, cancellation.clone());
 
         if cancellation.is_cancelled() { return }
 
@@ -71,7 +71,7 @@ impl TestRunHandler {
         };
     }
 
-    fn compute_coverage(&self, cancellation: Cancellation) {
+    fn compute_coverage(&mut self, cancellation: Cancellation) {
         self.coverage_status_sender.send(CoverageStatus::Running);
 
         let coverage_status = self.coverage.compute_coverage(cancellation.clone());
@@ -89,7 +89,7 @@ impl TestRunHandler {
     pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
     
     fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation) {
-        let result = self.runner.run_test(&self.tests_status_sender, id, update_snapshots, cancellation);
+        let result = self.runner.run_test(&mut self.tests_status_sender, id, update_snapshots, cancellation);
 
         if let Err(error) = result {
             let error_status = FailedTestRun { inner_error_display: error.to_string() };

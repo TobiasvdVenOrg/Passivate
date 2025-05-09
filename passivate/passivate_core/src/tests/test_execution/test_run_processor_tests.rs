@@ -2,9 +2,9 @@ use std::rc::Rc;
 use galvanic_assert::is_variant;
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
+use passivate_delegation::tx_1_rx_1;
 use rstest::rstest;
 
-use passivate_delegation::channel;
 use passivate_delegation::Rx;
 use crate::test_run_model::{SingleTest, SingleTestStatus};
 use crate::{configuration::TestRunnerImplementation, test_run_model::{TestRun, TestRunState}};
@@ -13,14 +13,14 @@ use crate::test_execution::{build_test_output_parser, MockRunTests, TestRunError
 
 
 struct TestRunIterator {
-    receiver: Rx<TestRun>
+    rx: Rx<TestRun>
 }
 
 impl Iterator for TestRunIterator {
     type Item = TestRun;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.receiver.try_iter().next()
+        self.rx.try_iter().next()
     }
 }
 
@@ -100,13 +100,13 @@ b
 "#;
 
     let mut processor = build_processor(&TestRunnerImplementation::Nextest, test_output);    
-    let (sender, receiver) = channel();
+    let (mut tx, rx) = tx_1_rx_1();
     let instrument_coverage = false;
 
-    processor.run_tests(&sender, instrument_coverage, Cancellation::default()).unwrap();
-    processor.run_tests(&sender, instrument_coverage, Cancellation::default()).unwrap();
+    processor.run_tests(&mut tx, instrument_coverage, Cancellation::default()).unwrap();
+    processor.run_tests(&mut tx, instrument_coverage, Cancellation::default()).unwrap();
 
-    let iterator = TestRunIterator { receiver };
+    let iterator = TestRunIterator { rx };
 
     let test_run = iterator.last().unwrap();
 
@@ -123,12 +123,12 @@ b
 
 fn run(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunIterator {
     let mut processor = build_processor(implementation, test_output);    
-    let (sender, receiver) = channel();
+    let (mut tx, rx) = tx_1_rx_1();
     let instrument_coverage = true;
 
-    processor.run_tests(&sender, instrument_coverage, Cancellation::default()).unwrap();
+    processor.run_tests(&mut tx, instrument_coverage, Cancellation::default()).unwrap();
 
-    TestRunIterator { receiver }
+    TestRunIterator { rx }
 }
 
 fn build_processor(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunProcessor {

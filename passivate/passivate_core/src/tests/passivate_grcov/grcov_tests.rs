@@ -11,14 +11,13 @@ use stdext::function_name;
 use crate::coverage::CoverageStatus;
 use pretty_assertions::assert_eq;
 use crate::test_helpers::builder::*;
+use passivate_delegation::tx_1_rx_1;
 
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
 pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    use passivate_delegation::channel;
-
-    let (coverage_sender, coverage_receiver) = channel();
+    let (coverage_sender, coverage_receiver) = tx_1_rx_1();
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
