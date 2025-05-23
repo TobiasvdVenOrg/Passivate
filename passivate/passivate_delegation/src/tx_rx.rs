@@ -1,4 +1,3 @@
-use bus::Bus;
 use crossbeam_channel::{Receiver, RecvError, Sender, TryRecvError};
 
 use super::{ActorTx, Cancellation};
@@ -12,10 +11,11 @@ pub fn tx_1_rx_1<T: Send + 'static>() -> (Tx<T>, Rx<T>) {
 }
 
 pub fn tx_1_rx_2<T: Send + 'static>() -> (Tx<T>, Rx<T>, Rx<T>) {
-    let (sender, receiver) = crossbeam_channel::unbounded();
-    let tx = Tx { implementation: TxImplementation::Channel(sender) };
-    let rx1 = Rx { receiver: receiver.clone() };
-    let rx2 = Rx { receiver };
+    let (tx1, rx1) = crossbeam_channel::unbounded();
+    let (tx2, rx2) = crossbeam_channel::unbounded();
+    let tx = Tx { implementation: TxImplementation::Broadcast(vec![tx1, tx2]) };
+    let rx1 = Rx { receiver: rx1 };
+    let rx2 = Rx { receiver: rx2 };
 
     ( tx, rx1, rx2 )
 }
@@ -23,7 +23,7 @@ pub fn tx_1_rx_2<T: Send + 'static>() -> (Tx<T>, Rx<T>, Rx<T>) {
 enum TxImplementation<T: Send + 'static> {
     Channel(Sender<T>),
     Actor(ActorTx<T>),
-    Bus(Bus<T>),
+    Broadcast(Vec<Sender<T>>),
 
     Stub
 }
@@ -32,7 +32,7 @@ pub struct Tx<T: Send + 'static> {
     implementation: TxImplementation<T>
 }
 
-impl<T: Send + 'static> Tx<T> {
+impl<T: Send + Clone + 'static> Tx<T> {
     pub fn stub() -> Self {
         Self { implementation: TxImplementation::Stub }
     }
@@ -41,7 +41,11 @@ impl<T: Send + 'static> Tx<T> {
         match &mut self.implementation {
             TxImplementation::Channel(sender) => sender.send(event).expect("'Tx' failed, receiver is invalid!"),
             TxImplementation::Actor(actor_api) => actor_api.send(event, Cancellation::default()),
-            TxImplementation::Bus(bus) => bus.broadcast(event),
+            TxImplementation::Broadcast(txs) => {
+                for tx in txs {
+                    tx.send(event.clone()).expect("'Tx' failed, receiver is invalid!");
+                }
+            },
             TxImplementation::Stub => { },
         }
     }

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-
+#[derive(Clone)]
 pub struct LogEvent {
     pub message: String,
     pub timestamp: DateTime<Utc>
