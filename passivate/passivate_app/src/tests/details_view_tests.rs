@@ -1,6 +1,7 @@
 use egui_kittest::{Harness, kittest::Queryable};
 use galvanic_assert::*;
 use galvanic_assert::matchers::*;
+use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_delegation::{tx_1_rx_1, Rx, Tx};
 use crate::views::{DetailsView, TestRunView, View};
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestRun, TestRunEvent};
@@ -38,7 +39,9 @@ pub fn selecting_a_test_shows_it_in_details_view() {
     let (mut test_run_sender, test_run_receiver)  = tx_1_rx_1();
     let (details_sender, details_receiver)  = tx_1_rx_1();
 
-    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), Rx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+
+    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -69,8 +72,8 @@ pub fn selecting_a_test_shows_it_in_details_view() {
 pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates() {
     let (mut test_run_sender, test_run_receiver)  = tx_1_rx_1();
     let (details_sender, details_receiver)  = tx_1_rx_1();
-
-    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), Rx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui|{
@@ -142,14 +145,13 @@ pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identica
 #[case::current_and_new("example_snapshot_changed")]
 #[case::only_new("example_snapshot_only_new")]
 pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] test: &str) {
-    use passivate_delegation::Rx;
-
     let snapshot_test = example_test(test, SingleTestStatus::Failed);
     
     let (mut details_sender, details_receiver)  = tx_1_rx_1();
     let (test_run_sender, test_run_receiver) = tx_1_rx_1();
-    
-    let mut details_view = DetailsView::new(details_receiver, test_run_sender, Rx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+
+    let mut details_view = DetailsView::new(details_receiver, test_run_sender, configuration);
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{
@@ -175,8 +177,9 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
 fn show_test(test_name: &str, single_test: SingleTest) {
     let (mut sender, receiver)  = tx_1_rx_1();
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    let mut details_view = DetailsView::new(receiver, Tx::stub(), Rx::stub());
+    let mut details_view = DetailsView::new(receiver, Tx::stub(), configuration);
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui|{

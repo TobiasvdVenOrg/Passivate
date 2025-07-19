@@ -1,16 +1,16 @@
 use egui::{collapsing_header::CollapsingState, Color32, RichText};
-use passivate_core::{configuration::ConfigurationChangeEvent, coverage::CoverageStatus, passivate_grcov::CovdirJson};
-use passivate_delegation::{Rx, Tx};
+use passivate_core::{configuration::ConfigurationManager, coverage::CoverageStatus, passivate_grcov::CovdirJson};
+use passivate_delegation::Rx;
 use crate::views::View;
 
 pub struct CoverageView {
     receiver: Rx<CoverageStatus>,
-    configuration: Tx<ConfigurationChangeEvent>,
+    configuration: ConfigurationManager,
     status: CoverageStatus
 }
 
 impl CoverageView {
-    pub fn new(receiver: Rx<CoverageStatus>, configuration: Tx<ConfigurationChangeEvent>) -> CoverageView {
+    pub fn new(receiver: Rx<CoverageStatus>, configuration: ConfigurationManager) -> CoverageView {
         CoverageView { receiver, configuration, status: CoverageStatus::Disabled }
     }
 
@@ -44,7 +44,9 @@ impl CoverageView {
         ui.heading("Code coverage is disabled");
 
         if ui.button("Enable").clicked() {
-            self.configuration.send(ConfigurationChangeEvent::Coverage(true));
+            self.configuration.update(|c| {
+                c.coverage_enabled = true;
+            });
         }
     }
 }

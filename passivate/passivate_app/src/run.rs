@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use egui::Context;
 use passivate_delegation::{tx_1_rx_1, tx_1_rx_2, Actor, Cancellation};
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{ConfigurationHandler, PassivateConfig, TestRunnerImplementation};
+use passivate_core::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
@@ -39,7 +39,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Channels
     let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
-    let (configuration_sender, configuration_rx1, configuration_rx2) = tx_1_rx_2();
+    let (configuration_tx, configuration_rx1, configuration_rx2) = tx_1_rx_2();
     let (log_tx, log_rx) = tx_1_rx_1();
     let (details_sender, details_receiver) = tx_1_rx_1();
 
@@ -69,17 +69,16 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Send an initial change event to trigger the first test run
     change_actor_tx1.send(ChangeEvent::File, Cancellation::default());
 
-    let configuration_handler = ConfigurationHandler::new(change_actor_tx1.into(), configuration_sender);
-    let (_configuration_actor, configuration_actor_tx1, configuration_actor_tx2) = Actor::new_2(configuration_handler);
+    let configuration_manager = ConfigurationManager::new(configuration, configuration_tx);
 
     // Notify
     let mut change_events = NotifyChangeEvents::new(path, change_actor_tx2.into())?;
 
     // Views
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration_rx1);
-    let coverage_view = CoverageView::new(coverage_receiver, configuration_actor_tx1.into());
-    let configuration_view = ConfigurationView::new(configuration_actor_tx2.into(), configuration_rx2, configuration);
+    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration_manager.clone());
+    let coverage_view = CoverageView::new(coverage_receiver, configuration_manager.clone());
+    let configuration_view = ConfigurationView::new(configuration_manager);
     let log_view = LogView::new(log_rx);
 
     // Block until app closes

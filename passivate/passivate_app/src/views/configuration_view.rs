@@ -1,33 +1,29 @@
-use passivate_core::configuration::{ConfigurationChangeEvent, ConfigurationEvent, PassivateConfig};
-use passivate_delegation::{Rx, Tx};
+use passivate_core::configuration::ConfigurationManager;
 
 use crate::views::View;
 
 pub struct ConfigurationView {
-    stakeholder: Tx<ConfigurationChangeEvent>,
-    receiver: Rx<ConfigurationEvent>,
-    configuration: PassivateConfig,
-
+    configuration_manager: ConfigurationManager,
     snapshots_path_field: String
 }
 
 impl ConfigurationView {
-    pub fn new(stakeholder: Tx<ConfigurationChangeEvent>, receiver: Rx<ConfigurationEvent>, configuration: PassivateConfig) -> Self {
-        Self { stakeholder, receiver, configuration, snapshots_path_field: String::new() }
+    pub fn new(configuration_manager: ConfigurationManager) -> Self {
+        Self { configuration_manager, snapshots_path_field: String::new() }
     }
 }
 
 impl View for ConfigurationView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
-        if let Ok(new_configuration) = self.receiver.try_recv() {
-            self.configuration = new_configuration.new;
+        let mut configuration = self.configuration_manager.get_copy();
+
+        if ui.toggle_value(&mut configuration.coverage_enabled, "Compute Coverage").changed() {
+            self.configuration_manager.update(|c| {
+                c.coverage_enabled = configuration.coverage_enabled;
+            });
         }
 
-        if ui.toggle_value(&mut self.configuration.coverage_enabled, "Compute Coverage").changed() {
-            self.stakeholder.send(ConfigurationChangeEvent::Coverage(self.configuration.coverage_enabled));
-        }
-
-        if let Some(configured_snapshots_path) = &self.configuration.snapshots_path {
+        if let Some(configured_snapshots_path) = &configuration.snapshots_path {
             self.snapshots_path_field.clone_from(configured_snapshots_path);
         }
 
@@ -35,7 +31,9 @@ impl View for ConfigurationView {
             ui.label("Snapshots Path:");
 
             if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus() {
-                self.stakeholder.send(ConfigurationChangeEvent::SnapshotsPath(self.snapshots_path_field.clone()));
+                self.configuration_manager.update(|c| {
+                    c.snapshots_path = Some(self.snapshots_path_field.clone());
+                });
             }
         });
     }

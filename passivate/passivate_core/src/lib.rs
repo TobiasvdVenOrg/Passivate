@@ -63,8 +63,7 @@ pub mod coverage {
 pub mod configuration {
     mod_use!(passivate_config);
     mod_use!(test_runner_implementation);
-    mod_use!(configuration_events);
-    mod_use!(configuration_handler);
+    mod_use!(configuration_event);
     mod_use!(configuration_manager);
 }
 
@@ -85,7 +84,6 @@ pub mod tests {
     }
 
     mod configuration {
-        mod configuration_handler_tests;
         mod configuration_manager_tests;
     }
 

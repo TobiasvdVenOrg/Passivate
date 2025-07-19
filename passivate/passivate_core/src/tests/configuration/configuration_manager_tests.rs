@@ -12,7 +12,9 @@ pub fn configuration_update_changes_configuration() {
         c.snapshots_path = Some(String::from("Example/path"));
     });
 
-    assert_eq!(Some("Example/path"), manager.snapshots_path().as_deref());
+    let snapshots_path = manager.get(|c| c.snapshots_path.clone());
+
+    assert_eq!(Some("Example/path"), snapshots_path.as_deref());
 }
 
 #[test]

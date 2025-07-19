@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
-use passivate_core::configuration::ConfigurationEvent;
+use passivate_core::configuration::ConfigurationManager;
 use passivate_delegation::{Rx, Tx};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
@@ -18,7 +18,7 @@ struct SnapshotHandles {
 pub struct DetailsView {
     test_receiver: Rx<Option<SingleTest>>,
     change_events: Tx<ChangeEvent>,
-    configuration_receiver: Rx<ConfigurationEvent>,
+    configuration: ConfigurationManager,
     single_test: Option<SingleTest>,
     snapshots: Option<Snapshots>,
     snapshot_handles: Option<SnapshotHandles>
@@ -28,11 +28,11 @@ impl DetailsView {
     pub fn new(
         test_receiver: Rx<Option<SingleTest>>, 
         change_events: Tx<ChangeEvent>, 
-        configuration_receiver: Rx<ConfigurationEvent>) -> Self {
+        configuration: ConfigurationManager) -> Self {
         Self { 
             test_receiver,
             change_events,
-            configuration_receiver,
+            configuration,
             single_test: None, 
             snapshots: None, 
             snapshot_handles: None 
@@ -111,11 +111,14 @@ impl DetailsView {
 
 impl View for DetailsView {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui) {
-        if let Ok(configuration) = self.configuration_receiver.try_recv() {
-            if let Some(snapshots_path) = configuration.new.snapshots_path {
-                self.snapshots = Some(Snapshots { snapshot_directory: PathBuf::from(snapshots_path) })
+        if let Some(snapshots_path) = self.configuration.get(|c| c.snapshots_path.clone()) {
+            if self.snapshots.as_ref().is_none_or(|s| s.snapshot_directory != PathBuf::from(&snapshots_path)) {
+                self.snapshots = Some(Snapshots { snapshot_directory: PathBuf::from(snapshots_path) });
             }
+        } else {
+            self.snapshots = None;
         }
+        
 
         if let Ok(new_test) = self.test_receiver.try_recv() {
             self.check_for_snapshots(ui, &new_test);
