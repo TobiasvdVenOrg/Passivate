@@ -4,18 +4,20 @@ use passivate_delegation::{Actor, ActorTx, Tx};
 use super::{TestRunHandler, TestRunProcessor};
 
 
-pub struct TestRunActor {
-    actor: Actor<ChangeEvent, TestRunHandler>
+pub struct TestRunActor<TCoverageEnabled>
+    where TCoverageEnabled: Fn() -> bool + Send + 'static {
+    actor: Actor<ChangeEvent, TestRunHandler<TCoverageEnabled>>
 }
 
-impl TestRunActor {
+impl<TCoverageEnabled> TestRunActor<TCoverageEnabled> 
+    where TCoverageEnabled: Fn() -> bool + Send + 'static {
     pub fn new(
         runner: TestRunProcessor,
         coverage: Box<dyn ComputeCoverage + Send>, 
         tests_status_sender: Tx<TestRun>,
         coverage_status_sender: Tx<CoverageStatus>,
         log: Box<dyn Log>,
-        coverage_enabled: bool) -> (Self, ActorTx<ChangeEvent>) {
+        coverage_enabled: TCoverageEnabled) -> (Self, ActorTx<ChangeEvent>) {
         let handler = TestRunHandler::new(
             runner, 
             coverage, 
@@ -30,7 +32,7 @@ impl TestRunActor {
         ( Self { actor }, tx )
     }
 
-    pub fn into_inner(&mut self) -> TestRunHandler {
+    pub fn into_inner(&mut self) -> TestRunHandler<TCoverageEnabled> {
         self.actor.into_inner()
     }
 }

@@ -60,28 +60,28 @@ impl ChangeEventHandlerBuilder {
         }
     }
 
-    pub fn receive_tests_status(&mut self, sender: Tx<TestRun>) -> &mut Self {
+    pub fn receive_tests_status(mut self, sender: Tx<TestRun>) -> Self {
         self.tests_status_sender = Some(sender);
         self
     }
 
-    pub fn receive_coverage_status(&mut self, sender: Tx<CoverageStatus>) -> &mut Self {
+    pub fn receive_coverage_status(mut self, sender: Tx<CoverageStatus>) -> Self {
         self.coverage_sender = Some(sender);
         self
     }
 
-    pub fn with_workspace(&mut self, workspace_path: &str) -> &mut Self {
+    pub fn with_workspace(mut self, workspace_path: &str) -> Self {
         self.workspace_path.push(workspace_path);
         self
     }
 
-    pub fn with_output(&mut self, output_path: &str) -> &mut Self {
+    pub fn with_output(mut self, output_path: &str) -> Self {
         let output_path = output_path.split("::").last().expect("Failed!");
         self.output_path.push(output_path);
         self
     }
 
-    pub fn coverage_enabled(&mut self, coverage_enabled: bool) -> &mut Self {
+    pub fn coverage_enabled(mut self, coverage_enabled: bool) -> Self {
         self.coverage_enabled = coverage_enabled;
         self
     }
@@ -90,7 +90,7 @@ impl ChangeEventHandlerBuilder {
         Grcov::new(&self.get_workspace_path(), &self.get_coverage_path(), &self.get_binary_path())
     }
 
-    pub fn build(&mut self) -> TestRunHandler {
+    pub fn build(mut self) -> TestRunHandler<impl Fn() -> bool> {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");
 
@@ -112,16 +112,19 @@ impl ChangeEventHandlerBuilder {
 
         let grcov = self.build_grcov();
 
+        let b = self.coverage_enabled;
+        let f = move || b;
+
         TestRunHandler::new(
             processor, 
             Box::new(grcov), 
             tests_status_sender, 
             coverage_sender,
             stub_log(),
-            self.coverage_enabled)
+            f)
     }
 
-    pub fn clean_output(&mut self) -> &mut Self {
+    pub fn clean_output(self) -> Self {
         let output_path = self.get_output_path();
 
         if fs::exists(&output_path).expect("Failed to check if output_path exists!") {
@@ -131,7 +134,7 @@ impl ChangeEventHandlerBuilder {
         self
     }
 
-    pub fn clean_snapshots(&mut self) -> &mut Self {
+    pub fn clean_snapshots(self) -> Self {
         let snapshots_path = self.get_snapshots_path();
 
         if fs::exists(&snapshots_path).expect("Failed to check if output_path exists!") {
@@ -173,8 +176,8 @@ impl ChangeEventHandlerBuilder {
     }
 }
 
-pub fn test_run(test_runner: &mut TestRunHandler) -> Result<(), IoError> {
-    let mock_event = ChangeEvent::File;
+pub fn test_run(test_runner: &mut TestRunHandler<impl Fn() -> bool + Send + 'static>) -> Result<(), IoError> {
+    let mock_event = ChangeEvent::DefaultRun;
     test_runner.handle(mock_event, Cancellation::default());
 
     Ok(())

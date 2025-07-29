@@ -1,5 +1,5 @@
 use passivate_delegation::{Cancellation, Cancelled, Handler, Tx};
-use crate::configuration::{ConfigurationEvent, PassivateConfig};
+use crate::configuration::{ConfigurationManager, PassivateConfig};
 use crate::test_execution::{mock_run_tests, stub_parse_output, TestRunError, TestRunProcessor};
 use crate::test_helpers::builder::nextest_builder;
 use crate::test_helpers::fakes::test_run_actor_fakes;
@@ -25,7 +25,7 @@ pub fn handle_single_test_run() {
         .build();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let state = test_run_rx.try_iter().last().unwrap();
     assert!(state.tests.iter().all(|test| {
@@ -70,14 +70,14 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled() {
         .build();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let all_tests = test_run_rx.try_iter().last().unwrap();
 
     let pinned_test = all_tests.tests.iter().next().unwrap().to_owned();
 
     handler.handle(ChangeEvent::PinTest { id: pinned_test.id() }, Cancellation::default());
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let pinned_run = test_run_rx.try_iter().last().unwrap();
     // Assert that all tests are unknown, except the pinned test, which is passing
@@ -100,7 +100,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled() {
         .build();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let all_tests = test_run_rx.try_iter().last().unwrap();
 
@@ -108,7 +108,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled() {
 
     handler.handle(ChangeEvent::PinTest { id: pinned_test.id() }, Cancellation::default());
     handler.handle(ChangeEvent::ClearPinnedTests, Cancellation::default());
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let test_run = test_run_rx.try_iter().last().unwrap();
     // Assert that all tests are unknown, except the pinned test, which is passing
@@ -121,16 +121,16 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled() {
 #[test]
 #[cfg(target_os = "windows")]
 pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snapshot_with_approved() -> Result<(), IoError> {
-    let mut builder = nextest_builder();
-    let builder = builder
+    let builder = nextest_builder()
         .with_workspace("project_snapshot_tests")
         .with_output(function_name!())
         .clean_snapshots();
 
+    let expected_approved_snapshot = builder.get_snapshots_path().join("example_snapshot.png");
     let mut handler = builder.build();
 
     // Run all tests first to generate a new snapshot
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let snapshot_test_id = TestId::new("snapshot_test".to_string());
 
@@ -139,7 +139,6 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
         update_snapshots: true
     }, Cancellation::default());
 
-    let expected_approved_snapshot = builder.get_snapshots_path().join("example_snapshot.png");
     assert_that!(fs::exists(expected_approved_snapshot)?);
 
     Ok(())
@@ -149,8 +148,8 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError> {
     let (test_run_tx, test_run_rx) = tx_1_rx_1();
-    let mut builder = nextest_builder();
-    let builder = builder
+
+    let builder = nextest_builder()
         .with_workspace("simple_project_failing_tests")
         .with_output(function_name!())
         .receive_tests_status(test_run_tx)
@@ -159,7 +158,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError> {
     let mut handler = builder.build();
 
     // Run all tests first to generate a new snapshot
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
 
@@ -189,7 +188,7 @@ pub fn when_test_run_fails_error_is_reported() {
     let (tests_sender, tests_receiver) = tx_1_rx_1();
     let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, tests_sender);
 
-    handler.handle(ChangeEvent::File, Cancellation::default());
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let last = tests_receiver.try_iter().last().unwrap().state;
 
@@ -203,8 +202,8 @@ pub fn when_configuration_changes_tests_are_run() {
     run_tests.expect_run_tests().once().returning(|_, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
     run_tests.expect_run_test().returning(|_, _, _, _| { Err(TestRunError::Cancelled(Cancelled)) });
 
-    let processor = TestRunProcessor::new(run_tests, stub_parse_output());
-    let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, Tx::stub());
+    let (test_run_actor, test_run_actor_tx) = test_run_actor_fakes::stub();
+    let mut configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    handler.handle(ChangeEvent::Configuration(ConfigurationEvent { old: PassivateConfig::default(), new: PassivateConfig::default() }), Cancellation::default());
+    configuration.update(|c| c.coverage_enabled = true);
 }

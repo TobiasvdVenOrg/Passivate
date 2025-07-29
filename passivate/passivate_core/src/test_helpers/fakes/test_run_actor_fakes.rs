@@ -2,9 +2,9 @@ use crate::{change_events::ChangeEvent, coverage::stub_compute_coverage, cross_c
 use crate::test_execution::{stub_parse_output, stub_run_tests, TestRunActor, TestRunHandler, TestRunProcessor};
 use passivate_delegation::{ActorTx, Tx};
 
-pub fn stub() -> (TestRunActor, ActorTx<ChangeEvent>) {
+pub fn stub() -> (TestRunActor<impl Fn() -> bool>, ActorTx<ChangeEvent>) {
     let test_run_processor = TestRunProcessor::new(stub_run_tests(), stub_parse_output());
-    let coverage_enabled = false;
+    let coverage_enabled = || false;
     TestRunActor::new(
         test_run_processor, 
         stub_compute_coverage(), 
@@ -14,8 +14,8 @@ pub fn stub() -> (TestRunActor, ActorTx<ChangeEvent>) {
         coverage_enabled)
 }
 
-pub fn stub_with_test_run_processor_and_tests_sender(test_run_processor: TestRunProcessor, tests_tx: Tx<TestRun>) -> TestRunHandler {
-    let coverage_enabled = false;
+pub fn stub_with_test_run_processor_and_tests_sender(test_run_processor: TestRunProcessor, tests_tx: Tx<TestRun>) -> TestRunHandler<impl Fn() -> bool> {
+    let coverage_enabled = || false;
     TestRunHandler::new(
         test_run_processor, 
         stub_compute_coverage(), 

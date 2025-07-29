@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use egui::Context;
-use passivate_delegation::{tx_1_rx_1, tx_1_rx_2, Actor, Cancellation};
+use passivate_delegation::{tx_1_rx_1, Actor, Cancellation};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
 use passivate_core::passivate_grcov::Grcov;
@@ -39,7 +39,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Channels
     let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
-    let (configuration_tx, configuration_rx1, configuration_rx2) = tx_1_rx_2();
+    let (configuration_tx, _configuration_rx1) = tx_1_rx_1();
     let (log_tx, log_rx) = tx_1_rx_1();
     let (details_sender, details_receiver) = tx_1_rx_1();
 
@@ -49,8 +49,6 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let coverage_path = passivate_path.join("coverage");
     let target_path = passivate_path.join("target");
     let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
-    
-    let configuration = PassivateConfig::default();
 
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
@@ -60,25 +58,36 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, );
+
+    let coverage_enabled = {
+        let configuration = configuration.clone();
+        move || configuration.get(|c| c.coverage_enabled)
+    };
+
     // Actors
-    let (_test_run_actor, test_run_tx) = TestRunActor::new(test_processor, Box::new(coverage), tests_status_sender, coverage_sender, ChannelLog::boxed(log_tx), configuration.coverage_enabled);
+    let (_test_run_actor, test_run_tx) = TestRunActor::new(
+        test_processor, 
+        Box::new(coverage), 
+        tests_status_sender, 
+        coverage_sender, 
+        ChannelLog::boxed(log_tx), 
+        coverage_enabled);
 
     let change_handler = ChangeEventHandler::new(test_run_tx);
     let (_change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler);
     
     // Send an initial change event to trigger the first test run
-    change_actor_tx1.send(ChangeEvent::File, Cancellation::default());
-
-    let configuration_manager = ConfigurationManager::new(configuration, configuration_tx);
+    change_actor_tx1.send(ChangeEvent::DefaultRun, Cancellation::default());
 
     // Notify
     let mut change_events = NotifyChangeEvents::new(path, change_actor_tx2.into())?;
 
     // Views
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration_manager.clone());
-    let coverage_view = CoverageView::new(coverage_receiver, configuration_manager.clone());
-    let configuration_view = ConfigurationView::new(configuration_manager);
+    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration.clone());
+    let coverage_view = CoverageView::new(coverage_receiver, configuration.clone());
+    let configuration_view = ConfigurationView::new(configuration);
     let log_view = LogView::new(log_rx);
 
     // Block until app closes

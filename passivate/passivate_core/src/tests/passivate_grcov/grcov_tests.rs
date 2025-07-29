@@ -16,7 +16,7 @@ use passivate_delegation::tx_1_rx_1;
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
     let mut runner = builder
         .with_workspace("simple_project")
@@ -46,17 +46,19 @@ pub fn test_run_sends_coverage_result(#[case] mut builder: ChangeEventHandlerBui
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let mut runner = builder
+pub fn test_run_outputs_coverage_file_for_project(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .clean_output()
-        .build();
+        .clean_output();
+
+    let output_path = builder.get_output_path();
+    let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
-    let file_data = expected_lcov_metadata(&builder.get_output_path());
+    let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
 
     Ok(())
@@ -65,17 +67,19 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] mut builder: ChangeEve
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let mut runner = builder
+pub fn test_run_outputs_coverage_file_for_workspace(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let builder = builder
         .with_workspace("simple_workspace")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .clean_output()
-        .build();
+        .clean_output();
+
+    let output_path = builder.get_output_path();
+    let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
-    let file_data = expected_lcov_metadata(&builder.get_output_path());
+    let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
 
     Ok(())
@@ -84,21 +88,23 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] mut builder: ChangeE
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let mut runner = builder
+pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .clean_output()
-        .build();
+        .clean_output();
+
+    let coverage_path = builder.get_coverage_path();
+    let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
-    let first_run = get_profraw_count(&builder.get_coverage_path())?;
+    let first_run = get_profraw_count(&coverage_path)?;
 
     test_run(&mut runner)?;
 
-    let second_run = get_profraw_count(&builder.get_coverage_path())?;
+    let second_run = get_profraw_count(&coverage_path)?;
 
     assert_ne!(0, second_run);
     assert_eq!(first_run, second_run);
@@ -110,21 +116,23 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] mut builder: Cha
 #[case::nextest(nextest_builder())]
 // Temporary deletion of the lcov file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
-pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let mut runner = builder
+pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
-        .clean_output()
-        .build();
+        .clean_output();
+
+    let output_path = builder.get_output_path();
+    let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
-    let first_run_metadata = expected_lcov_metadata(&builder.get_output_path())?;
+    let first_run_metadata = expected_lcov_metadata(&output_path)?;
 
     test_run(&mut runner)?;
 
-    let second_run_metadata = expected_lcov_metadata(&builder.get_output_path())?;
+    let second_run_metadata = expected_lcov_metadata(&output_path)?;
     
     assert_eq!(first_run_metadata.created()?, second_run_metadata.created()?);
     Ok(())
@@ -132,8 +140,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] mut builder: ChangeEvent
 
 #[rstest]
 pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError> {
-    let mut builder = cargo_builder();
-    let builder = builder
+    let builder = cargo_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
@@ -161,8 +168,7 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
 
 #[rstest]
 pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError> {
-    let mut builder = cargo_builder();
-    let builder = builder
+    let builder = cargo_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(true)
@@ -194,20 +200,24 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] mut builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let mut runner = builder
+pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+    let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
         .coverage_enabled(false)
-        .clean_output()
-        .build();
+        .clean_output();
+
+    let coverage_path = builder.get_coverage_path();
+    let output_path = builder.get_output_path();
+    
+    let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
-    let profraw_count = get_profraw_count(&builder.get_coverage_path())?;
+    let profraw_count = get_profraw_count(&coverage_path)?;
     assert_eq!(0, profraw_count);
     
-    let exists = fs::exists(expected_lcov_path(&builder.get_output_path()))?;
+    let exists = fs::exists(expected_lcov_path(&output_path))?;
     assert!(!exists, "lcov file existed unexpectedly");
 
     Ok(())

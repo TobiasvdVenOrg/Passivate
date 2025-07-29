@@ -1,12 +1,11 @@
 use enum_as_inner::EnumAsInner;
 
-use crate::{configuration::ConfigurationEvent, test_run_model::TestId};
+use crate::test_run_model::TestId;
 
 #[derive(Clone)]
 #[derive(EnumAsInner)]
 pub enum ChangeEvent {
-    File,
-    Configuration(ConfigurationEvent),
+    DefaultRun,
     SingleTest {
         id: TestId,
         update_snapshots: bool

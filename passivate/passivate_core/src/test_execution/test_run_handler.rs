@@ -5,24 +5,26 @@ use crate::cross_cutting::Log;
 
 use super::TestRunProcessor;
 
-pub struct TestRunHandler {
+pub struct TestRunHandler<TCoverageEnabled>
+    where TCoverageEnabled: Fn() -> bool {
     runner: TestRunProcessor,
     coverage: Box<dyn ComputeCoverage + Send>, 
     tests_status_sender: Tx<TestRun>,
     coverage_status_sender: Tx<CoverageStatus>,
     log: Box<dyn Log>,
-    coverage_enabled: bool,
+    coverage_enabled: TCoverageEnabled,
     pinned_test: Option<TestId>
 }
 
-impl TestRunHandler {
+impl<TCoverageEnabled> TestRunHandler<TCoverageEnabled> 
+    where TCoverageEnabled: Fn() -> bool {
     pub fn new(
         runner: TestRunProcessor,
         coverage: Box<dyn ComputeCoverage + Send>, 
         tests_status_sender: Tx<TestRun>,
         coverage_status_sender: Tx<CoverageStatus>,
         log: Box<dyn Log>,
-        coverage_enabled: bool) -> Self {
+        coverage_enabled: TCoverageEnabled) -> Self {
             Self {
             runner, 
             coverage, 
@@ -41,7 +43,9 @@ impl TestRunHandler {
             return;
         }
 
-        if self.coverage_enabled {
+        let coverage_enabled = self.coverage_enabled();
+
+        if coverage_enabled {
             self.coverage_status_sender.send(CoverageStatus::Preparing);
         }
 
@@ -51,13 +55,13 @@ impl TestRunHandler {
 
         if cancellation.is_cancelled() { return }
 
-        let test_output = self.runner.run_tests(&mut self.tests_status_sender, self.coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(&mut self.tests_status_sender, coverage_enabled, cancellation.clone());
 
         if cancellation.is_cancelled() { return }
 
         match test_output {
             Ok(_) => {
-                if self.coverage_enabled {
+                if self.coverage_enabled() {
                     self.log.info("Coverage enabled, computing...");
                     self.compute_coverage(cancellation.clone());
                 } else {
@@ -86,8 +90,6 @@ impl TestRunHandler {
         }
     }
 
-    pub fn coverage_enabled(&self) -> bool { self.coverage_enabled }
-    
     fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation) {
         let result = self.runner.run_test(&mut self.tests_status_sender, id, update_snapshots, cancellation);
 
@@ -96,22 +98,16 @@ impl TestRunHandler {
             self.tests_status_sender.send(TestRun::from_failed(error_status));
         }
     }
+
+    pub fn coverage_enabled(&self) -> bool {
+        (self.coverage_enabled)()
+    }
 }
 
-impl Handler<ChangeEvent> for TestRunHandler {
+impl<TCoverageEnabled: Fn() -> bool + Send + 'static> Handler<ChangeEvent> for TestRunHandler<TCoverageEnabled> {
     fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation) {
         match event {
-            ChangeEvent::File => self.run_tests(cancellation.clone()),
-            ChangeEvent::Configuration(configuration) => {
-                        let coverage_changed = self.coverage_enabled != configuration.new.coverage_enabled;
-                        self.coverage_enabled = configuration.new.coverage_enabled;
-                        
-                        if coverage_changed && !self.coverage_enabled {
-                            self.coverage_status_sender.send(CoverageStatus::Disabled);
-                        }
-
-                        self.run_tests(cancellation.clone());
-                    },
+            ChangeEvent::DefaultRun => self.run_tests(cancellation.clone()),
             ChangeEvent::PinTest { id } => {
                 self.pinned_test = Some(id);
                 self.run_tests(cancellation.clone());
