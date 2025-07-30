@@ -9,7 +9,7 @@ macro_rules! mod_use {
 }
 
 mod_use!(actor);
-mod_use!(actor_api);
+mod_use!(actor_tx);
 mod_use!(handler);
 mod_use!(actor_event);
 mod_use!(tx_rx);
