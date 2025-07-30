@@ -120,13 +120,11 @@ impl TestRun
             TestRunEvent::ErrorOutput { test, message } =>
             {
                 if !message.is_empty()
+                    && let Some(mut updated_test) = self.tests.find(&test)
                 {
-                    if let Some(mut updated_test) = self.tests.find(&test)
-                    {
-                        updated_test.output.push(message);
-                        self.tests.add_or_update(updated_test);
-                        return true;
-                    }
+                    updated_test.output.push(message);
+                    self.tests.add_or_update(updated_test);
+                    return true;
                 }
 
                 false

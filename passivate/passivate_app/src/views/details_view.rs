@@ -53,29 +53,27 @@ impl DetailsView
     fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_test: &Option<SingleTest>)
     {
         if let Some(snapshots) = &self.snapshots
+            && let Some(new_test) = new_test
         {
-            if let Some(new_test) = new_test
+            let snapshot = snapshots.from_test(new_test);
+            let mut are_identical = false;
+
+            if let (Some(Ok(current)), Some(Ok(new))) = (&snapshot.current, &snapshot.new)
             {
-                let snapshot = snapshots.from_test(new_test);
-                let mut are_identical = false;
-
-                if let (Some(Ok(current)), Some(Ok(new))) = (&snapshot.current, &snapshot.new)
-                {
-                    are_identical = current == new;
-                }
-
-                let current = snapshot
-                    .current
-                    .map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
-                let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
-
-                self.snapshot_handles = Some(SnapshotHandles {
-                    current,
-                    new,
-                    are_identical,
-                    test_id: new_test.id().clone()
-                });
+                are_identical = current == new;
             }
+
+            let current = snapshot
+                .current
+                .map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
+            let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
+
+            self.snapshot_handles = Some(SnapshotHandles {
+                current,
+                new,
+                are_identical,
+                test_id: new_test.id().clone()
+            });
         }
     }
 

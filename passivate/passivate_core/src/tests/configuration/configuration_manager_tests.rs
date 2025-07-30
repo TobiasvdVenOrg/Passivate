@@ -1,4 +1,4 @@
-use passivate_delegation::{Tx, tx_1_rx_1, tx_1_rx_2};
+use passivate_delegation::{Tx, tx_1_rx_2};
 
 use crate::configuration::{ConfigurationManager, PassivateConfig};
 

@@ -133,11 +133,9 @@ pub fn get_profraw_count(path: &Path) -> Result<i32, IoError>
     for profraw in fs::read_dir(path)?
     {
         if let Some(extension) = profraw?.path().extension()
+            && extension == "profraw"
         {
-            if extension == "profraw"
-            {
-                count += 1;
-            }
+            count += 1;
         }
     }
 
@@ -149,11 +147,9 @@ fn remove_profraw_files(directory: &Path) -> Result<(), IoError>
     for profraw in fs::read_dir(directory)?.flatten()
     {
         if let Some(extension) = profraw.path().extension()
+            && extension == "profraw"
         {
-            if extension == "profraw"
-            {
-                fs::remove_file(profraw.path())?;
-            }
+            fs::remove_file(profraw.path())?;
         }
     }
 

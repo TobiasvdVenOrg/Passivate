@@ -6,7 +6,7 @@ use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::test_helpers::builder::test_data_path;
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestId, TestRun, TestRunEvent};
-use passivate_delegation::{Rx, Tx, tx_1_rx_1};
+use passivate_delegation::{Tx, tx_1_rx_1};
 use rstest::*;
 use stdext::function_name;
 
