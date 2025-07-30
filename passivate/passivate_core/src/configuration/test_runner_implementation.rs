@@ -1,5 +1,5 @@
-
-pub enum TestRunnerImplementation {
+pub enum TestRunnerImplementation
+{
     Cargo,
     Nextest
 }

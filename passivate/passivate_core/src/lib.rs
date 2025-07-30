@@ -5,19 +5,22 @@ macro_rules! mod_use {
         // false positive
         #[allow(unused_imports)]
         pub use $module::*;
-    }
+    };
 }
 
-pub mod change_events {
+pub mod change_events
+{
     mod_use!(change_event);
 }
 
-pub mod cross_cutting {
+pub mod cross_cutting
+{
     mod_use!(log_event);
     mod_use!(log);
 }
 
-pub mod test_execution {
+pub mod test_execution
+{
     mod_use!(change_event_handler);
     mod_use!(run_tests);
     mod_use!(parse_output);
@@ -29,7 +32,8 @@ pub mod test_execution {
     mod_use!(test_run_actor);
 }
 
-pub mod test_run_model {
+pub mod test_run_model
+{
     mod_use!(single_test);
     mod_use!(single_test_status);
     mod_use!(test_run);
@@ -39,69 +43,78 @@ pub mod test_run_model {
     mod_use!(test_id);
 }
 
-pub mod passivate_cargo {
+pub mod passivate_cargo
+{
     mod_use!(cargo_test_parser);
     mod_use!(cargo_workspace);
     mod_use!(cargo_workspace_errors);
 }
 
-pub mod passivate_nextest {
+pub mod passivate_nextest
+{
     mod_use!(nextest_run_parser);
 }
 
-pub mod passivate_grcov {
+pub mod passivate_grcov
+{
     mod_use!(covdir_json);
     mod_use!(grcov);
 }
 
-pub mod coverage {
+pub mod coverage
+{
     mod_use!(coverage_status);
     mod_use!(compute_coverage);
     mod_use!(coverage_errors);
 }
 
-pub mod configuration {
+pub mod configuration
+{
     mod_use!(passivate_config);
     mod_use!(test_runner_implementation);
     mod_use!(configuration_event);
     mod_use!(configuration_manager);
 }
 
-pub mod test_helpers {
+pub mod test_helpers
+{
     pub mod assert_matches;
     pub mod builder;
 
-    pub mod fakes {
+    pub mod fakes
+    {
         pub mod change_event_handler_fakes;
         pub mod test_run_actor_fakes;
     }
 }
 
 #[cfg(test)]
-pub mod tests {
-    mod actors {
-        mod actor_tests;
-    }
-
-    mod configuration {
+pub mod tests
+{
+    mod configuration
+    {
         mod configuration_manager_tests;
     }
 
-    mod passivate_grcov {
+    mod passivate_grcov
+    {
         mod covdir_json_tests;
         mod grcov_tests;
     }
-    
-    mod passivate_cargo {
+
+    mod passivate_cargo
+    {
         mod cargo_test_parser_tests;
         mod cargo_workspace_tests;
     }
 
-    mod passivate_nextest {
+    mod passivate_nextest
+    {
         mod nextest_run_parser_tests;
     }
-    
-    mod test_execution {
+
+    mod test_execution
+    {
         mod test_run_handler_tests;
         mod test_run_processor_tests;
     }

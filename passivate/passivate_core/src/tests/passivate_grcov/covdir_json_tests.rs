@@ -1,8 +1,8 @@
 use crate::passivate_grcov::parse_covdir;
 
-
 #[test]
-pub fn parse() {
+pub fn parse()
+{
     let json = r#"{
    "children":{
       "src":{

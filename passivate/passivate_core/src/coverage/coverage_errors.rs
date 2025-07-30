@@ -1,11 +1,14 @@
-use std::{io::ErrorKind as IoErrorKind, path::PathBuf};
+use std::io::ErrorKind as IoErrorKind;
+use std::path::PathBuf;
+
+use passivate_delegation::Cancelled;
 use thiserror::Error;
 
 use crate::passivate_cargo::CargoWorkspaceError;
-use passivate_delegation::Cancelled;
 
 #[derive(Error, Debug)]
-pub enum CoverageError {
+pub enum CoverageError
+{
     #[error("grcov is not installed")]
     GrcovNotInstalled(IoErrorKind),
 
@@ -32,13 +35,15 @@ pub enum CoverageError {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum NoProfrawFilesKind {
+pub enum NoProfrawFilesKind
+{
     Io(IoErrorKind),
     NoProfrawFilesExist
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NoProfrawFilesError {
+pub struct NoProfrawFilesError
+{
     pub expected_path: PathBuf,
     pub kind: NoProfrawFilesKind
 }

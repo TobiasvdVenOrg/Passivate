@@ -3,20 +3,21 @@
 use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
-use passivate_delegation::Cancellation;
-use crate::coverage::{ComputeCoverage, CoverageError, NoProfrawFilesKind};
-use crate::passivate_grcov::get_profraw_count;
+
+use passivate_delegation::{Cancellation, tx_1_rx_1};
+use pretty_assertions::assert_eq;
 use rstest::*;
 use stdext::function_name;
-use crate::coverage::CoverageStatus;
-use pretty_assertions::assert_eq;
+
+use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesKind};
+use crate::passivate_grcov::get_profraw_count;
 use crate::test_helpers::builder::*;
-use passivate_delegation::tx_1_rx_1;
 
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
     let mut runner = builder
         .with_workspace("simple_project")
@@ -30,14 +31,16 @@ pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder
 
     let result = coverage_receiver.try_iter().last().unwrap();
 
-    match result {
+    match result
+    {
         CoverageStatus::Disabled => panic!(),
         CoverageStatus::Preparing => panic!(),
         CoverageStatus::Running => panic!(),
-        CoverageStatus::Done(covdir_json) => {
+        CoverageStatus::Done(covdir_json) =>
+        {
             assert_eq!(100.0, covdir_json.coverage_percent);
-        },
-        CoverageStatus::Error(_) => panic!(),
+        }
+        CoverageStatus::Error(_) => panic!()
     };
 
     Ok(())
@@ -46,12 +49,9 @@ pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_project(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let builder = builder
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .coverage_enabled(true)
-        .clean_output();
+pub fn test_run_outputs_coverage_file_for_project(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
+    let builder = builder.with_workspace("simple_project").with_output(function_name!()).coverage_enabled(true).clean_output();
 
     let output_path = builder.get_output_path();
     let mut runner = builder.build();
@@ -67,7 +67,8 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] builder: ChangeEventHa
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_outputs_coverage_file_for_workspace(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+pub fn test_run_outputs_coverage_file_for_workspace(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
     let builder = builder
         .with_workspace("simple_workspace")
         .with_output(function_name!())
@@ -88,12 +89,9 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] builder: ChangeEvent
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let builder = builder
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .coverage_enabled(true)
-        .clean_output();
+pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
+    let builder = builder.with_workspace("simple_project").with_output(function_name!()).coverage_enabled(true).clean_output();
 
     let coverage_path = builder.get_coverage_path();
     let mut runner = builder.build();
@@ -116,12 +114,9 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] builder: ChangeE
 #[case::nextest(nextest_builder())]
 // Temporary deletion of the lcov file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
-pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
-    let builder = builder
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .coverage_enabled(true)
-        .clean_output();
+pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
+    let builder = builder.with_workspace("simple_project").with_output(function_name!()).coverage_enabled(true).clean_output();
 
     let output_path = builder.get_output_path();
     let mut runner = builder.build();
@@ -133,13 +128,14 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] builder: ChangeEventHand
     test_run(&mut runner)?;
 
     let second_run_metadata = expected_lcov_metadata(&output_path)?;
-    
+
     assert_eq!(first_run_metadata.created()?, second_run_metadata.created()?);
     Ok(())
 }
 
 #[rstest]
-pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError> {
+pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError>
+{
     let builder = cargo_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
@@ -150,16 +146,18 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
     let grcov = builder.build_grcov();
 
     let result = grcov.compute_coverage(Cancellation::default());
-    
+
     assert!(result.is_err_and(|e| {
-        match e {
-            CoverageError::NoProfrawFiles(details) => {
+        match e
+        {
+            CoverageError::NoProfrawFiles(details) =>
+            {
                 assert_eq!(builder.get_coverage_path(), details.expected_path);
                 assert_eq!(NoProfrawFilesKind::NoProfrawFilesExist, details.kind);
 
                 true
             }
-            _ => false,
+            _ => false
         }
     }));
 
@@ -167,7 +165,8 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
 }
 
 #[rstest]
-pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError> {
+pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError>
+{
     let builder = cargo_builder()
         .with_workspace("simple_project")
         .with_output(function_name!())
@@ -177,20 +176,26 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
     let grcov = builder.build_grcov();
 
     let result = grcov.compute_coverage(Cancellation::default());
-    
+
     assert!(result.is_err_and(|e| {
-        match e {
-            CoverageError::NoProfrawFiles(details) => {
+        match e
+        {
+            CoverageError::NoProfrawFiles(details) =>
+            {
                 assert_eq!(builder.get_coverage_path(), details.expected_path);
 
-                match details.kind {
-                    NoProfrawFilesKind::Io(error_kind) => assert_eq!(std::io::ErrorKind::NotFound, error_kind),
-                    _ => panic!(),
+                match details.kind
+                {
+                    NoProfrawFilesKind::Io(error_kind) =>
+                    {
+                        assert_eq!(std::io::ErrorKind::NotFound, error_kind)
+                    }
+                    _ => panic!()
                 };
 
                 true
             }
-            _ => false,
+            _ => false
         }
     }));
 
@@ -200,7 +205,8 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError> {
+pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+{
     let builder = builder
         .with_workspace("simple_project")
         .with_output(function_name!())
@@ -209,25 +215,27 @@ pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case]
 
     let coverage_path = builder.get_coverage_path();
     let output_path = builder.get_output_path();
-    
+
     let mut runner = builder.build();
 
     test_run(&mut runner)?;
 
     let profraw_count = get_profraw_count(&coverage_path)?;
     assert_eq!(0, profraw_count);
-    
+
     let exists = fs::exists(expected_lcov_path(&output_path))?;
     assert!(!exists, "lcov file existed unexpectedly");
 
     Ok(())
 }
 
-fn expected_lcov_path(test_name: &Path) -> PathBuf {
+fn expected_lcov_path(test_name: &Path) -> PathBuf
+{
     test_output_path().join(test_name).join(".passivate/coverage/lcov")
 }
 
-fn expected_lcov_metadata(test_name: &Path) -> Result<fs::Metadata, IoError> {
-    let path = expected_lcov_path(test_name); 
+fn expected_lcov_metadata(test_name: &Path) -> Result<fs::Metadata, IoError>
+{
+    let path = expected_lcov_path(test_name);
     fs::metadata(path)
 }

@@ -1,18 +1,22 @@
 use std::time::Duration;
+
 use chrono::DateTime;
 use egui::accesskit::Role;
-use egui_kittest::{Harness, kittest::Queryable};
-use passivate_delegation::tx_1_rx_1;
-use crate::views::{LogView, View};
+use egui_kittest::Harness;
+use egui_kittest::kittest::Queryable;
 use passivate_core::cross_cutting::LogEvent;
+use passivate_delegation::tx_1_rx_1;
 use stdext::function_name;
 
+use crate::views::{LogView, View};
+
 #[test]
-pub fn show_a_single_log() {
-    let (mut sender, receiver)  = tx_1_rx_1();
+pub fn show_a_single_log()
+{
+    let (mut sender, receiver) = tx_1_rx_1();
     let mut log_view = LogView::new(receiver);
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         log_view.ui(ui);
     };
 
@@ -27,18 +31,20 @@ pub fn show_a_single_log() {
 }
 
 #[test]
-pub fn many_logs_are_scrollable() {
-    let (mut sender, receiver)  = tx_1_rx_1();
+pub fn many_logs_are_scrollable()
+{
+    let (mut sender, receiver) = tx_1_rx_1();
     let mut log_view = LogView::new(receiver);
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         ui.set_max_height(100.0);
         log_view.ui(ui);
     };
 
     let mut harness = Harness::new_ui(ui);
     harness.run();
-    for n in 0..20 {
+    for n in 0 .. 20
+    {
         let mut timestamp = DateTime::from_timestamp_nanos(1_662_921_288_000_000_000);
         timestamp += Duration::from_secs(n);
 
@@ -61,6 +67,7 @@ pub fn many_logs_are_scrollable() {
     harness.snapshot(&test_name(function_name!()));
 }
 
-fn test_name(function_name: &str) -> String {
+fn test_name(function_name: &str) -> String
+{
     function_name.split("::").last().unwrap_or(function_name).to_string()
 }

@@ -1,41 +1,45 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+
 use egui::Context;
-use passivate_delegation::{tx_1_rx_1, Actor, Cancellation};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
-use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{build_test_output_parser, ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner};
-use passivate_core::test_run_model::{TestRun, TestRunState};
 use passivate_core::cross_cutting::*;
+use passivate_core::passivate_grcov::Grcov;
+use passivate_core::test_execution::{ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner, build_test_output_parser};
+use passivate_core::test_run_model::{TestRun, TestRunState};
+use passivate_delegation::{Actor, Cancellation, tx_1_rx_1};
 use views::{CoverageView, TestRunView};
+
 use crate::app::App;
 use crate::error_app::ErrorApp;
 use crate::passivate_notify::NotifyChangeEvents;
+use crate::startup_errors::*;
+use crate::views;
 use crate::views::{ConfigurationView, DetailsView, LogView};
-use crate::{startup_errors::*, views};
 
-pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
-    match get_path_arg() {
-        Ok(path) => {
-            run_from_path(&path, context_accessor)
-        }
-        Err(error) => {
-            run_app(ErrorApp::boxed(error.into()), context_accessor)
-        }
+pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+{
+    match get_path_arg()
+    {
+        Ok(path) => run_from_path(&path, context_accessor),
+        Err(error) => run_app(ErrorApp::boxed(error.into()), context_accessor)
     }
 }
 
-pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError> {
+pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError>
+{
     let path = std::env::args().nth(1);
 
-    match path {
+    match path
+    {
         Some(p) => Ok(PathBuf::from(p)),
         None => Err(MissingArgumentError { argument: "path".to_string() })
     }
 }
 
-pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
+pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+{
     // Channels
     let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
@@ -58,7 +62,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, );
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx);
 
     let coverage_enabled = {
         let configuration = configuration.clone();
@@ -67,16 +71,17 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     // Actors
     let (_test_run_actor, test_run_tx) = TestRunActor::new(
-        test_processor, 
-        Box::new(coverage), 
-        tests_status_sender, 
-        coverage_sender, 
-        ChannelLog::boxed(log_tx), 
-        coverage_enabled);
+        test_processor,
+        Box::new(coverage),
+        tests_status_sender,
+        coverage_sender,
+        ChannelLog::boxed(log_tx),
+        coverage_enabled
+    );
 
     let change_handler = ChangeEventHandler::new(test_run_tx);
     let (_change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler);
-    
+
     // Send an initial change event to trigger the first test run
     change_actor_tx1.send(ChangeEvent::DefaultRun, Cancellation::default());
 
@@ -98,11 +103,10 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     Ok(())
 }
 
-pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError> {
+pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+{
     let eframe_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([400.0, 300.0])
-            .with_min_inner_size([300.0, 220.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]).with_min_inner_size([300.0, 220.0]),
         ..Default::default()
     };
 
@@ -113,8 +117,9 @@ pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Conte
             context_accessor(cc.egui_ctx.clone());
 
             Ok(app)
-        }),
-    ).expect("Failed to start Passivate!");
+        })
+    )
+    .expect("Failed to start Passivate!");
 
     Ok(())
 }

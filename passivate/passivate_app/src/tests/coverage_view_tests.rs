@@ -1,21 +1,25 @@
 use egui::accesskit::Role;
-use egui_kittest::{Harness, kittest::Queryable};
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
-use passivate_delegation::{tx_1_rx_1, Rx, Tx};
-use passivate_core::test_helpers::fakes::test_run_actor_fakes;
-use passivate_core::{coverage::CoverageStatus, passivate_grcov::CovdirJson};
-use stdext::function_name;
-use crate::views::{CoverageView, View};
+use egui_kittest::Harness;
+use egui_kittest::kittest::Queryable;
 use indexmap::IndexMap;
+use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::coverage::CoverageStatus;
+use passivate_core::passivate_grcov::CovdirJson;
+use passivate_core::test_helpers::fakes::test_run_actor_fakes;
+use passivate_delegation::{Rx, Tx, tx_1_rx_1};
+use stdext::function_name;
+
+use crate::views::{CoverageView, View};
 
 #[test]
-pub fn show_coverage_hierarchy_fully_collapsed() {
+pub fn show_coverage_hierarchy_fully_collapsed()
+{
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
     };
 
@@ -27,7 +31,7 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
         lines_covered: 64,
         lines_missed: 16,
         lines_total: 80,
-        name: "example.rs".to_string(),
+        name: "example.rs".to_string()
     };
 
     coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
@@ -38,14 +42,15 @@ pub fn show_coverage_hierarchy_fully_collapsed() {
 }
 
 #[test]
-pub fn show_coverage_hierarchy_expand_children() {
+pub fn show_coverage_hierarchy_expand_children()
+{
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
 
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
     };
 
@@ -53,45 +58,57 @@ pub fn show_coverage_hierarchy_expand_children() {
 
     let coverage_info = CovdirJson {
         children: Some(IndexMap::from([
-            ("child1.rs".to_string(), CovdirJson {
-                children: None,
-                coverage_percent: 88.0,
-                lines_covered: 64,
-                lines_missed: 16,
-                lines_total: 80,
-                name: "child1.rs".to_string()
-            }),
-            ("child2.rs".to_string(), CovdirJson {
-                children: Some(IndexMap::from([
-                    ("nested1.rs".to_string(), CovdirJson {
-                        children: None,
-                        coverage_percent: 12.0,
-                        lines_covered: 64,
-                        lines_missed: 16,
-                        lines_total: 80,
-                        name: "nested1.rs".to_string()
-                    }),
-                    ("nested2.rs".to_string(), CovdirJson {
-                        children: None,
-                        coverage_percent: 24.0,
-                        lines_covered: 64,
-                        lines_missed: 16,
-                        lines_total: 80,
-                        name: "nested2.rs".to_string()
-                    })
-                ])),
-                coverage_percent: 100.0,
-                lines_covered: 64,
-                lines_missed: 16,
-                lines_total: 80,
-                name: "child2.rs".to_string()
-            })
+            (
+                "child1.rs".to_string(),
+                CovdirJson {
+                    children: None,
+                    coverage_percent: 88.0,
+                    lines_covered: 64,
+                    lines_missed: 16,
+                    lines_total: 80,
+                    name: "child1.rs".to_string()
+                }
+            ),
+            (
+                "child2.rs".to_string(),
+                CovdirJson {
+                    children: Some(IndexMap::from([
+                        (
+                            "nested1.rs".to_string(),
+                            CovdirJson {
+                                children: None,
+                                coverage_percent: 12.0,
+                                lines_covered: 64,
+                                lines_missed: 16,
+                                lines_total: 80,
+                                name: "nested1.rs".to_string()
+                            }
+                        ),
+                        (
+                            "nested2.rs".to_string(),
+                            CovdirJson {
+                                children: None,
+                                coverage_percent: 24.0,
+                                lines_covered: 64,
+                                lines_missed: 16,
+                                lines_total: 80,
+                                name: "nested2.rs".to_string()
+                            }
+                        )
+                    ])),
+                    coverage_percent: 100.0,
+                    lines_covered: 64,
+                    lines_missed: 16,
+                    lines_total: 80,
+                    name: "child2.rs".to_string()
+                }
+            )
         ])),
         coverage_percent: 69.0,
         lines_covered: 64,
         lines_missed: 16,
         lines_total: 80,
-        name: "example.rs".to_string(),
+        name: "example.rs".to_string()
     };
 
     coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
@@ -104,9 +121,11 @@ pub fn show_coverage_hierarchy_expand_children() {
     let top_level_header_id = top_level_header.id();
 
     harness.run();
-    
-    for header in harness.get_all_by_role(Role::Unknown) {
-        if header.id() == top_level_header_id {
+
+    for header in harness.get_all_by_role(Role::Unknown)
+    {
+        if header.id() == top_level_header_id
+        {
             continue;
         }
 
@@ -119,14 +138,15 @@ pub fn show_coverage_hierarchy_expand_children() {
 }
 
 #[test]
-pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
+pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
+{
     let (mut test_run_actor, _test_run_tx) = test_run_actor_fakes::stub();
 
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
     };
 
@@ -147,18 +167,19 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event() {
 }
 
 #[test]
-pub fn show_error() {
+pub fn show_error()
+{
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 
-    let ui = |ui: &mut egui::Ui|{
+    let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
     };
 
     coverage_sender.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string()));
-    
+
     let mut harness = Harness::new_ui(ui);
     harness.run();
 
@@ -166,7 +187,8 @@ pub fn show_error() {
     harness.snapshot(&test_name(function_name!()));
 }
 
-fn test_name(function_name: &str) -> String {
+fn test_name(function_name: &str) -> String
+{
     function_name.split("::").last().unwrap_or(function_name).to_string()
 }
 

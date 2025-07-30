@@ -1,10 +1,10 @@
-use passivate_delegation::{tx_1_rx_1, tx_1_rx_2, Tx};
+use passivate_delegation::{Tx, tx_1_rx_1, tx_1_rx_2};
 
 use crate::configuration::{ConfigurationManager, PassivateConfig};
 
-
 #[test]
-pub fn configuration_update_changes_configuration() {
+pub fn configuration_update_changes_configuration()
+{
     let configuration = PassivateConfig::default();
     let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
@@ -18,7 +18,8 @@ pub fn configuration_update_changes_configuration() {
 }
 
 #[test]
-pub fn configuration_change_is_broadcast() {
+pub fn configuration_change_is_broadcast()
+{
     let configuration = PassivateConfig::default();
     let (tx, rx1, rx2) = tx_1_rx_2();
     let mut manager = ConfigurationManager::new(configuration, tx);

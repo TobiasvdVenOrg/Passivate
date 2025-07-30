@@ -1,9 +1,12 @@
-use std::{ffi::OsString, io::Error as IoError, path::PathBuf};
+use std::ffi::OsString;
+use std::io::Error as IoError;
+use std::path::PathBuf;
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum CargoWorkspaceError {
+pub enum CargoWorkspaceError
+{
     #[error("cargo metadata failed")]
     MetadataCommand(#[from] cargo_metadata::Error),
 
@@ -14,14 +17,14 @@ pub enum CargoWorkspaceError {
     TomlNotFound(PathBuf),
 
     #[error("could not find `Cargo.toml` in `{path:?}`, but found {found:?} please try to rename it to Cargo.toml")]
-    IncorrectTomlCasing {
-        path: PathBuf,
-        found: OsString
+    IncorrectTomlCasing
+    {
+        path: PathBuf, found: OsString
     },
 
     #[error("")]
-    Hey {
-        a: i32,
-        b: i32
+    Hey
+    {
+        a: i32, b: i32
     }
 }

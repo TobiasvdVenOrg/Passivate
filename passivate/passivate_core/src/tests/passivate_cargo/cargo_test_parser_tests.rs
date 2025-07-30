@@ -1,9 +1,11 @@
 use crate::assert_matches;
-use crate::{passivate_cargo::CargoTestParser, test_execution::ParseOutput};
+use crate::passivate_cargo::CargoTestParser;
+use crate::test_execution::ParseOutput;
 use crate::test_run_model::{SingleTestStatus, TestRunEvent};
 
 #[test]
-pub fn parse_test_line_status_pass() {
+pub fn parse_test_line_status_pass()
+{
     let mut parser = CargoTestParser;
     let event = parser.parse_line("test add_2_and_2_is_4 ... ok").unwrap();
 
@@ -13,7 +15,8 @@ pub fn parse_test_line_status_pass() {
 }
 
 #[test]
-pub fn test_with_error_in_its_name_is_not_considered_a_build_failure() {
+pub fn test_with_error_in_its_name_is_not_considered_a_build_failure()
+{
     let mut parser = CargoTestParser;
     let event = parser.parse_line("test some_test_with_error ... ok").unwrap();
 

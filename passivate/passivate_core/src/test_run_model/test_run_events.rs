@@ -1,8 +1,10 @@
 use super::{SingleTest, TestId};
 
-pub enum TestRunEvent {
+pub enum TestRunEvent
+{
     Start,
-    StartSingle {
+    StartSingle
+    {
         test: TestId,
         clear_tests: bool
     },
@@ -11,7 +13,8 @@ pub enum TestRunEvent {
     TestFinished(SingleTest),
     TestsCompleted,
     NoTests,
-    ErrorOutput {
+    ErrorOutput
+    {
         test: TestId,
         message: String
     }
