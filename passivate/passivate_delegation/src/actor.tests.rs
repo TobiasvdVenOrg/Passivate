@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use crate::{Actor, ActorTx, Cancellation, Handler};
+use crossbeam_channel::Receiver;
+
+use crate::{Actor, Actor2, ActorEvent, ActorTx, Cancellation, Handler};
 
 struct LoopingHandler;
 
@@ -18,6 +20,69 @@ impl Handler<i32> for LoopingHandler
             }
         }
     }
+}
+
+struct ExampleEvent
+{
+    input: i32
+}
+
+struct ExampleCollaborator
+{
+    value: i32
+}
+
+impl ExampleCollaborator
+{
+    pub fn set_value(&mut self, value: i32)
+    {
+        self.value = value;
+    }
+}
+
+trait ExampleTrait
+{
+    fn get_something(&self) -> i32;
+}
+
+struct ExampleImpl;
+
+impl ExampleTrait for ExampleImpl
+{
+    fn get_something(&self) -> i32
+    {
+        10
+    }
+}
+
+#[test]
+pub fn actor_handles_event_and_returns()
+{
+    let collaborator = ExampleCollaborator { value: 0 };
+    let thing = ExampleImpl;
+
+    let actor = Actor2::new(move |event| actor_thread(event, collaborator, thing));
+
+    actor.send(ExampleEvent { input: 32 });
+
+    let result = actor.into_inner();
+
+    assert_eq!(42, result);
+}
+
+fn actor_thread(rx: Receiver<ActorEvent<ExampleEvent>>, mut collaborator: ExampleCollaborator, thing: impl ExampleTrait) -> i32
+{
+    while let Ok(event) = rx.recv()
+    {
+        handle(event.event, &mut collaborator);
+    }
+
+    collaborator.value + thing.get_something()
+}
+
+fn handle(event: ExampleEvent, collaborator: &mut ExampleCollaborator)
+{
+    collaborator.set_value(event.input);
 }
 
 #[test]

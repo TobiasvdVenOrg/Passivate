@@ -5,6 +5,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 
+use crossbeam_channel::Receiver;
+
 use super::{ActorEvent, ActorTx, Handler};
 
 #[derive(Default, Clone)]
@@ -160,5 +162,49 @@ impl<T: Send + 'static, THandler: Handler<T>> Drop for Actor<T, THandler>
         {
             let _handler = thread.join().expect("failed to join actor thread!");
         }
+    }
+}
+
+pub struct Actor2<TEvent: Send + 'static, TReturn: Send + 'static>
+{
+    tx: ActorTx<TEvent>,
+    handle: Option<JoinHandle<TReturn>>
+}
+
+impl<TEvent, TReturn> Actor2<TEvent, TReturn>
+where
+    TEvent: Send + 'static,
+    TReturn: Send + 'static
+{
+    pub fn new<THandler>(handler: THandler) -> Self
+    where
+        THandler: FnOnce(Receiver<ActorEvent<TEvent>>) -> TReturn + Send + 'static
+    {
+        let (tx, rx) = crossbeam_channel::unbounded();
+
+        let handle = thread::spawn(move || handler(rx));
+
+        let actor_tx = ActorTx::new(tx);
+
+        Actor2 { tx: actor_tx, handle: Some(handle) }
+    }
+
+    pub fn send(&self, event: TEvent)
+    {
+        self.tx.send(event, Cancellation::default());
+    }
+
+    pub fn send_cancellable(&self, event: TEvent, cancellation: Cancellation)
+    {
+        self.tx.send(event, cancellation);
+    }
+
+    pub fn into_inner(mut self) -> TReturn
+    {
+        let handle = self.handle.take().expect("failed to acquire actor thread handle");
+
+        drop(self);
+        
+        handle.join().expect("actor failed to join.")
     }
 }
