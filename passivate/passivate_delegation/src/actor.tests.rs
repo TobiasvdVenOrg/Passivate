@@ -2,25 +2,7 @@ use std::time::Duration;
 
 use crossbeam_channel::Receiver;
 
-use crate::{Actor, Actor2, ActorEvent, ActorTx, Cancellation, Handler};
-
-struct LoopingHandler;
-
-impl Handler<i32> for LoopingHandler
-{
-    fn handle(&mut self, _event: i32, cancellation: Cancellation)
-    {
-        loop
-        {
-            std::thread::sleep(Duration::from_millis(100));
-
-            if cancellation.is_cancelled()
-            {
-                return;
-            }
-        }
-    }
-}
+use crate::{Actor2, ActorEvent, Cancellation};
 
 struct ExampleEvent
 {
@@ -61,7 +43,7 @@ pub fn actor_handles_event_and_returns()
     let collaborator = ExampleCollaborator { value: 0 };
     let thing = ExampleImpl;
 
-    let actor = Actor2::new(move |event| actor_thread(event, collaborator, thing));
+    let actor = Actor2::new(move |rx| actor_thread(rx, collaborator, thing));
 
     actor.send(ExampleEvent { input: 32 });
 
@@ -86,18 +68,39 @@ fn handle(event: ExampleEvent, collaborator: &mut ExampleCollaborator)
 }
 
 #[test]
-pub fn actor_handle_can_be_cancelled()
+pub fn actor_event_is_cancellable()
 {
-    let handler = LoopingHandler;
+    let actor = Actor2::new(actor_thread_infinite);
+
     let mut cancellation = Cancellation::default();
-    let (_actor, tx) = Actor::new(handler);
 
-    send(tx, cancellation.clone());
-
+    actor.send_cancellable(ExampleEvent { input: 32 }, cancellation.clone());
     cancellation.cancel();
+
+    let result = actor.into_inner();
+
+    assert_eq!(0, result);
 }
 
-fn send(tx: ActorTx<i32>, cancellation: Cancellation)
+fn actor_thread_infinite(rx: Receiver<ActorEvent<ExampleEvent>>) -> i32
 {
-    tx.send(64, cancellation);
+    while let Ok(event) = rx.recv()
+    {
+        handle_infinite(event.event, event.cancellation);
+    }
+
+    0
+}
+
+fn handle_infinite(_event: ExampleEvent, cancellation: Cancellation)
+{
+    loop
+    {
+        std::thread::sleep(Duration::from_millis(100));
+
+        if cancellation.is_cancelled()
+        {
+            break;
+        }
+    }
 }
