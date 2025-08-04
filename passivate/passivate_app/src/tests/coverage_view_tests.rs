@@ -15,7 +15,7 @@ use crate::views::{CoverageView, View};
 pub fn show_coverage_hierarchy_fully_collapsed()
 {
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 
@@ -46,7 +46,7 @@ pub fn show_coverage_hierarchy_expand_children()
 {
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 
@@ -140,7 +140,7 @@ pub fn show_coverage_hierarchy_expand_children()
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let test_run_handler = test_run_actor_fakes::stub_with_coverage_enabled(|| configuration.get(|c| c.coverage_enabled));
 
     let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
@@ -166,7 +166,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 pub fn show_error()
 {
     let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
 

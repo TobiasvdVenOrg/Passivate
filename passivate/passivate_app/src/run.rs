@@ -8,7 +8,7 @@ use passivate_core::cross_cutting::*;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner, build_test_output_parser};
 use passivate_core::test_run_model::{TestRun, TestRunState};
-use passivate_delegation::{Actor, Cancellation, tx_1_rx_1};
+use passivate_delegation::{tx_1_rx_1, Actor, ActorEvent, ActorTx, Cancellation};
 use views::{CoverageView, TestRunView};
 
 use crate::app::App;
@@ -62,7 +62,11 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx);
+    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
+    let test_run_actor_tx = ActorTx::new(test_run_tx.clone());
+    let test_run_actor_tx_2 = ActorTx::new(test_run_tx);
+
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, test_run_actor_tx.into());
 
     let coverage_enabled = {
         let configuration = configuration.clone();
@@ -70,7 +74,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     };
 
     // Actors
-    let (_test_run_actor, test_run_tx) = TestRunActor::new(
+    let mut test_run_actor = TestRunActor::new(
+        test_run_rx,
         test_processor,
         Box::new(coverage),
         tests_status_sender,
@@ -79,7 +84,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
         coverage_enabled
     );
 
-    let change_handler = ChangeEventHandler::new(test_run_tx);
+    let change_handler = ChangeEventHandler::new(test_run_actor_tx_2);
     let (_change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler);
 
     // Send an initial change event to trigger the first test run
@@ -99,6 +104,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     let _ = change_events.stop();
+    let _ = test_run_actor.into_inner();
 
     Ok(())
 }

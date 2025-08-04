@@ -89,10 +89,19 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
     ///     // 'tx' is guaranteed to be dropped when 'actor' is dropped at the end of the scope
     /// }
     /// ```
-    pub fn new(mut handler: THandler) -> (Actor<T, THandler>, ActorTx<T>)
+    pub fn new(handler: THandler) -> (Actor<T, THandler>, ActorTx<T>)
     {
         let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
+        let actor_tx = ActorTx::new(tx);
+        
+        let actor = Self::with_rx(handler, rx);
+
+        (actor, actor_tx)
+    }
+
+    pub fn with_rx(mut handler: THandler, rx: Receiver<ActorEvent<T>>) -> Actor<T, THandler>
+    {
         let thread = Some(thread::spawn(move || {
             while let Ok(event) = rx.recv()
             {
@@ -102,9 +111,7 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
             handler
         }));
 
-        let actor_tx = ActorTx::new(tx);
-        let actor = Self { thread, _phantom: PhantomData {} };
-        (actor, actor_tx)
+        Self { thread, _phantom: PhantomData {} }
     }
 
     pub fn new_2(mut handler: THandler) -> (Actor<T, THandler>, ActorTx<T>, ActorTx<T>)

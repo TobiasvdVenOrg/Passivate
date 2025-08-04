@@ -3,7 +3,7 @@ use std::io::Error as IoError;
 
 use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::{assert_that, is_variant};
-use passivate_delegation::{Cancellation, Cancelled, Handler, Tx, tx_1_rx_1};
+use passivate_delegation::{ActorEvent, ActorTx, Cancellation, Cancelled, Handler, Tx, tx_1_rx_1};
 use pretty_assertions::assert_eq;
 use stdext::function_name;
 
@@ -193,7 +193,11 @@ pub fn when_test_run_fails_error_is_reported()
 
     let processor = TestRunProcessor::new(run_tests, stub_parse_output());
     let (tests_sender, tests_receiver) = tx_1_rx_1();
-    let mut handler = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(processor, tests_sender);
+    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
+    let mut actor = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(test_run_rx, processor, tests_sender);
+    
+    drop(test_run_tx);
+    let mut handler = actor.into_inner();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
@@ -215,8 +219,16 @@ pub fn when_configuration_changes_tests_are_run()
     run_tests.expect_run_tests().once().returning(|_, _, _| Err(TestRunError::Cancelled(Cancelled)));
     run_tests.expect_run_test().returning(|_, _, _, _| Err(TestRunError::Cancelled(Cancelled)));
 
-    let (test_run_actor, test_run_actor_tx) = test_run_actor_fakes::stub();
-    let mut configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let test_run_processor = TestRunProcessor::new(run_tests, stub_parse_output());
+    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
+    let tx = ActorTx::new(test_run_tx);
+
+    let mut test_run_actor = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(test_run_rx, test_run_processor, Tx::stub());
+    let mut configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), tx.into());
 
     configuration.update(|c| c.coverage_enabled = true);
+
+    drop(configuration);
+
+    let _test_run_handler = test_run_actor.into_inner();
 }

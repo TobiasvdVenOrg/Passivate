@@ -2,22 +2,26 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use passivate_delegation::Tx;
 
+use crate::change_events::ChangeEvent;
+
 use super::{ConfigurationEvent, PassivateConfig};
 
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfig>>,
-    configuration_tx: Arc<Mutex<Tx<ConfigurationEvent>>>
+    configuration_tx: Arc<Mutex<Tx<ConfigurationEvent>>>,
+    change_event_tx: Arc<Mutex<Tx<ChangeEvent>>>
 }
 
 impl ConfigurationManager
 {
-    pub fn new(configuration: PassivateConfig, configuration_tx: Tx<ConfigurationEvent>) -> Self
+    pub fn new(configuration: PassivateConfig, configuration_tx: Tx<ConfigurationEvent>, change_event_tx: Tx<ChangeEvent>) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
-            configuration_tx: Arc::new(Mutex::new(configuration_tx))
+            configuration_tx: Arc::new(Mutex::new(configuration_tx)),
+            change_event_tx: Arc::new(Mutex::new(change_event_tx))
         }
     }
 
@@ -33,7 +37,8 @@ impl ConfigurationManager
 
         drop(configuration);
 
-        self.configuration_tx.lock().expect("Failed to acquire tx lock.").send(ConfigurationEvent { old, new });
+        self.configuration_tx.lock().expect("failed to acquire configuration event tx lock.").send(ConfigurationEvent { old, new });
+        self.change_event_tx.lock().expect("failed to acquire change event tx lock.").send(ChangeEvent::DefaultRun);
     }
 
     pub fn get_copy(&self) -> PassivateConfig

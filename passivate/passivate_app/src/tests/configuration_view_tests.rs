@@ -16,7 +16,7 @@ use crate::views::{ConfigurationView, DetailsView, View};
 #[test]
 pub fn show_configuration()
 {
-    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let mut configuration_view = ConfigurationView::new(configuration_manager.clone());
 
     let ui = |ui: &mut egui::Ui| {
@@ -38,7 +38,7 @@ pub fn show_configuration()
 #[test]
 pub fn configure_coverage_enabled()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let test_run_handler = test_run_actor_fakes::stub_with_coverage_enabled(|| configuration.get(|c| c.coverage_enabled));
 
     let mut configuration_view = ConfigurationView::new(configuration.clone());
@@ -60,7 +60,7 @@ pub fn configure_coverage_enabled()
 #[test]
 pub fn configure_snapshots_path()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let mut configuration_view = ConfigurationView::new(configuration.clone());
     let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);
 

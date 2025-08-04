@@ -46,7 +46,7 @@ pub fn selecting_a_test_shows_it_in_details_view()
     let (mut test_run_sender, test_run_receiver) = tx_1_rx_1();
     let (details_sender, details_receiver) = tx_1_rx_1();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
@@ -80,7 +80,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
 {
     let (mut test_run_sender, test_run_receiver) = tx_1_rx_1();
     let (details_sender, details_receiver) = tx_1_rx_1();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
 
@@ -163,7 +163,7 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
     let (mut details_sender, details_receiver) = tx_1_rx_1();
     let (test_run_sender, test_run_receiver) = tx_1_rx_1();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut details_view = DetailsView::new(details_receiver, test_run_sender, configuration);
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
@@ -195,7 +195,7 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 fn show_test(test_name: &str, single_test: SingleTest)
 {
     let (mut sender, receiver) = tx_1_rx_1();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut details_view = DetailsView::new(receiver, Tx::stub(), configuration);
     details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));

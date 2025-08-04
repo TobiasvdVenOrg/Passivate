@@ -20,6 +20,8 @@ indexmap = { version = "2.8.0", features = [ "serde" ] }
 cargo_metadata = "0.19.2"
 epaint = "0.31"
 png = "0.17.16"
+bon = "3.6.5"
+crossbeam-channel = "0.5.14"
 
 [dev-dependencies]
 rstest = "0.25.0"

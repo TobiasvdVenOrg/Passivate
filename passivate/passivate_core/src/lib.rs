@@ -83,7 +83,6 @@ pub mod test_helpers
 
     pub mod fakes
     {
-        pub mod change_event_handler_fakes;
         pub mod test_run_actor_fakes;
     }
 }
