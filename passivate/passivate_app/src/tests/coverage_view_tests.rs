@@ -140,9 +140,8 @@ pub fn show_coverage_hierarchy_expand_children()
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 {
-    let (mut test_run_actor, _test_run_tx) = test_run_actor_fakes::stub();
-
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let test_run_handler = test_run_actor_fakes::stub_with_coverage_enabled(|| configuration.get(|c| c.coverage_enabled));
 
     let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
 
@@ -157,10 +156,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 
     harness.run();
 
-    let test_run_handler = test_run_actor.into_inner();
-
     assert!(test_run_handler.coverage_enabled());
-    assert!(configuration.get(|c| c.coverage_enabled));
 
     harness.fit_contents();
     harness.snapshot(&test_name(function_name!()));
