@@ -105,6 +105,11 @@ impl RunTests for TestRunner
         args.push(OsString::from("--target-dir"));
         args.push(OsString::from(&self.target_dir));
 
+        if update_snapshots
+        {
+            args.push(OsString::from("--all-features"));
+        }
+        
         let command = cmd("cargo", args).dir(&self.working_dir);
 
         let command = if update_snapshots { command.env("UPDATE_SNAPSHOTS", "1") } else { command };
