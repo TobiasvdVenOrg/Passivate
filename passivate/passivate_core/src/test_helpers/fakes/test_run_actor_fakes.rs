@@ -18,3 +18,16 @@ pub fn stub_with_test_run_processor_and_tests_sender(test_run_processor: TestRun
     let coverage_enabled = || false;
     TestRunHandler::new(test_run_processor, stub_compute_coverage(), tests_tx, Tx::stub(), stub_log(), coverage_enabled)
 }
+
+pub fn stub_with_coverage_enabled(coverage_enabled: impl Fn() -> bool) -> TestRunHandler<impl Fn() -> bool>
+{
+    let test_run_processor = TestRunProcessor::new(stub_run_tests(), stub_parse_output());
+    TestRunHandler::new(
+        test_run_processor,
+        stub_compute_coverage(),
+        Tx::stub(),
+        Tx::stub(),
+        stub_log(),
+        coverage_enabled
+    )
+}
