@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use crossbeam_channel::Sender;
 use passivate_delegation::Tx;
 
 use crate::change_events::ChangeEvent;
@@ -10,18 +11,18 @@ use super::{ConfigurationEvent, PassivateConfig};
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfig>>,
-    configuration_tx: Arc<Mutex<Tx<ConfigurationEvent>>>,
-    change_event_tx: Arc<Mutex<Tx<ChangeEvent>>>
+    configuration_tx: Sender<ConfigurationEvent>,
+    change_event_tx: Sender<ChangeEvent>
 }
 
 impl ConfigurationManager
 {
-    pub fn new(configuration: PassivateConfig, configuration_tx: Tx<ConfigurationEvent>, change_event_tx: Tx<ChangeEvent>) -> Self
+    pub fn new(configuration: PassivateConfig, configuration_tx: Sender<ConfigurationEvent>, change_event_tx: Sender<ChangeEvent>) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
-            configuration_tx: Arc::new(Mutex::new(configuration_tx)),
-            change_event_tx: Arc::new(Mutex::new(change_event_tx))
+            configuration_tx,
+            change_event_tx
         }
     }
 
@@ -37,8 +38,8 @@ impl ConfigurationManager
 
         drop(configuration);
 
-        self.configuration_tx.lock().expect("failed to acquire configuration event tx lock.").send(ConfigurationEvent { old, new });
-        self.change_event_tx.lock().expect("failed to acquire change event tx lock.").send(ChangeEvent::DefaultRun);
+        self.configuration_tx.send(ConfigurationEvent { old, new }).expect("failed to send configuration event");
+        self.change_event_tx.send(ChangeEvent::DefaultRun).expect("failed to send change event");
     }
 
     pub fn get_copy(&self) -> PassivateConfig

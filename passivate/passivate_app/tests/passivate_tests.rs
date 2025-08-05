@@ -28,7 +28,7 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     use tokio::{task, time};
 
     run_from_path(
-        Path::new("..\\..\\test_data\\simple_project"),
+        Path::new("..\\test_data\\simple_project"),
         Box::new(move |context: egui::Context| {
             task::spawn(async move {
                 // Asynchronously send a close window command to passivate after some delay

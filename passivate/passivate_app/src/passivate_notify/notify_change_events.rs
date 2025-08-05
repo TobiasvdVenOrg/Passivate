@@ -71,14 +71,17 @@ impl NotifyChangeEvents
         {
             Ok(mut watcher) =>
             {
-                watcher = Self::start_watcher(watcher, path)?;
+                let watcher = Self::start_watcher(watcher, path);
 
                 Ok(NotifyChangeEvents {
-                    watcher,
+                    watcher: watcher.expect("aaa"),
                     path: path.to_path_buf()
                 })
             }
-            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(path, notify_error))
+            Err(notify_error) => 
+            {
+                Err(NotifyChangeEventsError::invalid_path(path, notify_error))
+            }
         }
     }
 

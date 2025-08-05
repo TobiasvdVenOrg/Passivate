@@ -54,6 +54,7 @@ impl Display for Cancelled
 pub struct Actor<T: Send + 'static, THandler: Handler<T>>
 {
     thread: Option<JoinHandle<THandler>>,
+    name: String,
     _phantom: PhantomData<T>
 }
 
@@ -89,18 +90,18 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
     ///     // 'tx' is guaranteed to be dropped when 'actor' is dropped at the end of the scope
     /// }
     /// ```
-    pub fn new(handler: THandler) -> (Actor<T, THandler>, ActorTx<T>)
+    pub fn new(handler: THandler, name: String) -> (Actor<T, THandler>, ActorTx<T>)
     {
         let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
-        let actor_tx = ActorTx::new(tx);
+        let actor_tx = ActorTx::new(tx, format!("{}1", name));
         
-        let actor = Self::with_rx(handler, rx);
+        let actor = Self::with_rx(handler, rx, name);
 
         (actor, actor_tx)
     }
 
-    pub fn with_rx(mut handler: THandler, rx: Receiver<ActorEvent<T>>) -> Actor<T, THandler>
+    pub fn with_rx(mut handler: THandler, rx: Receiver<ActorEvent<T>>, name: String) -> Actor<T, THandler>
     {
         let thread = Some(thread::spawn(move || {
             while let Ok(event) = rx.recv()
@@ -111,10 +112,10 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
             handler
         }));
 
-        Self { thread, _phantom: PhantomData {} }
+        Self { thread, name, _phantom: PhantomData {} }
     }
 
-    pub fn new_2(mut handler: THandler) -> (Actor<T, THandler>, ActorTx<T>, ActorTx<T>)
+    pub fn new_2(mut handler: THandler, name: String) -> (Actor<T, THandler>, ActorTx<T>, ActorTx<T>)
     {
         let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
@@ -127,13 +128,13 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
             handler
         }));
 
-        let actor_tx1 = ActorTx::new(tx.clone());
-        let actor_tx2 = ActorTx::new(tx);
-        let actor = Self { thread, _phantom: PhantomData {} };
+        let actor_tx1 = ActorTx::new(tx.clone(), format!("{}1", name));
+        let actor_tx2 = ActorTx::new(tx, format!("{}2", name));
+        let actor = Self { thread, name, _phantom: PhantomData {} };
         (actor, actor_tx1, actor_tx2)
     }
 
-    pub fn new_3(mut handler: THandler) -> (Actor<T, THandler>, ActorTx<T>, ActorTx<T>, ActorTx<T>)
+    pub fn new_3(mut handler: THandler, name: String) -> (Actor<T, THandler>, ActorTx<T>, ActorTx<T>, ActorTx<T>)
     {
         let (tx, rx) = crossbeam_channel::unbounded::<ActorEvent<T>>();
 
@@ -146,10 +147,10 @@ impl<T: Send + 'static, THandler: Handler<T>> Actor<T, THandler>
             handler
         }));
 
-        let actor_tx1 = ActorTx::new(tx.clone());
-        let actor_tx2 = ActorTx::new(tx.clone());
-        let actor_tx3 = ActorTx::new(tx);
-        let actor = Self { thread, _phantom: PhantomData {} };
+        let actor_tx1 = ActorTx::new(tx.clone(), format!("{}1", name).to_string());
+        let actor_tx2 = ActorTx::new(tx.clone(), format!("{}2", name).to_string());
+        let actor_tx3 = ActorTx::new(tx, format!("{}3", name).to_string());
+        let actor = Self { thread, name, _phantom: PhantomData {} };
         (actor, actor_tx1, actor_tx2, actor_tx3)
     }
 
@@ -191,7 +192,7 @@ where
 
         let handle = thread::spawn(move || handler(rx));
 
-        let actor_tx = ActorTx::new(tx);
+        let actor_tx = ActorTx::new(tx, "actor2".to_string());
 
         Actor2 { tx: actor_tx, handle: Some(handle) }
     }

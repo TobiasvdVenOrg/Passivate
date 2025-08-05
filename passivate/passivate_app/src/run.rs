@@ -43,7 +43,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     // Channels
     let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
-    let (configuration_tx, _configuration_rx1) = tx_1_rx_1();
+    let (configuration_tx, _configuration_rx1) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
     let (log_tx, log_rx) = tx_1_rx_1();
     let (details_sender, details_receiver) = tx_1_rx_1();
 
@@ -63,8 +63,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
 
     let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let test_run_actor_tx = ActorTx::new(test_run_tx.clone());
-    let test_run_actor_tx_2 = ActorTx::new(test_run_tx);
+    let test_run_actor_tx = ActorTx::new(test_run_tx.clone(), "test_run_actor_tx!1".to_string());
+    let test_run_actor_tx_2 = ActorTx::new(test_run_tx, "test_run_actor_tx_2!".to_string());
 
     let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, test_run_actor_tx.into());
 
@@ -85,7 +85,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     );
 
     let change_handler = ChangeEventHandler::new(test_run_actor_tx_2);
-    let (_change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler);
+    let (change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler, String::from("change_actor"));
 
     // Send an initial change event to trigger the first test run
     change_actor_tx1.send(ChangeEvent::DefaultRun, Cancellation::default());
@@ -104,7 +104,10 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     let _ = change_events.stop();
-    let _ = test_run_actor.into_inner();
+    
+    drop(change_events);
+    drop(change_actor_tx1);
+    drop(test_run_actor);
 
     Ok(())
 }

@@ -30,7 +30,7 @@ where
     {
         let handler = TestRunHandler::new(runner, coverage, tests_status_sender, coverage_status_sender, log, coverage_enabled);
 
-        Self { actor: Actor::with_rx(handler, rx) }
+        Self { actor: Actor::with_rx(handler, rx, String::from("test_run_actor")) }
     }
 
     pub fn into_inner(&mut self) -> TestRunHandler<TCoverageEnabled>

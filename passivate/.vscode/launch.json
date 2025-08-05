@@ -95,7 +95,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["F:\\Projects\\Passivate\\test_data\\simple_project"],
             "cwd": "${workspaceFolder}"
         },
         {

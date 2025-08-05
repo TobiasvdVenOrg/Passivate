@@ -12,15 +12,17 @@ enum ActorTxImplementation<T: Send + 'static>
 
 pub struct ActorTx<T: Send + 'static>
 {
-    implementation: ActorTxImplementation<ActorEvent<T>>
+    implementation: ActorTxImplementation<ActorEvent<T>>,
+    name: String
 }
 
 impl<T: Send + 'static> ActorTx<T>
 {
-    pub fn new(sender: Sender<ActorEvent<T>>) -> Self
+    pub fn new(sender: Sender<ActorEvent<T>>, name: String) -> Self
     {
         Self {
-            implementation: ActorTxImplementation::Channel(sender)
+            implementation: ActorTxImplementation::Channel(sender),
+            name
         }
     }
 
@@ -38,7 +40,16 @@ impl<T: Send + 'static> ActorTx<T>
     pub fn stub() -> Self
     {
         Self {
-            implementation: ActorTxImplementation::Stub
+            implementation: ActorTxImplementation::Stub,
+            name: "stub".to_string()
         }
+    }
+}
+
+impl<T: Send + 'static> Drop for ActorTx<T>
+{
+    fn drop(&mut self)
+    {
+        println!("Drop tx {}", self.name);
     }
 }
