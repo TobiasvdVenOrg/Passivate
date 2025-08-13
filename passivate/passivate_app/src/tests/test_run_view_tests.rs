@@ -1,6 +1,6 @@
 use egui_kittest::Harness;
 use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState};
-use passivate_delegation::{Tx, tx_1_rx_1};
+use passivate_delegation::{Tx, tx_rx};
 use stdext::function_name;
 
 use crate::views::{TestRunView, View};
@@ -48,7 +48,7 @@ pub fn show_build_status_above_tests_while_compiling()
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
 {
-    let (mut sender, receiver) = tx_1_rx_1();
+    let (mut sender, receiver) = tx_rx();
     let mut tests_status_view = TestRunView::new(receiver, Tx::stub());
 
     let ui = |ui: &mut egui::Ui| {

@@ -8,7 +8,7 @@ use passivate_core::cross_cutting::*;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner, build_test_output_parser};
 use passivate_core::test_run_model::{TestRun, TestRunState};
-use passivate_delegation::{tx_1_rx_1, Actor, ActorEvent, ActorTx, Cancellation};
+use passivate_delegation::{tx_rx, Actor, ActorEvent, ActorTx, Cancellation};
 use views::{CoverageView, TestRunView};
 
 use crate::app::App;
@@ -38,14 +38,26 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError>
     }
 }
 
+pub trait S<T>
+{
+    fn send(&self, message: T);
+}
+
+impl<T> S<T> for crossbeam_channel::Sender<T>
+{
+    fn send(&self, message: T) {
+        self.send(message).expect("aah");
+    }
+}
+
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
 {
     // Channels
-    let (tests_status_sender, tests_status_receiver) = tx_1_rx_1();
-    let (coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (tests_status_sender, tests_status_receiver) = tx_rx();
+    let (coverage_sender, coverage_receiver) = tx_rx();
     let (configuration_tx, _configuration_rx1) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let (log_tx, log_rx) = tx_1_rx_1();
-    let (details_sender, details_receiver) = tx_1_rx_1();
+    let (log_tx, log_rx) = tx_rx();
+    let (details_sender, details_receiver) = tx_rx();
 
     // Paths
     let workspace_path = path.to_path_buf();

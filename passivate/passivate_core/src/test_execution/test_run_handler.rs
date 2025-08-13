@@ -1,4 +1,8 @@
-use passivate_delegation::{Cancellation, Handler, Tx};
+use std::thread::{self, JoinHandle};
+
+use bon::Builder;
+use crossbeam_channel::Receiver;
+use passivate_delegation::{ActorEvent, Cancellation, Handler, Tx};
 
 use super::TestRunProcessor;
 use crate::change_events::ChangeEvent;
@@ -6,40 +10,88 @@ use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::cross_cutting::Log;
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
 
-pub struct TestRunHandler<TCoverageEnabled>
-where
-    TCoverageEnabled: Fn() -> bool
+#[mockall::automock]
+pub trait ProvideBool
+{
+    fn get(&self) -> bool;
+}
+
+pub struct GetBool
+{
+    value: bool
+}
+
+impl GetBool
+{
+    pub fn new(value: bool) -> Self
+    {
+        Self { value }
+    }
+}
+
+impl ProvideBool for GetBool
+{
+    fn get(&self) -> bool
+    {
+        self.value
+    }
+}
+
+pub fn test_run_thread<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>(
+    rx: Receiver<ActorEvent<ChangeEvent>>,
+    mut handler: TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
+) -> JoinHandle<TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>>
+where 
+    TCoverageEnabled : ProvideBool + Send + 'static,
+    TTxTestRun : Tx<TestRun> + Send + 'static,
+    TTxCoverageStatus : Tx<CoverageStatus> + Send + 'static,
+    TLog : Log + Send + 'static
+{
+    thread::spawn(move || {
+        while let Ok(event) = rx.recv()
+        {
+            handler.handle(event.event, event.cancellation);
+        }
+
+        handler
+    })
+}
+
+#[derive(Builder)]
+pub struct TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
 {
     runner: TestRunProcessor,
     coverage: Box<dyn ComputeCoverage + Send>,
-    tests_status_sender: Tx<TestRun>,
-    coverage_status_sender: Tx<CoverageStatus>,
-    log: Box<dyn Log>,
+    tests_status_sender: TTxTestRun,
+    coverage_status_sender: TTxCoverageStatus,
+    log: TLog,
     coverage_enabled: TCoverageEnabled,
     pinned_test: Option<TestId>
 }
 
-impl<TCoverageEnabled> TestRunHandler<TCoverageEnabled>
+impl<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog> TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
 where
-    TCoverageEnabled: Fn() -> bool
+    TCoverageEnabled: ProvideBool,
+    TTxTestRun: Tx<TestRun>,
+    TTxCoverageStatus: Tx<CoverageStatus>,
+    TLog: Log
 {
-    pub fn new(
-        runner: TestRunProcessor,
-        coverage: Box<dyn ComputeCoverage + Send>,
-        tests_status_sender: Tx<TestRun>,
-        coverage_status_sender: Tx<CoverageStatus>,
-        log: Box<dyn Log>,
-        coverage_enabled: TCoverageEnabled
-    ) -> Self
+    pub fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation)
     {
-        Self {
-            runner,
-            coverage,
-            tests_status_sender,
-            coverage_status_sender,
-            log,
-            coverage_enabled,
-            pinned_test: None
+        match event
+        {
+            ChangeEvent::DefaultRun => self.run_tests(cancellation.clone()),
+            ChangeEvent::PinTest { id } =>
+            {
+                self.pinned_test = Some(id);
+                self.run_tests(cancellation.clone());
+            }
+            ChangeEvent::ClearPinnedTests =>
+            {
+                self.pinned_test = None;
+                self.run_tests(cancellation.clone());
+            }
+            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(&id, update_snapshots, cancellation.clone())
         }
     }
 
@@ -130,28 +182,6 @@ where
 
     pub fn coverage_enabled(&self) -> bool
     {
-        (self.coverage_enabled)()
-    }
-}
-
-impl<TCoverageEnabled: Fn() -> bool + Send + 'static> Handler<ChangeEvent> for TestRunHandler<TCoverageEnabled>
-{
-    fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation)
-    {
-        match event
-        {
-            ChangeEvent::DefaultRun => self.run_tests(cancellation.clone()),
-            ChangeEvent::PinTest { id } =>
-            {
-                self.pinned_test = Some(id);
-                self.run_tests(cancellation.clone());
-            }
-            ChangeEvent::ClearPinnedTests =>
-            {
-                self.pinned_test = None;
-                self.run_tests(cancellation.clone());
-            }
-            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(&id, update_snapshots, cancellation.clone())
-        }
+        self.coverage_enabled.get()
     }
 }

@@ -1,109 +1,76 @@
-use crossbeam_channel::{Receiver, RecvError, Sender, TryRecvError};
+use mockall::automock;
 
-use super::{ActorTx, Cancellation};
+use super::Cancellation;
 
-pub fn tx_1_rx_1<T: Send + 'static>() -> (Tx<T>, Rx<T>)
+type Rx<T> = crossbeam_channel::Receiver<T>;
+
+pub fn tx_rx<T: Send + 'static>() -> (impl Tx<T>, Rx<T>)
 {
-    let (sender, receiver) = crossbeam_channel::unbounded();
-    let tx = Tx {
-        implementation: TxImplementation::Channel(sender)
-    };
-    let rx = Rx { receiver };
-
-    (tx, rx)
+    crossbeam_channel::unbounded()
 }
 
-pub fn tx_1_rx_2<T: Send + 'static>() -> (Tx<T>, Rx<T>, Rx<T>)
+pub fn tx_1_rx_2<T: Send + Clone + 'static>() -> (impl Tx<T>, Rx<T>, Rx<T>)
 {
     let (tx1, rx1) = crossbeam_channel::unbounded();
     let (tx2, rx2) = crossbeam_channel::unbounded();
-    let tx = Tx {
-        implementation: TxImplementation::Broadcast(vec![tx1, tx2])
-    };
-    let rx1 = Rx { receiver: rx1 };
-    let rx2 = Rx { receiver: rx2 };
+    let tx = Broadcast { txs: vec![tx1, tx2] };
 
     (tx, rx1, rx2)
 }
 
-enum TxImplementation<T: Send + 'static>
+#[automock]
+pub trait Tx<T>
 {
-    Channel(Sender<T>),
-    Actor(ActorTx<T>),
-    Broadcast(Vec<Sender<T>>),
-
-    Stub
+    fn send(&self, message: T);
 }
 
-pub struct Tx<T: Send + 'static>
+#[automock]
+pub trait TxCancel<T>
 {
-    implementation: TxImplementation<T>
+    fn send(&self, message: T, cancellation: Cancellation);
 }
 
-impl<T: Send + Clone + 'static> Tx<T>
+pub struct CancellableMessage<T>
 {
-    pub fn stub() -> Self
+    pub message: T,
+    pub cancellation: Cancellation
+}
+
+pub struct Broadcast<T>
+{
+    txs: Vec<crossbeam_channel::Sender<T>>
+}
+
+impl<T> Tx<T> for crossbeam_channel::Sender<T>
+{
+    fn send(&self, message: T)
     {
-        Self {
-            implementation: TxImplementation::Stub
-        }
+        self.send(message).expect("failed to send message");
     }
+}
 
-    pub fn send(&mut self, event: T)
+impl<T> Tx<T> for Broadcast<T>
+where
+    T: Clone
+{
+    fn send(&self, message: T)
     {
-        match &mut self.implementation
+        if let Some((last, txs)) = self.txs.split_last()
         {
-            TxImplementation::Channel(sender) => sender.send(event).expect("'Tx' failed, receiver is invalid!"),
-            TxImplementation::Actor(actor_api) => actor_api.send(event, Cancellation::default()),
-            TxImplementation::Broadcast(txs) =>
+            for tx in txs.iter()
             {
-                for tx in txs
-                {
-                    tx.send(event.clone()).expect("'Tx' failed, receiver is invalid!");
-                }
+                tx.send(message.clone()).expect("failed to send_message");
             }
-            TxImplementation::Stub =>
-            {}
+
+            last.send(message).expect("failed to send_message");
         }
     }
 }
 
-pub struct Rx<T: Send + 'static>
+impl<T> TxCancel<T> for crossbeam_channel::Sender<CancellableMessage<T>>
 {
-    receiver: Receiver<T>
-}
-
-impl<T: Send + 'static> Rx<T>
-{
-    pub fn recv(&self) -> Result<T, RecvError>
+    fn send(&self, message: T, cancellation: Cancellation)
     {
-        self.receiver.recv()
-    }
-
-    pub fn try_recv(&self) -> Result<T, TryRecvError>
-    {
-        self.receiver.try_recv()
-    }
-
-    pub fn try_iter(&self) -> crossbeam_channel::TryIter<'_, T>
-    {
-        self.receiver.try_iter()
-    }
-
-    pub fn stub() -> Self
-    {
-        Self {
-            receiver: crossbeam_channel::never()
-        }
-    }
-}
-
-impl<T: Send + 'static> From<ActorTx<T>> for Tx<T>
-{
-    fn from(actor_tx: ActorTx<T>) -> Self
-    {
-        Tx {
-            implementation: TxImplementation::Actor(actor_tx)
-        }
+        self.send(CancellableMessage { message, cancellation }).expect("failed to send_message");
     }
 }

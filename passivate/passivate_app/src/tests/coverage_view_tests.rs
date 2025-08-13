@@ -6,7 +6,7 @@ use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_core::test_helpers::fakes::test_run_actor_fakes;
-use passivate_delegation::{Rx, Tx, tx_1_rx_1};
+use passivate_delegation::{Rx, Tx, tx_rx};
 use stdext::function_name;
 
 use crate::views::{CoverageView, View};
@@ -14,7 +14,7 @@ use crate::views::{CoverageView, View};
 #[test]
 pub fn show_coverage_hierarchy_fully_collapsed()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (mut coverage_sender, coverage_receiver) = tx_rx();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
@@ -44,7 +44,7 @@ pub fn show_coverage_hierarchy_fully_collapsed()
 #[test]
 pub fn show_coverage_hierarchy_expand_children()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (mut coverage_sender, coverage_receiver) = tx_rx();
 
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
@@ -165,7 +165,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 #[test]
 pub fn show_error()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (mut coverage_sender, coverage_receiver) = tx_rx();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
@@ -199,13 +199,13 @@ fn test_name(function_name: &str) -> String
 //         Err(CoverageError::GrcovNotInstalled(std::io::ErrorKind::NotFound))
 //     });
 
-//     let (tests_sender, _tests_receiver) = tx_1_rx_1();
-//     let (coverage_sender, coverage_receiver) = tx_1_rx_1();
+//     let (tests_sender, _tests_receiver) = tx_rx();
+//     let (coverage_sender, coverage_receiver) = tx_rx();
 //     let mut test_runner = ChangeEventHandler::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
 
 //     test_runner.handle_event(ChangeEvent::File);
 
-//     let (change_event_sender, _change_event_receiver) = tx_1_rx_1();
+//     let (change_event_sender, _change_event_receiver) = tx_rx();
 //     let mut coverage_view = CoverageView::new(coverage_receiver, change_event_sender);
 
 //     let ui = |ui: &mut egui::Ui|{

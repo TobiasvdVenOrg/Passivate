@@ -3,28 +3,35 @@ use std::io::Error as IoError;
 
 use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::{assert_that, is_variant};
-use passivate_delegation::{ActorEvent, ActorTx, Cancellation, Cancelled, Handler, Tx, tx_1_rx_1};
+use passivate_delegation::{Cancellation, Cancelled, Handler, MockTx, Tx, tx_rx};
 use pretty_assertions::assert_eq;
 use stdext::function_name;
 
 use crate::change_events::ChangeEvent;
-use crate::configuration::{ConfigurationManager, PassivateConfig};
-use crate::test_execution::{TestRunError, TestRunProcessor, mock_run_tests, stub_parse_output};
-use crate::test_helpers::builder::nextest_builder;
-use crate::test_helpers::fakes::test_run_actor_fakes;
+use crate::configuration::ConfigurationManager;
+use crate::coverage::MockComputeCoverage;
+use crate::cross_cutting::MockLog;
+use crate::test_execution::{mock_run_tests, stub_parse_output, test_run_thread, GetBool, MockProvideBool, TestRunError, TestRunHandler, TestRunProcessor};
+use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestId, TestRunState};
 
 #[test]
 #[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
-    let (test_run_tx, test_run_rx) = tx_1_rx_1();
-    let mut handler = nextest_builder()
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .receive_tests_status(test_run_tx)
+    use crate::configuration::TestRunnerImplementation;
+
+    let (test_run_tx, test_run_rx) = tx_rx();
+
+    let mut handler = TestRunSetup::builder()
+        .test_runner(TestRunnerImplementation::Nextest)
+        .output_path(function_name!())
+        .workspace_path("simple_project")
+        .tests_status_sender(test_run_tx)
+        .coverage_sender(MockTx::default())
+        .build()
         .clean_output()
-        .build();
+        .build_test_run_handler();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
@@ -64,13 +71,17 @@ pub fn handle_single_test_run()
 #[cfg(target_os = "windows")]
 pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 {
-    let (test_run_tx, test_run_rx) = tx_1_rx_1();
-    let mut handler = nextest_builder()
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .receive_tests_status(test_run_tx)
+    let (test_run_tx, test_run_rx) = tx_rx();
+
+    let mut handler = TestRunSetup::builder()
+        .test_runner(TestRunnerImplementation::Nextest)
+        .output_path(function_name!())
+        .workspace_path("simple_project")
+        .tests_status_sender(test_run_tx)
+        .coverage_sender(MockTx::default())
+        .build()
         .clean_output()
-        .build();
+        .build_test_run_handler();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
@@ -96,13 +107,19 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 #[cfg(target_os = "windows")]
 pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 {
-    let (test_run_tx, test_run_rx) = tx_1_rx_1();
-    let mut handler = nextest_builder()
-        .with_workspace("simple_project")
-        .with_output(function_name!())
-        .receive_tests_status(test_run_tx)
+    use crate::configuration::TestRunnerImplementation;
+    use crate::test_helpers::test_run_setup::TestRunSetup;
+
+    let (test_run_tx, test_run_rx) = tx_rx();
+    let mut handler = TestRunSetup::builder()
+        .test_runner(TestRunnerImplementation::Nextest)
+        .workspace_path("simple_project")
+        .output_path(function_name!())
+        .tests_status_sender(test_run_tx)
+        .coverage_sender(MockTx::default())
+        .build()
         .clean_output()
-        .build();
+        .build_test_run_handler();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
@@ -124,10 +141,17 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 #[cfg(target_os = "windows")]
 pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snapshot_with_approved() -> Result<(), IoError>
 {
-    let builder = nextest_builder().with_workspace("project_snapshot_tests").with_output(function_name!()).clean_snapshots();
+    let setup = TestRunSetup::builder()
+        .test_runner(TestRunnerImplementation::Nextest)
+        .output_path(function_name!())
+        .workspace_path("simple_project")
+        .tests_status_sender(test_run_tx)
+        .coverage_sender(MockTx::default())
+        .build()
+        .clean_snapshots();
 
-    let expected_approved_snapshot = builder.get_snapshots_path().join("example_snapshot.png");
-    let mut handler = builder.build();
+    let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
+    let mut handler = setup.build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
@@ -151,15 +175,17 @@ pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snaps
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
-    let (test_run_tx, test_run_rx) = tx_1_rx_1();
+    let (test_run_tx, test_run_rx) = tx_rx();
 
-    let builder = nextest_builder()
-        .with_workspace("simple_project_failing_tests")
-        .with_output(function_name!())
-        .receive_tests_status(test_run_tx)
-        .clean_output();
-
-    let mut handler = builder.build();
+    let mut handler = TestRunSetup::builder()
+        .test_runner(TestRunnerImplementation::Nextest)
+        .workspace_path("simple_project_failing_tests")
+        .output_path(function_name!())
+        .tests_status_sender(test_run_tx)
+        .coverage_sender(MockTx::default())
+        .build()
+        .clean_output()
+        .build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
@@ -192,12 +218,17 @@ pub fn when_test_run_fails_error_is_reported()
     run_tests.expect_run_tests().returning(|_, _, _| Err(TestRunError::Cancelled(Cancelled)));
 
     let processor = TestRunProcessor::new(run_tests, stub_parse_output());
-    let (tests_sender, tests_receiver) = tx_1_rx_1();
-    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let mut actor = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(test_run_rx, processor, tests_sender);
-    
-    drop(test_run_tx);
-    let mut handler = actor.into_inner();
+    let (tests_sender, tests_receiver) = tx_rx();
+
+    let mut handler = TestRunHandler::builder()
+        .runner(processor)
+        .coverage(Box::new(MockComputeCoverage::default()))
+        .tests_status_sender(tests_sender)
+        .coverage_status_sender(MockTx::default())
+        .log(MockLog::default())
+        .coverage_enabled(MockProvideBool::default())
+        .pinned_test(TestId::new("stub_test_id"))
+        .build();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
@@ -220,15 +251,22 @@ pub fn when_configuration_changes_tests_are_run()
     run_tests.expect_run_test().returning(|_, _, _, _| Err(TestRunError::Cancelled(Cancelled)));
 
     let test_run_processor = TestRunProcessor::new(run_tests, stub_parse_output());
-    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let tx = ActorTx::new(test_run_tx);
+    let (change_event_tx, change_event_rx) = crossbeam_channel::unbounded();
+    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded();
 
-    let mut test_run_actor = test_run_actor_fakes::stub_with_test_run_processor_and_tests_sender(test_run_rx, test_run_processor, Tx::stub());
-    let mut configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), tx.into());
+    let handler = TestRunHandler::builder()
+        .runner(test_run_processor)
+        .tests_status_sender(test_run_tx)
+        .coverage(Box::new(MockComputeCoverage::default()))
+        .coverage_enabled(GetBool::new(false))
+        .coverage_status_sender(MockTx::default())
+        .build();
+
+    let mut configuration = ConfigurationManager::default_config(MockTx::default(), change_event_tx);
+
+    let thread = test_run_thread(change_event_rx, handler);
 
     configuration.update(|c| c.coverage_enabled = true);
 
-    drop(configuration);
-
-    let _test_run_handler = test_run_actor.into_inner();
+    handler = thread.join();
 }

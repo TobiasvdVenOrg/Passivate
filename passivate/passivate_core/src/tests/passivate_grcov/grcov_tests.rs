@@ -4,21 +4,20 @@ use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
 
-use passivate_delegation::{Cancellation, tx_1_rx_1};
+use passivate_delegation::{Cancellation, tx_rx};
 use pretty_assertions::assert_eq;
 use rstest::*;
 use stdext::function_name;
 
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
-use crate::test_helpers::builder::*;
 
 #[rstest]
 #[case::cargo(cargo_builder())]
 #[case::nextest(nextest_builder())]
-pub fn test_run_sends_coverage_result(#[case] builder: ChangeEventHandlerBuilder) -> Result<(), IoError>
+pub fn test_run_sends_coverage_result<TTxTestRun, TTxCoverageStatus>(#[case] builder: ChangeEventHandlerBuilder<TTxTestRun, TTxCoverageStatus>) -> Result<(), IoError>
 {
-    let (coverage_sender, coverage_receiver) = tx_1_rx_1();
+    let (coverage_sender, coverage_receiver) = tx_rx();
     let mut runner = builder
         .with_workspace("simple_project")
         .with_output(function_name!())

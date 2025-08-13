@@ -10,23 +10,12 @@ use super::CovdirJson;
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind};
 use crate::passivate_cargo::cargo_workspace;
 
+#[derive(bon::Builder)]
 pub struct Grcov
 {
     workspace_path: PathBuf,
     output_path: PathBuf,
     binary_path: PathBuf
-}
-
-impl Grcov
-{
-    pub fn new(workspace_path: &Path, output_path: &Path, binary_path: &Path) -> Self
-    {
-        Self {
-            workspace_path: workspace_path.to_path_buf(),
-            output_path: output_path.to_path_buf(),
-            binary_path: binary_path.to_path_buf()
-        }
-    }
 }
 
 impl ComputeCoverage for Grcov

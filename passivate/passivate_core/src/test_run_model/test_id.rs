@@ -6,8 +6,8 @@ pub struct TestId
 
 impl TestId
 {
-    pub fn new(name: String) -> Self
+    pub fn new<T: ToString>(name: T) -> Self
     {
-        Self { name }
+        Self { name: name.to_string() }
     }
 }

@@ -9,41 +9,22 @@ pub trait Log: Send
     fn info(&mut self, message: &str);
 }
 
-pub fn stub_log() -> Box<MockLog>
+pub struct TxLog<TTx>
 {
-    let mut log = MockLog::new();
-    log.expect_info().returning(|_| {});
-
-    Box::new(log)
+    sender: TTx
 }
 
-pub struct ChannelLog
+impl<TTx> TxLog<TTx>
 {
-    sender: Tx<LogEvent>
-}
-
-impl ChannelLog
-{
-    pub fn new(sender: Tx<LogEvent>) -> Self
+    pub fn new(sender: TTx) -> Self
     {
         Self { sender }
     }
-
-    pub fn boxed(sender: Tx<LogEvent>) -> Box<Self>
-    {
-        Box::new(Self::new(sender))
-    }
 }
 
-impl From<ChannelLog> for Box<Tx<LogEvent>>
-{
-    fn from(log: ChannelLog) -> Self
-    {
-        Box::new(log.sender)
-    }
-}
-
-impl Log for ChannelLog
+impl<TTx> Log for TxLog<TTx>
+where
+    TTx: Tx<LogEvent> + Send
 {
     fn info(&mut self, message: &str)
     {

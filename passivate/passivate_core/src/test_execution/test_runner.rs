@@ -9,25 +9,13 @@ use passivate_delegation::Cancellation;
 use super::{RunTests, TestRunError, TestRunIterator};
 use crate::configuration::TestRunnerImplementation;
 
+#[derive(bon::Builder)]
 pub struct TestRunner
 {
     target: OsString,
     working_dir: PathBuf,
     target_dir: PathBuf,
     coverage_output_dir: PathBuf
-}
-
-impl TestRunner
-{
-    pub fn new(target: OsString, working_dir: PathBuf, target_dir: PathBuf, coverage_output_dir: PathBuf) -> Self
-    {
-        Self {
-            target,
-            working_dir,
-            target_dir,
-            coverage_output_dir
-        }
-    }
 }
 
 impl RunTests for TestRunner

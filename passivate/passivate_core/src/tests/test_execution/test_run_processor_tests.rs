@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
+use crossbeam_channel::Receiver;
 use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::{assert_that, is_variant};
-use passivate_delegation::{Cancellation, Rx, tx_1_rx_1};
+use passivate_delegation::{Cancellation, tx_rx};
 use rstest::rstest;
 
 use crate::configuration::TestRunnerImplementation;
@@ -11,7 +12,7 @@ use crate::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState}
 
 struct TestRunIterator
 {
-    rx: Rx<TestRun>
+    rx: Receiver<TestRun>
 }
 
 impl Iterator for TestRunIterator
@@ -105,7 +106,7 @@ b
 "#;
 
     let mut processor = build_processor(&TestRunnerImplementation::Nextest, test_output);
-    let (mut tx, rx) = tx_1_rx_1();
+    let (mut tx, rx) = tx_rx();
     let instrument_coverage = false;
 
     processor.run_tests(&mut tx, instrument_coverage, Cancellation::default()).unwrap();
@@ -128,7 +129,7 @@ b
 fn run(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunIterator
 {
     let mut processor = build_processor(implementation, test_output);
-    let (mut tx, rx) = tx_1_rx_1();
+    let (mut tx, rx) = tx_rx();
     let instrument_coverage = true;
 
     processor.run_tests(&mut tx, instrument_coverage, Cancellation::default()).unwrap();

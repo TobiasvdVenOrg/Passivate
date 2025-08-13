@@ -29,7 +29,6 @@ pub mod test_execution
     mod_use!(test_run_processor);
     mod_use!(test_run_errors);
     mod_use!(test_run_handler);
-    mod_use!(test_run_actor);
 }
 
 pub mod test_run_model
@@ -79,12 +78,7 @@ pub mod configuration
 pub mod test_helpers
 {
     pub mod assert_matches;
-    pub mod builder;
-
-    pub mod fakes
-    {
-        pub mod test_run_actor_fakes;
-    }
+    pub mod test_run_setup;
 }
 
 #[cfg(test)]
