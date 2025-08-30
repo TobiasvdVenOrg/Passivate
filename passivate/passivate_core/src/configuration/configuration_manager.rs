@@ -2,24 +2,23 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use passivate_delegation::{ActorEvent, Cancellation, Tx};
 
+use super::{ConfigurationEvent, PassivateConfig};
 use crate::change_events::ChangeEvent;
 
-use super::{ConfigurationEvent, PassivateConfig};
+type TxConfiguration = Arc<dyn Tx<ConfigurationEvent>>;
+type TxChangeEvent = Arc<dyn Tx<ActorEvent<ChangeEvent>>>;
 
 #[derive(Clone)]
-pub struct ConfigurationManager<TConfigurationTx, TChangeEventTx>
+pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfig>>,
-    configuration_tx: TConfigurationTx,
-    change_event_tx: TChangeEventTx
+    configuration_tx: TxConfiguration,
+    change_event_tx: TxChangeEvent
 }
 
-impl<TConfigurationTx, TChangeEventTx> ConfigurationManager<TConfigurationTx, TChangeEventTx>
-where
-    TConfigurationTx: Tx<ConfigurationEvent>,
-    TChangeEventTx: Tx<ActorEvent<ChangeEvent>>
+impl ConfigurationManager
 {
-    pub fn new(configuration: PassivateConfig, configuration_tx: TConfigurationTx, change_event_tx: TChangeEventTx) -> Self
+    pub fn new(configuration: PassivateConfig, configuration_tx: TxConfiguration, change_event_tx: TxChangeEvent) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
@@ -28,7 +27,7 @@ where
         }
     }
 
-    pub fn default_config(configuration_tx: TConfigurationTx, change_event_tx: TChangeEventTx) -> Self
+    pub fn default_config(configuration_tx: TxConfiguration, change_event_tx: TxChangeEvent) -> Self
     {
         Self::new(PassivateConfig::default(), configuration_tx, change_event_tx)
     }
@@ -46,7 +45,10 @@ where
         drop(configuration);
 
         self.configuration_tx.send(ConfigurationEvent { old, new });
-        self.change_event_tx.send(ActorEvent { event: ChangeEvent::DefaultRun, cancellation: Cancellation::default() });
+        self.change_event_tx.send(ActorEvent {
+            event: ChangeEvent::DefaultRun,
+            cancellation: Cancellation::default()
+        });
     }
 
     pub fn get_copy(&self) -> PassivateConfig

@@ -9,11 +9,20 @@ pub trait ComputeCoverage
     fn clean_coverage_output(&self) -> Result<(), CoverageError>;
 }
 
-pub fn stub_compute_coverage() -> Box<MockComputeCoverage>
+pub type BComputeCoverage = Box<dyn ComputeCoverage + Send>;
+pub trait Stub<T>
 {
-    let mut mock = MockComputeCoverage::new();
-    mock.expect_clean_coverage_output().returning(|| Ok(()));
-    mock.expect_compute_coverage().returning(|_cancellation| Ok(CoverageStatus::Disabled));
+    fn stub() -> T;   
+}
 
-    Box::new(mock)
+impl Stub<BComputeCoverage> for BComputeCoverage
+{
+    fn stub() -> BComputeCoverage 
+    {
+        let mut mock = MockComputeCoverage::new();
+        mock.expect_clean_coverage_output().returning(|| Ok(()));
+        mock.expect_compute_coverage().returning(|_cancellation| Ok(CoverageStatus::Disabled));
+
+        Box::new(mock)
+    }
 }

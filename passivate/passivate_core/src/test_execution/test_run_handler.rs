@@ -2,12 +2,13 @@ use std::thread::{self, JoinHandle};
 
 use bon::Builder;
 use crossbeam_channel::Receiver;
-use passivate_delegation::{ActorEvent, Cancellation, Handler, Tx};
+use passivate_delegation::{ActorEvent, BTx, Cancellation, Handler, Tx};
 
 use super::TestRunProcessor;
 use crate::change_events::ChangeEvent;
-use crate::coverage::{ComputeCoverage, CoverageStatus};
-use crate::cross_cutting::Log;
+use crate::configuration::ConfigurationManager;
+use crate::coverage::{BComputeCoverage, ComputeCoverage, CoverageStatus};
+use crate::cross_cutting::{BLog, Log};
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
 
 #[mockall::automock]
@@ -37,15 +38,10 @@ impl ProvideBool for GetBool
     }
 }
 
-pub fn test_run_thread<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>(
+pub fn test_run_thread(
     rx: Receiver<ActorEvent<ChangeEvent>>,
-    mut handler: TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
-) -> JoinHandle<TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>>
-where 
-    TCoverageEnabled : ProvideBool + Send + 'static,
-    TTxTestRun : Tx<TestRun> + Send + 'static,
-    TTxCoverageStatus : Tx<CoverageStatus> + Send + 'static,
-    TLog : Log + Send + 'static
+    mut handler: TestRunHandler
+) -> JoinHandle<TestRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
@@ -58,23 +54,18 @@ where
 }
 
 #[derive(Builder)]
-pub struct TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
+pub struct TestRunHandler
 {
     runner: TestRunProcessor,
-    coverage: Box<dyn ComputeCoverage + Send>,
-    tests_status_sender: TTxTestRun,
-    coverage_status_sender: TTxCoverageStatus,
-    log: TLog,
-    coverage_enabled: TCoverageEnabled,
+    coverage: BComputeCoverage,
+    tests_status_sender: BTx<TestRun>,
+    coverage_status_sender: BTx<CoverageStatus>,
+    log: BLog,
+    configuration: ConfigurationManager,
     pinned_test: Option<TestId>
 }
 
-impl<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog> TestRunHandler<TCoverageEnabled, TTxTestRun, TTxCoverageStatus, TLog>
-where
-    TCoverageEnabled: ProvideBool,
-    TTxTestRun: Tx<TestRun>,
-    TTxCoverageStatus: Tx<CoverageStatus>,
-    TLog: Log
+impl TestRunHandler
 {
     pub fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation)
     {

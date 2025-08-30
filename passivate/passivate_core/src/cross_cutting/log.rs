@@ -9,6 +9,8 @@ pub trait Log: Send
     fn info(&mut self, message: &str);
 }
 
+pub type BLog = Box<dyn Log>;
+
 pub struct TxLog<TTx>
 {
     sender: TTx

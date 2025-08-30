@@ -4,12 +4,14 @@ use super::Cancellation;
 
 type Rx<T> = crossbeam_channel::Receiver<T>;
 
-pub fn tx_rx<T: Send + 'static>() -> (impl Tx<T>, Rx<T>)
+pub fn tx_rx<T>() -> (impl Tx<T>, Rx<T>)
+    where T : Send + Sync
 {
     crossbeam_channel::unbounded()
 }
 
-pub fn tx_1_rx_2<T: Send + Clone + 'static>() -> (impl Tx<T>, Rx<T>, Rx<T>)
+pub fn tx_1_rx_2<T>() -> (impl Tx<T>, Rx<T>, Rx<T>)
+    where T : Clone + Send + Sync
 {
     let (tx1, rx1) = crossbeam_channel::unbounded();
     let (tx2, rx2) = crossbeam_channel::unbounded();
@@ -19,13 +21,25 @@ pub fn tx_1_rx_2<T: Send + Clone + 'static>() -> (impl Tx<T>, Rx<T>, Rx<T>)
 }
 
 #[automock]
-pub trait Tx<T>
+pub trait Tx<T> : Send + Sync
+    where T : Send + Sync
 {
     fn send(&self, message: T);
 }
 
+pub type BTx<T> = Box<dyn Tx<T>>;
+
+impl<T> Tx<T> for BTx<T>
+    where T : Send + Sync
+{
+    fn send(&self, message:T) {
+        (**self).send(message);
+    }
+}
+
 #[automock]
-pub trait TxCancel<T>
+pub trait TxCancel<T> : Send + Sync
+    where T : Send + Sync
 {
     fn send(&self, message: T, cancellation: Cancellation);
 }
@@ -37,11 +51,13 @@ pub struct CancellableMessage<T>
 }
 
 pub struct Broadcast<T>
+    where T : Send + Sync
 {
     txs: Vec<crossbeam_channel::Sender<T>>
 }
 
 impl<T> Tx<T> for crossbeam_channel::Sender<T>
+    where T : Send + Sync
 {
     fn send(&self, message: T)
     {
@@ -51,7 +67,7 @@ impl<T> Tx<T> for crossbeam_channel::Sender<T>
 
 impl<T> Tx<T> for Broadcast<T>
 where
-    T: Clone
+    T: Clone + Send + Sync
 {
     fn send(&self, message: T)
     {
@@ -68,6 +84,7 @@ where
 }
 
 impl<T> TxCancel<T> for crossbeam_channel::Sender<CancellableMessage<T>>
+    where T : Send + Sync
 {
     fn send(&self, message: T, cancellation: Cancellation)
     {

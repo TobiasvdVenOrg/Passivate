@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use passivate_delegation::Tx;
+use passivate_delegation::{BTx, Tx};
 
 use crate::configuration::TestRunnerImplementation;
 use crate::coverage::CoverageStatus;
@@ -12,11 +12,11 @@ use crate::test_execution::{GetBool, ParseOutput, TestRunHandler, TestRunProcess
 use crate::test_run_model::TestRun;
 
 #[derive(bon::Builder)]
-pub struct TestRunSetup<TTxTestRun, TTxCoverageStatus>
+pub struct TestRunSetup
 {
     test_runner: TestRunnerImplementation,
-    tests_status_sender: TTxTestRun,
-    coverage_sender: TTxCoverageStatus,
+    tests_status_sender: BTx<TestRun>,
+    coverage_sender: BTx<CoverageStatus>,
 
     #[builder(into, default = test_data_path())]
     base_workspace_path: PathBuf,
@@ -51,7 +51,7 @@ where
     test_data_path().join(workspace_path)
 }
 
-impl<TTxTestRun, TTxCoverageStatus> TestRunSetup<TTxTestRun, TTxCoverageStatus>
+impl TestRunSetup
 {
     pub fn build_grcov(&self) -> Grcov
     {
