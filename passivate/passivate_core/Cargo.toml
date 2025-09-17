@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_delegation = { path = "../passivate_delegation" }
-passivate_delegation_proc = { path = "../passivate_delegation_proc" }
+passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 
 futures = "0.3.31"
 fs_extra = "1.3.0"

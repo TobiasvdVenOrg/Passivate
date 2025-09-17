@@ -2,46 +2,35 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use passivate_delegation::{BTx, Tx};
+use bon::bon;
+use passivate_delegation::Tx;
 
 use crate::configuration::TestRunnerImplementation;
 use crate::coverage::CoverageStatus;
-use crate::cross_cutting::MockLog;
 use crate::passivate_grcov::Grcov;
 use crate::test_execution::{GetBool, ParseOutput, TestRunHandler, TestRunProcessor, TestRunner, build_test_output_parser};
 use crate::test_run_model::TestRun;
 
-#[derive(bon::Builder)]
 pub struct TestRunSetup
 {
     test_runner: TestRunnerImplementation,
-    tests_status_sender: BTx<TestRun>,
-    coverage_sender: BTx<CoverageStatus>,
-
-    #[builder(into, default = test_data_path())]
-    base_workspace_path: PathBuf,
-
-    #[builder(into, default = test_output_path())]
-    base_output_path: PathBuf,
-
-    #[builder(into)]
-    workspace_path: PathBuf,
-
-    #[builder(into)]
     output_path: PathBuf,
-
-    #[builder(default = false)]
+    workspace_path: PathBuf,
+    base_output_path: PathBuf,
+    base_workspace_path: PathBuf,
+    tests_status_sender: Tx<TestRun>,
+    coverage_sender: Tx<CoverageStatus>,
     coverage_enabled: bool
-}
-
-pub fn test_data_path() -> PathBuf
-{
-    fs::canonicalize(PathBuf::from("../../test_data")).expect("test data path did not exist!")
 }
 
 pub fn test_output_path() -> PathBuf
 {
     fs::canonicalize(PathBuf::from("../../test_output")).expect("test output path did not exist!")
+}
+
+pub fn test_data_path() -> PathBuf
+{
+    fs::canonicalize(PathBuf::from("../../test_data")).expect("test data path did not exist!")
 }
 
 pub fn get_default_workspace_path<P>(workspace_path: P) -> PathBuf
@@ -51,8 +40,33 @@ where
     test_data_path().join(workspace_path)
 }
 
+#[bon]
+#[cfg(test)]
 impl TestRunSetup
 {
+    #[builder]
+    pub fn nextest(
+        #[builder(start_fn)] output_path: PathBuf,
+        #[builder(start_fn)] workspace_path: PathBuf,
+        #[builder(default = test_output_path())] base_output_path: PathBuf,
+        #[builder(default = test_data_path())] base_workspace_path: PathBuf,
+        #[builder(default = false)] coverage_enabled: bool,
+        #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
+        #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>
+    ) -> Self
+    {
+        Self {
+            test_runner: TestRunnerImplementation::Nextest,
+            output_path,
+            workspace_path,
+            base_output_path,
+            base_workspace_path,
+            coverage_enabled,
+            tests_status_sender,
+            coverage_sender
+        }
+    }
+
     pub fn build_grcov(&self) -> Grcov
     {
         Grcov::builder()
@@ -62,10 +76,7 @@ impl TestRunSetup
             .build()
     }
 
-    pub fn build_test_run_handler(self) -> TestRunHandler<GetBool, TTxTestRun, TTxCoverageStatus, MockLog>
-    where
-        TTxTestRun: Tx<TestRun>,
-        TTxCoverageStatus: Tx<CoverageStatus>
+    pub fn build_test_run_handler(self) -> TestRunHandler
     {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");

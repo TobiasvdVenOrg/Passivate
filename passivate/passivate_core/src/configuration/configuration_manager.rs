@@ -5,20 +5,17 @@ use passivate_delegation::{ActorEvent, Cancellation, Tx};
 use super::{ConfigurationEvent, PassivateConfig};
 use crate::change_events::ChangeEvent;
 
-type TxConfiguration = Arc<dyn Tx<ConfigurationEvent>>;
-type TxChangeEvent = Arc<dyn Tx<ActorEvent<ChangeEvent>>>;
-
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfig>>,
-    configuration_tx: TxConfiguration,
-    change_event_tx: TxChangeEvent
+    configuration_tx: Tx<ConfigurationEvent>,
+    change_event_tx: Tx<ChangeEvent>
 }
 
 impl ConfigurationManager
 {
-    pub fn new(configuration: PassivateConfig, configuration_tx: TxConfiguration, change_event_tx: TxChangeEvent) -> Self
+    pub fn new(configuration: PassivateConfig, configuration_tx: Tx<ConfigurationEvent>, change_event_tx: Tx<ChangeEvent>) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
@@ -27,7 +24,7 @@ impl ConfigurationManager
         }
     }
 
-    pub fn default_config(configuration_tx: TxConfiguration, change_event_tx: TxChangeEvent) -> Self
+    pub fn default_config(configuration_tx: Tx<ConfigurationEvent>, change_event_tx: Tx<ChangeEvent>) -> Self
     {
         Self::new(PassivateConfig::default(), configuration_tx, change_event_tx)
     }

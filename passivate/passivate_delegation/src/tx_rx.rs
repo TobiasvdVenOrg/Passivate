@@ -1,93 +1,96 @@
-use mockall::automock;
+use syn::ItemStruct;
 
 use super::Cancellation;
 
 type Rx<T> = crossbeam_channel::Receiver<T>;
 
-pub fn tx_rx<T>() -> (impl Tx<T>, Rx<T>)
-    where T : Send + Sync
+enum Mode<T>
 {
-    crossbeam_channel::unbounded()
+    Single(crossbeam_channel::Sender<T>),
+    Multi(Vec<crossbeam_channel::Sender<T>>)
 }
 
-pub fn tx_1_rx_2<T>() -> (impl Tx<T>, Rx<T>, Rx<T>)
-    where T : Clone + Send + Sync
+#[faux::create]
+pub struct Tx<T>
 {
-    let (tx1, rx1) = crossbeam_channel::unbounded();
-    let (tx2, rx2) = crossbeam_channel::unbounded();
-    let tx = Broadcast { txs: vec![tx1, tx2] };
-
-    (tx, rx1, rx2)
+    mode: Mode<T>
 }
 
-#[automock]
-pub trait Tx<T> : Send + Sync
-    where T : Send + Sync
-{
-    fn send(&self, message: T);
-}
-
-pub type BTx<T> = Box<dyn Tx<T>>;
-
-impl<T> Tx<T> for BTx<T>
-    where T : Send + Sync
-{
-    fn send(&self, message:T) {
-        (**self).send(message);
-    }
-}
-
-#[automock]
-pub trait TxCancel<T> : Send + Sync
-    where T : Send + Sync
-{
-    fn send(&self, message: T, cancellation: Cancellation);
-}
-
-pub struct CancellableMessage<T>
-{
-    pub message: T,
-    pub cancellation: Cancellation
-}
-
-pub struct Broadcast<T>
-    where T : Send + Sync
-{
-    txs: Vec<crossbeam_channel::Sender<T>>
-}
-
-impl<T> Tx<T> for crossbeam_channel::Sender<T>
-    where T : Send + Sync
-{
-    fn send(&self, message: T)
-    {
-        self.send(message).expect("failed to send message");
-    }
-}
-
-impl<T> Tx<T> for Broadcast<T>
+#[faux::methods]
+impl<T> Tx<T>
 where
     T: Clone + Send + Sync
 {
-    fn send(&self, message: T)
+    pub fn new() -> (Tx<T>, Rx<T>)
     {
-        if let Some((last, txs)) = self.txs.split_last()
-        {
-            for tx in txs.iter()
-            {
-                tx.send(message.clone()).expect("failed to send_message");
-            }
+        let (tx, rx) = crossbeam_channel::unbounded();
 
-            last.send(message).expect("failed to send_message");
+        (Tx { mode: Mode::Single(tx) }, rx)
+    }
+
+    pub fn multi_2() -> (Tx<T>, Rx<T>, Rx<T>)
+    where
+        T: Clone + Send
+    {
+        let (tx1, rx1) = crossbeam_channel::unbounded();
+        let (tx2, rx2) = crossbeam_channel::unbounded();
+        let tx = Tx {
+            mode: Mode::Multi(vec![tx1, tx2])
+        };
+
+        (tx, rx1, rx2)
+    }
+
+    pub fn send(&self, message: T)
+    {
+        match &self.mode
+        {
+            Mode::Single(sender) => sender.send(message).expect("failed to send single message"),
+            Mode::Multi(senders) =>
+            {
+                if let Some((last, txs)) = senders.split_last()
+                {
+                    for tx in txs.iter()
+                    {
+                        tx.send(message.clone()).expect("failed to send multi message");
+                    }
+
+                    last.send(message).expect("failed to send multi message");
+                }
+            }
         }
     }
 }
 
-impl<T> TxCancel<T> for crossbeam_channel::Sender<CancellableMessage<T>>
-    where T : Send + Sync
+#[cfg(test)]
+impl<T> Tx<T>
+where
+    T: Clone + Send + Sync
 {
-    fn send(&self, message: T, cancellation: Cancellation)
+    pub fn stub() -> Self
     {
-        self.send(CancellableMessage { message, cancellation }).expect("failed to send_message");
+        let mut tx = Tx::faux();
+        tx._when_send().then(|_| { });
+
+        tx
     }
+}
+
+pub struct TxCancel<T>(Tx<CancellableMessage<T>>);
+
+impl<T> TxCancel<T>
+where
+    T: Clone + Send + Sync
+{
+    pub fn send(&self, message: T, cancellation: Cancellation)
+    {
+        self.0.send(CancellableMessage { message, cancellation });
+    }
+}
+
+#[derive(Clone)]
+pub struct CancellableMessage<T>
+{
+    pub message: T,
+    pub cancellation: Cancellation
 }

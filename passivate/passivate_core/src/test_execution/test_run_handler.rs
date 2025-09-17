@@ -2,13 +2,13 @@ use std::thread::{self, JoinHandle};
 
 use bon::Builder;
 use crossbeam_channel::Receiver;
-use passivate_delegation::{ActorEvent, BTx, Cancellation, Handler, Tx};
+use passivate_delegation::{ActorEvent, Cancellation, Handler, Tx};
 
 use super::TestRunProcessor;
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::{BComputeCoverage, ComputeCoverage, CoverageStatus};
-use crate::cross_cutting::{BLog, Log};
+use crate::cross_cutting::LogEvent;
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
 
 #[mockall::automock]
@@ -38,10 +38,7 @@ impl ProvideBool for GetBool
     }
 }
 
-pub fn test_run_thread(
-    rx: Receiver<ActorEvent<ChangeEvent>>,
-    mut handler: TestRunHandler
-) -> JoinHandle<TestRunHandler>
+pub fn test_run_thread<'a>(rx: Receiver<ActorEvent<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
@@ -58,9 +55,9 @@ pub struct TestRunHandler
 {
     runner: TestRunProcessor,
     coverage: BComputeCoverage,
-    tests_status_sender: BTx<TestRun>,
-    coverage_status_sender: BTx<CoverageStatus>,
-    log: BLog,
+    tests_status_sender: Tx<TestRun>,
+    coverage_status_sender: Tx<CoverageStatus>,
+    log: Tx<LogEvent>,
     configuration: ConfigurationManager,
     pinned_test: Option<TestId>
 }
@@ -112,7 +109,7 @@ impl TestRunHandler
             return;
         }
 
-        let test_output = self.runner.run_tests(&mut self.tests_status_sender, coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(self.tests_status_sender, coverage_enabled, cancellation.clone());
 
         if cancellation.is_cancelled()
         {

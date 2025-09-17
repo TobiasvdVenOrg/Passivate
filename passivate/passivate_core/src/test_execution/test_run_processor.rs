@@ -26,7 +26,7 @@ impl TestRunProcessor
         }
     }
 
-    fn update(&mut self, event: TestRunEvent, sender: &mut impl Tx<TestRun>)
+    fn update(&mut self, event: TestRunEvent, sender: &mut Tx<TestRun>)
     {
         if self.test_run.update(event)
         {
@@ -34,7 +34,7 @@ impl TestRunProcessor
         }
     }
 
-    pub fn run_tests(&mut self, sender: &mut impl Tx<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError>
+    pub fn run_tests(&mut self, sender: &mut Tx<TestRun>, instrument_coverage: bool, cancellation: Cancellation) -> Result<(), TestRunError>
     {
         self.update(TestRunEvent::Start, sender);
 
@@ -90,7 +90,7 @@ impl TestRunProcessor
         Ok(())
     }
 
-    pub fn run_test(&mut self, sender: &mut impl Tx<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError>
+    pub fn run_test(&mut self, sender: &mut Tx<TestRun>, id: &TestId, update_snapshots: bool, cancellation: Cancellation) -> Result<(), TestRunError>
     {
         if let Some(test) = self.test_run.tests.find(id)
         {
