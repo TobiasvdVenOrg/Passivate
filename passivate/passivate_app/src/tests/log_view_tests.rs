@@ -5,7 +5,7 @@ use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use passivate_core::cross_cutting::LogEvent;
-use passivate_delegation::tx_rx;
+use passivate_delegation::Tx;
 use stdext::function_name;
 
 use crate::views::{LogView, View};
@@ -13,7 +13,7 @@ use crate::views::{LogView, View};
 #[test]
 pub fn show_a_single_log()
 {
-    let (mut sender, receiver) = tx_rx();
+    let (sender, receiver) = Tx::new();
     let mut log_view = LogView::new(receiver);
 
     let ui = |ui: &mut egui::Ui| {
@@ -33,7 +33,7 @@ pub fn show_a_single_log()
 #[test]
 pub fn many_logs_are_scrollable()
 {
-    let (mut sender, receiver) = tx_rx();
+    let (sender, receiver) = Tx::new();
     let mut log_view = LogView::new(receiver);
 
     let ui = |ui: &mut egui::Ui| {

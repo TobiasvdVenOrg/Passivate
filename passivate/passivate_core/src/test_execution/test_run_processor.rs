@@ -3,6 +3,7 @@ use passivate_delegation::{Cancellation, Tx};
 use super::{ParseOutput, RunTests, TestRunError};
 use crate::test_run_model::{TestId, TestRun, TestRunEvent, TestRunState};
 
+#[faux::create]
 pub struct TestRunProcessor
 {
     run_tests: Box<dyn RunTests + Send>,
@@ -10,6 +11,7 @@ pub struct TestRunProcessor
     test_run: TestRun
 }
 
+#[faux::methods]
 impl TestRunProcessor
 {
     pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>) -> Self

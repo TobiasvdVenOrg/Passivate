@@ -6,8 +6,10 @@ use egui_kittest::kittest::{Key, Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::coverage::MockComputeCoverage;
+use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
 use passivate_core::test_run_model::Snapshots;
-use passivate_delegation::{MockTx, Tx};
+use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
 
 use crate::views::{ConfigurationView, DetailsView, View};
@@ -15,7 +17,7 @@ use crate::views::{ConfigurationView, DetailsView, View};
 #[test]
 pub fn show_configuration()
 {
-    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), MockTx::default(), MockTx::default());
+    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let mut configuration_view = ConfigurationView::new(configuration_manager.clone());
 
     let ui = |ui: &mut egui::Ui| {
@@ -38,9 +40,16 @@ pub fn show_configuration()
 pub fn configure_coverage_enabled()
 {
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
-    let test_run_handler = test_run_actor_fakes::stub_with_coverage_enabled(|| configuration.get(|c| c.coverage_enabled));
+    let test_run_handler = TestRunHandler::builder()
+        .configuration(configuration.clone())
+        .coverage(Box::new(MockComputeCoverage::new()))
+        .coverage_status_sender(Tx::stub())
+        .log(Tx::stub())
+        .runner(TestRunProcessor::faux())
+        .tests_status_sender(Tx::stub())
+        .build();
 
-    let mut configuration_view = ConfigurationView::new(configuration.clone());
+    let mut configuration_view = ConfigurationView::new(configuration);
 
     let ui = |ui: &mut egui::Ui| {
         configuration_view.ui(ui);
@@ -59,9 +68,9 @@ pub fn configure_coverage_enabled()
 #[test]
 pub fn configure_snapshots_path()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), MockTx::default(), MockTx::default());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
     let mut configuration_view = ConfigurationView::new(configuration.clone());
-    let mut details_view = DetailsView::new(Rx::stub(), MockTx::default(), configuration);
+    let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);
 
     let ui = |ui: &mut egui::Ui| {
         configuration_view.ui(ui);

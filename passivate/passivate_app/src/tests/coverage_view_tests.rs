@@ -3,10 +3,10 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use indexmap::IndexMap;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
-use passivate_core::coverage::CoverageStatus;
+use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
-use passivate_core::test_helpers::fakes::test_run_actor_fakes;
-use passivate_delegation::{Rx, Tx, tx_rx};
+use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
+use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
 
 use crate::views::{CoverageView, View};
@@ -14,7 +14,7 @@ use crate::views::{CoverageView, View};
 #[test]
 pub fn show_coverage_hierarchy_fully_collapsed()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_rx();
+    let (coverage_sender, coverage_receiver) = Tx::new();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
@@ -44,7 +44,7 @@ pub fn show_coverage_hierarchy_fully_collapsed()
 #[test]
 pub fn show_coverage_hierarchy_expand_children()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_rx();
+    let (coverage_sender, coverage_receiver) = Tx::new();
 
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
@@ -141,7 +141,14 @@ pub fn show_coverage_hierarchy_expand_children()
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 {
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
-    let test_run_handler = test_run_actor_fakes::stub_with_coverage_enabled(|| configuration.get(|c| c.coverage_enabled));
+    let test_run_handler = TestRunHandler::builder()
+        .configuration(configuration.clone())
+        .coverage(Box::new(MockComputeCoverage::new()))
+        .coverage_status_sender(Tx::stub())
+        .log(Tx::stub())
+        .runner(TestRunProcessor::faux())
+        .tests_status_sender(Tx::stub())
+        .build();
 
     let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
 
@@ -165,7 +172,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 #[test]
 pub fn show_error()
 {
-    let (mut coverage_sender, coverage_receiver) = tx_rx();
+    let (coverage_sender, coverage_receiver) = Tx::new();
     let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_receiver, configuration);

@@ -140,7 +140,7 @@ impl View for DetailsView
     {
         if let Some(snapshots_path) = self.configuration.get(|c| c.snapshots_path.clone())
         {
-            if self.snapshots.as_ref().is_none_or(|s| s.snapshot_directory != PathBuf::from(&snapshots_path))
+            if self.snapshots.as_ref().is_none_or(|s| s.snapshot_directory != snapshots_path)
             {
                 self.snapshots = Some(Snapshots {
                     snapshot_directory: PathBuf::from(snapshots_path)

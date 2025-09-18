@@ -8,6 +8,5 @@ macro_rules! mod_use {
     };
 }
 
-mod_use!(handler);
 mod_use!(tx_rx);
 mod_use!(cancellation);
