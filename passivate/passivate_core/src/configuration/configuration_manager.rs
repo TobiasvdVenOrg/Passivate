@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use passivate_delegation::{ActorEvent, Cancellation, Tx};
+use passivate_delegation::Tx;
 
 use super::{ConfigurationEvent, PassivateConfig};
 use crate::change_events::ChangeEvent;
@@ -42,10 +42,7 @@ impl ConfigurationManager
         drop(configuration);
 
         self.configuration_tx.send(ConfigurationEvent { old, new });
-        self.change_event_tx.send(ActorEvent {
-            event: ChangeEvent::DefaultRun,
-            cancellation: Cancellation::default()
-        });
+        self.change_event_tx.send(ChangeEvent::DefaultRun);
     }
 
     pub fn get_copy(&self) -> PassivateConfig

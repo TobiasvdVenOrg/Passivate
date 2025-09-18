@@ -1,4 +1,5 @@
-use passivate_delegation::{tx_1_rx_2, MockTx};
+
+use passivate_delegation::Tx;
 
 use crate::configuration::{ConfigurationManager, PassivateConfig};
 
@@ -6,7 +7,7 @@ use crate::configuration::{ConfigurationManager, PassivateConfig};
 pub fn configuration_update_changes_configuration()
 {
     let configuration = PassivateConfig::default();
-    let mut manager = ConfigurationManager::new(configuration, MockTx::default(), MockTx::default());
+    let mut manager = ConfigurationManager::new(configuration, Tx::stub(), Tx::stub());
 
     manager.update(|c| {
         c.snapshots_path = Some(String::from("Example/path"));
@@ -21,15 +22,15 @@ pub fn configuration_update_changes_configuration()
 pub fn configuration_change_is_broadcast()
 {
     let configuration = PassivateConfig::default();
-    let (tx, rx1, rx2) = tx_1_rx_2();
-    let mut manager = ConfigurationManager::new(configuration, tx, MockTx::default());
+    let (tx, rx1, rx2) = Tx::multi_2();
+    let mut manager = ConfigurationManager::new(configuration, tx, Tx::stub());
 
     manager.update(|c| {
         c.coverage_enabled = true;
     });
 
-    let broadcast1 = rx1.try_iter().last().unwrap();
-    let broadcast2 = rx2.try_iter().last().unwrap();
+    let broadcast1 = rx1.last().unwrap();
+    let broadcast2 = rx2.last().unwrap();
 
     assert_eq!(broadcast1, broadcast2);
 }

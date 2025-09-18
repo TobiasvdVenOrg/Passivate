@@ -4,11 +4,10 @@ use std::path::{Path, PathBuf};
 use egui::Context;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
-use passivate_core::cross_cutting::*;
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{ChangeEventHandler, TestRunActor, TestRunProcessor, TestRunner, build_test_output_parser};
+use passivate_core::test_execution::{build_test_output_parser, change_event_thread, test_run_thread, TestRunHandler, TestRunProcessor, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
-use passivate_delegation::{tx_rx, Actor, ActorEvent, ActorTx, Cancellation};
+use passivate_delegation::Tx;
 use views::{CoverageView, TestRunView};
 
 use crate::app::App;
@@ -38,26 +37,16 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError>
     }
 }
 
-pub trait S<T>
-{
-    fn send(&self, message: T);
-}
-
-impl<T> S<T> for crossbeam_channel::Sender<T>
-{
-    fn send(&self, message: T) {
-        self.send(message).expect("aah");
-    }
-}
-
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
 {
     // Channels
-    let (tests_status_sender, tests_status_receiver) = tx_rx();
-    let (coverage_sender, coverage_receiver) = tx_rx();
-    let (configuration_tx, _configuration_rx1) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let (log_tx, log_rx) = tx_rx();
-    let (details_sender, details_receiver) = tx_rx();
+    let (tests_status_sender, tests_status_receiver) = Tx::new();
+    let (coverage_sender, coverage_receiver) = Tx::new();
+    let (configuration_tx, _configuration_rx1) = Tx::new();
+    let (log_tx, log_rx) = Tx::new();
+    let (details_sender, details_receiver) = Tx::new();
+    let (test_run_tx, test_run_rx) = Tx::new();
+    let (change_event_tx, change_event_rx) = Tx::new();
 
     // Paths
     let workspace_path = path.to_path_buf();
@@ -68,46 +57,44 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
 
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
-    let test_runner = TestRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone());
+    let test_runner = TestRunner::builder()
+        .target(target)
+        .working_dir(workspace_path.clone())
+        .target_dir(target_path.clone())
+        .coverage_output_dir(coverage_path.clone())
+        .build();
+
     let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
     let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
-    let coverage = Grcov::new(&workspace_path, &coverage_path, &binary_path);
+    let coverage = Grcov::builder()
+        .workspace_path(workspace_path)
+        .output_path(coverage_path)
+        .binary_path(binary_path)
+        .build();
+    
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, change_event_tx.clone());
+    let test_run_handler = TestRunHandler::builder()
+        .configuration(configuration.clone())
+        .coverage(Box::new(coverage))
+        .tests_status_sender(tests_status_sender)
+        .coverage_status_sender(coverage_sender)
+        .log(log_tx)
+        .runner(test_processor)
+        .build();
 
-    let (test_run_tx, test_run_rx) = crossbeam_channel::unbounded::<ActorEvent<ChangeEvent>>();
-    let test_run_actor_tx = ActorTx::new(test_run_tx.clone(), "test_run_actor_tx!1".to_string());
-    let test_run_actor_tx_2 = ActorTx::new(test_run_tx, "test_run_actor_tx_2!".to_string());
-
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, test_run_actor_tx.into());
-
-    let coverage_enabled = {
-        let configuration = configuration.clone();
-        move || configuration.get(|c| c.coverage_enabled)
-    };
-
-    // Actors
-    let mut test_run_actor = TestRunActor::new(
-        test_run_rx,
-        test_processor,
-        Box::new(coverage),
-        tests_status_sender,
-        coverage_sender,
-        ChannelLog::boxed(log_tx),
-        coverage_enabled
-    );
-
-    let change_handler = ChangeEventHandler::new(test_run_actor_tx_2);
-    let (change_actor, change_actor_tx1, change_actor_tx2, change_actor_tx3) = Actor::new_3(change_handler, String::from("change_actor"));
+    let test_run_thread = test_run_thread(test_run_rx, test_run_handler);
+    let change_event_thread = change_event_thread(change_event_rx, test_run_tx);
 
     // Send an initial change event to trigger the first test run
-    change_actor_tx1.send(ChangeEvent::DefaultRun, Cancellation::default());
+    change_event_tx.send(ChangeEvent::DefaultRun);
 
     // Notify
-    let mut change_events = NotifyChangeEvents::new(path, change_actor_tx2.into())?;
+    let mut change_events = NotifyChangeEvents::new(path, change_event_tx.clone())?;
 
     // Views
     let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver, change_actor_tx3.into(), configuration.clone());
+    let details_view = DetailsView::new(details_receiver, change_event_tx, configuration.clone());
     let coverage_view = CoverageView::new(coverage_receiver, configuration.clone());
     let configuration_view = ConfigurationView::new(configuration);
     let log_view = LogView::new(log_rx);
@@ -116,10 +103,8 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     let _ = change_events.stop();
-    
-    drop(change_events);
-    drop(change_actor_tx1);
-    drop(test_run_actor);
+    let _ = test_run_thread.join();
+    let _ = change_event_thread.join();
 
     Ok(())
 }

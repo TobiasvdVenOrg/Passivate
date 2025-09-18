@@ -17,7 +17,7 @@ pub struct NotifyChangeEvents
 
 impl NotifyChangeEvents
 {
-    pub fn new(path: &Path, mut change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
+    pub fn new(path: &Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
@@ -69,7 +69,7 @@ impl NotifyChangeEvents
 
         match watcher
         {
-            Ok(mut watcher) =>
+            Ok(watcher) =>
             {
                 let watcher = Self::start_watcher(watcher, path);
 

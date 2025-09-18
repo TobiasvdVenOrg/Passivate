@@ -5,10 +5,10 @@ use std::path::{Path, PathBuf};
 use bon::bon;
 use passivate_delegation::Tx;
 
-use crate::configuration::TestRunnerImplementation;
+use crate::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
-use crate::test_execution::{GetBool, ParseOutput, TestRunHandler, TestRunProcessor, TestRunner, build_test_output_parser};
+use crate::test_execution::{ParseOutput, TestRunHandler, TestRunProcessor, TestRunner, build_test_output_parser};
 use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
@@ -41,13 +41,13 @@ where
 }
 
 #[bon]
-#[cfg(test)]
 impl TestRunSetup
 {
     #[builder]
-    pub fn nextest(
-        #[builder(start_fn)] output_path: PathBuf,
-        #[builder(start_fn)] workspace_path: PathBuf,
+    pub fn new(
+        #[builder(start_fn)] test_runner_implementation: TestRunnerImplementation,
+        #[builder(start_fn, into)] output_path: PathBuf,
+        #[builder(start_fn, into)] workspace_path: PathBuf,
         #[builder(default = test_output_path())] base_output_path: PathBuf,
         #[builder(default = test_data_path())] base_workspace_path: PathBuf,
         #[builder(default = false)] coverage_enabled: bool,
@@ -56,7 +56,30 @@ impl TestRunSetup
     ) -> Self
     {
         Self {
-            test_runner: TestRunnerImplementation::Nextest,
+            test_runner: test_runner_implementation,
+            output_path,
+            workspace_path,
+            base_output_path,
+            base_workspace_path,
+            coverage_enabled,
+            tests_status_sender,
+            coverage_sender
+        }
+    }
+
+    #[builder]
+    pub fn cargo(
+        #[builder(start_fn, into)] output_path: PathBuf,
+        #[builder(start_fn, into)] workspace_path: PathBuf,
+        #[builder(default = test_output_path())] base_output_path: PathBuf,
+        #[builder(default = test_data_path())] base_workspace_path: PathBuf,
+        #[builder(default = false)] coverage_enabled: bool,
+        #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
+        #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>
+    ) -> Self
+    {
+        Self {
+            test_runner: TestRunnerImplementation::Cargo,
             output_path,
             workspace_path,
             base_output_path,
@@ -76,7 +99,7 @@ impl TestRunSetup
             .build()
     }
 
-    pub fn build_test_run_handler(self) -> TestRunHandler
+    pub fn build_test_run_processor(&self) -> TestRunProcessor
     {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");
@@ -92,17 +115,31 @@ impl TestRunSetup
             .build();
 
         let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
-        let processor = TestRunProcessor::new(Box::new(test_runner), parser);
+        TestRunProcessor::new(Box::new(test_runner), parser)
+    }
+
+    pub fn build_test_run_handler(self) -> TestRunHandler
+    {
+        let processor = self.build_test_run_processor();
 
         let grcov = self.build_grcov();
+
+        let configuration = ConfigurationManager::new(
+            PassivateConfig {
+                coverage_enabled: self.coverage_enabled,
+                ..Default::default()
+            },
+            Tx::stub(),
+            Tx::stub()
+        );
 
         TestRunHandler::builder()
             .runner(processor)
             .coverage(Box::new(grcov))
             .tests_status_sender(self.tests_status_sender)
             .coverage_status_sender(self.coverage_sender)
-            .log(MockLog::default())
-            .coverage_enabled(GetBool::new(self.coverage_enabled))
+            .log(Tx::stub())
+            .configuration(configuration)
             .build()
     }
 

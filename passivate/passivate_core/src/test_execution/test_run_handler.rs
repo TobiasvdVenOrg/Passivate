@@ -1,49 +1,21 @@
 use std::thread::{self, JoinHandle};
 
 use bon::Builder;
-use crossbeam_channel::Receiver;
-use passivate_delegation::{ActorEvent, Cancellation, Handler, Tx};
+use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 
 use super::TestRunProcessor;
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
-use crate::coverage::{BComputeCoverage, ComputeCoverage, CoverageStatus};
+use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::cross_cutting::LogEvent;
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
 
-#[mockall::automock]
-pub trait ProvideBool
-{
-    fn get(&self) -> bool;
-}
-
-pub struct GetBool
-{
-    value: bool
-}
-
-impl GetBool
-{
-    pub fn new(value: bool) -> Self
-    {
-        Self { value }
-    }
-}
-
-impl ProvideBool for GetBool
-{
-    fn get(&self) -> bool
-    {
-        self.value
-    }
-}
-
-pub fn test_run_thread<'a>(rx: Receiver<ActorEvent<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
+pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
         {
-            handler.handle(event.event, event.cancellation);
+            handler.handle(event.message, event.cancellation);
         }
 
         handler
@@ -54,7 +26,7 @@ pub fn test_run_thread<'a>(rx: Receiver<ActorEvent<ChangeEvent>>, mut handler: T
 pub struct TestRunHandler
 {
     runner: TestRunProcessor,
-    coverage: BComputeCoverage,
+    coverage: Box<dyn ComputeCoverage + Send>,
     tests_status_sender: Tx<TestRun>,
     coverage_status_sender: Tx<CoverageStatus>,
     log: Tx<LogEvent>,
@@ -101,7 +73,7 @@ impl TestRunHandler
 
         if let Err(clean_error) = self.coverage.clean_coverage_output()
         {
-            self.log.info(&format!("error cleaning coverage output: {:?}", clean_error));
+            self.log.send(LogEvent::new(&format!("error cleaning coverage output: {:?}", clean_error)));
         }
 
         if cancellation.is_cancelled()
@@ -109,7 +81,7 @@ impl TestRunHandler
             return;
         }
 
-        let test_output = self.runner.run_tests(self.tests_status_sender, coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(&mut self.tests_status_sender, coverage_enabled, cancellation.clone());
 
         if cancellation.is_cancelled()
         {
@@ -122,12 +94,12 @@ impl TestRunHandler
             {
                 if self.coverage_enabled()
                 {
-                    self.log.info("Coverage enabled, computing...");
+                    self.log.send(LogEvent::new("Coverage enabled, computing..."));
                     self.compute_coverage(cancellation.clone());
                 }
                 else
                 {
-                    self.log.info("Coverage disabled.");
+                    self.log.send(LogEvent::new("Coverage disabled."));
                 }
             }
             Err(test_error) =>
@@ -146,7 +118,7 @@ impl TestRunHandler
 
         let coverage_status = self.coverage.compute_coverage(cancellation.clone());
 
-        self.log.info("Coverage completed.");
+        self.log.send(LogEvent::new("Coverage completed."));
 
         match coverage_status
         {
@@ -170,6 +142,6 @@ impl TestRunHandler
 
     pub fn coverage_enabled(&self) -> bool
     {
-        self.coverage_enabled.get()
+        self.configuration.get(|c| c.coverage_enabled)
     }
 }

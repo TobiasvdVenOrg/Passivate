@@ -1,19 +1,68 @@
-use syn::ItemStruct;
+use std::fmt::Display;
 
 use super::Cancellation;
 
-type Rx<T> = crossbeam_channel::Receiver<T>;
-
+#[derive(Clone)]
 enum Mode<T>
 {
     Single(crossbeam_channel::Sender<T>),
     Multi(Vec<crossbeam_channel::Sender<T>>)
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum RxError
+{
+    Recv(#[from] crossbeam_channel::RecvError),
+    TryRecv(#[from] crossbeam_channel::TryRecvError)
+}
+
+impl Display for RxError
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
 #[faux::create]
+#[derive(Clone)]
 pub struct Tx<T>
 {
     mode: Mode<T>
+}
+
+#[faux::create]
+pub struct Rx<T>
+{
+    rx: crossbeam_channel::Receiver<T>
+}
+
+#[faux::methods]
+impl<T> Rx<T>
+{
+    fn new(rx: crossbeam_channel::Receiver<T>) -> Rx<T>
+    {
+        Rx { rx }
+    }
+
+    pub fn last(&self) -> Option<T>
+    {
+        self.rx.try_iter().last()
+    }
+
+    pub fn next(&self) -> Option<T>
+    {
+        self.rx.try_iter().next()
+    }
+
+    pub fn recv(&self) -> Result<T, RxError>
+    {
+        Ok(self.rx.recv()?)
+    }
+
+    pub fn try_recv(&self) -> Result<T, RxError>
+    {
+        Ok(self.rx.try_recv()?)
+    }
 }
 
 #[faux::methods]
@@ -25,7 +74,7 @@ where
     {
         let (tx, rx) = crossbeam_channel::unbounded();
 
-        (Tx { mode: Mode::Single(tx) }, rx)
+        (Tx { mode: Mode::Single(tx) }, Rx::new(rx))
     }
 
     pub fn multi_2() -> (Tx<T>, Rx<T>, Rx<T>)
@@ -38,7 +87,7 @@ where
             mode: Mode::Multi(vec![tx1, tx2])
         };
 
-        (tx, rx1, rx2)
+        (tx, Rx::new(rx1), Rx::new(rx2))
     }
 
     pub fn send(&self, message: T)
@@ -62,7 +111,6 @@ where
     }
 }
 
-#[cfg(test)]
 impl<T> Tx<T>
 where
     T: Clone + Send + Sync
@@ -73,6 +121,20 @@ where
         tx._when_send().then(|_| { });
 
         tx
+    }
+}
+
+impl<T: 'static> Rx<T>
+{
+    pub fn stub() -> Self
+    {
+        let mut rx = Rx::faux();
+        rx._when_last().then(|_| None);
+        rx._when_next().then(|_| None);
+        rx._when_recv().then(|_| Err(RxError::Recv(crossbeam_channel::RecvError { })));
+        rx._when_try_recv().then(|_| Err(RxError::TryRecv(crossbeam_channel::TryRecvError::Empty)));
+
+        rx
     }
 }
 
