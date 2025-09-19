@@ -5,7 +5,7 @@ use galvanic_assert::*;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::test_helpers::test_run_setup::test_data_path;
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, Snapshots, TestId, TestRun, TestRunEvent};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
 use rstest::*;
 use stdext::function_name;
