@@ -196,12 +196,11 @@ pub fn when_test_run_fails_error_is_reported()
 
     let mut handler = TestRunHandler::builder()
         .runner(processor)
-        .coverage(Box::new(MockComputeCoverage::default()))
+        .coverage(Box::new(compute_coverage::stub()))
         .tests_status_sender(tests_sender)
         .coverage_status_sender(Tx::stub())
         .log(Tx::stub())
         .configuration(ConfigurationManager::default_config(Tx::stub(), Tx::stub()))
-        .pinned_test(TestId::new("stub_test_id"))
         .build();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
