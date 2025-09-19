@@ -163,10 +163,9 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
     let (details_sender, details_receiver) = Tx::new();
     let (test_run_sender, test_run_receiver) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = get_configuration_with_example_snapshots_path();
 
     let mut details_view = DetailsView::new(details_receiver, test_run_sender, configuration);
-    details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui| {
         details_view.ui(ui);
@@ -195,10 +194,9 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 fn show_test(test_name: &str, single_test: SingleTest)
 {
     let (sender, receiver) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = get_configuration_with_example_snapshots_path();
 
     let mut details_view = DetailsView::new(receiver, Tx::stub(), configuration);
-    details_view.set_snapshots(Snapshots::new(test_data_path().join("example_snapshots")));
 
     let ui = |ui: &mut egui::Ui| {
         details_view.ui(ui);
@@ -211,6 +209,14 @@ fn show_test(test_name: &str, single_test: SingleTest)
     harness.run();
     harness.fit_contents();
     harness.snapshot(test_name);
+}
+
+fn get_configuration_with_example_snapshots_path() -> ConfigurationManager 
+{
+    ConfigurationManager::new(PassivateConfig {
+        snapshots_path: Some(test_data_path().join("example_snapshots").to_str().unwrap().to_string()),
+        .. PassivateConfig::default()
+    }, Tx::stub(), Tx::stub())
 }
 
 fn test_name(function_name: &str) -> String

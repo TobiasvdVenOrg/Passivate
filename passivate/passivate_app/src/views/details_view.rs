@@ -22,7 +22,6 @@ pub struct DetailsView
     change_events: Tx<ChangeEvent>,
     configuration: ConfigurationManager,
     single_test: Option<SingleTest>,
-    snapshots: Option<Snapshots>,
     snapshot_handles: Option<SnapshotHandles>
 }
 
@@ -35,24 +34,20 @@ impl DetailsView
             change_events,
             configuration,
             single_test: None,
-            snapshots: None,
             snapshot_handles: None
         }
     }
 
     pub fn get_snapshots(&self) -> Option<Snapshots>
     {
-        self.snapshots.clone()
-    }
+        let snapshots_path = self.configuration.get(|c| c.snapshots_path.clone());
 
-    pub fn set_snapshots(&mut self, snapshots: Snapshots)
-    {
-        self.snapshots = Some(snapshots);
+        snapshots_path.map(|path| Snapshots::new(PathBuf::from(path)))
     }
 
     fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_test: &Option<SingleTest>)
     {
-        if let Some(snapshots) = &self.snapshots
+        if let Some(snapshots) = self.get_snapshots()
             && let Some(new_test) = new_test
         {
             let snapshot = snapshots.from_test(new_test);
@@ -138,20 +133,6 @@ impl View for DetailsView
 {
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
-        if let Some(snapshots_path) = self.configuration.get(|c| c.snapshots_path.clone())
-        {
-            if self.snapshots.as_ref().is_none_or(|s| s.snapshot_directory != snapshots_path)
-            {
-                self.snapshots = Some(Snapshots {
-                    snapshot_directory: PathBuf::from(snapshots_path)
-                });
-            }
-        }
-        else
-        {
-            self.snapshots = None;
-        }
-
         if let Ok(new_test) = self.test_receiver.try_recv()
         {
             self.check_for_snapshots(ui, &new_test);
