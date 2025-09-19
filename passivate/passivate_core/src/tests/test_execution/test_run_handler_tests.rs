@@ -170,9 +170,9 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = state.tests.find(&failed_test).unwrap();
     assert_that!(
-        &failed_test.output,
+        // Skip first line as it contains a thread ID that is not deterministic
+        &failed_test.output.into_iter().skip(1).collect::<Vec<_>>(),
         contains_in_order(vec![
-            "thread 'multiply_2_and_2_is_4' panicked at tests\\multiply_tests.rs:6:5:".to_string(),
             "assertion `left == right` failed".to_string(),
             "left: 5".to_string(),
             "right: 4".to_string(),
