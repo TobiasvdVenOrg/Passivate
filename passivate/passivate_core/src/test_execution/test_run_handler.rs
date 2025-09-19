@@ -131,11 +131,8 @@ impl TestRunHandler
     {
         let result = self.runner.run_test(&mut self.tests_status_sender, id, update_snapshots, cancellation);
 
-        eprintln!("Got an result!");
-
         if let Err(error) = result
         {
-            eprintln!("Got an error!");
             let error_status = FailedTestRun {
                 inner_error_display: error.to_string()
             };
