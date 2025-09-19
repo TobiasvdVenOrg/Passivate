@@ -1,5 +1,5 @@
 use egui_kittest::Harness;
-use passivate_core::test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState};
+use passivate_core::{test_helpers::test_name::test_name, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
 use passivate_delegation::Tx;
 use stdext::function_name;
 
@@ -62,11 +62,6 @@ fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
     harness.run();
     harness.fit_contents();
     harness.snapshot(snapshot_name);
-}
-
-fn test_name(function_name: &str) -> String
-{
-    function_name.split("::").last().unwrap_or(function_name).to_string()
 }
 
 fn example_test(name: &str, status: SingleTestStatus) -> SingleTest

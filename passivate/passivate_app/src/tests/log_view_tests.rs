@@ -4,7 +4,7 @@ use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use passivate_core::cross_cutting::LogEvent;
+use passivate_core::{cross_cutting::LogEvent, test_helpers::test_name::test_name};
 use passivate_delegation::Tx;
 use stdext::function_name;
 
@@ -65,9 +65,4 @@ pub fn many_logs_are_scrollable()
     harness.run();
     harness.fit_contents();
     harness.snapshot(&test_name(function_name!()));
-}
-
-fn test_name(function_name: &str) -> String
-{
-    function_name.split("::").last().unwrap_or(function_name).to_string()
 }

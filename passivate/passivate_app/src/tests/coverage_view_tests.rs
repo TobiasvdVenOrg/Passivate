@@ -6,6 +6,7 @@ use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
+use passivate_core::test_helpers::test_name::test_name;
 use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
 
@@ -188,11 +189,6 @@ pub fn show_error()
 
     harness.fit_contents();
     harness.snapshot(&test_name(function_name!()));
-}
-
-fn test_name(function_name: &str) -> String
-{
-    function_name.split("::").last().unwrap_or(function_name).to_string()
 }
 
 // #[test]

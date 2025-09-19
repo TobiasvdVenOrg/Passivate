@@ -4,17 +4,17 @@ use std::fs;
 use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
 
-use passivate_delegation::Cancellation;
+use passivate_delegation::{Cancellation, Tx};
 use pretty_assertions::assert_eq;
 use rstest::*;
 use stdext::function_name;
-    use passivate_delegation::Tx;
 
-use crate::test_helpers::test_run_setup::{test_output_path, TestRunSetup};
+use crate::change_events::ChangeEvent;
+use crate::configuration::TestRunnerImplementation;
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
-use crate::configuration::TestRunnerImplementation;
-use crate::change_events::ChangeEvent;
+use crate::test_helpers::test_name::test_name;
+use crate::test_helpers::test_run_setup::{TestRunSetup, test_output_path};
 
 #[rstest]
 #[case::cargo(TestRunnerImplementation::Cargo)]
@@ -22,15 +22,12 @@ use crate::change_events::ChangeEvent;
 pub fn test_run_sends_coverage_result(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
     let (coverage_sender, coverage_receiver) = Tx::new();
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .coverage_sender(coverage_sender)
         .build();
 
-    setup
-        .clean_output()
-        .build_test_run_handler()
-        .handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let result = coverage_receiver.last().unwrap();
 
@@ -54,16 +51,13 @@ pub fn test_run_sends_coverage_result(#[case] implementation: TestRunnerImplemen
 #[case::nextest(TestRunnerImplementation::Nextest)]
 pub fn test_run_outputs_coverage_file_for_project(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .build();
-    
+
     let output_path = setup.get_output_path();
 
-    setup
-        .clean_output()
-        .build_test_run_handler()
-        .handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
@@ -76,16 +70,13 @@ pub fn test_run_outputs_coverage_file_for_project(#[case] implementation: TestRu
 #[case::nextest(TestRunnerImplementation::Nextest)]
 pub fn test_run_outputs_coverage_file_for_workspace(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_workspace")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_workspace")
         .coverage_enabled(true)
         .build();
 
     let output_path = setup.get_output_path();
 
-    setup
-        .clean_output()
-        .build_test_run_handler()
-        .handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
@@ -98,15 +89,13 @@ pub fn test_run_outputs_coverage_file_for_workspace(#[case] implementation: Test
 #[case::nextest(TestRunnerImplementation::Nextest)]
 pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .build();
 
     let coverage_path = setup.get_coverage_path();
 
-    let mut handler = setup
-        .clean_output()
-        .build_test_run_handler();
+    let mut handler = setup.clean_output().build_test_run_handler();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
@@ -128,15 +117,13 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files(#[case] implementation: 
 // to briefly error due to "not finding the file" until a new one is created
 pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .build();
 
     let output_path = setup.get_output_path();
 
-    let mut handler = setup
-        .clean_output()
-        .build_test_run_handler();
+    let mut handler = setup.clean_output().build_test_run_handler();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
@@ -153,14 +140,13 @@ pub fn repeat_test_runs_do_not_delete_lcov_file(#[case] implementation: TestRunn
 #[rstest]
 pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(TestRunnerImplementation::Cargo, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(TestRunnerImplementation::Cargo, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .build();
 
     let coverage_path = setup.get_coverage_path();
 
-    let setup = setup
-        .clean_output();
+    let setup = setup.clean_output();
 
     fs::create_dir_all(&coverage_path)?;
 
@@ -188,15 +174,13 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
 #[rstest]
 pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(TestRunnerImplementation::Cargo, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(TestRunnerImplementation::Cargo, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
         .build();
 
     let coverage_path = setup.get_coverage_path();
 
-    let grcov = setup
-        .clean_output()
-        .build_grcov();
+    let grcov = setup.clean_output().build_grcov();
 
     let result = grcov.compute_coverage(Cancellation::default());
 
@@ -230,17 +214,14 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
 #[case::nextest(TestRunnerImplementation::Nextest)]
 pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(implementation, function_name!(), "simple_project")
+    let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(false)
         .build();
 
     let coverage_path = setup.get_coverage_path();
     let output_path = setup.get_output_path();
 
-    setup
-        .clean_output()
-        .build_test_run_handler()
-        .handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let profraw_count = get_profraw_count(&coverage_path)?;
     assert_eq!(0, profraw_count);

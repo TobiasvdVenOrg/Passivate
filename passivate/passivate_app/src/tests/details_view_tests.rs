@@ -4,6 +4,7 @@ use galvanic_assert::matchers::*;
 use galvanic_assert::*;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::test_helpers::test_name::test_name;
 use passivate_core::test_helpers::test_run_setup::test_data_path;
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
@@ -217,11 +218,6 @@ fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
         snapshots_path: Some(test_data_path().join("example_snapshots").to_str().unwrap().to_string()),
         .. PassivateConfig::default()
     }, Tx::stub(), Tx::stub())
-}
-
-fn test_name(function_name: &str) -> String
-{
-    function_name.split("::").last().unwrap_or(function_name).to_string()
 }
 
 fn example_test(name: &str, status: SingleTestStatus) -> SingleTest
