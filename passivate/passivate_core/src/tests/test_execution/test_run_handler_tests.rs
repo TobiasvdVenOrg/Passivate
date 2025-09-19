@@ -9,7 +9,7 @@ use stdext::function_name;
 
 use crate::change_events::ChangeEvent;
 use crate::configuration::{ConfigurationManager, TestRunnerImplementation};
-use crate::coverage::MockComputeCoverage;
+use crate::coverage::{compute_coverage, MockComputeCoverage};
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunProcessor, change_event_thread, mock_run_tests, stub_parse_output, test_run_thread};
 use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::TestRunSetup;
@@ -221,30 +221,34 @@ pub fn when_configuration_changes_tests_are_run()
 {
     let mut run_tests = mock_run_tests();
 
+    // This expectation of 'once()' is the test assertion
     run_tests.expect_run_tests().once().returning(|_, _, _| Err(TestRunError::Cancelled(Cancelled)));
     run_tests.expect_run_test().returning(|_, _, _, _| Err(TestRunError::Cancelled(Cancelled)));
 
     let test_run_processor = TestRunProcessor::new(run_tests, stub_parse_output());
     let (change_event_tx, change_event_rx) = Tx::new();
+    let (test_run_tx, test_run_rx) = Tx::new();
 
     let handler = TestRunHandler::builder()
         .runner(test_run_processor)
         .tests_status_sender(Tx::stub())
-        .coverage(Box::new(MockComputeCoverage::default()))
+        .coverage(Box::new(compute_coverage::stub()))
         .coverage_status_sender(Tx::stub())
         .configuration(ConfigurationManager::default_config(Tx::stub(), Tx::stub()))
         .log(Tx::stub())
         .build();
 
-    let (test_run_tx, test_run_rx) = Tx::new();
-
     let change_event_thread = change_event_thread(change_event_rx, test_run_tx);
-    let mut configuration = ConfigurationManager::default_config(Tx::stub(), change_event_tx);
+    let test_run_thread = test_run_thread(test_run_rx, handler);
 
-    let thread = test_run_thread(test_run_rx, handler);
+    let configuration = ConfigurationManager::default_config(Tx::stub(), change_event_tx);
+    change_configuration_to_trigger_test_run(configuration);
 
-    configuration.update(|c| c.coverage_enabled = true);
-
-    _ = thread.join().expect("failed to join");
+    _ = test_run_thread.join().expect("failed to join");
     change_event_thread.join().expect("failed to join");
+}
+
+fn change_configuration_to_trigger_test_run(mut configuration: ConfigurationManager)
+{
+    configuration.update(|c| c.coverage_enabled = true);
 }
