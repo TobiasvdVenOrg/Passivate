@@ -1,6 +1,5 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use notify::Error as NotifyError;
@@ -28,7 +27,7 @@ impl NotifyChangeEventsError
 
     fn try_absolute_path(relative_path: &Path) -> String
     {
-        let canonicalize = fs::canonicalize(relative_path);
+        let canonicalize = dunce::canonicalize(relative_path);
 
         match canonicalize
         {

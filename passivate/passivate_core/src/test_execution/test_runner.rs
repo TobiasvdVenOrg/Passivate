@@ -30,7 +30,7 @@ impl RunTests for TestRunner
     ) -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
-        let coverage_output_dir = fs::canonicalize(&self.coverage_output_dir)?;
+        let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
         let mut args: Vec<OsString> = vec![];
         match implementation

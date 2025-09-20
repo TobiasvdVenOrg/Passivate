@@ -122,9 +122,9 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 
 #[test]
 #[cfg(target_os = "windows")]
-pub fn when_snapshot_test_is_run_with_update_snapshots_enabled_replace_new_snapshot_with_approved() -> Result<(), IoError>
+pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(TestRunnerImplementation::Nextest, test_name(function_name!()), "simple_project")
+    let setup = TestRunSetup::builder(TestRunnerImplementation::Nextest, test_name(function_name!()), "project_snapshot_tests")
         .build()
         .clean_snapshots();
 

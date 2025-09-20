@@ -26,8 +26,8 @@ pub fn query_projects_in_workspace()
 
     let projects = cargo_workspace::projects(&workspace_path).unwrap();
 
-    let project_a_path = fs::canonicalize(workspace_path.join("project_a")).unwrap();
-    let project_b_path = fs::canonicalize(workspace_path.join("project_b")).unwrap();
+    let project_a_path = dunce::canonicalize(workspace_path.join("project_a")).unwrap();
+    let project_b_path = dunce::canonicalize(workspace_path.join("project_b")).unwrap();
 
     assert_that!(&projects, contains_in_order(vec![project_a_path, project_b_path]));
 }

@@ -25,12 +25,12 @@ pub struct TestRunSetup
 
 pub fn test_output_path() -> PathBuf
 {
-    fs::canonicalize(PathBuf::from("../../test_output")).expect("test output path did not exist!")
+    dunce::canonicalize(PathBuf::from("../../test_output")).expect("test output path did not exist!")
 }
 
 pub fn test_data_path() -> PathBuf
 {
-    fs::canonicalize(PathBuf::from("../../test_data")).expect("test data path did not exist!")
+    dunce::canonicalize(PathBuf::from("../../test_data")).expect("test data path did not exist!")
 }
 
 pub fn get_default_workspace_path<P>(workspace_path: P) -> PathBuf
@@ -127,7 +127,7 @@ impl TestRunSetup
         let configuration = ConfigurationManager::new(
             PassivateConfig {
                 coverage_enabled: self.coverage_enabled,
-                ..Default::default()
+                snapshots_path: Some(self.get_snapshots_path().to_str().unwrap().to_string())
             },
             Tx::stub(),
             Tx::stub()
@@ -149,6 +149,8 @@ impl TestRunSetup
 
         if fs::exists(&output_path).expect("Failed to check if output_path exists!")
         {
+            eprintln!("Cleaning: {:?}", output_path);
+
             fs::remove_dir_all(&output_path).expect("Failed to clear output path!")
         }
 
@@ -161,6 +163,8 @@ impl TestRunSetup
 
         if fs::exists(&snapshots_path).expect("Failed to check if output_path exists!")
         {
+            eprintln!("Cleaning snapshots_path: {:?}", snapshots_path);
+
             fs::remove_dir_all(&snapshots_path).expect("Failed to clear output path!")
         }
 

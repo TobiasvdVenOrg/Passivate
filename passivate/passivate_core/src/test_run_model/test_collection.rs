@@ -30,7 +30,7 @@ impl TestCollection
         match self.tests.iter_mut().find(|t| t.id() == test.id())
         {
             Some(existing) => *existing = test,
-            None => self.tests.push(test)
+            None => self.add(test)
         };
     }
 

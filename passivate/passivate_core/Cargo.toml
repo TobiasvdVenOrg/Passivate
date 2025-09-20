@@ -21,6 +21,7 @@ epaint = "0.31"
 png = "0.17.16"
 bon = "3.6.5"
 crossbeam-channel = "0.5.14"
+dunce = "1.0.5"
 
 [dev-dependencies]
 rstest = "0.25.0"

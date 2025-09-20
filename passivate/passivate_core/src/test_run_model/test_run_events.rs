@@ -1,5 +1,6 @@
 use super::{SingleTest, TestId};
 
+#[derive(Debug)]
 pub enum TestRunEvent
 {
     Start,
