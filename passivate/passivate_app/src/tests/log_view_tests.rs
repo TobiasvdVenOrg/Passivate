@@ -13,8 +13,8 @@ use crate::views::{LogView, View};
 #[test]
 pub fn show_a_single_log()
 {
-    let (sender, receiver) = Tx::new();
-    let mut log_view = LogView::new(receiver);
+    let (tx, rx) = Tx::new();
+    let mut log_view = LogView::new(rx);
 
     let ui = |ui: &mut egui::Ui| {
         log_view.ui(ui);
@@ -23,7 +23,7 @@ pub fn show_a_single_log()
     let mut harness = Harness::new_ui(ui);
 
     let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
-    sender.send(example_log);
+    tx.send(example_log);
 
     harness.run();
     harness.fit_contents();
@@ -33,8 +33,8 @@ pub fn show_a_single_log()
 #[test]
 pub fn many_logs_are_scrollable()
 {
-    let (sender, receiver) = Tx::new();
-    let mut log_view = LogView::new(receiver);
+    let (tx, rx) = Tx::new();
+    let mut log_view = LogView::new(rx);
 
     let ui = |ui: &mut egui::Ui| {
         ui.set_max_height(100.0);
@@ -49,7 +49,7 @@ pub fn many_logs_are_scrollable()
         timestamp += Duration::from_secs(n);
 
         let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", timestamp);
-        sender.send(example_log);
+        tx.send(example_log);
 
         harness.run();
     }

@@ -21,15 +21,15 @@ use crate::test_helpers::test_run_setup::{TestRunSetup, test_output_path};
 #[case::nextest(TestRunnerImplementation::Nextest)]
 pub fn test_run_sends_coverage_result(#[case] implementation: TestRunnerImplementation) -> Result<(), IoError>
 {
-    let (coverage_sender, coverage_receiver) = Tx::new();
+    let (coverage_tx, coverage_rx) = Tx::new();
     let setup = TestRunSetup::builder(implementation, test_name(function_name!()), "simple_project")
         .coverage_enabled(true)
-        .coverage_sender(coverage_sender)
+        .coverage_sender(coverage_tx)
         .build();
 
     setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let result = coverage_receiver.last().unwrap();
+    let result = coverage_rx.last().unwrap();
 
     match result
     {

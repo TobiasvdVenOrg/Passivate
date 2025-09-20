@@ -48,8 +48,8 @@ pub fn show_build_status_above_tests_while_compiling()
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
 {
-    let (sender, receiver) = Tx::new();
-    let mut tests_status_view = TestRunView::new(receiver, Tx::stub());
+    let (tx, rx) = Tx::new();
+    let mut tests_status_view = TestRunView::new(rx, Tx::stub());
 
     let ui = |ui: &mut egui::Ui| {
         tests_status_view.ui(ui);
@@ -57,7 +57,7 @@ fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
 
     let mut harness = Harness::new_ui(ui);
 
-    sender.send(tests_status);
+    tx.send(tests_status);
 
     harness.run();
     harness.fit_contents();

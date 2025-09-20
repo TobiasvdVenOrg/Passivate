@@ -15,10 +15,10 @@ use crate::views::{CoverageView, View};
 #[test]
 pub fn show_coverage_hierarchy_fully_collapsed()
 {
-    let (coverage_sender, coverage_receiver) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let (coverage_tx, coverage_rx) = Tx::new();
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
+    let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
     let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
@@ -35,7 +35,7 @@ pub fn show_coverage_hierarchy_fully_collapsed()
         name: "example.rs".to_string()
     };
 
-    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
+    coverage_tx.send(CoverageStatus::Done(Box::new(coverage_info)));
 
     harness.run();
     harness.fit_contents();
@@ -45,11 +45,11 @@ pub fn show_coverage_hierarchy_fully_collapsed()
 #[test]
 pub fn show_coverage_hierarchy_expand_children()
 {
-    let (coverage_sender, coverage_receiver) = Tx::new();
+    let (coverage_tx, coverage_rx) = Tx::new();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
+    let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
     let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
@@ -112,7 +112,7 @@ pub fn show_coverage_hierarchy_expand_children()
         name: "example.rs".to_string()
     };
 
-    coverage_sender.send(CoverageStatus::Done(Box::new(coverage_info)));
+    coverage_tx.send(CoverageStatus::Done(Box::new(coverage_info)));
 
     harness.run();
 
@@ -141,7 +141,7 @@ pub fn show_coverage_hierarchy_expand_children()
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
@@ -173,16 +173,16 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 #[test]
 pub fn show_error()
 {
-    let (coverage_sender, coverage_receiver) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let (coverage_tx, coverage_rx) = Tx::new();
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    let mut coverage_view = CoverageView::new(coverage_receiver, configuration);
+    let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
     let ui = |ui: &mut egui::Ui| {
         coverage_view.ui(ui);
     };
 
-    coverage_sender.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string()));
+    coverage_tx.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string()));
 
     let mut harness = Harness::new_ui(ui);
     harness.run();

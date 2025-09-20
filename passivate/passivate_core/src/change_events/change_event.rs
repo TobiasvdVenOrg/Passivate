@@ -2,7 +2,7 @@ use enum_as_inner::EnumAsInner;
 
 use crate::test_run_model::TestId;
 
-#[derive(Clone, EnumAsInner)]
+#[derive(Clone, EnumAsInner, PartialEq, Debug)]
 pub enum ChangeEvent
 {
     DefaultRun,

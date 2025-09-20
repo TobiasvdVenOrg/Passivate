@@ -1,20 +1,23 @@
-use passivate_core::configuration::ConfigurationManager;
+use passivate_core::{change_events::ChangeEvent, configuration::ConfigurationManager};
+use passivate_delegation::Tx;
 
 use crate::views::View;
 
 pub struct ConfigurationView
 {
     configuration_manager: ConfigurationManager,
-    snapshots_path_field: String
+    snapshots_path_field: String,
+    change_event_tx: Tx<ChangeEvent>
 }
 
 impl ConfigurationView
 {
-    pub fn new(configuration_manager: ConfigurationManager) -> Self
+    pub fn new(configuration_manager: ConfigurationManager, change_event_tx: Tx<ChangeEvent>) -> Self
     {
         Self {
             configuration_manager,
-            snapshots_path_field: String::new()
+            snapshots_path_field: String::new(),
+            change_event_tx
         }
     }
 }
@@ -30,6 +33,8 @@ impl View for ConfigurationView
             self.configuration_manager.update(|c| {
                 c.coverage_enabled = configuration.coverage_enabled;
             });
+
+            self.change_event_tx.send(ChangeEvent::DefaultRun);
         }
 
         if let Some(configured_snapshots_path) = &configuration.snapshots_path
@@ -45,6 +50,8 @@ impl View for ConfigurationView
                 self.configuration_manager.update(|c| {
                     c.snapshots_path = Some(self.snapshots_path_field.clone());
                 });
+
+                self.change_event_tx.send(ChangeEvent::DefaultRun);
             }
         });
     }

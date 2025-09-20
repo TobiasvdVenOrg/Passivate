@@ -5,6 +5,7 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::{Key, Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
+use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::MockComputeCoverage;
 use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
@@ -17,8 +18,8 @@ use crate::views::{ConfigurationView, DetailsView, View};
 #[test]
 pub fn show_configuration()
 {
-    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
-    let mut configuration_view = ConfigurationView::new(configuration_manager.clone());
+    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), Tx::stub());
 
     let ui = |ui: &mut egui::Ui| {
         configuration_view.ui(ui);
@@ -39,7 +40,7 @@ pub fn show_configuration()
 #[test]
 pub fn configure_coverage_enabled()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
@@ -49,7 +50,8 @@ pub fn configure_coverage_enabled()
         .tests_status_sender(Tx::stub())
         .build();
 
-    let mut configuration_view = ConfigurationView::new(configuration);
+    let (change_events_tx, change_events_rx) = Tx::new();
+    let mut configuration_view = ConfigurationView::new(configuration, change_events_tx);
 
     let ui = |ui: &mut egui::Ui| {
         configuration_view.ui(ui);
@@ -62,14 +64,19 @@ pub fn configure_coverage_enabled()
 
     harness.run();
 
+    assert_that!(
+        &change_events_rx.last().expect("expected change event"),
+        eq(ChangeEvent::DefaultRun));
+
     assert!(test_run_handler.coverage_enabled());
 }
 
 #[test]
 pub fn configure_snapshots_path()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
-    let mut configuration_view = ConfigurationView::new(configuration.clone());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let (change_events_tx, change_events_rx) = Tx::new();
+    let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
     let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);
 
     let ui = |ui: &mut egui::Ui| {
@@ -88,6 +95,10 @@ pub fn configure_snapshots_path()
     harness.run();
 
     drop(harness);
+
+    assert_that!(
+        &change_events_rx.last().expect("expected change event"),
+        eq(ChangeEvent::DefaultRun));
 
     assert_that!(
         &details_view.get_snapshots(),

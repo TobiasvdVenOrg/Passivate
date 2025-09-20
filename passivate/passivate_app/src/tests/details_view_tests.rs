@@ -44,13 +44,13 @@ pub fn show_a_failing_test_with_output()
 #[test]
 pub fn selecting_a_test_shows_it_in_details_view()
 {
-    let (test_run_sender, test_run_receiver) = Tx::new();
-    let (details_sender, details_receiver) = Tx::new();
+    let (test_run_tx, test_run_rx) = Tx::new();
+    let (details_tx, details_rx) = Tx::new();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
 
-    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
-    let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
+    let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
+    let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
         test_run_view.ui(ui);
@@ -62,7 +62,7 @@ pub fn selecting_a_test_shows_it_in_details_view()
 
     let mut test_run = TestRun::default();
     test_run.tests.add(example_test("example_test", SingleTestStatus::Failed));
-    test_run_sender.send(test_run);
+    test_run_tx.send(test_run);
 
     test_run_ui.run();
 
@@ -79,11 +79,11 @@ pub fn selecting_a_test_shows_it_in_details_view()
 #[test]
 pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
 {
-    let (test_run_sender, test_run_receiver) = Tx::new();
-    let (details_sender, details_receiver) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub(), Tx::stub());
-    let mut details_view = DetailsView::new(details_receiver, Tx::stub(), configuration);
-    let mut test_run_view = TestRunView::new(test_run_receiver, details_sender);
+    let (test_run_tx, test_run_rx) = Tx::new();
+    let (details_tx, details_rx) = Tx::new();
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
+    let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
 
     let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
         test_run_view.ui(ui);
@@ -95,7 +95,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
 
     let mut test_run = TestRun::default();
     test_run.update(TestRunEvent::TestFinished(example_test("example_test", SingleTestStatus::Failed)));
-    test_run_sender.send(test_run.clone());
+    test_run_tx.send(test_run.clone());
 
     test_run_ui.run();
 
@@ -106,7 +106,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
     details_ui.run();
 
     test_run.update(TestRunEvent::TestFinished(example_test("example_test", SingleTestStatus::Passed)));
-    test_run_sender.send(test_run);
+    test_run_tx.send(test_run);
 
     test_run_ui.run();
     details_ui.run();
@@ -162,11 +162,11 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 {
     let snapshot_test = example_test(test, SingleTestStatus::Failed);
 
-    let (details_sender, details_receiver) = Tx::new();
-    let (test_run_sender, test_run_receiver) = Tx::new();
+    let (details_tx, details_rx) = Tx::new();
+    let (test_run_tx, test_run_rx) = Tx::new();
     let configuration = get_configuration_with_example_snapshots_path();
 
-    let mut details_view = DetailsView::new(details_receiver, test_run_sender, configuration);
+    let mut details_view = DetailsView::new(details_rx, test_run_tx, configuration);
 
     let ui = |ui: &mut egui::Ui| {
         details_view.ui(ui);
@@ -174,14 +174,14 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
     let mut harness = Harness::new_ui(ui);
 
-    details_sender.send(Some(snapshot_test));
+    details_tx.send(Some(snapshot_test));
     harness.run();
 
     let approve = harness.get_by_label("Approve");
     approve.click();
     harness.run();
 
-    let approval_run = test_run_receiver.last().unwrap();
+    let approval_run = test_run_rx.last().unwrap();
 
     assert_that!(
         &approval_run,
@@ -194,10 +194,10 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
 fn show_test(test_name: &str, single_test: SingleTest)
 {
-    let (sender, receiver) = Tx::new();
+    let (tx, rx) = Tx::new();
     let configuration = get_configuration_with_example_snapshots_path();
 
-    let mut details_view = DetailsView::new(receiver, Tx::stub(), configuration);
+    let mut details_view = DetailsView::new(rx, Tx::stub(), configuration);
 
     let ui = |ui: &mut egui::Ui| {
         details_view.ui(ui);
@@ -205,7 +205,7 @@ fn show_test(test_name: &str, single_test: SingleTest)
 
     let mut harness = Harness::new_ui(ui);
 
-    sender.send(Some(single_test));
+    tx.send(Some(single_test));
 
     harness.run();
     harness.fit_contents();
@@ -217,7 +217,7 @@ fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
     ConfigurationManager::new(PassivateConfig {
         snapshots_path: Some(test_data_path().join("example_snapshots").to_str().unwrap().to_string()),
         .. PassivateConfig::default()
-    }, Tx::stub(), Tx::stub())
+    }, Tx::stub())
 }
 
 fn example_test(name: &str, status: SingleTestStatus) -> SingleTest

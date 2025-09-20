@@ -129,7 +129,6 @@ impl TestRunSetup
                 coverage_enabled: self.coverage_enabled,
                 snapshots_path: Some(self.get_snapshots_path().to_str().unwrap().to_string())
             },
-            Tx::stub(),
             Tx::stub()
         );
 

@@ -7,7 +7,7 @@ use crate::configuration::{ConfigurationManager, PassivateConfig};
 pub fn configuration_update_changes_configuration()
 {
     let configuration = PassivateConfig::default();
-    let mut manager = ConfigurationManager::new(configuration, Tx::stub(), Tx::stub());
+    let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
     manager.update(|c| {
         c.snapshots_path = Some(String::from("Example/path"));
@@ -23,7 +23,7 @@ pub fn configuration_change_is_broadcast()
 {
     let configuration = PassivateConfig::default();
     let (tx, rx1, rx2) = Tx::multi_2();
-    let mut manager = ConfigurationManager::new(configuration, tx, Tx::stub());
+    let mut manager = ConfigurationManager::new(configuration, tx);
 
     manager.update(|c| {
         c.coverage_enabled = true;

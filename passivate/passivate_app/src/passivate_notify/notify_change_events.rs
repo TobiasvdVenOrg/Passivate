@@ -71,10 +71,10 @@ impl NotifyChangeEvents
         {
             Ok(watcher) =>
             {
-                let watcher = Self::start_watcher(watcher, path);
+                let watcher = Self::start_watcher(watcher, path)?;
 
                 Ok(NotifyChangeEvents {
-                    watcher: watcher.expect("aaa"),
+                    watcher,
                     path: path.to_path_buf()
                 })
             }

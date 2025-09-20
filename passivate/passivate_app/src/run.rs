@@ -40,11 +40,11 @@ pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError>
 pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
 {
     // Channels
-    let (tests_status_sender, tests_status_receiver) = Tx::new();
-    let (coverage_sender, coverage_receiver) = Tx::new();
+    let (tests_status_tx, tests_status_rx) = Tx::new();
+    let (coverage_tx, coverage_rx) = Tx::new();
     let (configuration_tx, _configuration_rx1) = Tx::new();
     let (log_tx, log_rx) = Tx::new();
-    let (details_sender, details_receiver) = Tx::new();
+    let (details_tx, details_rx) = Tx::new();
     let (test_run_tx, test_run_rx) = Tx::new();
     let (change_event_tx, change_event_rx) = Tx::new();
 
@@ -73,12 +73,12 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
         .binary_path(binary_path)
         .build();
     
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx, change_event_tx.clone());
+    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx);
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
-        .tests_status_sender(tests_status_sender)
-        .coverage_status_sender(coverage_sender)
+        .tests_status_sender(tests_status_tx)
+        .coverage_status_sender(coverage_tx)
         .log(log_tx)
         .runner(test_processor)
         .build();
@@ -93,18 +93,19 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
     let mut change_events = NotifyChangeEvents::new(path, change_event_tx.clone())?;
 
     // Views
-    let tests_view = TestRunView::new(tests_status_receiver, details_sender);
-    let details_view = DetailsView::new(details_receiver, change_event_tx, configuration.clone());
-    let coverage_view = CoverageView::new(coverage_receiver, configuration.clone());
-    let configuration_view = ConfigurationView::new(configuration);
+    let tests_view = TestRunView::new(tests_status_rx, details_tx);
+    let details_view = DetailsView::new(details_rx, change_event_tx.clone(), configuration.clone());
+    let coverage_view = CoverageView::new(coverage_rx, configuration.clone());
+    let configuration_view = ConfigurationView::new(configuration, change_event_tx);
     let log_view = LogView::new(log_rx);
 
     // Block until app closes
     run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
 
     let _ = change_events.stop();
-    let _ = test_run_thread.join();
+    drop(change_events);
     let _ = change_event_thread.join();
+    let _ = test_run_thread.join();
 
     Ok(())
 }
