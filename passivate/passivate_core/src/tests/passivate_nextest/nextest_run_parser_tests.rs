@@ -2,7 +2,6 @@ use galvanic_assert::matchers::*;
 use galvanic_assert::{assert_that, structure};
 
 use crate::passivate_nextest::NextestParser;
-use crate::test_execution::ParseOutput;
 use crate::test_run_model::{SingleTest, SingleTestStatus, TestRunEvent};
 
 #[test]

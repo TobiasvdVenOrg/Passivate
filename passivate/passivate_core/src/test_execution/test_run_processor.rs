@@ -1,25 +1,25 @@
 use passivate_delegation::{Cancellation, Tx};
 
-use super::{ParseOutput, RunTests, TestRunError};
-use crate::test_run_model::{TestId, TestRun, TestRunEvent, TestRunState};
+use super::{RunTests, TestRunError};
+use crate::{passivate_nextest::NextestParser, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
 
 #[faux::create]
 pub struct TestRunProcessor
 {
     run_tests: Box<dyn RunTests + Send>,
-    parse_output: Box<dyn ParseOutput + Send>,
+    parse_output: NextestParser,
     test_run: TestRun
 }
 
 #[faux::methods]
 impl TestRunProcessor
 {
-    pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>) -> Self
+    pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: NextestParser) -> Self
     {
         Self::from_test_run(run_tests, parse_output, TestRun::default())
     }
 
-    pub fn from_test_run(run_tests: Box<dyn RunTests + Send>, parse_output: Box<dyn ParseOutput + Send>, test_run: TestRun) -> Self
+    pub fn from_test_run(run_tests: Box<dyn RunTests + Send>, parse_output: NextestParser, test_run: TestRun) -> Self
     {
         Self {
             run_tests,
@@ -44,7 +44,7 @@ impl TestRunProcessor
 
         let iterator = self
             .run_tests
-            .run_tests(self.parse_output.get_implementation(), instrument_coverage, cancellation.clone())?;
+            .run_tests(instrument_coverage, cancellation.clone())?;
 
         cancellation.check()?;
 
@@ -106,7 +106,7 @@ impl TestRunProcessor
 
             let iterator = self
                 .run_tests
-                .run_test(self.parse_output.get_implementation(), &test.name, update_snapshots, cancellation.clone())?;
+                .run_test(&test.name, update_snapshots, cancellation.clone())?;
 
             cancellation.check()?;
 

@@ -22,7 +22,6 @@ pub mod test_execution
 {
     mod_use!(change_event_handler);
     mod_use!(run_tests);
-    mod_use!(parse_output);
     mod_use!(test_runner);
     mod_use!(test_run_iterator);
     mod_use!(test_run_processor);
@@ -43,7 +42,6 @@ pub mod test_run_model
 
 pub mod passivate_cargo
 {
-    mod_use!(cargo_test_parser);
     mod_use!(cargo_workspace);
     mod_use!(cargo_workspace_errors);
 }
@@ -69,7 +67,6 @@ pub mod coverage
 pub mod configuration
 {
     mod_use!(passivate_config);
-    mod_use!(test_runner_implementation);
     mod_use!(configuration_event);
     mod_use!(configuration_manager);
 }
@@ -97,7 +94,6 @@ pub mod tests
 
     mod passivate_cargo
     {
-        mod cargo_test_parser_tests;
         mod cargo_workspace_tests;
     }
 

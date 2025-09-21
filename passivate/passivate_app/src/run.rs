@@ -3,9 +3,10 @@ use std::path::{Path, PathBuf};
 
 use egui::Context;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
+use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{build_test_output_parser, change_event_thread, test_run_thread, TestRunHandler, TestRunProcessor, TestRunner};
+use passivate_core::passivate_nextest::NextestParser;
+use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunProcessor, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
 use passivate_delegation::Tx;
 use views::{CoverageView, TestRunView};
@@ -64,7 +65,7 @@ pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) ->
         .coverage_output_dir(coverage_path.clone())
         .build();
 
-    let parser = build_test_output_parser(&TestRunnerImplementation::Nextest);
+    let parser = NextestParser::default();
     let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
     let coverage = Grcov::builder()

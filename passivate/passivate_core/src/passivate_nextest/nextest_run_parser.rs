@@ -1,5 +1,4 @@
-use crate::configuration::TestRunnerImplementation;
-use crate::test_execution::ParseOutput;
+use crate::test_helpers::test_name::test_name;
 use crate::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRunEvent};
 
 enum State
@@ -25,9 +24,9 @@ impl Default for NextestParser
     }
 }
 
-impl ParseOutput for NextestParser
+impl NextestParser
 {
-    fn parse_line(&mut self, line: &str) -> Option<TestRunEvent>
+    pub fn parse_line(&mut self, line: &str) -> Option<TestRunEvent>
     {
         let trimmed = line.trim();
 
@@ -57,7 +56,7 @@ impl ParseOutput for NextestParser
         {
             return Some(TestRunEvent::Compiling(trimmed.to_string()));
         }
-        else if trimmed.contains("STDERR")
+        else if trimmed.contains("stderr")
         {
             self.state = State::ErrorOutput;
         }
@@ -77,10 +76,5 @@ impl ParseOutput for NextestParser
         }
 
         None
-    }
-
-    fn get_implementation(&self) -> TestRunnerImplementation
-    {
-        TestRunnerImplementation::Nextest
     }
 }

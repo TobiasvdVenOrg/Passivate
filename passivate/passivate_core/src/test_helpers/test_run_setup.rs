@@ -5,15 +5,15 @@ use std::path::{Path, PathBuf};
 use bon::bon;
 use passivate_delegation::Tx;
 
-use crate::configuration::{ConfigurationManager, PassivateConfig, TestRunnerImplementation};
+use crate::configuration::{ConfigurationManager, PassivateConfig};
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
-use crate::test_execution::{ParseOutput, TestRunHandler, TestRunProcessor, TestRunner, build_test_output_parser};
+use crate::passivate_nextest::NextestParser;
+use crate::test_execution::{TestRunHandler, TestRunProcessor, TestRunner};
 use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
 {
-    test_runner: TestRunnerImplementation,
     output_path: PathBuf,
     workspace_path: PathBuf,
     base_output_path: PathBuf,
@@ -45,7 +45,6 @@ impl TestRunSetup
 {
     #[builder]
     pub fn new(
-        #[builder(start_fn)] test_runner_implementation: TestRunnerImplementation,
         #[builder(start_fn, into)] output_path: PathBuf,
         #[builder(start_fn, into)] workspace_path: PathBuf,
         #[builder(default = test_output_path())] base_output_path: PathBuf,
@@ -56,30 +55,6 @@ impl TestRunSetup
     ) -> Self
     {
         Self {
-            test_runner: test_runner_implementation,
-            output_path,
-            workspace_path,
-            base_output_path,
-            base_workspace_path,
-            coverage_enabled,
-            tests_status_sender,
-            coverage_sender
-        }
-    }
-
-    #[builder]
-    pub fn cargo(
-        #[builder(start_fn, into)] output_path: PathBuf,
-        #[builder(start_fn, into)] workspace_path: PathBuf,
-        #[builder(default = test_output_path())] base_output_path: PathBuf,
-        #[builder(default = test_data_path())] base_workspace_path: PathBuf,
-        #[builder(default = false)] coverage_enabled: bool,
-        #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
-        #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>
-    ) -> Self
-    {
-        Self {
-            test_runner: TestRunnerImplementation::Cargo,
             output_path,
             workspace_path,
             base_output_path,
@@ -114,7 +89,7 @@ impl TestRunSetup
             .coverage_output_dir(self.get_coverage_path().clone())
             .build();
 
-        let parser: Box<dyn ParseOutput + Send> = build_test_output_parser(&self.test_runner);
+        let parser = NextestParser::default();
         TestRunProcessor::new(Box::new(test_runner), parser)
     }
 
@@ -177,7 +152,7 @@ impl TestRunSetup
 
     pub fn get_output_path(&self) -> PathBuf
     {
-        self.base_output_path.join(&self.output_path).join(self.runner_identifier())
+        self.base_output_path.join(&self.output_path)
     }
 
     pub fn get_passivate_path(&self) -> PathBuf
@@ -198,14 +173,5 @@ impl TestRunSetup
     pub fn get_snapshots_path(&self) -> PathBuf
     {
         self.get_workspace_path().join("tests").join("snapshots")
-    }
-
-    fn runner_identifier(&self) -> PathBuf
-    {
-        match self.test_runner
-        {
-            TestRunnerImplementation::Cargo => PathBuf::from("cargo"),
-            TestRunnerImplementation::Nextest => PathBuf::from("nextest")
-        }
     }
 }

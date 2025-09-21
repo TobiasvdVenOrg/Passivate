@@ -5,8 +5,8 @@ use galvanic_assert::{assert_that, is_variant};
 use passivate_delegation::{Cancellation, Rx, Tx};
 use rstest::rstest;
 
-use crate::configuration::TestRunnerImplementation;
-use crate::test_execution::{MockRunTests, TestRunError, TestRunProcessor, build_test_output_parser};
+use crate::passivate_nextest::NextestParser;
+use crate::test_execution::{MockRunTests, TestRunError, TestRunProcessor};
 use crate::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
 
 struct TestRunIterator
@@ -25,11 +25,9 @@ impl Iterator for TestRunIterator
 }
 
 #[rstest]
-#[case::cargo(TestRunnerImplementation::Cargo)]
-#[case::nextest(TestRunnerImplementation::Nextest)]
-pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerImplementation)
+pub fn run_completes_when_no_tests_are_found()
 {
-    let test_run = run(&implementation, "");
+    let test_run = run("");
 
     let idle = test_run.last().unwrap().state;
 
@@ -37,11 +35,9 @@ pub fn run_completes_when_no_tests_are_found(#[case] implementation: TestRunnerI
 }
 
 #[rstest]
-#[case::cargo(TestRunnerImplementation::Cargo, "test add_2_and_2_is_4 ... ok")]
-#[case::nextest(TestRunnerImplementation::Nextest, "PASS [   0.015s] sample_project::add_tests add_2_and_4_is_6")]
-pub fn run_transitions_to_idle_after_tests_complete(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str)
+pub fn run_transitions_to_idle_after_tests_complete()
 {
-    let test_run = run(&implementation, test_output);
+    let test_run = run("PASS [   0.015s] sample_project::add_tests add_2_and_4_is_6");
 
     let state = test_run.last().unwrap().state;
 
@@ -49,11 +45,9 @@ pub fn run_transitions_to_idle_after_tests_complete(#[case] implementation: Test
 }
 
 #[rstest]
-#[case::cargo(TestRunnerImplementation::Cargo, "   Compiling some-dependency v1.2.3")]
-#[case::nextest(TestRunnerImplementation::Nextest, "   Compiling some-dependency v1.2.3")]
-pub fn build_output_is_captured_for_building_state(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str)
+pub fn build_output_is_captured_for_building_state()
 {
-    let mut test_run = run(&implementation, test_output);
+    let mut test_run = run("   Compiling some-dependency v1.2.3");
 
     let running = test_run.nth(1).unwrap().state;
 
@@ -61,10 +55,9 @@ pub fn build_output_is_captured_for_building_state(#[case] implementation: TestR
 }
 
 #[rstest]
-#[case::nextest(TestRunnerImplementation::Nextest, "error[E0425]: cannot find value `asdf` in this scope")]
-pub fn build_output_is_captured_for_build_failed_state(#[case] implementation: TestRunnerImplementation, #[case] test_output: &str)
+pub fn build_output_is_captured_for_build_failed_state()
 {
-    let test_run = run(&implementation, test_output);
+    let test_run = run("error[E0425]: cannot find value `asdf` in this scope");
 
     let build_failed = test_run.last().unwrap().state;
 
@@ -76,11 +69,11 @@ pub fn error_output_is_captured_for_failed_test()
 {
     let test_output = r#"
     FAIL some_test
-    STDERR
+    stderr
     a
     b
     "#;
-    let test_run = run(&TestRunnerImplementation::Nextest, test_output);
+    let test_run = run(test_output);
 
     let test_run = test_run.last().unwrap();
 
@@ -99,12 +92,12 @@ pub fn error_output_is_recaptured_for_failed_test_on_repeat_runs()
 {
     let test_output = r#"
 FAIL some_test
-STDERR
+stderr
 a
 b
 "#;
 
-    let mut processor = build_processor(&TestRunnerImplementation::Nextest, test_output);
+    let mut processor = build_processor(test_output);
     let (mut tx, rx) = Tx::new();
     let instrument_coverage = false;
 
@@ -125,9 +118,9 @@ b
     );
 }
 
-fn run(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunIterator
+fn run(test_output: &str) -> TestRunIterator
 {
-    let mut processor = build_processor(implementation, test_output);
+    let mut processor = build_processor(test_output);
     let (mut tx, rx) = Tx::new();
     let instrument_coverage = true;
 
@@ -136,11 +129,11 @@ fn run(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunI
     TestRunIterator { rx }
 }
 
-fn build_processor(implementation: &TestRunnerImplementation, test_output: &str) -> TestRunProcessor
+fn build_processor(test_output: &str) -> TestRunProcessor
 {
     let mut run_tests = MockRunTests::new();
     let test_output = test_output.to_string();
-    run_tests.expect_run_tests().returning(move |_implementation, _instrument_coverage, _cancellation| {
+    run_tests.expect_run_tests().returning(move |_instrument_coverage, _cancellation| {
         let iterator = test_output
             .clone()
             .lines()
@@ -151,7 +144,7 @@ fn build_processor(implementation: &TestRunnerImplementation, test_output: &str)
         Ok(Box::new(iterator))
     });
 
-    let parser = build_test_output_parser(implementation);
+    let parser = NextestParser::default();
 
     TestRunProcessor::new(Box::new(run_tests), parser)
 }

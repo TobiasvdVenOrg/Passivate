@@ -7,7 +7,6 @@ use duct::cmd;
 use passivate_delegation::Cancellation;
 
 use super::{RunTests, TestRunError, TestRunIterator};
-use crate::configuration::TestRunnerImplementation;
 
 #[derive(bon::Builder)]
 pub struct TestRunner
@@ -24,7 +23,6 @@ impl RunTests for TestRunner
     // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     fn run_tests(
         &self,
-        implementation: TestRunnerImplementation,
         instrument_coverage: bool,
         cancellation: Cancellation
     ) -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError>
@@ -33,16 +31,9 @@ impl RunTests for TestRunner
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
         let mut args: Vec<OsString> = vec![];
-        match implementation
-        {
-            TestRunnerImplementation::Cargo => args.push(OsString::from("test")),
-            TestRunnerImplementation::Nextest =>
-            {
-                args.push(OsString::from("nextest"));
-                args.push(OsString::from("run"));
-            }
-        };
 
+        args.push(OsString::from("nextest"));
+        args.push(OsString::from("run"));
         args.push(OsString::from("--no-fail-fast"));
         args.push(OsString::from("--target"));
         args.push(self.target.clone());
@@ -69,23 +60,15 @@ impl RunTests for TestRunner
 
     fn run_test(
         &self,
-        implementation: TestRunnerImplementation,
         test_name: &str,
         update_snapshots: bool,
         cancellation: Cancellation
     ) -> Result<Box<dyn Iterator<Item = Result<Rc<String>, TestRunError>>>, TestRunError>
     {
         let mut args: Vec<OsString> = vec![];
-        match implementation
-        {
-            TestRunnerImplementation::Cargo => args.push(OsString::from("test")),
-            TestRunnerImplementation::Nextest =>
-            {
-                args.push(OsString::from("nextest"));
-                args.push(OsString::from("run"));
-            }
-        };
 
+        args.push(OsString::from("nextest"));
+        args.push(OsString::from("run"));
         args.push(OsString::from(&test_name));
         args.push(OsString::from("--no-fail-fast"));
         args.push(OsString::from("--target"));
