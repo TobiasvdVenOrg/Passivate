@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use camino::{Utf8Path, Utf8PathBuf};
 use notify::{Config as NotifyConfig, Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
 use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::Tx;
@@ -12,12 +12,12 @@ use crate::passivate_notify::NotifyChangeEventsError;
 pub struct NotifyChangeEvents
 {
     watcher: RecommendedWatcher,
-    path: PathBuf
+    path: Utf8PathBuf
 }
 
 impl NotifyChangeEvents
 {
-    pub fn new(path: &Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
+    pub fn new(path: &Utf8Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
@@ -38,7 +38,7 @@ impl NotifyChangeEvents
                                 && let Ok(metadata) = fs::metadata(path)
                                 && let Ok(modified) = metadata.modified()
                             {
-                                if let Some(last_modification) = modification_cache.get(path.as_path())
+                                if let Some(last_modification) = modification_cache.get(path)
                                 {
                                     if &modified > last_modification
                                     {
@@ -87,16 +87,16 @@ impl NotifyChangeEvents
 
     pub fn stop(&mut self) -> Result<(), NotifyChangeEventsError>
     {
-        match self.watcher.unwatch(self.path.as_path())
+        match self.watcher.unwatch(self.path.as_std_path())
         {
             Ok(_) => Ok(()),
             Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(self.path.as_path(), notify_error))
         }
     }
 
-    fn start_watcher<T: Watcher>(mut watcher: T, path: &Path) -> Result<T, NotifyChangeEventsError>
+    fn start_watcher<T: Watcher>(mut watcher: T, path: &Utf8Path) -> Result<T, NotifyChangeEventsError>
     {
-        let watch_result = watcher.watch(path, RecursiveMode::Recursive);
+        let watch_result = watcher.watch(path.as_std_path(), RecursiveMode::Recursive);
 
         match watch_result
         {

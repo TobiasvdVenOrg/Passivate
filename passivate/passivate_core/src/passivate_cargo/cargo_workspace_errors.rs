@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 use std::io::Error as IoError;
-use std::path::PathBuf;
+use camino::Utf8PathBuf;
 
 use thiserror::Error;
 
@@ -14,17 +14,14 @@ pub enum CargoWorkspaceError
     Io(#[from] IoError),
 
     #[error("could not find cargo.toml file")]
-    TomlNotFound(PathBuf),
+    TomlNotFound(Utf8PathBuf),
 
     #[error("could not find `Cargo.toml` in `{path:?}`, but found {found:?} please try to rename it to Cargo.toml")]
     IncorrectTomlCasing
     {
-        path: PathBuf, found: OsString
+        path: Utf8PathBuf, found: OsString
     },
 
-    #[error("")]
-    Hey
-    {
-        a: i32, b: i32
-    }
+    #[error("format of `Cargo.toml` file was not UTF8")]
+    NonUtf8
 }

@@ -1,8 +1,8 @@
 use std::ffi::OsString;
 use std::fs;
-use std::path::PathBuf;
 use std::rc::Rc;
 
+use camino::Utf8PathBuf;
 use duct::cmd;
 use passivate_delegation::Cancellation;
 
@@ -12,9 +12,9 @@ use super::{RunTests, TestRunError, TestRunIterator};
 pub struct TestRunner
 {
     target: OsString,
-    working_dir: PathBuf,
-    target_dir: PathBuf,
-    coverage_output_dir: PathBuf
+    working_dir: Utf8PathBuf,
+    target_dir: Utf8PathBuf,
+    coverage_output_dir: Utf8PathBuf
 }
 
 impl RunTests for TestRunner

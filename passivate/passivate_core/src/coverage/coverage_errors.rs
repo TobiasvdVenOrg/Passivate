@@ -1,5 +1,5 @@
 use std::io::ErrorKind as IoErrorKind;
-use std::path::PathBuf;
+use camino::Utf8PathBuf;
 
 use passivate_delegation::Cancelled;
 use thiserror::Error;
@@ -44,6 +44,6 @@ pub enum NoProfrawFilesKind
 #[derive(Debug, Clone, PartialEq)]
 pub struct NoProfrawFilesError
 {
-    pub expected_path: PathBuf,
+    pub expected_path: Utf8PathBuf,
     pub kind: NoProfrawFilesKind
 }

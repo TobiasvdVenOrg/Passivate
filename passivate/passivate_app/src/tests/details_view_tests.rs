@@ -215,7 +215,7 @@ fn show_test(test_name: &str, single_test: SingleTest)
 fn get_configuration_with_example_snapshots_path() -> ConfigurationManager 
 {
     ConfigurationManager::new(PassivateConfig {
-        snapshots_path: Some(test_data_path().join("example_snapshots").to_str().unwrap().to_string()),
+        snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
         .. PassivateConfig::default()
     }, Tx::stub())
 }

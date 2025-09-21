@@ -1,8 +1,8 @@
 use std::ffi::OsString;
 use std::fs;
-use std::path::{Path, PathBuf};
 
 use bon::bon;
+use camino::{Utf8Path, Utf8PathBuf};
 use passivate_delegation::Tx;
 
 use crate::configuration::{ConfigurationManager, PassivateConfig};
@@ -14,28 +14,28 @@ use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
 {
-    output_path: PathBuf,
-    workspace_path: PathBuf,
-    base_output_path: PathBuf,
-    base_workspace_path: PathBuf,
+    output_path: Utf8PathBuf,
+    workspace_path: Utf8PathBuf,
+    base_output_path: Utf8PathBuf,
+    base_workspace_path: Utf8PathBuf,
     tests_status_sender: Tx<TestRun>,
     coverage_sender: Tx<CoverageStatus>,
     coverage_enabled: bool
 }
 
-pub fn test_output_path() -> PathBuf
+pub fn test_output_path() -> Utf8PathBuf
 {
-    dunce::canonicalize(PathBuf::from("../../test_output")).expect("test output path did not exist!")
+    Utf8PathBuf::from_path_buf(dunce::canonicalize(Utf8PathBuf::from("../../test_output")).expect("test output path did not exist!")).expect("expected utf8 path")
 }
 
-pub fn test_data_path() -> PathBuf
+pub fn test_data_path() -> Utf8PathBuf
 {
-    dunce::canonicalize(PathBuf::from("../../test_data")).expect("test data path did not exist!")
+    Utf8PathBuf::from_path_buf(dunce::canonicalize(Utf8PathBuf::from("../../test_data")).expect("test data path did not exist!")).expect("expected utf8 path")
 }
 
-pub fn get_default_workspace_path<P>(workspace_path: P) -> PathBuf
+pub fn get_default_workspace_path<P>(workspace_path: P) -> Utf8PathBuf
 where
-    P: AsRef<Path>
+    P: AsRef<Utf8Path>
 {
     test_data_path().join(workspace_path)
 }
@@ -45,10 +45,10 @@ impl TestRunSetup
 {
     #[builder]
     pub fn new(
-        #[builder(start_fn, into)] output_path: PathBuf,
-        #[builder(start_fn, into)] workspace_path: PathBuf,
-        #[builder(default = test_output_path())] base_output_path: PathBuf,
-        #[builder(default = test_data_path())] base_workspace_path: PathBuf,
+        #[builder(start_fn, into)] output_path: Utf8PathBuf,
+        #[builder(start_fn, into)] workspace_path: Utf8PathBuf,
+        #[builder(default = test_output_path())] base_output_path: Utf8PathBuf,
+        #[builder(default = test_data_path())] base_workspace_path: Utf8PathBuf,
         #[builder(default = false)] coverage_enabled: bool,
         #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
         #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>
@@ -102,7 +102,7 @@ impl TestRunSetup
         let configuration = ConfigurationManager::new(
             PassivateConfig {
                 coverage_enabled: self.coverage_enabled,
-                snapshots_path: Some(self.get_snapshots_path().to_str().unwrap().to_string())
+                snapshots_path: Some(self.get_snapshots_path().to_string())
             },
             Tx::stub()
         );
@@ -145,32 +145,32 @@ impl TestRunSetup
         self
     }
 
-    pub fn get_workspace_path(&self) -> PathBuf
+    pub fn get_workspace_path(&self) -> Utf8PathBuf
     {
         self.base_workspace_path.join(&self.workspace_path)
     }
 
-    pub fn get_output_path(&self) -> PathBuf
+    pub fn get_output_path(&self) -> Utf8PathBuf
     {
         self.base_output_path.join(&self.output_path)
     }
 
-    pub fn get_passivate_path(&self) -> PathBuf
+    pub fn get_passivate_path(&self) -> Utf8PathBuf
     {
         self.get_output_path().join(".passivate")
     }
 
-    pub fn get_coverage_path(&self) -> PathBuf
+    pub fn get_coverage_path(&self) -> Utf8PathBuf
     {
         self.get_passivate_path().join("coverage")
     }
 
-    pub fn get_binary_path(&self) -> PathBuf
+    pub fn get_binary_path(&self) -> Utf8PathBuf
     {
         self.get_output_path().join("x86_64-pc-windows-msvc/debug")
     }
 
-    pub fn get_snapshots_path(&self) -> PathBuf
+    pub fn get_snapshots_path(&self) -> Utf8PathBuf
     {
         self.get_workspace_path().join("tests").join("snapshots")
     }

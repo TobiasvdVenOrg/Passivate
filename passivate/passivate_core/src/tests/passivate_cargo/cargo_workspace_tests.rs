@@ -1,6 +1,6 @@
 use std::ffi::OsString;
-use std::fs;
 
+use camino::Utf8PathBuf;
 use galvanic_assert::matchers::collection::*;
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, structure};
@@ -26,8 +26,8 @@ pub fn query_projects_in_workspace()
 
     let projects = cargo_workspace::projects(&workspace_path).unwrap();
 
-    let project_a_path = dunce::canonicalize(workspace_path.join("project_a")).unwrap();
-    let project_b_path = dunce::canonicalize(workspace_path.join("project_b")).unwrap();
+    let project_a_path = Utf8PathBuf::from_path_buf(dunce::canonicalize(workspace_path.join("project_a")).unwrap()).unwrap();
+    let project_b_path = Utf8PathBuf::from_path_buf(dunce::canonicalize(workspace_path.join("project_b")).unwrap()).unwrap();
 
     assert_that!(&projects, contains_in_order(vec![project_a_path, project_b_path]));
 }

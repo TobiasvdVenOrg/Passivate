@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::Error as IoError;
-use std::path::{Path, PathBuf};
+use camino::{Utf8Path, Utf8PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
@@ -13,9 +13,9 @@ use crate::passivate_cargo::cargo_workspace;
 #[derive(bon::Builder)]
 pub struct Grcov
 {
-    workspace_path: PathBuf,
-    output_path: PathBuf,
-    binary_path: PathBuf
+    workspace_path: Utf8PathBuf,
+    output_path: Utf8PathBuf,
+    binary_path: Utf8PathBuf
 }
 
 impl ComputeCoverage for Grcov
@@ -115,7 +115,7 @@ pub fn parse_covdir(json: &str) -> Result<CovdirJson, CoverageError>
     serde_json::from_str(json).map_err(|e| CoverageError::CovdirParse(e.to_string()))
 }
 
-pub fn get_profraw_count(path: &Path) -> Result<i32, IoError>
+pub fn get_profraw_count(path: &Utf8Path) -> Result<i32, IoError>
 {
     let mut count = 0;
 
@@ -131,7 +131,7 @@ pub fn get_profraw_count(path: &Path) -> Result<i32, IoError>
     Ok(count)
 }
 
-fn remove_profraw_files(directory: &Path) -> Result<(), IoError>
+fn remove_profraw_files(directory: &Utf8Path) -> Result<(), IoError>
 {
     for profraw in fs::read_dir(directory)?.flatten()
     {

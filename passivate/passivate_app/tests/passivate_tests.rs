@@ -21,14 +21,14 @@ async fn main()
 #[cfg(target_os = "windows")]
 pub fn start_and_exit_passivate() -> Result<(), Failed>
 {
-    use std::path::Path;
     use std::time::Duration;
 
+    use camino::Utf8Path;
     use passivate::run_from_path;
     use tokio::{task, time};
 
     run_from_path(
-        Path::new("..\\..\\test_data\\simple_project"),
+        Utf8Path::new("..\\..\\test_data\\simple_project"),
         Box::new(move |context: egui::Context| {
             task::spawn(async move {
                 // Asynchronously send a close window command to passivate after some delay

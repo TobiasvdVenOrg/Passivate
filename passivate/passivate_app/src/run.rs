@@ -1,6 +1,6 @@
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
 
+use camino::{Utf8Path, Utf8PathBuf};
 use egui::Context;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
@@ -27,18 +27,18 @@ pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupErro
     }
 }
 
-pub fn get_path_arg() -> Result<PathBuf, MissingArgumentError>
+pub fn get_path_arg() -> Result<Utf8PathBuf, MissingArgumentError>
 {
     let path = std::env::args().nth(1);
 
     match path
     {
-        Some(p) => Ok(PathBuf::from(p)),
+        Some(p) => Ok(Utf8PathBuf::from(p)),
         None => Err(MissingArgumentError { argument: "path".to_string() })
     }
 }
 
-pub fn run_from_path(path: &Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
 {
     // Channels
     let (tests_status_tx, tests_status_rx) = Tx::new();

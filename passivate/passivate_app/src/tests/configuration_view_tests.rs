@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-
+use camino::Utf8PathBuf;
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::{Key, Queryable};
@@ -104,7 +103,7 @@ pub fn configure_snapshots_path()
         &details_view.get_snapshots(),
         structure!(Option<Snapshots>::Some [
             has_structure!(Snapshots {
-                snapshot_directory: eq(PathBuf::from("Some/Path/To/Snapshots"))
+                snapshot_directory: eq(Utf8PathBuf::from("Some/Path/To/Snapshots"))
             })
         ])
     );

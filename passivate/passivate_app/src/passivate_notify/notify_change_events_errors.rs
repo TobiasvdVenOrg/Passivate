@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use std::path::{Path, PathBuf};
 
+use camino::{Utf8Path, Utf8PathBuf};
 use notify::Error as NotifyError;
 
 pub enum NotifyChangeEventsError
@@ -11,13 +11,13 @@ pub enum NotifyChangeEventsError
 
 pub struct InvalidPathError
 {
-    pub path: PathBuf,
+    pub path: Utf8PathBuf,
     pub notify_error: NotifyError
 }
 
 impl NotifyChangeEventsError
 {
-    pub fn invalid_path(path: &Path, notify_error: NotifyError) -> NotifyChangeEventsError
+    pub fn invalid_path(path: &Utf8Path, notify_error: NotifyError) -> NotifyChangeEventsError
     {
         NotifyChangeEventsError::InvalidPath(InvalidPathError {
             path: path.to_path_buf(),
@@ -25,7 +25,7 @@ impl NotifyChangeEventsError
         })
     }
 
-    fn try_absolute_path(relative_path: &Path) -> String
+    fn try_absolute_path(relative_path: &Utf8Path) -> String
     {
         let canonicalize = dunce::canonicalize(relative_path);
 
@@ -56,7 +56,7 @@ impl Display for NotifyChangeEventsError
         {
             NotifyChangeEventsError::InvalidPath(invalid_path) =>
             {
-                writeln!(f, "input was: {}", invalid_path.path.display())?;
+                writeln!(f, "input was: {}", invalid_path.path)?;
                 writeln!(f, "full path was: {}", Self::try_absolute_path(&invalid_path.path))?;
                 write!(f, "working directory: {}", Self::try_working_dir())
             }

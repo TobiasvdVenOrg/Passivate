@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-
+use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::ConfigurationManager;
@@ -42,7 +41,7 @@ impl DetailsView
     {
         let snapshots_path = self.configuration.get(|c| c.snapshots_path.clone());
 
-        snapshots_path.map(|path| Snapshots::new(PathBuf::from(path)))
+        snapshots_path.map(|path| Snapshots::new(Utf8PathBuf::from(path)))
     }
 
     fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_test: &Option<SingleTest>)

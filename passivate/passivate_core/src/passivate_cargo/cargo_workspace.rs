@@ -1,9 +1,9 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use camino::{Utf8Path, Utf8PathBuf};
 
 use super::CargoWorkspaceError;
 
-pub fn projects(workspace: &Path) -> Result<Vec<PathBuf>, CargoWorkspaceError>
+pub fn projects(workspace: &Utf8Path) -> Result<Vec<Utf8PathBuf>, CargoWorkspaceError>
 {
     let mut toml = workspace.to_path_buf();
 
@@ -22,6 +22,7 @@ pub fn projects(workspace: &Path) -> Result<Vec<PathBuf>, CargoWorkspaceError>
                 });
             }
 
+            let toml_name = Utf8Path::from_os_str(&toml_name).ok_or(CargoWorkspaceError::NonUtf8)?;
             toml = workspace.join(toml_name);
         }
         else
@@ -36,7 +37,7 @@ pub fn projects(workspace: &Path) -> Result<Vec<PathBuf>, CargoWorkspaceError>
         .packages
         .iter()
         .filter(|package| metadata.workspace_members.contains(&package.id))
-        .map(|package| package.manifest_path.clone().into_std_path_buf())
+        .map(|package| package.manifest_path.clone().to_path_buf())
         .filter_map(|path| path.parent().map(|directory| directory.to_path_buf()))
         .collect();
 

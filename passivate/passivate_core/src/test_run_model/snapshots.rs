@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Error as IoError;
-use std::path::{Path, PathBuf};
 
+use camino::{Utf8Path, Utf8PathBuf};
 use epaint::ColorImage;
 use thiserror::Error;
 
@@ -16,7 +16,7 @@ pub struct Snapshot
 #[derive(Clone, Debug)]
 pub struct Snapshots
 {
-    pub snapshot_directory: PathBuf
+    pub snapshot_directory: Utf8PathBuf
 }
 
 #[derive(Error, Debug)]
@@ -34,26 +34,26 @@ pub enum SnapshotError
     #[error("io error occurred loading snapshot:\n{error}\n{path}")]
     Io
     {
-        error: IoError, path: PathBuf
+        error: IoError, path: Utf8PathBuf
     }
 }
 
 impl Snapshots
 {
-    pub fn new(snapshot_directory: PathBuf) -> Self
+    pub fn new(snapshot_directory: Utf8PathBuf) -> Self
     {
         Self { snapshot_directory }
     }
 
     pub fn from_test(&self, single_test: &SingleTest) -> Snapshot
     {
-        let current = self.from_file(PathBuf::from(&single_test.name).with_extension("png"));
-        let new = self.from_file(PathBuf::from(&single_test.name).with_extension("new.png"));
+        let current = self.from_file(Utf8PathBuf::from(&single_test.name).with_extension("png"));
+        let new = self.from_file(Utf8PathBuf::from(&single_test.name).with_extension("new.png"));
 
         Snapshot { current, new }
     }
 
-    pub fn from_file(&self, file: PathBuf) -> Option<Result<ColorImage, SnapshotError>>
+    pub fn from_file(&self, file: Utf8PathBuf) -> Option<Result<ColorImage, SnapshotError>>
     {
         let path = self.snapshot_directory.join(file);
 
@@ -117,7 +117,7 @@ impl Snapshots
         }
     }
 
-    fn open_file(path: &Path) -> Option<Result<File, SnapshotError>>
+    fn open_file(path: &Utf8Path) -> Option<Result<File, SnapshotError>>
     {
         let open = File::open(path);
 

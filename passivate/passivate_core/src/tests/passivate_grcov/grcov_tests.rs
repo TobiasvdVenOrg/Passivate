@@ -2,8 +2,9 @@
 
 use std::fs;
 use std::io::Error as IoError;
-use std::path::{Path, PathBuf};
+use camino::Utf8PathBuf;
 
+use camino::Utf8Path;
 use passivate_delegation::{Cancellation, Tx};
 use pretty_assertions::assert_eq;
 use rstest::*;
@@ -219,12 +220,12 @@ pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled() -> Re
     Ok(())
 }
 
-fn expected_lcov_path(test_name: &Path) -> PathBuf
+fn expected_lcov_path(test_name: &Utf8Path) -> Utf8PathBuf
 {
     test_output_path().join(test_name).join(".passivate/coverage/lcov")
 }
 
-fn expected_lcov_metadata(test_name: &Path) -> Result<fs::Metadata, IoError>
+fn expected_lcov_metadata(test_name: &Utf8Path) -> Result<fs::Metadata, IoError>
 {
     let path = expected_lcov_path(test_name);
     fs::metadata(path)
