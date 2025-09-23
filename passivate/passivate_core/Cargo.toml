@@ -22,7 +22,11 @@ png = "0.17.16"
 bon = "3.6.5"
 crossbeam-channel = "0.5.14"
 dunce = "1.0.5"
+nextest-runner = "0.87.0"
+cargo-nextest = "0.9.104"
+nextest-filtering = "0.16.0"
 camino = "1.2.0"
+guppy = "0.17.21"
 
 [dev-dependencies]
 rstest = "0.25.0"

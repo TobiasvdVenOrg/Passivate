@@ -6,7 +6,7 @@ use passivate_delegation::{Cancellation, Rx, Tx};
 use rstest::rstest;
 
 use crate::passivate_nextest::NextestParser;
-use crate::test_execution::{MockRunTests, TestRunError, TestRunProcessor};
+use crate::test_execution::{TestRunError, TestRunProcessor, TestRunner};
 use crate::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
 
 struct TestRunIterator
@@ -131,20 +131,10 @@ fn run(test_output: &str) -> TestRunIterator
 
 fn build_processor(test_output: &str) -> TestRunProcessor
 {
-    let mut run_tests = MockRunTests::new();
+    let run_tests = TestRunner::faux();
     let test_output = test_output.to_string();
-    run_tests.expect_run_tests().returning(move |_instrument_coverage, _cancellation| {
-        let iterator = test_output
-            .clone()
-            .lines()
-            .map(|line| Ok(Rc::new(line.to_string())))
-            .collect::<Vec<Result<Rc<String>, TestRunError>>>()
-            .into_iter();
-
-        Ok(Box::new(iterator))
-    });
 
     let parser = NextestParser::default();
 
-    TestRunProcessor::new(Box::new(run_tests), parser)
+    TestRunProcessor::new(run_tests, parser)
 }

@@ -10,7 +10,7 @@ use stdext::function_name;
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
-use crate::test_execution::{TestRunError, TestRunHandler, TestRunProcessor, mock_run_tests};
+use crate::test_execution::{TestRunError, TestRunHandler, TestRunProcessor};
 use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestId, TestRunState};
@@ -187,11 +187,10 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
-    use crate::passivate_nextest::NextestParser;
+    use crate::{passivate_nextest::NextestParser, test_execution::TestRunner};
 
-    let mut run_tests = mock_run_tests();
-
-    run_tests.expect_run_tests().returning(|_, _| Err(TestRunError::Cancelled(Cancelled)));
+    let mut run_tests = TestRunner::faux();
+    run_tests._when_run_tests().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
     let processor = TestRunProcessor::new(run_tests, NextestParser::default());
     let (test_run_tx, test_run_rx) = Tx::new();

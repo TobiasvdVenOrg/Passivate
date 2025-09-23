@@ -21,7 +21,6 @@ pub mod cross_cutting
 pub mod test_execution
 {
     mod_use!(change_event_handler);
-    mod_use!(run_tests);
     mod_use!(test_runner);
     mod_use!(test_run_iterator);
     mod_use!(test_run_processor);

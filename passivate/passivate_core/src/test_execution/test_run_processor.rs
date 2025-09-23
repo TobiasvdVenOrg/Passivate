@@ -1,12 +1,12 @@
 use passivate_delegation::{Cancellation, Tx};
 
-use super::{RunTests, TestRunError};
-use crate::{passivate_nextest::NextestParser, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
+use super::TestRunError;
+use crate::{passivate_nextest::NextestParser, test_execution::TestRunner, test_run_model::{TestId, TestRun, TestRunEvent, TestRunState}};
 
 #[faux::create]
 pub struct TestRunProcessor
 {
-    run_tests: Box<dyn RunTests + Send>,
+    run_tests: TestRunner,
     parse_output: NextestParser,
     test_run: TestRun
 }
@@ -14,12 +14,12 @@ pub struct TestRunProcessor
 #[faux::methods]
 impl TestRunProcessor
 {
-    pub fn new(run_tests: Box<dyn RunTests + Send>, parse_output: NextestParser) -> Self
+    pub fn new(run_tests: TestRunner, parse_output: NextestParser) -> Self
     {
         Self::from_test_run(run_tests, parse_output, TestRun::default())
     }
 
-    pub fn from_test_run(run_tests: Box<dyn RunTests + Send>, parse_output: NextestParser, test_run: TestRun) -> Self
+    pub fn from_test_run(run_tests: TestRunner, parse_output: NextestParser, test_run: TestRun) -> Self
     {
         Self {
             run_tests,
@@ -42,35 +42,9 @@ impl TestRunProcessor
 
         cancellation.check()?;
 
-        let iterator = self
-            .run_tests
-            .run_tests(instrument_coverage, cancellation.clone())?;
+        self.run_tests.run_tests(instrument_coverage, cancellation.clone())?;
 
         cancellation.check()?;
-
-        for line in iterator
-        {
-            match line
-            {
-                Ok(line) =>
-                {
-                    let test_run_event = self.parse_output.parse_line(&line);
-
-                    cancellation.check()?;
-
-                    if let Some(test_run_event) = test_run_event
-                    {
-                        self.update(test_run_event, sender);
-                    }
-                }
-                Err(_error) =>
-                {
-                    break;
-                }
-            }
-
-            cancellation.check()?;
-        }
 
         match self.test_run.state
         {
@@ -104,36 +78,10 @@ impl TestRunProcessor
                 sender
             );
 
-            let iterator = self
-                .run_tests
-                .run_test(&test.name, update_snapshots, cancellation.clone())?;
+            self.run_tests.run_test(&test.name, update_snapshots, cancellation.clone())?;
 
             cancellation.check()?;
-
-            for line in iterator
-            {
-                match line
-                {
-                    Ok(line) =>
-                    {
-                        let test_run_event = self.parse_output.parse_line(&line);
-
-                        cancellation.check()?;
-
-                        if let Some(test_run_event) = test_run_event
-                        {
-                            self.update(test_run_event, sender);
-                        }
-                    }
-                    Err(_error) =>
-                    {
-                        break;
-                    }
-                }
-
-                cancellation.check()?;
-            }
-
+            
             self.update(TestRunEvent::TestsCompleted, sender);
         }
 

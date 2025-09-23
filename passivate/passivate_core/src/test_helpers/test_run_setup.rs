@@ -82,15 +82,10 @@ impl TestRunSetup
         #[cfg(target_os = "linux")]
         let target = OsString::from("aarch64-unknown-linux-gnu");
 
-        let test_runner = TestRunner::builder()
-            .target(target)
-            .working_dir(self.get_workspace_path().clone())
-            .target_dir(self.get_output_path().clone())
-            .coverage_output_dir(self.get_coverage_path().clone())
-            .build();
+        let test_runner = TestRunner::new(target, self.get_workspace_path().clone(), self.get_output_path().clone(), self.get_coverage_path().clone());
 
         let parser = NextestParser::default();
-        TestRunProcessor::new(Box::new(test_runner), parser)
+        TestRunProcessor::new(test_runner, parser)
     }
 
     pub fn build_test_run_handler(self) -> TestRunHandler

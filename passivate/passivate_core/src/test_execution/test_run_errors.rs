@@ -10,5 +10,8 @@ pub enum TestRunError
     Io(#[from] IoError),
 
     #[error("test run cancelled")]
-    Cancelled(#[from] Cancelled)
+    Cancelled(#[from] Cancelled),
+
+    #[error("temp")]
+    Temp
 }

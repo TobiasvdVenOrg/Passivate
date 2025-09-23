@@ -58,16 +58,15 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
 
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
-    let test_runner = TestRunner::builder()
-        .target(target)
-        .working_dir(workspace_path.clone())
-        .target_dir(target_path.clone())
-        .coverage_output_dir(coverage_path.clone())
-        .build();
+    let test_runner = TestRunner::new(
+        target,
+        workspace_path.clone(),
+        target_path.clone(),
+        coverage_path.clone());
 
     let parser = NextestParser::default();
     let test_run = TestRun::from_state(TestRunState::FirstRun);
-    let test_processor = TestRunProcessor::from_test_run(Box::new(test_runner), parser, test_run);
+    let test_processor = TestRunProcessor::from_test_run(test_runner, parser, test_run);
     let coverage = Grcov::builder()
         .workspace_path(workspace_path)
         .output_path(coverage_path)
