@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
-use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
+use passivate_core::test_execution::{TestRunHandler, TestRunner};
 use passivate_core::test_helpers::test_name::test_name;
 use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
@@ -147,7 +147,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
         .coverage(Box::new(MockComputeCoverage::new()))
         .coverage_status_sender(Tx::stub())
         .log(Tx::stub())
-        .runner(TestRunProcessor::faux())
+        .runner(TestRunner::faux())
         .tests_status_sender(Tx::stub())
         .build();
 

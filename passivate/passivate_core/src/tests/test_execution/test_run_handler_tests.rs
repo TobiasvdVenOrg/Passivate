@@ -10,7 +10,7 @@ use stdext::function_name;
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
-use crate::test_execution::{TestRunError, TestRunHandler, TestRunProcessor};
+use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestId, TestRunState};
@@ -33,7 +33,17 @@ pub fn handle_single_test_run()
     let state = test_run_rx.last().unwrap();
     assert!(state.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
 
-    let test_to_run_again = state.tests.iter().find(|test| test.name == "add_2_and_2_is_4").unwrap();
+    let mut i = 0;
+
+    for t in state.tests.iter()
+    {
+        i += 1;
+        println!("{:?}", t.name);
+    }
+
+    println!("count: {:?}", i);
+
+    let test_to_run_again = state.tests.iter().find(|test| test.name == "test::add_8_and_8_is_16").unwrap();
 
     handler.handle(
         ChangeEvent::SingleTest {
@@ -58,6 +68,16 @@ pub fn handle_single_test_run()
     let final_state = test_run_rx.last().unwrap();
 
     assert_that!(&final_state.state, is_variant!(TestRunState::Idle));
+
+    i = 0;
+
+    for t in final_state.tests.iter()
+    {
+        i += 1;
+        println!("{:?}", t.name);
+    }
+    println!("count2: {:?}", i);
+
     assert!(final_state.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
 }
 
@@ -124,9 +144,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 #[cfg(target_os = "windows")]
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "project_snapshot_tests")
-        .build()
-        .clean_snapshots();
+    let setup = TestRunSetup::builder(test_name(function_name!()), "project_snapshot_tests").build().clean_snapshots();
 
     let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
     let mut handler = setup.build_test_run_handler();
@@ -187,16 +205,13 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
-    use crate::{passivate_nextest::NextestParser, test_execution::TestRunner};
+    let mut test_runner = TestRunner::faux();
+    test_runner._when_run_tests().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
-    let mut run_tests = TestRunner::faux();
-    run_tests._when_run_tests().then(|_| Err(TestRunError::Cancelled(Cancelled)));
-
-    let processor = TestRunProcessor::new(run_tests, NextestParser::default());
     let (test_run_tx, test_run_rx) = Tx::new();
 
     let mut handler = TestRunHandler::builder()
-        .runner(processor)
+        .runner(test_runner)
         .coverage(Box::new(compute_coverage::stub()))
         .tests_status_sender(test_run_tx)
         .coverage_status_sender(Tx::stub())

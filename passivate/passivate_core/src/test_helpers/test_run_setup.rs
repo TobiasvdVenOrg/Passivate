@@ -9,7 +9,7 @@ use crate::configuration::{ConfigurationManager, PassivateConfig};
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
 use crate::passivate_nextest::NextestParser;
-use crate::test_execution::{TestRunHandler, TestRunProcessor, TestRunner};
+use crate::test_execution::{TestRunHandler, TestRunner};
 use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
@@ -74,7 +74,7 @@ impl TestRunSetup
             .build()
     }
 
-    pub fn build_test_run_processor(&self) -> TestRunProcessor
+    pub fn build_test_runner(&self) -> TestRunner
     {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");
@@ -82,15 +82,12 @@ impl TestRunSetup
         #[cfg(target_os = "linux")]
         let target = OsString::from("aarch64-unknown-linux-gnu");
 
-        let test_runner = TestRunner::new(target, self.get_workspace_path().clone(), self.get_output_path().clone(), self.get_coverage_path().clone());
-
-        let parser = NextestParser::default();
-        TestRunProcessor::new(test_runner, parser)
+        TestRunner::new(target, self.get_workspace_path().clone(), self.get_output_path().clone(), self.get_coverage_path().clone(), TestRun::default())
     }
 
     pub fn build_test_run_handler(self) -> TestRunHandler
     {
-        let processor = self.build_test_run_processor();
+        let runner = self.build_test_runner();
 
         let grcov = self.build_grcov();
 
@@ -103,7 +100,7 @@ impl TestRunSetup
         );
 
         TestRunHandler::builder()
-            .runner(processor)
+            .runner(runner)
             .coverage(Box::new(grcov))
             .tests_status_sender(self.tests_status_sender)
             .coverage_status_sender(self.coverage_sender)

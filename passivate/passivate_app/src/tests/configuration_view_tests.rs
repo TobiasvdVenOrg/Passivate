@@ -7,7 +7,7 @@ use galvanic_assert::{assert_that, has_structure, structure};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::MockComputeCoverage;
-use passivate_core::test_execution::{TestRunHandler, TestRunProcessor};
+use passivate_core::test_execution::{TestRunHandler, TestRunner};
 use passivate_core::test_run_model::Snapshots;
 use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
@@ -45,7 +45,7 @@ pub fn configure_coverage_enabled()
         .coverage(Box::new(MockComputeCoverage::new()))
         .coverage_status_sender(Tx::stub())
         .log(Tx::stub())
-        .runner(TestRunProcessor::faux())
+        .runner(TestRunner::faux())
         .tests_status_sender(Tx::stub())
         .build();
 

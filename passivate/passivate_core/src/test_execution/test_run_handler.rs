@@ -1,13 +1,14 @@
+use std::collections::HashSet;
 use std::thread::{self, JoinHandle};
 
 use bon::Builder;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 
-use super::TestRunProcessor;
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::cross_cutting::LogEvent;
+use crate::test_execution::TestRunner;
 use crate::test_run_model::{FailedTestRun, TestId, TestRun};
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
@@ -25,7 +26,7 @@ pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: Tes
 #[derive(Builder)]
 pub struct TestRunHandler
 {
-    runner: TestRunProcessor,
+    runner: TestRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
     tests_status_sender: Tx<TestRun>,
     coverage_status_sender: Tx<CoverageStatus>,
@@ -81,7 +82,7 @@ impl TestRunHandler
             return;
         }
 
-        let test_output = self.runner.run_tests(&mut self.tests_status_sender, coverage_enabled, cancellation.clone());
+        let test_output = self.runner.run_tests(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new());
 
         if cancellation.is_cancelled()
         {
@@ -129,7 +130,7 @@ impl TestRunHandler
 
     fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let result = self.runner.run_test(&mut self.tests_status_sender, id, update_snapshots, cancellation);
+        let result = self.runner.run_test(id, update_snapshots, cancellation, &mut self.tests_status_sender);
 
         if let Err(error) = result
         {

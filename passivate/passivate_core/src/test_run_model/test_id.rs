@@ -10,4 +10,9 @@ impl TestId
     {
         Self { name: name.to_string() }
     }
+
+    pub fn get_name(&self) -> String
+    {
+        self.name.clone()
+    }
 }

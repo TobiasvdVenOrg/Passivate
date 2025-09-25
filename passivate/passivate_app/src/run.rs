@@ -6,7 +6,7 @@ use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::passivate_nextest::NextestParser;
-use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunProcessor, TestRunner};
+use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
 use passivate_delegation::Tx;
 use views::{CoverageView, TestRunView};
@@ -58,15 +58,16 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
 
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
+
+    let test_run = TestRun::from_state(TestRunState::FirstRun);
     let test_runner = TestRunner::new(
         target,
         workspace_path.clone(),
         target_path.clone(),
-        coverage_path.clone());
+        coverage_path.clone(),
+        test_run);
 
-    let parser = NextestParser::default();
-    let test_run = TestRun::from_state(TestRunState::FirstRun);
-    let test_processor = TestRunProcessor::from_test_run(test_runner, parser, test_run);
+
     let coverage = Grcov::builder()
         .workspace_path(workspace_path)
         .output_path(coverage_path)
@@ -80,7 +81,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
         .tests_status_sender(tests_status_tx)
         .coverage_status_sender(coverage_tx)
         .log(log_tx)
-        .runner(test_processor)
+        .runner(test_runner)
         .build();
 
     let test_run_thread = test_run_thread(test_run_rx, test_run_handler);
