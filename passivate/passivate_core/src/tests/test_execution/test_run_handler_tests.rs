@@ -187,13 +187,14 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
     let state = test_run_rx.last().unwrap();
 
     let failed_test = state.tests.find(&failed_test).unwrap();
+
     assert_that!(
-        // Skip first line as it contains a thread ID that is not deterministic
-        &failed_test.output.into_iter().skip(1).collect::<Vec<_>>(),
+        // Skip first 2 lines to avoid a thread ID that is not deterministic
+        &failed_test.output.into_iter().skip(2).collect::<Vec<_>>(),
         contains_in_order(vec![
             "assertion `left == right` failed".to_string(),
-            "left: 5".to_string(),
-            "right: 4".to_string(),
+            "  left: 5".to_string(),
+            " right: 4".to_string(),
             "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
         ])
     );

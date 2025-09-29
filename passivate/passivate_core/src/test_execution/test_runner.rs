@@ -20,6 +20,7 @@ use nextest_runner::signal::SignalHandlerKind;
 use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::reporter::FinalStatusLevel;
+use nextest_runner::test_output::ChildExecutionOutput;
 use clap::Parser;
 use cargo_nextest::CargoNextestApp;
 use cargo_nextest::OutputContext;
@@ -92,7 +93,6 @@ impl TestRunner
             .target_dir(self.target_dir.clone())
             .call();
 
-        //let cargo_options = CargoOptions::parse_from()
         let manifest_path = self.working_dir.join("Cargo.toml");
         let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &cargo_options, &build_platforms, output_context.clone()).map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
@@ -194,9 +194,6 @@ impl TestRunner
 
         runner
             .execute(|test_event| {
-                let dbg = format!("{:?}", test_event.kind);
-                println!("test_event: {:?}", dbg.split_once("{").unwrap().0);
-
                 let event = match test_event.kind
                 {
                     nextest_runner::reporter::events::TestEventKind::RunStarted {
@@ -273,6 +270,38 @@ impl TestRunner
                         running
                     } => 
                     {
+                        let test_output = run_statuses.iter()
+                            .map(|status|
+                            {
+                                if let ChildExecutionOutput::Output { result, output, errors } = &status.output
+                                {
+                                    match output
+                                    {
+                                        nextest_runner::test_output::ChildOutput::Split(child_split_output) => 
+                                        {
+                                            if let Some(stderr) = &child_split_output.stderr
+                                            {
+                                                stderr.lines().map(|l| String::from_utf8(l.to_vec()).unwrap()).collect()
+                                            }
+                                            else 
+                                            {
+                                                Vec::new()
+                                            }
+                                        },
+                                        nextest_runner::test_output::ChildOutput::Combined { output } => 
+                                        {
+                                            Vec::new()
+                                        },
+                                    }
+                                }
+                                else 
+                                {
+                                    Vec::new()
+                                }
+                            })
+                            .flatten()
+                            .collect();
+
                         let (status, output) = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
                         {
                             (SingleTestStatus::Passed, success_output)
@@ -282,7 +311,7 @@ impl TestRunner
                             (SingleTestStatus::Failed, failure_output)
                         };
 
-                        Some(TestRunEvent::TestFinished(SingleTest::new(test_instance.name.to_string(), status, vec!["MISSING OUTPUT".to_string()])))
+                        Some(TestRunEvent::TestFinished(SingleTest::new(test_instance.name.to_string(), status, test_output)))
                     },
                     nextest_runner::reporter::events::TestEventKind::TestSkipped {
                         stress_index,
@@ -297,7 +326,7 @@ impl TestRunner
                         setup_scripts_running,
                         current_stats,
                         running
-                    } => todo!(),
+                    } => None,
                     nextest_runner::reporter::events::TestEventKind::RunBeginKill {
                         setup_scripts_running,
                         current_stats,
@@ -317,7 +346,6 @@ impl TestRunner
                 if let Some(event) = event
                     && self.test_run.update(event.clone())
                     {
-                        println!("send: {:?}", &event);
                         sender.send(self.test_run.clone());
                     }
             })
