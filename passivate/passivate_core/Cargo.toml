@@ -6,6 +6,10 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 faux = { path = "D:/Projects/faux" }
+nextest-runner = { path = "F:/Projects/passivate-nextest/nextest-runner" }
+cargo-nextest = { path = "F:/Projects/passivate-nextest/cargo-nextest" }
+nextest-filtering = { path = "F:/Projects/passivate-nextest/nextest-filtering" }
+clap = "4.5.48"
 futures = "0.3.31"
 fs_extra = "1.3.0"
 thiserror = "2.0.11"
@@ -22,9 +26,6 @@ png = "0.17.16"
 bon = "3.6.5"
 crossbeam-channel = "0.5.14"
 dunce = "1.0.5"
-nextest-runner = "0.87.0"
-cargo-nextest = "0.9.104"
-nextest-filtering = "0.16.0"
 camino = "1.2.0"
 guppy = "0.17.21"
 

@@ -7,7 +7,6 @@ use camino::Utf8PathBuf;
 use camino::Utf8Path;
 use passivate_delegation::{Cancellation, Tx};
 use pretty_assertions::assert_eq;
-use rstest::*;
 use stdext::function_name;
 
 use crate::change_events::ChangeEvent;
@@ -16,7 +15,7 @@ use crate::passivate_grcov::get_profraw_count;
 use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::{TestRunSetup, test_output_path};
 
-#[rstest]
+#[test]
 pub fn test_run_sends_coverage_result() -> Result<(), IoError>
 {
     let (coverage_tx, coverage_rx) = Tx::new();
@@ -44,7 +43,7 @@ pub fn test_run_sends_coverage_result() -> Result<(), IoError>
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
@@ -61,7 +60,7 @@ pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError>
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_workspace")
@@ -78,7 +77,7 @@ pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError>
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
@@ -102,7 +101,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
     Ok(())
 }
 
-#[rstest]
+#[test]
 // Temporary deletion of the lcov file before re-creation can cause coverage systems relying on it (like Coverage Gutters in VSCode)
 // to briefly error due to "not finding the file" until a new one is created
 pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError>
@@ -127,7 +126,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError>
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
@@ -161,7 +160,7 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
@@ -199,7 +198,7 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
     Ok(())
 }
 
-#[rstest]
+#[test]
 pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")

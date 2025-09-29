@@ -20,6 +20,12 @@ use nextest_runner::signal::SignalHandlerKind;
 use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::reporter::FinalStatusLevel;
+use clap::Parser;
+use cargo_nextest::CargoNextestApp;
+use cargo_nextest::OutputContext;
+use cargo_nextest::acquire_graph_data;
+use cargo_nextest::cargo_options;
+use cargo_nextest::CargoOptions;
 use passivate_delegation::{Cancellation, Tx};
 
 use super::TestRunError;
@@ -50,14 +56,45 @@ impl TestRunner
         }
     }
 
-    // Unable to test effectively due to non-deterministic order of cargo test output (order of tests changes)
-    // During manual testing stdout and stderr output appeared to be interleaved in the correct order
     pub fn run_tests(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
-        let graph_data = self.acquire_graph_data()?;
+        if instrument_coverage
+        {
+            unsafe 
+            {
+                std::env::set_var("RUSTFLAGS", "-C instrument-coverage");
+                std::env::set_var("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));
+            }
+        }
+        else 
+        {
+            unsafe 
+            {
+                std::env::remove_var("RUSTFLAGS");
+                std::env::remove_var("LLVM_PROFILE_FILE");
+            }
+        }
+
+        let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
+            eprintln!("3 {:?}", error);
+            TestRunError::Temp
+        })?;
+
+        let output_context = OutputContext {
+            verbose: true,
+            color: cargo_nextest::Color::Auto
+        };
+
+        let cargo_options = cargo_options()
+            .target_dir(self.target_dir.clone())
+            .call();
+
+        //let cargo_options = CargoOptions::parse_from()
+        let manifest_path = self.working_dir.join("Cargo.toml");
+        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &cargo_options, &build_platforms, output_context.clone()).map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
             eprintln!("1 {:?}", error);
             TestRunError::Temp
@@ -72,12 +109,8 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
-            eprintln!("3 {:?}", error);
-            TestRunError::Temp
-        })?;
-
-        let binary_list = self.compute_binary_list(&graph, &build_platforms)?;
+        let binary_list = cargo_options.compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
+        
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
         let platform_filter = None;
@@ -114,8 +147,6 @@ impl TestRunner
             
             for f in c
             {
-                println!("f: {:?}", f);
-
                 patterns.add_exact_pattern(f);
             }
 
@@ -306,57 +337,5 @@ impl TestRunner
         }
 
         self.run_tests(instrument_coverage, cancellation, sender, filter)
-    }
-
-    fn acquire_graph_data(&self) -> Result<String, TestRunError>
-    {
-        //.add_args(["--filter-platform", &cargo_target_arg_str])
-
-        let mut args: Vec<OsString> = vec![];
-
-        args.push(OsString::from("metadata"));
-        args.push(OsString::from("--format-version=1"));
-        args.push(OsString::from("--all-features"));
-
-        // cargo metadata doesn't support "--target-dir" but setting the environment
-        // variable works.
-        let command = cmd("cargo", args).dir(self.working_dir.clone()).env("CARGO_TARGET_DIR", self.target_dir.as_os_str());
-
-        let output = command.stdout_capture().unchecked().run()?;
-
-        if !output.status.success()
-        {
-            return Err(TestRunError::Io(std::io::Error::new(std::io::ErrorKind::AddrInUse, "")));
-        }
-
-        let json = String::from_utf8(output.stdout).map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
-
-        Ok(json)
-    }
-
-    fn compute_binary_list(&self, graph: &PackageGraph, build_platforms: &BuildPlatforms) -> Result<BinaryList, TestRunError>
-    {
-        let mut args: Vec<OsString> = vec![];
-
-        args.push(OsString::from("test"));
-        args.push(OsString::from("--no-run"));
-        args.push(OsString::from("--message-format"));
-        args.push(OsString::from("json-render-diagnostics"));
-
-        let command = cmd("cargo", args).dir(&self.working_dir);
-
-        let output = command.stdout_capture().unchecked().run()?;
-
-        if !output.status.success()
-        {
-            return Err(TestRunError::Io(std::io::Error::new(std::io::ErrorKind::AddrInUse, "")));
-        }
-
-        let test_binaries = BinaryList::from_messages(Cursor::new(output.stdout), graph, build_platforms.clone()).map_err(|error| {
-            eprintln!("{:?}", error);
-            TestRunError::Io(std::io::Error::new(std::io::ErrorKind::AddrInUse, ""))
-        })?;
-
-        Ok(test_binaries)
     }
 }

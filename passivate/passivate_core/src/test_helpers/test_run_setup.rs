@@ -159,7 +159,7 @@ impl TestRunSetup
 
     pub fn get_binary_path(&self) -> Utf8PathBuf
     {
-        self.get_output_path().join("x86_64-pc-windows-msvc/debug")
+        self.get_output_path().join("debug")
     }
 
     pub fn get_snapshots_path(&self) -> Utf8PathBuf
