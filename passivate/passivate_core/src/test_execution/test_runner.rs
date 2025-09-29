@@ -59,6 +59,15 @@ impl TestRunner
 
     pub fn run_tests(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
     {
+        let cargo_options = cargo_options()
+            .target_dir(self.target_dir.clone())
+            .call();
+
+        self.run_tests_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
+    }
+
+    fn run_tests_with_options(&mut self, options: CargoOptions, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
@@ -89,12 +98,8 @@ impl TestRunner
             color: cargo_nextest::Color::Auto
         };
 
-        let cargo_options = cargo_options()
-            .target_dir(self.target_dir.clone())
-            .call();
-
         let manifest_path = self.working_dir.join("Cargo.toml");
-        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &cargo_options, &build_platforms, output_context.clone()).map_err(|error| TestRunError::Temp)?;
+        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms, output_context.clone()).map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
             eprintln!("1 {:?}", error);
             TestRunError::Temp
@@ -109,7 +114,7 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let binary_list = cargo_options.compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
+        let binary_list = options.compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
         
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
@@ -364,6 +369,23 @@ impl TestRunner
             sender.send(self.test_run.clone());
         }
 
-        self.run_tests(instrument_coverage, cancellation, sender, filter)
+        unsafe 
+        {
+            if update_snapshots
+            {
+                std::env::set_var("UPDATE_SNAPSHOTS", "1");
+            }
+            else 
+            {
+                std::env::set_var("UPDATE_SNAPSHOTS", "0");
+            }
+        }
+
+        let cargo_options = cargo_options()
+            .all_features(true)
+            .target_dir(self.target_dir.clone())
+            .call();
+
+        self.run_tests_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
     }
 }
