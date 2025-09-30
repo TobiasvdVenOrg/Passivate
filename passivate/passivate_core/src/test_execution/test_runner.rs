@@ -1,19 +1,16 @@
 use std::collections::BTreeSet;
-use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;
-use std::io::Cursor;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
-use duct::cmd;
 use guppy::graph::PackageGraph;
 use nextest_filtering::ParseContext;
 use nextest_runner::cargo_config::{CargoConfigs, EnvironmentMap};
 use nextest_runner::config::core::{NextestConfig, get_num_cpus};
 use nextest_runner::double_spawn::DoubleSpawnInfo;
 use nextest_runner::input::InputHandlerKind;
-use nextest_runner::list::{BinaryList, RustTestArtifact, TestExecuteContext, TestList};
+use nextest_runner::list::{RustTestArtifact, TestExecuteContext, TestList};
 use nextest_runner::platform::BuildPlatforms;
 use nextest_runner::reuse_build::PathMapper;
 use nextest_runner::signal::SignalHandlerKind;
@@ -21,12 +18,11 @@ use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::reporter::FinalStatusLevel;
 use nextest_runner::test_output::ChildExecutionOutput;
-use clap::Parser;
-use cargo_nextest::CargoNextestApp;
-use cargo_nextest::OutputContext;
+use nextest_runner::runner::TestRunnerBuilder;
 use cargo_nextest::acquire_graph_data;
 use cargo_nextest::cargo_options;
 use cargo_nextest::CargoOptions;
+use cargo_nextest::OutputContext;
 use passivate_delegation::{Cancellation, Tx};
 
 use super::TestRunError;
@@ -138,9 +134,6 @@ impl TestRunner
             target_runner: &target_runner
         };
 
-        let partitioner_builder = None;
-        let test_filter_expressions = vec![];
-
         let test_filter_builder = if filter.is_empty()
         {
             TestFilterBuilder::default_set(RunIgnored::Default)
@@ -154,6 +147,9 @@ impl TestRunner
             {
                 patterns.add_exact_pattern(f);
             }
+
+            let partitioner_builder = None;
+            let test_filter_expressions = vec![];
 
             TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns,  test_filter_expressions).map_err(|error| TestRunError::Temp)?
         };
@@ -182,7 +178,7 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let runner = nextest_runner::runner::TestRunnerBuilder::default()
+        let runner = TestRunnerBuilder::default()
             .build(
                 &test_list,
                 &profile,
