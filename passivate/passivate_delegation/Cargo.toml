@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-faux = { path = "D:/Projects/faux" }
+faux = "0.1.13"
 crossbeam-channel = "0.5.14"
 quote = "1.0.40"
 syn = { version = "2.0.106", features = ["full"]}
