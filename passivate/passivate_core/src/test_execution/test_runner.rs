@@ -19,12 +19,10 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::reporter::FinalStatusLevel;
 use nextest_runner::test_output::ChildExecutionOutput;
 use nextest_runner::runner::TestRunnerBuilder;
-use cargo_nextest::acquire_graph_data;
-use cargo_nextest::cargo_options;
-use cargo_nextest::CargoOptions;
-use cargo_nextest::OutputContext;
+use nextest_runner::cargo_cli::acquire_graph_data;
+use nextest_runner::cargo_cli::CargoOptions;
 use passivate_delegation::{Cancellation, Tx};
-
+use crate::passivate_nextest::cargo_options;
 use super::TestRunError;
 use crate::test_run_model::{TestId, TestRun, TestRunEvent, SingleTest, SingleTestStatus};
 
@@ -89,13 +87,8 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let output_context = OutputContext {
-            verbose: true,
-            color: cargo_nextest::Color::Auto
-        };
-
         let manifest_path = self.working_dir.join("Cargo.toml");
-        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms, output_context.clone()).map_err(|error| TestRunError::Temp)?;
+        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms).map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
             eprintln!("1 {:?}", error);
             TestRunError::Temp
@@ -110,7 +103,7 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let binary_list = options.compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
+        let binary_list = options.compute_binary_list(&graph, Some(&manifest_path), build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
         
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);

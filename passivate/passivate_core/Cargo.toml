@@ -7,7 +7,6 @@ edition = "2024"
 passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 faux = "0.1.13"
 nextest-runner = { path = "F:/Projects/passivate-nextest/nextest-runner" }
-cargo-nextest = { path = "F:/Projects/passivate-nextest/cargo-nextest" }
 nextest-filtering = { path = "F:/Projects/passivate-nextest/nextest-filtering" }
 clap = "4.5.48"
 futures = "0.3.31"

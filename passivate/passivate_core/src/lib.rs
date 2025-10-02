@@ -47,6 +47,7 @@ pub mod passivate_cargo
 pub mod passivate_nextest
 {
     mod_use!(nextest_run_parser);
+    mod_use!(nextest_cargo_options);
 }
 
 pub mod passivate_grcov
