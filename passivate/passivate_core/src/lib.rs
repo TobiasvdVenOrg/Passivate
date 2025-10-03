@@ -46,7 +46,6 @@ pub mod passivate_cargo
 
 pub mod passivate_nextest
 {
-    mod_use!(nextest_run_parser);
     mod_use!(nextest_cargo_options);
 }
 
@@ -94,11 +93,6 @@ pub mod tests
     mod passivate_cargo
     {
         mod cargo_workspace_tests;
-    }
-
-    mod passivate_nextest
-    {
-        mod nextest_run_parser_tests;
     }
 
     mod test_execution

@@ -8,7 +8,6 @@ use passivate_delegation::Tx;
 use crate::configuration::{ConfigurationManager, PassivateConfig};
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
-use crate::passivate_nextest::NextestParser;
 use crate::test_execution::{TestRunHandler, TestRunner};
 use crate::test_run_model::TestRun;
 

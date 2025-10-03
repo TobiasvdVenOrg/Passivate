@@ -5,7 +5,6 @@ use egui::Context;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::passivate_grcov::Grcov;
-use passivate_core::passivate_nextest::NextestParser;
 use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
 use passivate_delegation::Tx;
