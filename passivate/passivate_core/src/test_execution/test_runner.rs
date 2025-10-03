@@ -191,83 +191,34 @@ impl TestRunner
                 let event = match test_event.kind
                 {
                     nextest_runner::reporter::events::TestEventKind::RunStarted {
-                        test_list,
-                        run_id,
-                        profile_name,
-                        cli_args,
-                        stress_condition
+                        test_list: _,
+                        run_id: _,
+                        profile_name: _,
+                        cli_args: _,
+                        stress_condition: _
                     } => Some(TestRunEvent::Start),
-                    nextest_runner::reporter::events::TestEventKind::StressSubRunStarted { progress } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::SetupScriptStarted {
-                        stress_index,
-                        index,
-                        total,
-                        script_id,
-                        program,
-                        args,
-                        no_capture
-                    } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::SetupScriptSlow {
-                        stress_index,
-                        script_id,
-                        program,
-                        args,
-                        elapsed,
-                        will_terminate
-                    } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::SetupScriptFinished {
-                        stress_index,
-                        index,
-                        total,
-                        script_id,
-                        program,
-                        args,
-                        junit_store_success_output,
-                        junit_store_failure_output,
-                        no_capture,
-                        run_status
-                    } => todo!(),
                     nextest_runner::reporter::events::TestEventKind::TestStarted {
-                        stress_index,
+                        stress_index: _,
                         test_instance,
-                        current_stats,
-                        running
+                        current_stats: _,
+                        running: _
                     } => Some(TestRunEvent::StartSingle { test: TestId::new(test_instance.name), clear_tests: false }),
-                    nextest_runner::reporter::events::TestEventKind::TestSlow {
-                        stress_index,
-                        test_instance,
-                        retry_data,
-                        elapsed,
-                        will_terminate
-                    } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::TestAttemptFailedWillRetry {
-                        stress_index,
-                        test_instance,
-                        run_status,
-                        delay_before_next_attempt,
-                        failure_output
-                    } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::TestRetryStarted {
-                        stress_index,
-                        test_instance,
-                        retry_data
-                    } => todo!(),
                     nextest_runner::reporter::events::TestEventKind::TestFinished {
-                        stress_index,
+                        stress_index: _,
                         test_instance,
-                        success_output,
-                        failure_output,
-                        junit_store_success_output,
-                        junit_store_failure_output,
+                        success_output: _,
+                        failure_output: _,
+                        junit_store_success_output: _,
+                        junit_store_failure_output: _,
                         run_statuses,
-                        current_stats,
-                        running
+                        current_stats: _,
+                        running: _
                     } => 
                     {
                         let test_output = run_statuses.iter()
-                            .map(|status|
+                            .flat_map(|status|
                             {
-                                if let ChildExecutionOutput::Output { result, output, errors } = &status.output
+                                if let ChildExecutionOutput::Output { result: _, output, errors: _ } = &status.output
                                 {
                                     match output
                                     {
@@ -293,48 +244,26 @@ impl TestRunner
                                     Vec::new()
                                 }
                             })
-                            .flatten()
                             .collect();
 
-                        let (status, output) = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
+                        let status = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
                         {
-                            (SingleTestStatus::Passed, success_output)
+                            SingleTestStatus::Passed
                         }
                         else
                         {
-                            (SingleTestStatus::Failed, failure_output)
+                            SingleTestStatus::Failed
                         };
 
                         Some(TestRunEvent::TestFinished(SingleTest::new(test_instance.name.to_string(), status, test_output)))
                     },
-                    nextest_runner::reporter::events::TestEventKind::TestSkipped {
-                        stress_index,
-                        test_instance,
-                        reason
-                    } => None,
-                    nextest_runner::reporter::events::TestEventKind::InfoStarted { total, run_stats } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::InfoResponse { index, total, response } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::InfoFinished { missing } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::InputEnter { current_stats, running } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::RunBeginCancel {
-                        setup_scripts_running,
-                        current_stats,
-                        running
-                    } => None,
-                    nextest_runner::reporter::events::TestEventKind::RunBeginKill {
-                        setup_scripts_running,
-                        current_stats,
-                        running
-                    } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::RunPaused { setup_scripts_running, running } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::RunContinued { setup_scripts_running, running } => todo!(),
-                    nextest_runner::reporter::events::TestEventKind::StressSubRunFinished { progress, sub_elapsed, sub_stats } => todo!(),
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
-                        run_id,
-                        start_time,
-                        elapsed,
-                        run_stats
-                    } => Some(TestRunEvent::TestsCompleted)
+                        run_id: _,
+                        start_time: _,
+                        elapsed: _,
+                        run_stats: _
+                    } => Some(TestRunEvent::TestsCompleted),
+                    _ => None
                 };
 
                 if let Some(event) = event
