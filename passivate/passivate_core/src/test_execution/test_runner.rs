@@ -22,6 +22,7 @@ use nextest_runner::runner::TestRunnerBuilder;
 use nextest_runner::cargo_cli::acquire_graph_data;
 use nextest_runner::cargo_cli::CargoOptions;
 use passivate_delegation::{Cancellation, Tx};
+use nextest_runner::config::elements::MaxFail;
 use crate::passivate_nextest::cargo_options;
 use super::TestRunError;
 use crate::test_run_model::{TestId, TestRun, TestRunEvent, SingleTest, SingleTestStatus};
@@ -53,6 +54,11 @@ impl TestRunner
 
     pub fn run_tests(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
     {
+        if self.test_run.update(TestRunEvent::Start)
+        {
+            sender.send(self.test_run.clone());
+        }
+
         let cargo_options = cargo_options()
             .target_dir(self.target_dir.clone())
             .call();
@@ -171,7 +177,10 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let runner = TestRunnerBuilder::default()
+        let mut runner_builder = TestRunnerBuilder::default();
+        runner_builder.set_max_fail(MaxFail::from_fail_fast(false));
+
+        let runner = runner_builder
             .build(
                 &test_list,
                 &profile,
@@ -196,13 +205,13 @@ impl TestRunner
                         profile_name: _,
                         cli_args: _,
                         stress_condition: _
-                    } => Some(TestRunEvent::Start),
+                    } => None,
                     nextest_runner::reporter::events::TestEventKind::TestStarted {
                         stress_index: _,
                         test_instance,
                         current_stats: _,
                         running: _
-                    } => Some(TestRunEvent::StartSingle { test: TestId::new(test_instance.name), clear_tests: false }),
+                    } => None,
                     nextest_runner::reporter::events::TestEventKind::TestFinished {
                         stress_index: _,
                         test_instance,
@@ -215,7 +224,7 @@ impl TestRunner
                         running: _
                     } => 
                     {
-                        let test_output = run_statuses.iter()
+                        let test_output: Vec<String> = run_statuses.iter()
                             .flat_map(|status|
                             {
                                 if let ChildExecutionOutput::Output { result: _, output, errors: _ } = &status.output

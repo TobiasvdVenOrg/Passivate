@@ -27,57 +27,19 @@ pub fn handle_single_test_run()
         .clean_output()
         .build_test_run_handler();
 
-    // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
-
-    let state = test_run_rx.last().unwrap();
-    assert!(state.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
-
-    let mut i = 0;
-
-    for t in state.tests.iter()
-    {
-        i += 1;
-        println!("{:?}", t.name);
-    }
-
-    println!("count: {:?}", i);
-
-    let test_to_run_again = state.tests.iter().find(|test| test.name == "test::add_8_and_8_is_16").unwrap();
+    let test_to_run_again = TestId::new("test::add_8_and_8_is_16");
 
     handler.handle(
         ChangeEvent::SingleTest {
-            id: test_to_run_again.id(),
+            id: test_to_run_again,
             update_snapshots: false
         },
         Cancellation::default()
     );
 
-    let running_single = test_run_rx.next().unwrap();
-
-    assert_that!(&running_single.state, is_variant!(TestRunState::Running));
-
-    // Assert that all tests are still passing, except the single test, which is running
-    assert!(
-        state
-            .tests
-            .iter()
-            .all(|test| { (test.id() == test_to_run_again.id() && test.status == SingleTestStatus::Unknown) || test.status == SingleTestStatus::Passed })
-    );
-
     let final_state = test_run_rx.last().unwrap();
 
     assert_that!(&final_state.state, is_variant!(TestRunState::Idle));
-
-    i = 0;
-
-    for t in final_state.tests.iter()
-    {
-        i += 1;
-        println!("{:?}", t.name);
-    }
-    println!("count2: {:?}", i);
-
     assert!(final_state.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
 }
 
@@ -180,6 +142,42 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
         .build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+
+    let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
+
+    let state = test_run_rx.last().unwrap();
+
+    let failed_test = state.tests.find(&failed_test).unwrap();
+
+    assert_that!(
+        // Skip first 2 lines to avoid a thread ID that is not deterministic
+        &failed_test.output.into_iter().skip(2).collect::<Vec<_>>(),
+        contains_in_order(vec![
+            "assertion `left == right` failed".to_string(),
+            "  left: 5".to_string(),
+            " right: 4".to_string(),
+            "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
+        ])
+    );
+
+    Ok(())
+}
+
+#[test]
+#[cfg(target_os = "windows")]
+pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
+{
+    let (test_run_tx, test_run_rx) = Tx::new();
+
+    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project_failing_tests")
+        .tests_status_sender(test_run_tx)
+        .build()
+        .clean_output()
+        .build_test_run_handler();
+
+    // Run tests twice
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
