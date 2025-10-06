@@ -2,7 +2,8 @@
 members = [
     "passivate_core",
     "passivate_app",
-    "passivate_delegation"
+    "passivate_delegation",
+    "passivate_hyp_names"
 ]
 resolver = "2"
 
