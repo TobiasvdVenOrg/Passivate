@@ -8,6 +8,7 @@ use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::MockComputeCoverage;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};
+use passivate_core::test_helpers::test_name::test_name;
 use passivate_core::test_run_model::Snapshots;
 use passivate_delegation::{Rx, Tx};
 use stdext::function_name;
@@ -107,9 +108,4 @@ pub fn configure_snapshots_path()
             })
         ])
     );
-}
-
-fn test_name(function_name: &str) -> String
-{
-    function_name.split("::").last().unwrap_or(function_name).to_string()
 }
