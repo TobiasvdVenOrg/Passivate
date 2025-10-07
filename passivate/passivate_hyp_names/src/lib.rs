@@ -3,7 +3,7 @@ pub mod hyp_id;
 pub mod hyp_name_strategy;
 
 #[macro_export]
-macro_rules! test_name {
+macro_rules! test_id {
     () => {
         if !stdext::function_name!().contains(env!("CARGO_PKG_NAME"))
         {

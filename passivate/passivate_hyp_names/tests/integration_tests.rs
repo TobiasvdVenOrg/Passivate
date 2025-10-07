@@ -1,5 +1,5 @@
 
-use passivate_hyp_names::test_name;
+use passivate_hyp_names::test_id;
 
 mod sub_dir
 {
@@ -7,22 +7,22 @@ mod sub_dir
 }
 
 #[test]
-pub fn example_integration_test_name()
+pub fn example_integration_test_id()
 {
-    let name = test_name!();
+    let id = test_id!();
 
-    assert_eq!("passivate_hyp_names::integration_tests::example_integration_test_name", name);
+    assert_eq!("passivate_hyp_names::integration_tests::example_integration_test_id", id);
 }
 
 mod sub_mod
 {
-    use passivate_hyp_names::test_name;
+    use passivate_hyp_names::test_id;
 
     #[test]
-    pub fn example_integration_test_in_sub_mod_name()
+    pub fn example_integration_test_in_sub_mod_id()
     {
-        let name = test_name!();
+        let id = test_id!();
 
-        assert_eq!("passivate_hyp_names::integration_tests::sub_mod::example_integration_test_in_sub_mod_name", name);
+        assert_eq!("passivate_hyp_names::integration_tests::sub_mod::example_integration_test_in_sub_mod_id", id);
     }
 }
