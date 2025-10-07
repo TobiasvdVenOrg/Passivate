@@ -1,21 +1,21 @@
 use thiserror::Error;
 
-// pub enum HypNameStrategy
-// {
-//     Default,
-//     NameOnly
-// }
+pub enum HypNameStrategy
+{
+    Default,
+    NameOnly
+}
 
-// impl HypNameStrategy
-// {
-//     fn convert<'a>(&self, id: &HypId) -> &'a str
-//     {
-//         match self
-//         {
-//             HypNameStrategy::Default | HypNameStrategy::NameOnly => id.full_id.split_terminator("::").last()
-//         }
-//     }
-// }
+impl HypNameStrategy
+{
+    pub fn convert<'a>(&self, id: &'a HypId) -> &'a str
+    {
+        match self
+        {
+            HypNameStrategy::Default | HypNameStrategy::NameOnly => id.parts.last().unwrap()
+        }
+    }
+}
 
 pub struct HypId
 {
@@ -24,15 +24,10 @@ pub struct HypId
 
 impl HypId
 {
-    // pub fn new(test_id: String) -> Self
-    // {
-    //     Self { full_id: test_id }
-    // }
-
-    // pub fn into_name<'a>(&self, name_only: &HypNameStrategy) -> &'a str
-    // {
-    //     name_only.convert(&self.full_id)
-    // }
+    pub fn get_name<'a>(&'a self, name_only: &'a HypNameStrategy) -> &'a str
+    {
+        name_only.convert(self)
+    }
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -62,11 +57,9 @@ impl TryFrom<&str> for HypId
 #[cfg(test)]
 mod tests
 {
-    use crate::hyp_id::{HypId, HypIdError};
+    use crate::hyp_id::{HypId, HypIdError, HypNameStrategy};
     use crate::test_id;
     use rstest::*;
-    use galvanic_assert::*;
-    use galvanic_assert::matchers::*;
 
     #[test]
     pub fn example_unit_test_id()
@@ -85,13 +78,13 @@ mod tests
         assert!(matches!(id, Err(HypIdError::InvalidFormat(_))));
     }
 
-    // #[test]
-    // pub fn id_as_name_only_from_unit_test()
-    // {
-    //     let id = HypId::new(test_id!());
+    #[test]
+    pub fn id_as_name_only_from_unit_test()
+    {
+        let id = HypId::try_from(test_id!().as_ref()).unwrap();
 
-    //     let name = id.into_name(&HypNameStrategy::NameOnly);
+        let name = id.get_name(&HypNameStrategy::NameOnly);
 
-    //     assert_eq!("id_as_name_only_from_unit_test", name);
-    // }
+        assert_eq!("id_as_name_only_from_unit_test", name);
+    }
 }
