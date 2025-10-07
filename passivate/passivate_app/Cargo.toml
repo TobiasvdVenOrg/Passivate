@@ -30,7 +30,7 @@ libtest-mimic = "0.8.1"
 egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }
 stdext = "0.3.3"
 tokio = { version = "1.42.0", features = [ "full" ] }
-rstest = "0.25.0"
+rstest = "0.26.1"
 pretty_assertions = "1.4.1"
 galvanic-assert = "0.8.7"
 

@@ -5,3 +5,8 @@ edition = "2024"
 
 [dependencies]
 stdext = "0.3.3"
+thiserror = "2.0.11"
+
+[dev-dependencies]
+rstest = "0.26.1"
+galvanic-assert = "0.8.7"
