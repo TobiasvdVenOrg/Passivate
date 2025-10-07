@@ -14,3 +14,10 @@ macro_rules! test_id {
         }
     };
 }
+
+#[macro_export]
+macro_rules! test_name {
+    () => {
+        HypId::try_from(test_id!().as_ref()).unwrap().get_name(&HypNameStrategy::Default).to_string()
+    };
+}

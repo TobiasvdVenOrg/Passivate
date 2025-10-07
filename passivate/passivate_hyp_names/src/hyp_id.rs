@@ -58,7 +58,7 @@ impl TryFrom<&str> for HypId
 mod tests
 {
     use crate::hyp_id::{HypId, HypIdError, HypNameStrategy};
-    use crate::test_id;
+    use crate::{test_id, test_name};
     use rstest::*;
 
     #[test]
@@ -86,5 +86,13 @@ mod tests
         let name = id.get_name(&HypNameStrategy::NameOnly);
 
         assert_eq!("id_as_name_only_from_unit_test", name);
+    }
+
+    #[test]
+    pub fn example_unit_test_name()
+    {
+        let name = test_name!();
+
+        assert_eq!("example_unit_test_name", name);
     }
 }
