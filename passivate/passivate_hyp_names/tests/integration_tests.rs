@@ -1,6 +1,11 @@
 
 use passivate_hyp_names::test_name;
 
+mod sub_dir
+{
+    mod more_integration_tests;
+}
+
 #[test]
 pub fn example_integration_test_name()
 {
