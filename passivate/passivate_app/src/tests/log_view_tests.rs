@@ -4,9 +4,9 @@ use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use passivate_core::{cross_cutting::LogEvent, test_helpers::test_name::test_name};
+use passivate_core::cross_cutting::LogEvent;
 use passivate_delegation::Tx;
-use stdext::function_name;
+use passivate_hyp_names::test_name;
 
 use crate::views::{LogView, View};
 
@@ -27,7 +27,7 @@ pub fn show_a_single_log()
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 #[test]
@@ -64,5 +64,5 @@ pub fn many_logs_are_scrollable()
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }

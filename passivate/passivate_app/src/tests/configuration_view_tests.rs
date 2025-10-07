@@ -8,10 +8,9 @@ use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::MockComputeCoverage;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};
-use passivate_core::test_helpers::test_name::test_name;
 use passivate_core::test_run_model::Snapshots;
 use passivate_delegation::{Rx, Tx};
-use stdext::function_name;
+use passivate_hyp_names::test_name;
 
 use crate::views::{ConfigurationView, DetailsView, View};
 
@@ -34,7 +33,7 @@ pub fn show_configuration()
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 #[test]
@@ -64,9 +63,7 @@ pub fn configure_coverage_enabled()
 
     harness.run();
 
-    assert_that!(
-        &change_events_rx.last().expect("expected change event"),
-        eq(ChangeEvent::DefaultRun));
+    assert_that!(&change_events_rx.last().expect("expected change event"), eq(ChangeEvent::DefaultRun));
 
     assert!(test_run_handler.coverage_enabled());
 }
@@ -96,9 +93,7 @@ pub fn configure_snapshots_path()
 
     drop(harness);
 
-    assert_that!(
-        &change_events_rx.last().expect("expected change event"),
-        eq(ChangeEvent::DefaultRun));
+    assert_that!(&change_events_rx.last().expect("expected change event"), eq(ChangeEvent::DefaultRun));
 
     assert_that!(
         &details_view.get_snapshots(),

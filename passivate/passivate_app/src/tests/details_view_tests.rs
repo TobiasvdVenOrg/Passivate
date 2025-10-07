@@ -4,12 +4,11 @@ use galvanic_assert::matchers::*;
 use galvanic_assert::*;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
-use passivate_core::test_helpers::test_name::test_name;
 use passivate_core::test_helpers::test_run_setup::test_data_path;
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
+use passivate_hyp_names::test_name;
 use rstest::*;
-use stdext::function_name;
 
 use crate::views::{DetailsView, TestRunView, View};
 
@@ -18,7 +17,7 @@ pub fn show_a_passing_test()
 {
     let failing_test = example_test("ExampleTest", SingleTestStatus::Passed);
 
-    show_test(&test_name(function_name!()), failing_test);
+    show_test(&test_name!(), failing_test);
 }
 
 #[test]
@@ -26,7 +25,7 @@ pub fn show_a_failing_test()
 {
     let failing_test = example_test("ExampleTest", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), failing_test);
+    show_test(&test_name!(), failing_test);
 }
 
 #[test]
@@ -38,7 +37,7 @@ pub fn show_a_failing_test_with_output()
         vec!["this is some error output".to_string(), "you messed up".to_string()]
     );
 
-    show_test(&test_name(function_name!()), failing_test);
+    show_test(&test_name!(), failing_test);
 }
 
 #[test]
@@ -73,7 +72,7 @@ pub fn selecting_a_test_shows_it_in_details_view()
     details_ui.run();
 
     details_ui.fit_contents();
-    details_ui.snapshot(&test_name(function_name!()));
+    details_ui.snapshot(&test_name!());
 }
 
 #[test]
@@ -112,7 +111,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
     details_ui.run();
 
     details_ui.fit_contents();
-    details_ui.snapshot(&test_name(function_name!()));
+    details_ui.snapshot(&test_name!());
 }
 
 #[test]
@@ -120,7 +119,7 @@ pub fn show_snapshot_associated_with_test_rgb()
 {
     let test_with_snapshot = example_test("example_snapshot_rgb", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), test_with_snapshot);
+    show_test(&test_name!(), test_with_snapshot);
 }
 
 #[test]
@@ -128,7 +127,7 @@ pub fn show_snapshot_associated_with_test_rgba()
 {
     let test_with_snapshot = example_test("example_snapshot_rgba", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), test_with_snapshot);
+    show_test(&test_name!(), test_with_snapshot);
 }
 
 #[test]
@@ -136,7 +135,7 @@ pub fn show_current_and_new_snapshots_associated_with_test()
 {
     let test_with_changed_snapshot = example_test("example_snapshot_changed", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), test_with_changed_snapshot);
+    show_test(&test_name!(), test_with_changed_snapshot);
 }
 
 #[test]
@@ -144,7 +143,7 @@ pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snap
 {
     let test_first_run = example_test("example_snapshot_only_new", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), test_first_run);
+    show_test(&test_name!(), test_first_run);
 }
 
 #[test]
@@ -152,7 +151,7 @@ pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identica
 {
     let test_run_identical_snapshot = example_test("example_snapshot_identical", SingleTestStatus::Failed);
 
-    show_test(&test_name(function_name!()), test_run_identical_snapshot);
+    show_test(&test_name!(), test_run_identical_snapshot);
 }
 
 #[rstest]
@@ -212,12 +211,15 @@ fn show_test(test_name: &str, single_test: SingleTest)
     harness.snapshot(test_name);
 }
 
-fn get_configuration_with_example_snapshots_path() -> ConfigurationManager 
+fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
 {
-    ConfigurationManager::new(PassivateConfig {
-        snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
-        .. PassivateConfig::default()
-    }, Tx::stub())
+    ConfigurationManager::new(
+        PassivateConfig {
+            snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
+            ..PassivateConfig::default()
+        },
+        Tx::stub()
+    )
 }
 
 fn example_test(name: &str, status: SingleTestStatus) -> SingleTest

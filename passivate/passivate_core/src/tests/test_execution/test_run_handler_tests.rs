@@ -4,14 +4,13 @@ use std::io::Error as IoError;
 use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::{assert_that, is_variant};
 use passivate_delegation::{Cancellation, Cancelled, Tx};
+use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
-use stdext::function_name;
 
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
-use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestId, TestRunState};
 
@@ -21,7 +20,7 @@ pub fn handle_single_test_run()
 {
     let (test_run_tx, test_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project")
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
         .tests_status_sender(test_run_tx)
         .build()
         .clean_output()
@@ -49,7 +48,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 {
     let (test_run_tx, test_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project")
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
         .tests_status_sender(test_run_tx)
         .build()
         .clean_output()
@@ -80,7 +79,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 {
     let (test_run_tx, test_run_rx) = Tx::new();
-    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project")
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
         .tests_status_sender(test_run_tx)
         .build()
         .clean_output()
@@ -106,7 +105,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 #[cfg(target_os = "windows")]
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "project_snapshot_tests").build().clean_snapshots();
+    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests").build().clean_snapshots();
 
     let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
     let mut handler = setup.build_test_run_handler();
@@ -135,7 +134,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
     let (test_run_tx, test_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project_failing_tests")
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
         .tests_status_sender(test_run_tx)
         .build()
         .clean_output()
@@ -170,7 +169,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
     let (test_run_tx, test_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name(function_name!()), "simple_project_failing_tests")
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
         .tests_status_sender(test_run_tx)
         .build()
         .clean_output()

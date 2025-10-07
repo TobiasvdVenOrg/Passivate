@@ -1,6 +1,8 @@
 
 pub mod hyp_id;
 
+
+
 #[macro_export]
 macro_rules! test_id {
     () => {
@@ -18,6 +20,6 @@ macro_rules! test_id {
 #[macro_export]
 macro_rules! test_name {
     () => {
-        HypId::try_from(test_id!().as_ref()).unwrap().get_name(&HypNameStrategy::Default).to_string()
+        $crate::hyp_id::HypId::try_from($crate::test_id!().as_ref()).unwrap().get_name(&$crate::hyp_id::HypNameStrategy::Default).to_string()
     };
 }

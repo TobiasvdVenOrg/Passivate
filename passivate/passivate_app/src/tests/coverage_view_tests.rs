@@ -6,9 +6,8 @@ use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};
-use passivate_core::test_helpers::test_name::test_name;
 use passivate_delegation::{Rx, Tx};
-use stdext::function_name;
+use passivate_hyp_names::test_name;
 
 use crate::views::{CoverageView, View};
 
@@ -39,7 +38,7 @@ pub fn show_coverage_hierarchy_fully_collapsed()
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 #[test]
@@ -135,7 +134,7 @@ pub fn show_coverage_hierarchy_expand_children()
 
     harness.run();
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 #[test]
@@ -167,7 +166,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
     assert!(test_run_handler.coverage_enabled());
 
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 #[test]
@@ -188,7 +187,7 @@ pub fn show_error()
     harness.run();
 
     harness.fit_contents();
-    harness.snapshot(&test_name(function_name!()));
+    harness.snapshot(&test_name!());
 }
 
 // #[test]

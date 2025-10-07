@@ -1,20 +1,20 @@
 use egui_kittest::Harness;
-use passivate_core::{test_helpers::test_name::test_name, test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
+use passivate_core::{test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
 use passivate_delegation::Tx;
-use stdext::function_name;
+use passivate_hyp_names::test_name;
 
 use crate::views::{TestRunView, View};
 
 #[test]
 pub fn show_when_first_test_run_is_starting()
 {
-    run_and_snapshot(TestRun::from_state(TestRunState::FirstRun), &test_name(function_name!()));
+    run_and_snapshot(TestRun::from_state(TestRunState::FirstRun), &test_name!());
 }
 
 #[test]
 pub fn show_when_no_tests_were_found()
 {
-    run_and_snapshot(TestRun::from_state(TestRunState::Idle), &test_name(function_name!()));
+    run_and_snapshot(TestRun::from_state(TestRunState::Idle), &test_name!());
 }
 
 #[test]
@@ -24,7 +24,7 @@ pub fn show_when_build_failed()
         message: "Something didn't compile!".to_string()
     }));
 
-    run_and_snapshot(build_failed, &test_name(function_name!()));
+    run_and_snapshot(build_failed, &test_name!());
 }
 
 #[test]
@@ -33,7 +33,7 @@ pub fn show_tests_with_unknown_status_greyed_out()
     let mut active = TestRun::default();
     active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
 
-    run_and_snapshot(active, &test_name(function_name!()));
+    run_and_snapshot(active, &test_name!());
 }
 
 #[test]
@@ -43,7 +43,7 @@ pub fn show_build_status_above_tests_while_compiling()
     active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
     active.update(TestRunEvent::Compiling("The build is working on something right now!".to_string()));
 
-    run_and_snapshot(active, &test_name(function_name!()));
+    run_and_snapshot(active, &test_name!());
 }
 
 fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)

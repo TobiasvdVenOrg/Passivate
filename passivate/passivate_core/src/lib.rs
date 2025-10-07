@@ -73,7 +73,6 @@ pub mod test_helpers
 {
     pub mod assert_matches;
     pub mod test_run_setup;
-    pub mod test_name;
 }
 
 #[cfg(test)]

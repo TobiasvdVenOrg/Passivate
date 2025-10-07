@@ -2,24 +2,22 @@
 
 use std::fs;
 use std::io::Error as IoError;
-use camino::Utf8PathBuf;
 
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use passivate_delegation::{Cancellation, Tx};
+use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
-use stdext::function_name;
 
 use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
-use crate::test_helpers::test_name::test_name;
 use crate::test_helpers::test_run_setup::{TestRunSetup, test_output_path};
 
 #[test]
 pub fn test_run_sends_coverage_result() -> Result<(), IoError>
 {
     let (coverage_tx, coverage_rx) = Tx::new();
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
+    let setup = TestRunSetup::builder(test_name!(), "simple_project")
         .coverage_enabled(true)
         .coverage_sender(coverage_tx)
         .build();
@@ -46,9 +44,7 @@ pub fn test_run_sends_coverage_result() -> Result<(), IoError>
 #[test]
 pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(true).build();
 
     let output_path = setup.get_output_path();
 
@@ -63,9 +59,7 @@ pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError>
 #[test]
 pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_workspace")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_workspace").coverage_enabled(true).build();
 
     let output_path = setup.get_output_path();
 
@@ -80,9 +74,7 @@ pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError>
 #[test]
 pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(true).build();
 
     let coverage_path = setup.get_coverage_path();
 
@@ -106,9 +98,7 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
 // to briefly error due to "not finding the file" until a new one is created
 pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(true).build();
 
     let output_path = setup.get_output_path();
 
@@ -129,9 +119,7 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError>
 #[test]
 pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(true).build();
 
     let coverage_path = setup.get_coverage_path();
 
@@ -163,9 +151,7 @@ pub fn error_when_coverage_is_computed_with_no_profraw_files_present() -> Result
 #[test]
 pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exist() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(true)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(true).build();
 
     let coverage_path = setup.get_coverage_path();
 
@@ -201,9 +187,7 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
 #[test]
 pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name(function_name!()), "simple_project")
-        .coverage_enabled(false)
-        .build();
+    let setup = TestRunSetup::builder(test_name!(), "simple_project").coverage_enabled(false).build();
 
     let coverage_path = setup.get_coverage_path();
     let output_path = setup.get_output_path();
