@@ -113,7 +113,10 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
 pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
 {
     let eframe_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]).with_min_inner_size([300.0, 220.0]),
+        viewport: egui::ViewportBuilder::default()
+            .with_position([1920.0, 0.0])
+            .with_inner_size([1024.0, 512.0])
+            .with_min_inner_size([300.0, 220.0]),
         ..Default::default()
     };
 
