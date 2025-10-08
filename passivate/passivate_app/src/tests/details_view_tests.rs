@@ -5,8 +5,9 @@ use galvanic_assert::*;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
 use passivate_core::test_helpers::test_run_setup::test_data_path;
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunEvent};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
+use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use rstest::*;
 
@@ -15,7 +16,7 @@ use crate::views::{DetailsView, TestRunView, View};
 #[test]
 pub fn show_a_passing_test()
 {
-    let failing_test = example_test("ExampleTest", SingleTestStatus::Passed);
+    let failing_test = example_hyp("example_crate::example_test", SingleTestStatus::Passed);
 
     show_test(&test_name!(), failing_test);
 }
@@ -23,7 +24,7 @@ pub fn show_a_passing_test()
 #[test]
 pub fn show_a_failing_test()
 {
-    let failing_test = example_test("ExampleTest", SingleTestStatus::Failed);
+    let failing_test = example_hyp("example_crate::example_test", SingleTestStatus::Failed);
 
     show_test(&test_name!(), failing_test);
 }
@@ -32,7 +33,7 @@ pub fn show_a_failing_test()
 pub fn show_a_failing_test_with_output()
 {
     let failing_test = SingleTest::new(
-        "ExampleTest".to_string(),
+        HypId::new("example_crate", "example_test").unwrap(),
         SingleTestStatus::Failed,
         vec!["this is some error output".to_string(), "you messed up".to_string()]
     );
@@ -60,7 +61,7 @@ pub fn selecting_a_test_shows_it_in_details_view()
     });
 
     let mut test_run = TestRun::default();
-    test_run.tests.add(example_test("example_test", SingleTestStatus::Failed));
+    test_run.tests.add(example_hyp("tests::example_test", SingleTestStatus::Failed));
     test_run_tx.send(test_run);
 
     test_run_ui.run();
@@ -93,7 +94,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
     });
 
     let mut test_run = TestRun::default();
-    test_run.update(TestRunEvent::TestFinished(example_test("example_test", SingleTestStatus::Failed)));
+    test_run.update(TestRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Failed)));
     test_run_tx.send(test_run.clone());
 
     test_run_ui.run();
@@ -104,7 +105,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
     test_run_ui.run();
     details_ui.run();
 
-    test_run.update(TestRunEvent::TestFinished(example_test("example_test", SingleTestStatus::Passed)));
+    test_run.update(TestRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Passed)));
     test_run_tx.send(test_run);
 
     test_run_ui.run();
@@ -117,7 +118,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
 #[test]
 pub fn show_snapshot_associated_with_test_rgb()
 {
-    let test_with_snapshot = example_test("example_snapshot_rgb", SingleTestStatus::Failed);
+    let test_with_snapshot = example_hyp("tests::example_snapshot_rgb", SingleTestStatus::Failed);
 
     show_test(&test_name!(), test_with_snapshot);
 }
@@ -125,7 +126,7 @@ pub fn show_snapshot_associated_with_test_rgb()
 #[test]
 pub fn show_snapshot_associated_with_test_rgba()
 {
-    let test_with_snapshot = example_test("example_snapshot_rgba", SingleTestStatus::Failed);
+    let test_with_snapshot = example_hyp("tests::example_snapshot_rgba", SingleTestStatus::Failed);
 
     show_test(&test_name!(), test_with_snapshot);
 }
@@ -133,7 +134,7 @@ pub fn show_snapshot_associated_with_test_rgba()
 #[test]
 pub fn show_current_and_new_snapshots_associated_with_test()
 {
-    let test_with_changed_snapshot = example_test("example_snapshot_changed", SingleTestStatus::Failed);
+    let test_with_changed_snapshot = example_hyp("tests::example_snapshot_changed", SingleTestStatus::Failed);
 
     show_test(&test_name!(), test_with_changed_snapshot);
 }
@@ -141,7 +142,7 @@ pub fn show_current_and_new_snapshots_associated_with_test()
 #[test]
 pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snapshot()
 {
-    let test_first_run = example_test("example_snapshot_only_new", SingleTestStatus::Failed);
+    let test_first_run = example_hyp("tests::example_snapshot_only_new", SingleTestStatus::Failed);
 
     show_test(&test_name!(), test_first_run);
 }
@@ -149,17 +150,17 @@ pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snap
 #[test]
 pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identical()
 {
-    let test_run_identical_snapshot = example_test("example_snapshot_identical", SingleTestStatus::Failed);
+    let test_run_identical_snapshot = example_hyp("tests::example_snapshot_identical", SingleTestStatus::Failed);
 
     show_test(&test_name!(), test_run_identical_snapshot);
 }
 
 #[rstest]
-#[case::current_and_new("example_snapshot_changed")]
-#[case::only_new("example_snapshot_only_new")]
-pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] test: &str)
+#[case::current_and_new("tests::example_snapshot_changed")]
+#[case::only_new("tests::example_snapshot_only_new")]
+pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] hyp: &str)
 {
-    let snapshot_test = example_test(test, SingleTestStatus::Failed);
+    let snapshot_test = example_hyp(hyp, SingleTestStatus::Failed);
 
     let (details_tx, details_rx) = Tx::new();
     let (test_run_tx, test_run_rx) = Tx::new();
@@ -184,8 +185,8 @@ pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enab
 
     assert_that!(
         &approval_run,
-        has_structure!(ChangeEvent::SingleTest {
-            id: eq(TestId::new(test.to_string())),
+        has_structure!(ChangeEvent::SingleHyp {
+            id: eq(HypId::new("example_crate", hyp).unwrap()),
             update_snapshots: eq(true)
         })
     );
@@ -222,7 +223,8 @@ fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
     )
 }
 
-fn example_test(name: &str, status: SingleTestStatus) -> SingleTest
+fn example_hyp(name: &str, status: SingleTestStatus) -> SingleTest
 {
-    SingleTest::new(name.to_string(), status, vec![])
+    let id = HypId::new("example_crate", name).unwrap();
+    SingleTest::new(id, status, vec![])
 }

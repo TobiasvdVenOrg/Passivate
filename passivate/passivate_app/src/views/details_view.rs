@@ -2,8 +2,9 @@ use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::configuration::ConfigurationManager;
-use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots, TestId};
+use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_names::hyp_id::HypId;
 
 use super::View;
 
@@ -12,7 +13,7 @@ struct SnapshotHandles
     pub current: Option<Result<TextureHandle, SnapshotError>>,
     pub new: Option<Result<TextureHandle, SnapshotError>>,
     pub are_identical: bool,
-    pub test_id: TestId
+    pub hyp_id: HypId
 }
 
 pub struct DetailsView
@@ -66,7 +67,7 @@ impl DetailsView
                 current,
                 new,
                 are_identical,
-                test_id: new_test.id().clone()
+                hyp_id: new_test.id().clone()
             });
         }
     }
@@ -99,8 +100,8 @@ impl DetailsView
                     let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
                     if ui.button(approve).clicked()
                     {
-                        self.change_events.send(ChangeEvent::SingleTest {
-                            id: snapshot_handles.test_id.clone(),
+                        self.change_events.send(ChangeEvent::SingleHyp {
+                            id: snapshot_handles.hyp_id.clone(),
                             update_snapshots: true
                         });
                     }
@@ -153,12 +154,12 @@ impl View for DetailsView
 
                 if ui.button("Pin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::PinTest { id: single_test.id() });
+                    self.change_events.send(ChangeEvent::PinHyp { id: single_test.id() });
                 }
 
                 if ui.button("Unpin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::ClearPinnedTests);
+                    self.change_events.send(ChangeEvent::ClearPinnedHyps);
                 }
             });
 

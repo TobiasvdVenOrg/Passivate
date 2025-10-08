@@ -1,6 +1,8 @@
 use core::slice;
 
-use super::{SingleTest, TestId};
+use passivate_hyp_names::hyp_id::HypId;
+
+use super::SingleTest;
 
 #[derive(Default, Clone, Debug)]
 pub struct TestCollection
@@ -34,7 +36,7 @@ impl TestCollection
         };
     }
 
-    pub fn find(&self, id: &TestId) -> Option<SingleTest>
+    pub fn find(&self, id: &HypId) -> Option<SingleTest>
     {
         self.tests.iter().find(|t| t.id() == *id).cloned()
     }

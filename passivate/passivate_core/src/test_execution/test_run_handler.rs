@@ -1,15 +1,15 @@
-use std::collections::HashSet;
 use std::thread::{self, JoinHandle};
 
 use bon::Builder;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
+use passivate_hyp_names::hyp_id::HypId;
 
 use crate::change_events::ChangeEvent;
 use crate::configuration::ConfigurationManager;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::cross_cutting::LogEvent;
 use crate::test_execution::TestRunner;
-use crate::test_run_model::{FailedTestRun, TestId, TestRun};
+use crate::test_run_model::{FailedTestRun, TestRun};
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {
@@ -32,7 +32,7 @@ pub struct TestRunHandler
     coverage_status_sender: Tx<CoverageStatus>,
     log: Tx<LogEvent>,
     configuration: ConfigurationManager,
-    pinned_test: Option<TestId>
+    pinned_hyp: Option<HypId>
 }
 
 impl TestRunHandler
@@ -41,27 +41,27 @@ impl TestRunHandler
     {
         match event
         {
-            ChangeEvent::DefaultRun => self.run_tests(cancellation.clone()),
-            ChangeEvent::PinTest { id } =>
+            ChangeEvent::DefaultRun => self.run_hyps(cancellation.clone()),
+            ChangeEvent::PinHyp { id } =>
             {
-                self.pinned_test = Some(id);
-                self.run_tests(cancellation.clone());
+                self.pinned_hyp = Some(id);
+                self.run_hyps(cancellation.clone());
             }
-            ChangeEvent::ClearPinnedTests =>
+            ChangeEvent::ClearPinnedHyps =>
             {
-                self.pinned_test = None;
-                self.run_tests(cancellation.clone());
+                self.pinned_hyp = None;
+                self.run_hyps(cancellation.clone());
             }
-            ChangeEvent::SingleTest { id, update_snapshots } => self.run_test(&id, update_snapshots, cancellation.clone())
+            ChangeEvent::SingleHyp { id, update_snapshots } => self.run_hyp(&id, update_snapshots, cancellation.clone())
         }
     }
 
-    fn run_tests(&mut self, cancellation: Cancellation)
+    fn run_hyps(&mut self, cancellation: Cancellation)
     {
-        if let Some(pinned_test) = self.pinned_test.clone()
+        if let Some(pinned_hyp) = self.pinned_hyp.clone()
         {
             let update_snapshots = false;
-            self.run_test(&pinned_test, update_snapshots, cancellation.clone());
+            self.run_hyp(&pinned_hyp, update_snapshots, cancellation.clone());
             return;
         }
 
@@ -82,7 +82,7 @@ impl TestRunHandler
             return;
         }
 
-        let test_output = self.runner.run_tests(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new());
+        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new());
 
         if cancellation.is_cancelled()
         {
@@ -128,9 +128,9 @@ impl TestRunHandler
         }
     }
 
-    fn run_test(&mut self, id: &TestId, update_snapshots: bool, cancellation: Cancellation)
+    fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let result = self.runner.run_test(id, update_snapshots, cancellation, &mut self.tests_status_sender);
+        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.tests_status_sender);
 
         if let Err(error) = result
         {

@@ -6,26 +6,27 @@ use std::sync::Arc;
 use camino::Utf8PathBuf;
 use guppy::graph::PackageGraph;
 use nextest_filtering::ParseContext;
+use nextest_runner::cargo_cli::{CargoOptions, acquire_graph_data};
 use nextest_runner::cargo_config::{CargoConfigs, EnvironmentMap};
 use nextest_runner::config::core::{NextestConfig, get_num_cpus};
+use nextest_runner::config::elements::MaxFail;
 use nextest_runner::double_spawn::DoubleSpawnInfo;
 use nextest_runner::input::InputHandlerKind;
 use nextest_runner::list::{RustTestArtifact, TestExecuteContext, TestList};
 use nextest_runner::platform::BuildPlatforms;
+use nextest_runner::reporter::FinalStatusLevel;
 use nextest_runner::reuse_build::PathMapper;
+use nextest_runner::runner::TestRunnerBuilder;
 use nextest_runner::signal::SignalHandlerKind;
 use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
-use nextest_runner::reporter::FinalStatusLevel;
 use nextest_runner::test_output::ChildExecutionOutput;
-use nextest_runner::runner::TestRunnerBuilder;
-use nextest_runner::cargo_cli::acquire_graph_data;
-use nextest_runner::cargo_cli::CargoOptions;
 use passivate_delegation::{Cancellation, Tx};
-use nextest_runner::config::elements::MaxFail;
-use crate::passivate_nextest::cargo_options;
+use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+
 use super::TestRunError;
-use crate::test_run_model::{TestId, TestRun, TestRunEvent, SingleTest, SingleTestStatus};
+use crate::passivate_nextest::cargo_options;
+use crate::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
 
 #[faux::create]
 #[derive(Clone)]
@@ -52,37 +53,40 @@ impl TestRunner
         }
     }
 
-    pub fn run_tests(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    pub fn run_hyps(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
     {
         if self.test_run.update(TestRunEvent::Start)
         {
             sender.send(self.test_run.clone());
         }
 
-        let cargo_options = cargo_options()
-            .target_dir(self.target_dir.clone())
-            .call();
+        let cargo_options = cargo_options().target_dir(self.target_dir.clone()).call();
 
-        self.run_tests_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
+        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
     }
 
-    fn run_tests_with_options(&mut self, options: CargoOptions, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    fn run_hyps_with_options(
+        &mut self,
+        options: CargoOptions,
+        instrument_coverage: bool,
+        cancellation: Cancellation,
+        sender: &mut Tx<TestRun>,
+        filter: Vec<String>
+    ) -> Result<(), TestRunError>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
         if instrument_coverage
         {
-            unsafe 
-            {
+            unsafe {
                 std::env::set_var("RUSTFLAGS", "-C instrument-coverage");
                 std::env::set_var("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));
             }
         }
-        else 
+        else
         {
-            unsafe 
-            {
+            unsafe {
                 std::env::remove_var("RUSTFLAGS");
                 std::env::remove_var("LLVM_PROFILE_FILE");
             }
@@ -109,8 +113,10 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
-        let binary_list = options.compute_binary_list(&graph, Some(&manifest_path), build_platforms.clone()).map_err(|error| TestRunError::Temp)?;
-        
+        let binary_list = options
+            .compute_binary_list(&graph, Some(&manifest_path), build_platforms.clone())
+            .map_err(|error| TestRunError::Temp)?;
+
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
         let platform_filter = None;
@@ -139,18 +145,12 @@ impl TestRunner
         }
         else
         {
-            let c = filter.clone();
-            let mut patterns = TestFilterPatterns::new(filter);
-            
-            for f in c
-            {
-                patterns.add_exact_pattern(f);
-            }
+            let patterns = TestFilterPatterns::new(filter);
 
             let partitioner_builder = None;
             let test_filter_expressions = vec![];
 
-            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns,  test_filter_expressions).map_err(|error| TestRunError::Temp)?
+            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, test_filter_expressions).map_err(|error| TestRunError::Temp)?
         };
 
         let cli_configs: Vec<String> = Vec::new();
@@ -222,33 +222,30 @@ impl TestRunner
                         run_statuses,
                         current_stats: _,
                         running: _
-                    } => 
+                    } =>
                     {
-                        let test_output: Vec<String> = run_statuses.iter()
-                            .flat_map(|status|
-                            {
+                        let test_output: Vec<String> = run_statuses
+                            .iter()
+                            .flat_map(|status| {
                                 if let ChildExecutionOutput::Output { result: _, output, errors: _ } = &status.output
                                 {
                                     match output
                                     {
-                                        nextest_runner::test_output::ChildOutput::Split(child_split_output) => 
+                                        nextest_runner::test_output::ChildOutput::Split(child_split_output) =>
                                         {
                                             if let Some(stderr) = &child_split_output.stderr
                                             {
                                                 stderr.lines().map(|l| String::from_utf8(l.to_vec()).unwrap()).collect()
                                             }
-                                            else 
+                                            else
                                             {
                                                 Vec::new()
                                             }
-                                        },
-                                        nextest_runner::test_output::ChildOutput::Combined { output } => 
-                                        {
-                                            Vec::new()
-                                        },
+                                        }
+                                        nextest_runner::test_output::ChildOutput::Combined { output } => Vec::new()
                                     }
                                 }
-                                else 
+                                else
                                 {
                                     Vec::new()
                                 }
@@ -264,8 +261,9 @@ impl TestRunner
                             SingleTestStatus::Failed
                         };
 
-                        Some(TestRunEvent::TestFinished(SingleTest::new(test_instance.name.to_string(), status, test_output)))
-                    },
+                        let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name).expect("todo: error handling");
+                        Some(TestRunEvent::TestFinished(SingleTest::new(hyp_id, status, test_output)))
+                    }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
                         start_time: _,
@@ -277,42 +275,42 @@ impl TestRunner
 
                 if let Some(event) = event
                     && self.test_run.update(event.clone())
-                    {
-                        sender.send(self.test_run.clone());
-                    }
+                {
+                    sender.send(self.test_run.clone());
+                }
             })
             .map_err(|error| TestRunError::Temp)?;
 
         Ok(())
     }
 
-    pub fn run_test(&mut self, test_name: &TestId, update_snapshots: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>) -> Result<(), TestRunError>
+    pub fn run_hyp(&mut self, hyp_id: &HypId, update_snapshots: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
-        let filter = vec![ test_name.get_name() ];
-        
-        if self.test_run.update(TestRunEvent::StartSingle { test: test_name.clone(), clear_tests: true })
+        let strategy = HypNameStrategy::QualifiedWithoutCrate { separator: "::".to_string() };
+        let filter = vec![hyp_id.get_name(&strategy).to_string()];
+
+        if self.test_run.update(TestRunEvent::StartSingle {
+            hyp: hyp_id.clone(),
+            clear_tests: true
+        })
         {
             sender.send(self.test_run.clone());
         }
 
-        unsafe 
-        {
+        unsafe {
             if update_snapshots
             {
                 std::env::set_var("UPDATE_SNAPSHOTS", "1");
             }
-            else 
+            else
             {
                 std::env::set_var("UPDATE_SNAPSHOTS", "0");
             }
         }
 
-        let cargo_options = cargo_options()
-            .all_features(true)
-            .target_dir(self.target_dir.clone())
-            .call();
+        let cargo_options = cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
 
-        self.run_tests_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
+        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
     }
 }

@@ -6,13 +6,13 @@ pub mod hyp_id;
 #[macro_export]
 macro_rules! test_id {
     () => {
-        if !stdext::function_name!().contains(env!("CARGO_PKG_NAME"))
+        if stdext::function_name!().contains(env!("CARGO_PKG_NAME"))
         {
-            format!("{}::{}", env!("CARGO_PKG_NAME"), stdext::function_name!())
+            $crate::hyp_id::HypId::new(env!("CARGO_PKG_NAME"), stdext::function_name!().strip_prefix(env!("CARGO_PKG_NAME")).unwrap().strip_prefix("::").unwrap()).map_err(|error| panic!("{:?}", error)).unwrap()
         }
         else
         {
-            stdext::function_name!().to_string()
+            $crate::hyp_id::HypId::new(env!("CARGO_PKG_NAME"), stdext::function_name!()).map_err(|error| panic!("{:?}", error)).unwrap()
         }
     };
 }
@@ -20,6 +20,6 @@ macro_rules! test_id {
 #[macro_export]
 macro_rules! test_name {
     () => {
-        $crate::hyp_id::HypId::try_from($crate::test_id!().as_ref()).unwrap().get_name(&$crate::hyp_id::HypNameStrategy::Default).to_string()
+        $crate::test_id!().get_name(&$crate::hyp_id::HypNameStrategy::Default).to_string()
     };
 }

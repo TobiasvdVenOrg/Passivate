@@ -1,19 +1,18 @@
 use enum_as_inner::EnumAsInner;
-
-use crate::test_run_model::TestId;
+use passivate_hyp_names::hyp_id::HypId;
 
 #[derive(Clone, EnumAsInner, PartialEq, Debug)]
 pub enum ChangeEvent
 {
     DefaultRun,
-    SingleTest
+    SingleHyp
     {
-        id: TestId,
+        id: HypId,
         update_snapshots: bool
     },
-    PinTest
+    PinHyp
     {
-        id: TestId
+        id: HypId
     },
-    ClearPinnedTests
+    ClearPinnedHyps
 }

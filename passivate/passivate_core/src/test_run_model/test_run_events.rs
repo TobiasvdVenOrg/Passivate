@@ -1,4 +1,6 @@
-use super::{SingleTest, TestId};
+use passivate_hyp_names::hyp_id::HypId;
+
+use super::SingleTest;
 
 #[derive(Debug, Clone)]
 pub enum TestRunEvent
@@ -6,7 +8,7 @@ pub enum TestRunEvent
     Start,
     StartSingle
     {
-        test: TestId,
+        hyp: HypId,
         clear_tests: bool
     },
     Compiling(String),
@@ -16,7 +18,7 @@ pub enum TestRunEvent
     NoTests,
     ErrorOutput
     {
-        test: TestId,
+        hyp: HypId,
         message: String
     }
 }

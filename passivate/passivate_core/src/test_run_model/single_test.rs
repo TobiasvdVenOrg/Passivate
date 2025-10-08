@@ -1,9 +1,11 @@
-use super::{SingleTestStatus, TestId};
+use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+
+use super::SingleTestStatus;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SingleTest
 {
-    id: TestId,
+    id: HypId,
     pub name: String,
     pub status: SingleTestStatus,
     pub output: Vec<String>
@@ -11,17 +13,19 @@ pub struct SingleTest
 
 impl SingleTest
 {
-    pub fn new(name: String, status: SingleTestStatus, output: Vec<String>) -> Self
+    pub fn new(id: HypId, status: SingleTestStatus, output: Vec<String>) -> Self
     {
+        let name = id.get_name(&HypNameStrategy::Default).to_string();
+
         Self {
-            id: TestId::new(name.clone()),
+            id,
             name,
             status,
             output
         }
     }
 
-    pub fn id(&self) -> TestId
+    pub fn id(&self) -> HypId
     {
         self.id.clone()
     }

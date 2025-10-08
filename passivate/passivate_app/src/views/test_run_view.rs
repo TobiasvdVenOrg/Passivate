@@ -1,6 +1,7 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestId, TestRun, TestRunState};
+use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_names::hyp_id::HypId;
 
 use crate::views::View;
 
@@ -9,7 +10,7 @@ pub struct TestRunView
     receiver: Rx<TestRun>,
     test_details: Tx<Option<SingleTest>>,
     status: TestRun,
-    selected_test: Option<TestId>
+    selected_hyp: Option<HypId>
 }
 
 impl TestRunView
@@ -20,7 +21,7 @@ impl TestRunView
             receiver,
             test_details,
             status: TestRun::default(),
-            selected_test: None
+            selected_hyp: None
         }
     }
 
@@ -43,11 +44,11 @@ impl TestRunView
         ui.label(text);
     }
 
-    fn send_selected_test_details(&mut self)
+    fn send_selected_hyp_details(&mut self)
     {
-        if let Some(selected_test) = &self.selected_test
+        if let Some(selected_hyp) = &self.selected_hyp
         {
-            self.test_details.send(self.status.tests.find(selected_test));
+            self.test_details.send(self.status.tests.find(selected_hyp));
         }
     }
 
@@ -56,7 +57,7 @@ impl TestRunView
         match test.status
         {
             SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+            SingleTestStatus::Passed => None,
             SingleTestStatus::Unknown =>
             {
                 self.test_label(ui, test);
@@ -73,7 +74,7 @@ impl View for TestRunView
         if let Ok(status) = self.receiver.try_recv()
         {
             self.status = status;
-            self.send_selected_test_details();
+            self.send_selected_hyp_details();
         }
 
         match &self.status.state
@@ -120,14 +121,14 @@ impl View for TestRunView
         {
             if let Some(new_selection) = self.show_test(ui, test)
             {
-                self.selected_test = Some(new_selection.id());
+                self.selected_hyp = Some(new_selection.id());
                 send = true;
             }
         }
 
         if send
         {
-            self.send_selected_test_details();
+            self.send_selected_hyp_details();
         }
     }
 

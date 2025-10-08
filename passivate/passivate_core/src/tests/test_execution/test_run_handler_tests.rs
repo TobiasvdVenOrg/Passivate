@@ -4,6 +4,7 @@ use std::io::Error as IoError;
 use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::{assert_that, is_variant};
 use passivate_delegation::{Cancellation, Cancelled, Tx};
+use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
 
@@ -12,7 +13,7 @@ use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;
-use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestId, TestRunState};
+use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 
 #[test]
 #[cfg(target_os = "windows")]
@@ -26,11 +27,11 @@ pub fn handle_single_test_run()
         .clean_output()
         .build_test_run_handler();
 
-    let test_to_run_again = TestId::new("test::add_8_and_8_is_16");
+    let hyp_to_run_again = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleTest {
-            id: test_to_run_again,
+        ChangeEvent::SingleHyp {
+            id: hyp_to_run_again,
             update_snapshots: false
         },
         Cancellation::default()
@@ -57,11 +58,11 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let all_tests = test_run_rx.last().unwrap();
+    let all_hyps = test_run_rx.last().unwrap();
 
-    let pinned_test = all_tests.tests.iter().next().unwrap().to_owned();
+    let pinned_hyp = all_hyps.tests.iter().next().unwrap().to_owned();
 
-    handler.handle(ChangeEvent::PinTest { id: pinned_test.id() }, Cancellation::default());
+    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id() }, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let pinned_run = test_run_rx.last().unwrap();
@@ -70,7 +71,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
         pinned_run
             .tests
             .iter()
-            .all(|test| { (test.id() == pinned_test.id() && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown })
+            .all(|test| { (test.id() == pinned_hyp.id() && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown })
     );
 }
 
@@ -88,12 +89,12 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let all_tests = test_run_rx.last().unwrap();
+    let all_hyps = test_run_rx.last().unwrap();
 
-    let pinned_test = all_tests.tests.iter().next().unwrap().to_owned();
+    let pinned_hyp = all_hyps.tests.iter().next().unwrap().to_owned();
 
-    handler.handle(ChangeEvent::PinTest { id: pinned_test.id() }, Cancellation::default());
-    handler.handle(ChangeEvent::ClearPinnedTests, Cancellation::default());
+    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id() }, Cancellation::default());
+    handler.handle(ChangeEvent::ClearPinnedHyps, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let test_run = test_run_rx.last().unwrap();
@@ -113,11 +114,11 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     // Run all tests first to generate a new snapshot
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let snapshot_test_id = TestId::new("snapshot_test".to_string());
+    let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleTest {
-            id: snapshot_test_id,
+        ChangeEvent::SingleHyp {
+            id: snapshot_hyp_id,
             update_snapshots: true
         },
         Cancellation::default()
@@ -143,7 +144,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
     // Run all tests first to generate a new snapshot
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
+    let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
     let state = test_run_rx.last().unwrap();
 
@@ -179,11 +180,11 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let failed_test = TestId::new("multiply_2_and_2_is_4".to_string());
+    let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
     let state = test_run_rx.last().unwrap();
 
-    let failed_test = state.tests.find(&failed_test).unwrap();
+    let failed_test = state.tests.find(&failed_hyp).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -204,7 +205,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 pub fn when_test_run_fails_error_is_reported()
 {
     let mut test_runner = TestRunner::faux();
-    test_runner._when_run_tests().then(|_| Err(TestRunError::Cancelled(Cancelled)));
+    test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
     let (test_run_tx, test_run_rx) = Tx::new();
 

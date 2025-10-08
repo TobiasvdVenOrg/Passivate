@@ -60,18 +60,18 @@ impl TestRun
 
                 true
             }
-            TestRunEvent::StartSingle { test, clear_tests } =>
+            TestRunEvent::StartSingle { hyp, clear_tests } =>
             {
-                if let Some(mut test) = self.tests.find(&test)
+                if let Some(mut hyp) = self.tests.find(&hyp)
                 {
                     self.state = TestRunState::Running;
-                    test.status = SingleTestStatus::Unknown;
-                    test.output.clear();
+                    hyp.status = SingleTestStatus::Unknown;
+                    hyp.output.clear();
 
                     if clear_tests
                     {
                         self.tests.clear();
-                        self.tests.add_or_update(test);
+                        self.tests.add_or_update(hyp);
                     }
 
                     return true;
@@ -79,7 +79,7 @@ impl TestRun
 
                 false
             }
-            TestRunEvent::TestFinished(mut test) =>
+            TestRunEvent::TestFinished(test) =>
             {
                 self.state = TestRunState::Running;
 
@@ -107,10 +107,10 @@ impl TestRun
                 self.state = TestRunState::BuildFailed(BuildFailedTestRun { message });
                 true
             }
-            TestRunEvent::ErrorOutput { test, message } =>
+            TestRunEvent::ErrorOutput { hyp, message } =>
             {
                 if !message.is_empty()
-                    && let Some(mut updated_test) = self.tests.find(&test)
+                    && let Some(mut updated_test) = self.tests.find(&hyp)
                 {
                     updated_test.output.push(message);
                     self.tests.add_or_update(updated_test);

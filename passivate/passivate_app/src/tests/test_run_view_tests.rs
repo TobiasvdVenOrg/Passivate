@@ -1,7 +1,7 @@
 use egui_kittest::Harness;
 use passivate_core::{test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
 use passivate_delegation::Tx;
-use passivate_hyp_names::test_name;
+use passivate_hyp_names::{hyp_id::HypId, test_name};
 
 use crate::views::{TestRunView, View};
 
@@ -31,7 +31,7 @@ pub fn show_when_build_failed()
 pub fn show_tests_with_unknown_status_greyed_out()
 {
     let mut active = TestRun::default();
-    active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
+    active.tests.add(example_hyp("example_test", SingleTestStatus::Unknown));
 
     run_and_snapshot(active, &test_name!());
 }
@@ -40,7 +40,7 @@ pub fn show_tests_with_unknown_status_greyed_out()
 pub fn show_build_status_above_tests_while_compiling()
 {
     let mut active = TestRun::default();
-    active.tests.add(example_test("example_test", SingleTestStatus::Unknown));
+    active.tests.add(example_hyp("example_test", SingleTestStatus::Unknown));
     active.update(TestRunEvent::Compiling("The build is working on something right now!".to_string()));
 
     run_and_snapshot(active, &test_name!());
@@ -64,7 +64,8 @@ fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
     harness.snapshot(snapshot_name);
 }
 
-fn example_test(name: &str, status: SingleTestStatus) -> SingleTest
+fn example_hyp(name: &str, status: SingleTestStatus) -> SingleTest
 {
-    SingleTest::new(name.to_string(), status, vec![])
+    let id = HypId::new("example_crate", name).unwrap();
+    SingleTest::new(id, status, vec![])
 }
