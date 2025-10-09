@@ -12,16 +12,6 @@ pub struct TestCollection
 
 impl TestCollection
 {
-    pub fn iter(&self) -> impl Iterator<Item = &SingleTest>
-    {
-        self.tests.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut SingleTest>
-    {
-        self.tests.iter_mut()
-    }
-
     pub fn add(&mut self, test: SingleTest)
     {
         self.tests.push(test);
@@ -29,7 +19,7 @@ impl TestCollection
 
     pub fn add_or_update(&mut self, test: SingleTest)
     {
-        match self.tests.iter_mut().find(|t| t.id() == test.id())
+        match self.tests.iter_mut().find(|t| t.id == test.id)
         {
             Some(existing) => *existing = test,
             None => self.add(test)
@@ -38,7 +28,7 @@ impl TestCollection
 
     pub fn find(&self, id: &HypId) -> Option<SingleTest>
     {
-        self.tests.iter().find(|t| t.id() == *id).cloned()
+        self.tests.iter().find(|t| t.id == *id).cloned()
     }
 
     pub fn clear(&mut self)

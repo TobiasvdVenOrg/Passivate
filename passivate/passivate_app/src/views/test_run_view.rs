@@ -121,7 +121,7 @@ impl View for TestRunView
         {
             if let Some(new_selection) = self.show_test(ui, test)
             {
-                self.selected_hyp = Some(new_selection.id());
+                self.selected_hyp = Some(new_selection.id);
                 send = true;
             }
         }

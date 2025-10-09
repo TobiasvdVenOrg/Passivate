@@ -67,7 +67,7 @@ impl DetailsView
                 current,
                 new,
                 are_identical,
-                hyp_id: new_test.id().clone()
+                hyp_id: new_test.id.clone()
             });
         }
     }

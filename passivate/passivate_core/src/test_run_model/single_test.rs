@@ -5,7 +5,7 @@ use super::SingleTestStatus;
 #[derive(Clone, Debug, PartialEq)]
 pub struct SingleTest
 {
-    id: HypId,
+    pub id: HypId,
     pub name: String,
     pub status: SingleTestStatus,
     pub output: Vec<String>
@@ -23,10 +23,5 @@ impl SingleTest
             status,
             output
         }
-    }
-
-    pub fn id(&self) -> HypId
-    {
-        self.id.clone()
     }
 }

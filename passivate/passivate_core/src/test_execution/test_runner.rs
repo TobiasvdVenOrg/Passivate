@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use camino::Utf8PathBuf;
 use guppy::graph::PackageGraph;
+use nextest_filtering::Filterset;
+use nextest_filtering::FiltersetKind;
 use nextest_filtering::ParseContext;
 use nextest_runner::cargo_cli::{CargoOptions, acquire_graph_data};
 use nextest_runner::cargo_config::{CargoConfigs, EnvironmentMap};
@@ -145,12 +147,19 @@ impl TestRunner
         }
         else
         {
-            let patterns = TestFilterPatterns::new(filter);
+            let patterns = TestFilterPatterns::new(Vec::new());
+
+            let mut filter_sets = vec![];
+
+            for pattern in filter
+            {
+                let filterset = Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test).map_err(|error| TestRunError::Temp)?;
+                filter_sets.push(filterset);
+            }
 
             let partitioner_builder = None;
-            let test_filter_expressions = vec![];
 
-            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, test_filter_expressions).map_err(|error| TestRunError::Temp)?
+            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, filter_sets).map_err(|error| TestRunError::Temp)?
         };
 
         let cli_configs: Vec<String> = Vec::new();
@@ -309,7 +318,10 @@ impl TestRunner
             }
         }
 
-        let cargo_options = cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
+        let cargo_options = cargo_options()
+            .all_features(true)
+            .target_dir(self.target_dir.clone())
+            .call();
 
         self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
     }

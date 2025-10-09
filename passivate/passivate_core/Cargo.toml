@@ -28,6 +28,7 @@ crossbeam-channel = "0.5.14"
 dunce = "1.0.5"
 camino = "1.2.0"
 guppy = "0.17.21"
+itertools = "0.14.0"
 
 [dev-dependencies]
 rstest = "0.25.0"

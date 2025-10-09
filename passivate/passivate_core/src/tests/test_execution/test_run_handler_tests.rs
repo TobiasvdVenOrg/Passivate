@@ -2,7 +2,9 @@ use std::fs;
 use std::io::Error as IoError;
 
 use galvanic_assert::matchers::collection::contains_in_order;
+use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, is_variant};
+use itertools::Itertools;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
@@ -27,11 +29,11 @@ pub fn handle_single_test_run()
         .clean_output()
         .build_test_run_handler();
 
-    let hyp_to_run_again = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
+    let hyp_to_run = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
 
     handler.handle(
         ChangeEvent::SingleHyp {
-            id: hyp_to_run_again,
+            id: hyp_to_run,
             update_snapshots: false
         },
         Cancellation::default()
@@ -40,7 +42,34 @@ pub fn handle_single_test_run()
     let final_state = test_run_rx.last().unwrap();
 
     assert_that!(&final_state.state, is_variant!(TestRunState::Idle));
-    assert!(final_state.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
+    assert!(final_state.tests.into_iter().all(|test| { test.status == SingleTestStatus::Passed }));
+}
+
+#[test]
+pub fn single_hyp_run_only_runs_one_exact_hyp()
+{
+    let (test_run_tx, test_run_rx) = Tx::new();
+
+    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
+        .tests_status_sender(test_run_tx)
+        .build()
+        .clean_output()
+        .build_test_run_handler();
+
+    let hyp_to_run = HypId::new("add_tests", "add_2_and_2_is_4").unwrap();
+
+    handler.handle(
+        ChangeEvent::SingleHyp {
+            id: hyp_to_run.clone(),
+            update_snapshots: false
+        },
+        Cancellation::default()
+    );
+
+    let final_state = test_run_rx.last().unwrap();
+
+    let single_hyp = final_state.tests.into_iter().exactly_one().expect("expected exactly one test");
+    assert_that!(&single_hyp.id, eq(hyp_to_run));
 }
 
 #[test]
@@ -60,9 +89,9 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 
     let all_hyps = test_run_rx.last().unwrap();
 
-    let pinned_hyp = all_hyps.tests.iter().next().unwrap().to_owned();
+    let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
 
-    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id() }, Cancellation::default());
+    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id.clone() }, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let pinned_run = test_run_rx.last().unwrap();
@@ -70,8 +99,8 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     assert!(
         pinned_run
             .tests
-            .iter()
-            .all(|test| { (test.id() == pinned_hyp.id() && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown })
+            .into_iter()
+            .all(|test| { (test.id == pinned_hyp.id && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown })
     );
 }
 
@@ -91,15 +120,15 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 
     let all_hyps = test_run_rx.last().unwrap();
 
-    let pinned_hyp = all_hyps.tests.iter().next().unwrap().to_owned();
+    let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
 
-    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id() }, Cancellation::default());
+    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id }, Cancellation::default());
     handler.handle(ChangeEvent::ClearPinnedHyps, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
     let test_run = test_run_rx.last().unwrap();
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(test_run.tests.iter().all(|test| { test.status == SingleTestStatus::Passed }));
+    assert!(test_run.tests.into_iter().all(|test| { test.status == SingleTestStatus::Passed }));
 }
 
 #[test]
