@@ -70,8 +70,8 @@ pub mod configuration
 
 pub mod test_helpers
 {
-    pub mod assert_matches;
     pub mod test_run_setup;
+    pub mod test_snapshot_path;
 }
 
 #[cfg(test)]

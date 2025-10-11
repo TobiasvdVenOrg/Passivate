@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Error as IoError;
 
 use galvanic_assert::matchers::collection::contains_in_order;
-use galvanic_assert::matchers::eq;
+use galvanic_assert::matchers::*;
 use galvanic_assert::{assert_that, is_variant};
 use itertools::Itertools;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
@@ -15,6 +15,7 @@ use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;
+use crate::test_helpers::test_snapshot_path::TestSnapshotPath;
 use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
 
 #[test]
@@ -135,7 +136,10 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 #[cfg(target_os = "windows")]
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests").build().clean_snapshots();
+    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
+        .override_snapshot_path(TestSnapshotPath::relative_to_output("snapshots"))
+        .build()
+        .clean_snapshots();
 
     let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
     let mut handler = setup.build_test_run_handler();
@@ -154,6 +158,42 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     );
 
     assert_that!(fs::exists(expected_approved_snapshot)?);
+
+    Ok(())
+}
+
+#[test]
+#[cfg(target_os = "windows")]
+pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoError>
+{
+    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
+        .override_snapshot_path(TestSnapshotPath::relative_to_output("snapshots"))
+        .build()
+        .clean_snapshots();
+
+    let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
+    let expected_unapproved_snapshot = setup.get_snapshots_path().join("different_example_snapshot.new.png");
+
+    let mut handler = setup.build_test_run_handler();
+
+    // Run all tests first to generate a new snapshot
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+
+    let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
+
+    handler.handle(
+        ChangeEvent::SingleHyp {
+            id: snapshot_hyp_id,
+            update_snapshots: true
+        },
+        Cancellation::default()
+    );
+
+    // Run all tests again, which should no approve snapshots
+    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+
+    assert_that!(fs::exists(expected_approved_snapshot)?);
+    assert_that!(fs::exists(expected_unapproved_snapshot)?);
 
     Ok(())
 }

@@ -9,6 +9,7 @@ use crate::configuration::{ConfigurationManager, PassivateConfig};
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
 use crate::test_execution::{TestRunHandler, TestRunner};
+use crate::test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind};
 use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
@@ -19,7 +20,8 @@ pub struct TestRunSetup
     base_workspace_path: Utf8PathBuf,
     tests_status_sender: Tx<TestRun>,
     coverage_sender: Tx<CoverageStatus>,
-    coverage_enabled: bool
+    coverage_enabled: bool,
+    override_snapshot_path: TestSnapshotPath
 }
 
 pub fn test_output_path() -> Utf8PathBuf
@@ -50,7 +52,8 @@ impl TestRunSetup
         #[builder(default = test_data_path())] base_workspace_path: Utf8PathBuf,
         #[builder(default = false)] coverage_enabled: bool,
         #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
-        #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>
+        #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>,
+        #[builder(default = TestSnapshotPath::default())] override_snapshot_path: TestSnapshotPath
     ) -> Self
     {
         Self {
@@ -60,7 +63,8 @@ impl TestRunSetup
             base_workspace_path,
             coverage_enabled,
             tests_status_sender,
-            coverage_sender
+            coverage_sender,
+            override_snapshot_path
         }
     }
 
@@ -81,7 +85,13 @@ impl TestRunSetup
         #[cfg(target_os = "linux")]
         let target = OsString::from("aarch64-unknown-linux-gnu");
 
-        TestRunner::new(target, self.get_workspace_path().clone(), self.get_output_path().clone(), self.get_coverage_path().clone(), TestRun::default())
+        TestRunner::new(
+            target,
+            self.get_workspace_path().clone(),
+            self.get_output_path().clone(),
+            self.get_coverage_path().clone(),
+            TestRun::default()
+        )
     }
 
     pub fn build_test_run_handler(self) -> TestRunHandler
@@ -163,6 +173,11 @@ impl TestRunSetup
 
     pub fn get_snapshots_path(&self) -> Utf8PathBuf
     {
-        self.get_workspace_path().join("tests").join("snapshots")
+        match &self.override_snapshot_path
+        {
+            TestSnapshotPath { kind: TestSnapshotPathKind::Normal, path } => path.clone(),
+            TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToOutput, path } => self.get_output_path().join(path),
+            TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToWorkspace, path }=> self.get_workspace_path().join(path),
+        }
     }
 }

@@ -1,6 +1,7 @@
 use std::thread::{self, JoinHandle};
 
 use bon::Builder;
+use camino::Utf8PathBuf;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 
@@ -82,7 +83,9 @@ impl TestRunHandler
             return;
         }
 
-        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new());
+        let snapshot_path = self.get_snapshots_path();
+           
+        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new(), snapshot_path);
 
         if cancellation.is_cancelled()
         {
@@ -113,6 +116,23 @@ impl TestRunHandler
         };
     }
 
+    fn get_snapshots_path(&self) -> Option<Utf8PathBuf> {
+        self.configuration.get(|c| c.snapshots_path.clone())
+            .map(Utf8PathBuf::try_from)
+            .map_or_else(|| None, |path|
+            {
+                path.map_or_else(|_|
+                {
+                    self.log.send(LogEvent::new("snapshot path was not a valid UTF8 path"));
+                    None
+                }, 
+                |p|
+                {
+                    Some(p)
+                })
+            })
+    }
+    
     fn compute_coverage(&mut self, cancellation: Cancellation)
     {
         self.coverage_status_sender.send(CoverageStatus::Running);
@@ -130,7 +150,8 @@ impl TestRunHandler
 
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.tests_status_sender);
+        let snapshot_path = self.get_snapshots_path();
+        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.tests_status_sender, snapshot_path);
 
         if let Err(error) = result
         {

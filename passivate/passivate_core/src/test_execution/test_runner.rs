@@ -5,9 +5,7 @@ use std::sync::Arc;
 
 use camino::Utf8PathBuf;
 use guppy::graph::PackageGraph;
-use nextest_filtering::Filterset;
-use nextest_filtering::FiltersetKind;
-use nextest_filtering::ParseContext;
+use nextest_filtering::{Filterset, FiltersetKind, ParseContext};
 use nextest_runner::cargo_cli::{CargoOptions, acquire_graph_data};
 use nextest_runner::cargo_config::{CargoConfigs, EnvironmentMap};
 use nextest_runner::config::core::{NextestConfig, get_num_cpus};
@@ -55,7 +53,14 @@ impl TestRunner
         }
     }
 
-    pub fn run_hyps(&mut self, instrument_coverage: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    pub fn run_hyps(
+        &mut self,
+        instrument_coverage: bool,
+        cancellation: Cancellation,
+        sender: &mut Tx<TestRun>,
+        filter: Vec<String>,
+        snapshots_path: Option<Utf8PathBuf>
+    ) -> Result<(), TestRunError>
     {
         if self.test_run.update(TestRunEvent::Start)
         {
@@ -64,7 +69,7 @@ impl TestRunner
 
         let cargo_options = cargo_options().target_dir(self.target_dir.clone()).call();
 
-        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
+        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter, snapshots_path)
     }
 
     fn run_hyps_with_options(
@@ -73,27 +78,39 @@ impl TestRunner
         instrument_coverage: bool,
         cancellation: Cancellation,
         sender: &mut Tx<TestRun>,
-        filter: Vec<String>
+        filter: Vec<String>,
+        snapshots_path: Option<Utf8PathBuf>
     ) -> Result<(), TestRunError>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
-        if instrument_coverage
-        {
-            unsafe {
+        unsafe {
+            if let Some(snapshots_path) = snapshots_path
+            {
+                std::env::set_var("PASSIVATE_SNAPSHOT_DIR", snapshots_path);
+            }
+
+            if instrument_coverage
+            {
                 std::env::set_var("RUSTFLAGS", "-C instrument-coverage");
                 std::env::set_var("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));
             }
         }
-        else
-        {
-            unsafe {
-                std::env::remove_var("RUSTFLAGS");
-                std::env::remove_var("LLVM_PROFILE_FILE");
-            }
+
+        let result = self.run_hyps_internal(options, cancellation, sender, filter);
+
+        unsafe {
+            std::env::remove_var("PASSIVATE_SNAPSHOT_DIR");
+            std::env::remove_var("RUSTFLAGS");
+            std::env::remove_var("LLVM_PROFILE_FILE");
         }
 
+        result
+    }
+
+    fn run_hyps_internal(&mut self, options: CargoOptions, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    {
         let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
             eprintln!("3 {:?}", error);
             TestRunError::Temp
@@ -293,7 +310,14 @@ impl TestRunner
         Ok(())
     }
 
-    pub fn run_hyp(&mut self, hyp_id: &HypId, update_snapshots: bool, cancellation: Cancellation, sender: &mut Tx<TestRun>) -> Result<(), TestRunError>
+    pub fn run_hyp(
+        &mut self,
+        hyp_id: &HypId,
+        update_snapshots: bool,
+        cancellation: Cancellation,
+        sender: &mut Tx<TestRun>,
+        snapshots_path: Option<Utf8PathBuf>
+    ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
         let strategy = HypNameStrategy::QualifiedWithoutCrate { separator: "::".to_string() };
@@ -307,22 +331,21 @@ impl TestRunner
             sender.send(self.test_run.clone());
         }
 
-        unsafe {
-            if update_snapshots
-            {
+        if update_snapshots
+        {
+            unsafe {
                 std::env::set_var("UPDATE_SNAPSHOTS", "1");
-            }
-            else
-            {
-                std::env::set_var("UPDATE_SNAPSHOTS", "0");
             }
         }
 
-        let cargo_options = cargo_options()
-            .all_features(true)
-            .target_dir(self.target_dir.clone())
-            .call();
+        let cargo_options = cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
 
-        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter)
+        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter, snapshots_path);
+
+        unsafe {
+            std::env::set_var("UPDATE_SNAPSHOTS", "0");
+        }
+
+        result
     }
 }
