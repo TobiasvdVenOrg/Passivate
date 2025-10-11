@@ -154,7 +154,7 @@ impl View for DetailsView
 
                 if ui.button("Pin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::PinHyp { id: single_test.id() });
+                    self.change_events.send(ChangeEvent::PinHyp { id: single_test.id.clone() });
                 }
 
                 if ui.button("Unpin").clicked()
