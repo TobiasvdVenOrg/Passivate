@@ -57,7 +57,7 @@ impl TestRunView
         match test.status
         {
             SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-            SingleTestStatus::Passed => None,
+            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
             SingleTestStatus::Unknown =>
             {
                 self.test_label(ui, test);
