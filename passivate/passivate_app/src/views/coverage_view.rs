@@ -1,6 +1,6 @@
 use egui::collapsing_header::CollapsingState;
 use egui::{Color32, RichText};
-use passivate_core::configuration::ConfigurationManager;
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_delegation::Rx;

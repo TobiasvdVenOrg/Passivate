@@ -1,9 +1,8 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use passivate_configuration::configuration::Configuration;
 use passivate_delegation::Tx;
 
-use super::ConfigurationEvent;
+use crate::{configuration::Configuration, configuration_event::ConfigurationEvent};
 
 #[derive(Clone)]
 pub struct ConfigurationManager
@@ -58,5 +57,44 @@ impl ConfigurationManager
     fn acquire(&self) -> MutexGuard<'_, Configuration>
     {
         self.configuration.lock().expect("failed to acquire configuration lock.")
+    }
+}
+
+mod tests
+{
+    use passivate_delegation::Tx;
+
+    use crate::{configuration::Configuration, configuration_manager::ConfigurationManager};
+
+    #[test]
+    pub fn configuration_update_changes_configuration()
+    {
+        let configuration = Configuration::default();
+        let mut manager = ConfigurationManager::new(configuration, Tx::stub());
+
+        manager.update(|c| {
+            c.snapshots_path = Some(String::from("Example/path"));
+        });
+
+        let snapshots_path = manager.get(|c| c.snapshots_path.clone());
+
+        assert_eq!(Some("Example/path"), snapshots_path.as_deref());
+    }
+
+    #[test]
+    pub fn configuration_change_is_broadcast()
+    {
+        let configuration = Configuration::default();
+        let (tx, rx1, rx2) = Tx::multi_2();
+        let mut manager = ConfigurationManager::new(configuration, tx);
+
+        manager.update(|c| {
+            c.coverage_enabled = true;
+        });
+
+        let broadcast1 = rx1.last().unwrap();
+        let broadcast2 = rx2.last().unwrap();
+
+        assert_eq!(broadcast1, broadcast2);
     }
 }

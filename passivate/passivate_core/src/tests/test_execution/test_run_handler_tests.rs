@@ -11,7 +11,6 @@ use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
 
 use crate::change_events::ChangeEvent;
-use crate::configuration::ConfigurationManager;
 use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;
@@ -273,6 +272,8 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
+    use passivate_configuration::configuration_manager::ConfigurationManager;
+
     let mut test_runner = TestRunner::faux();
     test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 

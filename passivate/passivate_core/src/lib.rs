@@ -61,12 +61,6 @@ pub mod coverage
     mod_use!(coverage_errors);
 }
 
-pub mod configuration
-{
-    mod_use!(configuration_event);
-    mod_use!(configuration_manager);
-}
-
 pub mod test_helpers
 {
     pub mod test_run_setup;
@@ -76,11 +70,6 @@ pub mod test_helpers
 #[cfg(test)]
 pub mod tests
 {
-    mod configuration
-    {
-        mod configuration_manager_tests;
-    }
-
     mod passivate_grcov
     {
         mod covdir_json_tests;

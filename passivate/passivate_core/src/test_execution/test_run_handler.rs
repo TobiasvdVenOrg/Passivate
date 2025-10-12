@@ -2,11 +2,11 @@ use std::thread::{self, JoinHandle};
 
 use bon::Builder;
 use camino::Utf8PathBuf;
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::change_events::ChangeEvent;
-use crate::configuration::ConfigurationManager;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::cross_cutting::LogEvent;
 use crate::test_execution::TestRunner;

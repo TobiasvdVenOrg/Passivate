@@ -1,5 +1,4 @@
-use passivate_configuration::configuration::Configuration;
-
+use crate::configuration::Configuration;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct ConfigurationEvent

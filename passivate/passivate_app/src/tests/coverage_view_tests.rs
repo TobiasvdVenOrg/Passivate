@@ -3,7 +3,7 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use indexmap::IndexMap;
 use passivate_configuration::configuration::Configuration;
-use passivate_core::configuration::ConfigurationManager;
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};

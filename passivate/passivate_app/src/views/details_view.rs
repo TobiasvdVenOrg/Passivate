@@ -1,7 +1,7 @@
 use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::ConfigurationManager;
 use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use passivate_delegation::{Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
