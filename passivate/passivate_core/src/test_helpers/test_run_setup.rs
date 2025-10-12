@@ -3,9 +3,10 @@ use std::fs;
 
 use bon::bon;
 use camino::{Utf8Path, Utf8PathBuf};
+use passivate_configuration::configuration::Configuration;
 use passivate_delegation::Tx;
 
-use crate::configuration::{ConfigurationManager, PassivateConfig};
+use crate::configuration::ConfigurationManager;
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
 use crate::test_execution::{TestRunHandler, TestRunner};
@@ -101,7 +102,7 @@ impl TestRunSetup
         let grcov = self.build_grcov();
 
         let configuration = ConfigurationManager::new(
-            PassivateConfig {
+            Configuration {
                 coverage_enabled: self.coverage_enabled,
                 snapshots_path: Some(self.get_snapshots_path().to_string())
             },

@@ -2,8 +2,9 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use galvanic_assert::matchers::*;
 use galvanic_assert::*;
+use passivate_configuration::configuration::Configuration;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::configuration::ConfigurationManager;
 use passivate_core::test_helpers::test_run_setup::test_data_path;
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
@@ -47,7 +48,7 @@ pub fn selecting_a_test_shows_it_in_details_view()
     let (test_run_tx, test_run_rx) = Tx::new();
     let (details_tx, details_rx) = Tx::new();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
 
     let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
@@ -81,7 +82,7 @@ pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_upd
 {
     let (test_run_tx, test_run_rx) = Tx::new();
     let (details_tx, details_rx) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
     let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
     let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
 
@@ -215,9 +216,9 @@ fn show_test(test_name: &str, single_test: SingleTest)
 fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
 {
     ConfigurationManager::new(
-        PassivateConfig {
+        Configuration {
             snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
-            ..PassivateConfig::default()
+            ..Configuration::default()
         },
         Tx::stub()
     )

@@ -1,8 +1,9 @@
-use super::PassivateConfig;
+use passivate_configuration::configuration::Configuration;
+
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct ConfigurationEvent
 {
-    pub old: PassivateConfig,
-    pub new: PassivateConfig
+    pub old: Configuration,
+    pub new: Configuration
 }

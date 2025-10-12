@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_configuration = { path = "../passivate_configuration" }
+
 faux = "0.1.13"
 nextest-runner = { path = "F:/Projects/passivate-nextest/nextest-runner" }
 nextest-filtering = { path = "F:/Projects/passivate-nextest/nextest-filtering" }

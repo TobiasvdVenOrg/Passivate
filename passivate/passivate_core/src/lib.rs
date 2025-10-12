@@ -63,7 +63,6 @@ pub mod coverage
 
 pub mod configuration
 {
-    mod_use!(passivate_config);
     mod_use!(configuration_event);
     mod_use!(configuration_manager);
 }

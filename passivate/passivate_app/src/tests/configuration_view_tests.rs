@@ -4,8 +4,9 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::{Key, Queryable};
 use galvanic_assert::matchers::eq;
 use galvanic_assert::{assert_that, has_structure, structure};
+use passivate_configuration::configuration::Configuration;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::configuration::ConfigurationManager;
 use passivate_core::coverage::MockComputeCoverage;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};
 use passivate_core::test_run_model::Snapshots;
@@ -17,7 +18,7 @@ use crate::views::{ConfigurationView, DetailsView, View};
 #[test]
 pub fn show_configuration()
 {
-    let mut configuration_manager = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let mut configuration_manager = ConfigurationManager::new(Configuration::default(), Tx::stub());
     let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), Tx::stub());
 
     let ui = |ui: &mut egui::Ui| {
@@ -39,7 +40,7 @@ pub fn show_configuration()
 #[test]
 pub fn configure_coverage_enabled()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
@@ -71,7 +72,7 @@ pub fn configure_coverage_enabled()
 #[test]
 pub fn configure_snapshots_path()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
     let (change_events_tx, change_events_rx) = Tx::new();
     let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
     let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);

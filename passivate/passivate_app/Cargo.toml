@@ -8,6 +8,7 @@ passivate_core = { path = "../passivate_core" }
 passivate_delegation = { path = "../passivate_delegation" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_notify = { path = "../passivate_notify" }
+passivate_configuration = { path = "../passivate_configuration" }
 
 egui = { version = "0.31", features = [ ] }
 egui_dock = "0.16.0"

@@ -2,7 +2,8 @@ use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use indexmap::IndexMap;
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_configuration::configuration::Configuration;
+use passivate_core::configuration::ConfigurationManager;
 use passivate_core::coverage::{CoverageStatus, MockComputeCoverage};
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_core::test_execution::{TestRunHandler, TestRunner};
@@ -15,7 +16,7 @@ use crate::views::{CoverageView, View};
 pub fn show_coverage_hierarchy_fully_collapsed()
 {
     let (coverage_tx, coverage_rx) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
@@ -46,7 +47,7 @@ pub fn show_coverage_hierarchy_expand_children()
 {
     let (coverage_tx, coverage_rx) = Tx::new();
 
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
@@ -140,7 +141,7 @@ pub fn show_coverage_hierarchy_expand_children()
 #[test]
 pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 {
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
@@ -173,7 +174,7 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
 pub fn show_error()
 {
     let (coverage_tx, coverage_rx) = Tx::new();
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), Tx::stub());
+    let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
 
     let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 

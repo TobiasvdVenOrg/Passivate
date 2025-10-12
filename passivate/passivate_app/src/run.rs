@@ -2,8 +2,9 @@ use std::ffi::OsString;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use egui::Context;
+use passivate_configuration::configuration::Configuration;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::configuration::{ConfigurationManager, PassivateConfig};
+use passivate_core::configuration::ConfigurationManager;
 use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
@@ -73,7 +74,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
         .binary_path(binary_path)
         .build();
     
-    let configuration = ConfigurationManager::new(PassivateConfig::default(), configuration_tx);
+    let configuration = ConfigurationManager::new(Configuration::default(), configuration_tx);
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
