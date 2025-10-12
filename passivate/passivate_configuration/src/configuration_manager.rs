@@ -60,6 +60,7 @@ impl ConfigurationManager
     }
 }
 
+#[cfg(test)]
 mod tests
 {
     use passivate_delegation::Tx;

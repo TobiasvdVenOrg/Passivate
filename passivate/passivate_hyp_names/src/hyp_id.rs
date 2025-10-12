@@ -77,9 +77,8 @@ pub enum HypIdError
 #[cfg(test)]
 mod tests
 {
-    use crate::hyp_id::{HypId, HypIdError, HypNameStrategy};
+    use crate::hyp_id::HypNameStrategy;
     use crate::{test_id, test_name};
-    use rstest::*;
 
     #[test]
     pub fn example_unit_test_id()
