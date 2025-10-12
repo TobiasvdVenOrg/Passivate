@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use thiserror::Error;
 
 use super::Cancellation;
 
@@ -9,18 +9,14 @@ enum Mode<T>
     Multi(Vec<crossbeam_channel::Sender<T>>)
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Error, Debug)]
 pub enum RxError
 {
+    #[error("rx failed")]
     Recv(#[from] crossbeam_channel::RecvError),
-    TryRecv(#[from] crossbeam_channel::TryRecvError)
-}
 
-impl Display for RxError
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
+    #[error("rx failed")]
+    TryRecv(#[from] crossbeam_channel::TryRecvError)
 }
 
 #[faux::create]
