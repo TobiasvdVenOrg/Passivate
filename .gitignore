@@ -8,3 +8,4 @@ lcov.info
 test_output/**
 !test_output/README.txt
 test_data/project_snapshot_tests/tests/snapshots
+*.profraw
