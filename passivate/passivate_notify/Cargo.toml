@@ -1,0 +1,12 @@
+[package]
+name = "passivate_notify"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_core = { path = "../passivate_core" }
+passivate_delegation = { path = "../passivate_delegation" }
+
+notify = "8.0.0"
+camino = "1.2.0"
+dunce = "1.0.5"

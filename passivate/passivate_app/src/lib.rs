@@ -22,12 +22,6 @@ pub mod views
     mod_use!(details_view);
 }
 
-pub mod passivate_notify
-{
-    mod_use!(notify_change_events);
-    mod_use!(notify_change_events_errors);
-}
-
 mod_use!(run);
 
 #[cfg(test)]

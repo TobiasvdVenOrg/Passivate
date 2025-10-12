@@ -4,8 +4,7 @@ use std::io::Error as IoError;
 use std::sync::mpsc::SendError;
 
 use passivate_core::change_events::ChangeEvent;
-
-use crate::passivate_notify::NotifyChangeEventsError;
+use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 
 #[derive(Debug)]
 pub enum StartupError

@@ -8,11 +8,11 @@ use passivate_core::passivate_grcov::Grcov;
 use passivate_core::test_execution::{change_event_thread, test_run_thread, TestRunHandler, TestRunner};
 use passivate_core::test_run_model::{TestRun, TestRunState};
 use passivate_delegation::Tx;
+use passivate_notify::notify_change_events::NotifyChangeEvents;
 use views::{CoverageView, TestRunView};
 
 use crate::app::App;
 use crate::error_app::ErrorApp;
-use crate::passivate_notify::NotifyChangeEvents;
 use crate::startup_errors::*;
 use crate::views;
 use crate::views::{ConfigurationView, DetailsView, LogView};

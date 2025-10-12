@@ -7,7 +7,7 @@ use notify::{Config as NotifyConfig, Event as NotifyEvent, RecommendedWatcher, R
 use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::Tx;
 
-use crate::passivate_notify::NotifyChangeEventsError;
+use crate::notify_change_events_errors::NotifyChangeEventsError;
 
 pub struct NotifyChangeEvents
 {

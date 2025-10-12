@@ -7,10 +7,10 @@ edition = "2024"
 passivate_core = { path = "../passivate_core" }
 passivate_delegation = { path = "../passivate_delegation" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_notify = { path = "../passivate_notify" }
 
 egui = { version = "0.31", features = [ ] }
 egui_dock = "0.16.0"
-notify = "8.0.0"
 futures = "0.3.31"
 chrono = "0.4.40"
 serde = { version = "1.0", features = [ "derive" ] }
