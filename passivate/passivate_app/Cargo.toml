@@ -10,31 +10,27 @@ passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_notify = { path = "../passivate_notify" }
 passivate_configuration = { path = "../passivate_configuration" }
 
-egui = { version = "0.31", features = [ ] }
-egui_dock = "0.16.0"
-futures = "0.3.31"
-chrono = "0.4.40"
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = { version = "1.0", features = [ "preserve_order" ] }
-indexmap = { version = "2.8.0", features = [ "serde" ] }
-crossbeam-channel = "0.5.14"
-dunce = "1.0.5"
-camino = "1.2.0"
-
-[dependencies.eframe]
-version = "0.31"
-default-features = false
-features = [ "default_fonts", "wgpu", "accesskit", "wayland" ]
+egui.workspace = true
+egui_dock.workspace = true
+futures.workspace = true
+chrono.workspace = true
+serde = { workspace = true, features = [ "derive" ] }
+serde_json = { workspace = true, features = [ "preserve_order" ] }
+indexmap = { workspace = true, features = [ "serde" ] }
+crossbeam-channel.workspace = true
+dunce.workspace = true
+camino.workspace = true
+eframe.workspace = true
 
 [dev-dependencies]
-mockall = "0.13.1"
-libtest-mimic = "0.8.1"
-egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }
-stdext = "0.3.3"
-tokio = { version = "1.42.0", features = [ "full" ] }
-rstest = "0.26.1"
-pretty_assertions = "1.4.1"
-galvanic-assert = "0.8.7"
+mockall.workspace = true
+libtest-mimic.workspace = true
+egui_kittest.workspace = true
+stdext.workspace = true
+tokio.workspace = true
+rstest.workspace = true
+pretty_assertions.workspace = true
+galvanic-assert.workspace = true
 
 [[test]]
 name = "passivate_tests"

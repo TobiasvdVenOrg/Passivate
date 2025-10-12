@@ -7,6 +7,6 @@ edition = "2024"
 passivate_core = { path = "../passivate_core" }
 passivate_delegation = { path = "../passivate_delegation" }
 
-notify = "8.0.0"
-camino = "1.2.0"
-dunce = "1.0.5"
+notify.workspace = true
+camino.workspace = true
+dunce.workspace = true

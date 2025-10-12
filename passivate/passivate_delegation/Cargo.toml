@@ -4,15 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-faux = "0.1.13"
-crossbeam-channel = "0.5.14"
-quote = "1.0.40"
-syn = { version = "2.0.106", features = ["full"]}
-proc-macro2 = "1.0.101"
-thiserror = "2.0.11"
+faux.workspace = true
+crossbeam-channel.workspace = true
+quote.workspace = true
+syn = { workspace = true, features = ["full"]}
+proc-macro2.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
-mockall = "0.13.1"
+mockall.workspace = true
 
 [features]
 testing = []
