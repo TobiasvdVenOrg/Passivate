@@ -4,9 +4,9 @@ use chrono::DateTime;
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use passivate_core::cross_cutting::LogEvent;
 use passivate_delegation::Tx;
 use passivate_hyp_names::test_name;
+use passivate_log::log_message::LogMessage;
 
 use crate::views::{LogView, View};
 
@@ -22,7 +22,7 @@ pub fn show_a_single_log()
 
     let mut harness = Harness::new_ui(ui);
 
-    let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
+    let example_log = LogMessage::new_with_timestamp("Hey, this is a log message!".to_string(), DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
     tx.send(example_log);
 
     harness.run();
@@ -48,7 +48,7 @@ pub fn many_logs_are_scrollable()
         let mut timestamp = DateTime::from_timestamp_nanos(1_662_921_288_000_000_000);
         timestamp += Duration::from_secs(n);
 
-        let example_log = LogEvent::new_with_timestamp("Hey, this is a log message!", timestamp);
+        let example_log = LogMessage::new_with_timestamp("Hey, this is a log message!".to_string(), timestamp);
         tx.send(example_log);
 
         harness.run();

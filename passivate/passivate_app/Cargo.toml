@@ -9,6 +9,7 @@ passivate_delegation = { path = "../passivate_delegation" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_notify = { path = "../passivate_notify" }
 passivate_configuration = { path = "../passivate_configuration" }
+passivate_log = { path = "../passivate_log" }
 
 egui.workspace = true
 egui_dock.workspace = true
@@ -21,6 +22,7 @@ crossbeam-channel.workspace = true
 dunce.workspace = true
 camino.workspace = true
 eframe.workspace = true
+log.workspace = true
 
 [dev-dependencies]
 mockall.workspace = true

@@ -1,12 +1,12 @@
 use egui::ScrollArea;
-use passivate_core::cross_cutting::LogEvent;
 use passivate_delegation::Rx;
+use passivate_log::log_message::LogMessage;
 
 use crate::views::View;
 
 pub struct LogView
 {
-    receiver: Rx<LogEvent>,
+    receiver: Rx<LogMessage>,
     logs: Vec<LogEntry>
 }
 
@@ -18,7 +18,7 @@ struct LogEntry
 
 impl LogView
 {
-    pub fn new(receiver: Rx<LogEvent>) -> Self
+    pub fn new(receiver: Rx<LogMessage>) -> Self
     {
         Self { receiver, logs: vec![] }
     }
@@ -33,7 +33,7 @@ impl View for LogView
             let timestamp_formatted = format!("{}", log.timestamp.format("%H:%M:%S"));
             let entry = LogEntry {
                 timestamp: timestamp_formatted,
-                message: log.message
+                message: log.content
             };
             self.logs.push(entry);
         }

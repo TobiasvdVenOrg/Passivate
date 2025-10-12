@@ -114,7 +114,6 @@ impl TestRunSetup
             .coverage(Box::new(grcov))
             .tests_status_sender(self.tests_status_sender)
             .coverage_status_sender(self.coverage_sender)
-            .log(Tx::stub())
             .configuration(configuration)
             .build()
     }

@@ -45,7 +45,6 @@ pub fn configure_coverage_enabled()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
         .coverage_status_sender(Tx::stub())
-        .log(Tx::stub())
         .runner(TestRunner::faux())
         .tests_status_sender(Tx::stub())
         .build();

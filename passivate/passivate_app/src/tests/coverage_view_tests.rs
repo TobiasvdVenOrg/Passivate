@@ -146,7 +146,6 @@ pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
         .configuration(configuration.clone())
         .coverage(Box::new(MockComputeCoverage::new()))
         .coverage_status_sender(Tx::stub())
-        .log(Tx::stub())
         .runner(TestRunner::faux())
         .tests_status_sender(Tx::stub())
         .build();

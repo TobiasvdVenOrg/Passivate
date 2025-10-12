@@ -32,6 +32,7 @@ dunce.workspace = true
 camino.workspace = true
 guppy.workspace = true
 itertools.workspace = true
+log.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true

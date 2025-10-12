@@ -12,7 +12,9 @@ pub enum StartupError
     MissingArgument(MissingArgumentError),
     NotifyChangeEvents(NotifyChangeEventsError),
     Channel(SendError<ChangeEvent>),
-    DirectorySetup(IoError)
+    DirectorySetup(IoError),
+    Logger(log::SetLoggerError),
+    LoggerAlreadyInitialized
 }
 
 #[derive(Debug)]
@@ -48,6 +50,18 @@ impl Display for StartupError
                 writeln!(f, "failed to initialize Passivate environment")?;
                 writeln!(f)?;
                 write!(f, "{}", directory_setup_error)
+            },
+            StartupError::Logger(logger_error) =>
+            {
+                writeln!(f, "failed to initialize logger")?;
+                writeln!(f)?;
+                write!(f, "{}", logger_error)
+            },
+            StartupError::LoggerAlreadyInitialized =>
+            {
+                writeln!(f, "failed to initialize logger")?;
+                writeln!(f)?;
+                write!(f, "logger was already initialized")
             }
         }
     }
@@ -62,7 +76,9 @@ impl Error for StartupError
             StartupError::MissingArgument(_) => None,
             StartupError::NotifyChangeEvents(notify_change_events) => Some(notify_change_events),
             StartupError::Channel(channel) => Some(channel),
-            StartupError::DirectorySetup(directory_setup_error) => Some(directory_setup_error)
+            StartupError::DirectorySetup(directory_setup_error) => Some(directory_setup_error),
+            StartupError::Logger(logger_error) => Some(logger_error),
+            StartupError::LoggerAlreadyInitialized => None
         }
     }
 }

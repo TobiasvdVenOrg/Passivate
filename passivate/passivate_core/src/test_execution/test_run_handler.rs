@@ -8,7 +8,6 @@ use passivate_hyp_names::hyp_id::HypId;
 
 use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
-use crate::cross_cutting::LogEvent;
 use crate::test_execution::TestRunner;
 use crate::test_run_model::{FailedTestRun, TestRun};
 
@@ -31,7 +30,6 @@ pub struct TestRunHandler
     coverage: Box<dyn ComputeCoverage + Send>,
     tests_status_sender: Tx<TestRun>,
     coverage_status_sender: Tx<CoverageStatus>,
-    log: Tx<LogEvent>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>
 }
@@ -75,7 +73,7 @@ impl TestRunHandler
 
         if let Err(clean_error) = self.coverage.clean_coverage_output()
         {
-            self.log.send(LogEvent::new(&format!("error cleaning coverage output: {:?}", clean_error)));
+            log::error!("error cleaning coverage output: {:?}", clean_error);
         }
 
         if cancellation.is_cancelled()
@@ -98,12 +96,12 @@ impl TestRunHandler
             {
                 if self.coverage_enabled()
                 {
-                    self.log.send(LogEvent::new("Coverage enabled, computing..."));
+                    log::info!("Coverage enabled, computing...");
                     self.compute_coverage(cancellation.clone());
                 }
                 else
                 {
-                    self.log.send(LogEvent::new("Coverage disabled."));
+                    log::info!("Coverage disabled.");
                 }
             }
             Err(test_error) =>
@@ -123,7 +121,7 @@ impl TestRunHandler
             {
                 path.map_or_else(|_|
                 {
-                    self.log.send(LogEvent::new("snapshot path was not a valid UTF8 path"));
+                    log::error!("snapshot path was not a valid UTF8 path");
                     None
                 }, 
                 |p|
@@ -139,7 +137,7 @@ impl TestRunHandler
 
         let coverage_status = self.coverage.compute_coverage(cancellation.clone());
 
-        self.log.send(LogEvent::new("Coverage completed."));
+        log::info!("Coverage completed.");
 
         match coverage_status
         {

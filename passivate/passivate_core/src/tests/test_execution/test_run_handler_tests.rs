@@ -284,7 +284,6 @@ pub fn when_test_run_fails_error_is_reported()
         .coverage(Box::new(compute_coverage::stub()))
         .tests_status_sender(test_run_tx)
         .coverage_status_sender(Tx::stub())
-        .log(Tx::stub())
         .configuration(ConfigurationManager::default_config(Tx::stub()))
         .build();
 

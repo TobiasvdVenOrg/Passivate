@@ -1,0 +1,10 @@
+[package]
+name = "passivate_log"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_delegation = { path = "../passivate_delegation" }
+
+log.workspace = true
+chrono.workspace = true
