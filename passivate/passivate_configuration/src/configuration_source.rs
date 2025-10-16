@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fs, sync::Arc};
 
 use camino::{Utf8Path, Utf8PathBuf};
 
@@ -49,7 +49,12 @@ impl ConfigurationSource
 
 fn load_file(path: &Utf8Path) -> Result<Configuration, ConfigurationLoadError>
 {
-    let content = std::fs::read(path).map_err(Arc::new)?;
+    if !fs::exists(path).map_err(Arc::new)?
+    {
+        return Ok(Configuration::default());
+    }
+
+    let content = fs::read(path).map_err(Arc::new)?;
     let text = String::from_utf8(content)?;
     
     Ok(toml::from_str(&text)?)

@@ -98,13 +98,14 @@ impl ConfigurationManager
 mod tests
 {
     use std::error::Error;
+    use std::fs;
     use std::sync::Arc;
 
     use galvanic_assert::assert_that;
     use galvanic_assert::matchers::eq;
     use itertools::Itertools;
     use passivate_delegation::Tx;
-    use passivate_testing::path_resolution::copy_from_data_to_output;
+    use passivate_testing::path_resolution::{copy_from_data_to_output, test_output_path};
     use passivate_testing::spy_log::SpyLog;
 
     use crate::configuration::{Configuration, ConfigurationPersistError};
@@ -128,6 +129,19 @@ mod tests
     }
 
     #[test]
+    pub fn when_configuration_is_persisted_for_the_first_time_a_file_is_created() -> Result<(), Box<dyn Error>>
+    {
+        let file = test_output_path().join("example_configurations/new_configuration.toml");
+
+        let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
+
+        manager.update(|c| c.snapshots_path = Some("first/change".to_owned())).unwrap();
+
+        assert!(fs::exists(file)?);
+        Ok(())
+    }
+
+    #[test]
     pub fn an_error_is_logged_when_configuration_persistence_fails() -> Result<(), Box<dyn Error>>
     {
         let mut source = ConfigurationSource::faux();
@@ -139,7 +153,7 @@ mod tests
 
         let spy_log = SpyLog::set();
 
-        manager.update(|c| c.coverage_enabled = true).unwrap();
+        manager.update(|c| c.coverage_enabled = true).unwrap_err();
 
         let error = spy_log.into_iter().exactly_one().unwrap();
 
