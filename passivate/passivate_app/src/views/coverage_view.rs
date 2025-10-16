@@ -65,7 +65,7 @@ impl CoverageView
 
         if ui.button("Enable").clicked()
         {
-            self.configuration.update(|c| {
+            _ = self.configuration.update(|c| {
                 c.coverage_enabled = true;
             });
         }

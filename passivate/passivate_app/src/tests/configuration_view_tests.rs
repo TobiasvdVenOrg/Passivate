@@ -30,7 +30,7 @@ pub fn show_configuration()
     configuration_manager.update(|c| {
         c.coverage_enabled = true;
         c.snapshots_path = Some(String::from("tests/snapshots"));
-    });
+    }).unwrap();
 
     harness.run();
     harness.fit_contents();

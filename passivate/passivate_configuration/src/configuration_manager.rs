@@ -119,7 +119,7 @@ mod tests
         let mut manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
 
         assert_that!(&manager.get(|c| c.coverage_enabled), eq(false));
-        manager.update(|c| c.coverage_enabled = true).expect("expected Ok");
+        manager.update(|c| c.coverage_enabled = true).unwrap();
 
         let reloaded_manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
 
@@ -139,7 +139,7 @@ mod tests
 
         let spy_log = SpyLog::set();
 
-        manager.update(|c| c.coverage_enabled = true);
+        manager.update(|c| c.coverage_enabled = true).unwrap();
 
         let error = spy_log.into_iter().exactly_one().unwrap();
 
@@ -154,9 +154,7 @@ mod tests
         let configuration = Configuration::default();
         let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
-        manager.update(|c| {
-            c.snapshots_path = Some(String::from("Example/path"));
-        });
+        manager.update(|c| c.snapshots_path = Some(String::from("Example/path"))).unwrap();
 
         let snapshots_path = manager.get(|c| c.snapshots_path.clone());
 
@@ -170,9 +168,7 @@ mod tests
         let (tx, rx1, rx2) = Tx::multi_2();
         let mut manager = ConfigurationManager::new(configuration, tx);
 
-        manager.update(|c| {
-            c.coverage_enabled = true;
-        });
+        manager.update(|c| c.coverage_enabled = true).unwrap();
 
         let broadcast1 = rx1.last().unwrap();
         let broadcast2 = rx2.last().unwrap();

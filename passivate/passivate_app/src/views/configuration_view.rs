@@ -31,7 +31,7 @@ impl View for ConfigurationView
 
         if ui.toggle_value(&mut configuration.coverage_enabled, "Compute Coverage").changed()
         {
-            self.configuration_manager.update(|c| {
+            _ = self.configuration_manager.update(|c| {
                 c.coverage_enabled = configuration.coverage_enabled;
             });
 
@@ -48,7 +48,7 @@ impl View for ConfigurationView
 
             if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
             {
-                self.configuration_manager.update(|c| {
+                _ = self.configuration_manager.update(|c| {
                     c.snapshots_path = Some(self.snapshots_path_field.clone());
                 });
 

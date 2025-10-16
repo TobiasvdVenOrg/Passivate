@@ -28,7 +28,7 @@ impl SpyLog
 
 impl log::Log for SpyLogImpl
 {
-    fn enabled(&self, metadata: &log::Metadata) -> bool
+    fn enabled(&self, _metadata: &log::Metadata) -> bool
     {
         true
     }
