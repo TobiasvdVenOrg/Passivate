@@ -5,11 +5,11 @@ use galvanic_assert::*;
 use passivate_configuration::configuration::Configuration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::test_helpers::test_run_setup::test_data_path;
 use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
 use passivate_delegation::Tx;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
+use passivate_testing::path_resolution::test_data_path;
 use rstest::*;
 
 use crate::views::{DetailsView, TestRunView, View};

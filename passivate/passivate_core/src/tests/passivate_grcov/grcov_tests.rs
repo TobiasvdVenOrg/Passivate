@@ -6,12 +6,13 @@ use std::io::Error as IoError;
 use camino::{Utf8Path, Utf8PathBuf};
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_names::test_name;
+use passivate_testing::path_resolution::test_output_path;
 use pretty_assertions::assert_eq;
 
 use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesKind};
 use crate::passivate_grcov::get_profraw_count;
-use crate::test_helpers::test_run_setup::{TestRunSetup, test_output_path};
+use crate::test_helpers::test_run_setup::TestRunSetup;
 
 #[test]
 pub fn test_run_sends_coverage_result() -> Result<(), IoError>

@@ -9,6 +9,7 @@ passivate_delegation = { path = "../passivate_delegation" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_notify = { path = "../passivate_notify" }
 passivate_configuration = { path = "../passivate_configuration" }
+passivate_testing = { path = "../passivate_testing" }
 passivate_log = { path = "../passivate_log" }
 
 egui.workspace = true

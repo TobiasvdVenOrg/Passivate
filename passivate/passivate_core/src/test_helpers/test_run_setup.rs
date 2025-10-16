@@ -2,10 +2,11 @@ use std::ffi::OsString;
 use std::fs;
 
 use bon::bon;
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use passivate_configuration::configuration::Configuration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
+use passivate_testing::path_resolution::{test_data_path, test_output_path};
 
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
@@ -23,23 +24,6 @@ pub struct TestRunSetup
     coverage_sender: Tx<CoverageStatus>,
     coverage_enabled: bool,
     override_snapshot_path: TestSnapshotPath
-}
-
-pub fn test_output_path() -> Utf8PathBuf
-{
-    Utf8PathBuf::from_path_buf(dunce::canonicalize(Utf8PathBuf::from("../../test_output")).expect("test output path did not exist!")).expect("expected utf8 path")
-}
-
-pub fn test_data_path() -> Utf8PathBuf
-{
-    Utf8PathBuf::from_path_buf(dunce::canonicalize(Utf8PathBuf::from("../../test_data")).expect("test data path did not exist!")).expect("expected utf8 path")
-}
-
-pub fn get_default_workspace_path<P>(workspace_path: P) -> Utf8PathBuf
-where
-    P: AsRef<Utf8Path>
-{
-    test_data_path().join(workspace_path)
 }
 
 #[bon]
