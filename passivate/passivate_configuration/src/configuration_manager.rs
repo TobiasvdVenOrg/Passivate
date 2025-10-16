@@ -1,23 +1,46 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use camino::Utf8Path;
 use passivate_delegation::Tx;
 
-use crate::{configuration::Configuration, configuration_event::ConfigurationEvent};
+use crate::configuration::{Configuration, ConfigurationLoadError, ConfigurationPersistError};
+use crate::configuration_event::ConfigurationEvent;
+use crate::configuration_source::ConfigurationSource;
 
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<Configuration>>,
-    configuration_tx: Tx<ConfigurationEvent>
+    configuration_tx: Tx<ConfigurationEvent>,
+    source: Option<ConfigurationSource>
 }
 
 impl ConfigurationManager
 {
+    pub fn from_source(configuration_tx: Tx<ConfigurationEvent>, source: ConfigurationSource) -> Result<Self, ConfigurationLoadError>
+    {
+        let configuration = source.load()?;
+
+        Ok(Self {
+            configuration: Arc::new(Mutex::new(configuration)),
+            configuration_tx,
+            source: Some(source)
+        })
+    }
+
+    pub fn from_file<P: AsRef<Utf8Path>>(configuration_tx: Tx<ConfigurationEvent>, file_path: P) -> Result<Self, ConfigurationLoadError>
+    {
+        let source = ConfigurationSource::from_file(file_path);
+
+        Self::from_source(configuration_tx, source)
+    }
+
     pub fn new(configuration: Configuration, configuration_tx: Tx<ConfigurationEvent>) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
-            configuration_tx
+            configuration_tx,
+            source: None
         }
     }
 
@@ -26,7 +49,7 @@ impl ConfigurationManager
         Self::new(Configuration::default(), configuration_tx)
     }
 
-    pub fn update<TUpdater: Fn(&mut Configuration)>(&mut self, updater: TUpdater)
+    pub fn update<TUpdater: Fn(&mut Configuration)>(&mut self, updater: TUpdater) -> Result<(), ConfigurationPersistError>
     {
         let mut configuration = self.acquire();
 
@@ -38,7 +61,18 @@ impl ConfigurationManager
 
         drop(configuration);
 
+        if let Some(source) = &self.source
+        {
+            source.persist(&new).map_err(|error| 
+            {
+                log::error!("failed to persist configuration: {:?}", error);
+                error
+            })?
+        }
+
         self.configuration_tx.send(ConfigurationEvent { old, new });
+
+        Ok(())
     }
 
     pub fn get_copy(&self) -> Configuration
@@ -63,9 +97,56 @@ impl ConfigurationManager
 #[cfg(test)]
 mod tests
 {
-    use passivate_delegation::Tx;
+    use std::error::Error;
+    use std::sync::Arc;
 
-    use crate::{configuration::Configuration, configuration_manager::ConfigurationManager};
+    use galvanic_assert::assert_that;
+    use galvanic_assert::matchers::eq;
+    use itertools::Itertools;
+    use passivate_delegation::Tx;
+    use passivate_testing::path_resolution::copy_from_data_to_output;
+    use passivate_testing::spy_log::SpyLog;
+
+    use crate::configuration::{Configuration, ConfigurationPersistError};
+    use crate::configuration_manager::ConfigurationManager;
+    use crate::configuration_source::ConfigurationSource;
+
+    #[test]
+    pub fn when_configuration_is_loaded_from_file_then_changes_are_persisted_there() -> Result<(), Box<dyn Error>>
+    {
+        let file = copy_from_data_to_output("example_configurations/minimal_configuration.toml")?;
+
+        let mut manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
+
+        assert_that!(&manager.get(|c| c.coverage_enabled), eq(false));
+        manager.update(|c| c.coverage_enabled = true).expect("expected Ok");
+
+        let reloaded_manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
+
+        assert_that!(&reloaded_manager.get(|c| c.coverage_enabled), eq(true));
+        Ok(())
+    }
+
+    #[test]
+    pub fn an_error_is_logged_when_configuration_persistence_fails() -> Result<(), Box<dyn Error>>
+    {
+        let mut source = ConfigurationSource::faux();
+
+        source._when_load().then_return(Ok(Configuration::default()));
+        source._when_persist().then_return(Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(std::io::ErrorKind::Interrupted, "")))));
+
+        let mut manager = ConfigurationManager::from_source(Tx::stub(), source)?;
+
+        let spy_log = SpyLog::set();
+
+        manager.update(|c| c.coverage_enabled = true);
+
+        let error = spy_log.into_iter().exactly_one().unwrap();
+
+        assert_that!(error.contains("error"));
+        
+        Ok(())
+    }
 
     #[test]
     pub fn configuration_update_changes_configuration()

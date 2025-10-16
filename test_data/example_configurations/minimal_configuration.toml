@@ -1,0 +1,2 @@
+coverage_enabled = false
+snapshots_path = "a/path/to/snapshots"

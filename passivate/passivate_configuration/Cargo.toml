@@ -5,3 +5,15 @@ edition = "2024"
 
 [dependencies]
 passivate_delegation = { path = "../passivate_delegation" }
+passivate_testing = { path = "../passivate_testing" }
+
+camino.workspace = true
+faux.workspace = true
+log.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+galvanic-assert.workspace = true
+itertools.workspace = true
