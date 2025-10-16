@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io::Error as IoError;
 use std::sync::mpsc::SendError;
 
+use passivate_configuration::configuration::ConfigurationLoadError;
 use passivate_core::change_events::ChangeEvent;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 
@@ -14,7 +15,8 @@ pub enum StartupError
     Channel(SendError<ChangeEvent>),
     DirectorySetup(IoError),
     Logger(log::SetLoggerError),
-    LoggerAlreadyInitialized
+    LoggerAlreadyInitialized,
+    Configuration(ConfigurationLoadError)
 }
 
 #[derive(Debug)]
@@ -50,18 +52,24 @@ impl Display for StartupError
                 writeln!(f, "failed to initialize Passivate environment")?;
                 writeln!(f)?;
                 write!(f, "{}", directory_setup_error)
-            },
+            }
             StartupError::Logger(logger_error) =>
             {
                 writeln!(f, "failed to initialize logger")?;
                 writeln!(f)?;
                 write!(f, "{}", logger_error)
-            },
+            }
             StartupError::LoggerAlreadyInitialized =>
             {
                 writeln!(f, "failed to initialize logger")?;
                 writeln!(f)?;
                 write!(f, "logger was already initialized")
+            }
+            StartupError::Configuration(load_error) =>
+            {
+                writeln!(f, "failed to load configuration")?;
+                writeln!(f)?;
+                write!(f, "{}", load_error)
             }
         }
     }
@@ -78,7 +86,8 @@ impl Error for StartupError
             StartupError::Channel(channel) => Some(channel),
             StartupError::DirectorySetup(directory_setup_error) => Some(directory_setup_error),
             StartupError::Logger(logger_error) => Some(logger_error),
-            StartupError::LoggerAlreadyInitialized => None
+            StartupError::LoggerAlreadyInitialized => None,
+            StartupError::Configuration(load_error) => Some(load_error)
         }
     }
 }
@@ -112,5 +121,13 @@ impl From<IoError> for StartupError
     fn from(error: IoError) -> Self
     {
         StartupError::DirectorySetup(error)
+    }
+}
+
+impl From<ConfigurationLoadError> for StartupError
+{
+    fn from(value: ConfigurationLoadError) -> Self
+    {
+        StartupError::Configuration(value)
     }
 }

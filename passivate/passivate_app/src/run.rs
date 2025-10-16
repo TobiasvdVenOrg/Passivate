@@ -3,7 +3,6 @@ use std::sync::OnceLock;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use egui::Context;
-use passivate_configuration::configuration::Configuration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
 use passivate_core::passivate_grcov::Grcov;
@@ -70,7 +69,8 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
 
     let coverage = Grcov::builder().workspace_path(workspace_path).output_path(coverage_path).binary_path(binary_path).build();
 
-    let configuration = ConfigurationManager::new(Configuration::default(), configuration_tx);
+    let configuration = ConfigurationManager::from_file(configuration_tx, ".config/passivate.toml")?;
+
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
