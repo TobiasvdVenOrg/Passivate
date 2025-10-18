@@ -2,7 +2,7 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::Tx;
 
-use crate::view::View;
+use crate::docking::{dock_state::DockId, view::View};
 
 pub struct ConfigurationView
 {
@@ -25,6 +25,12 @@ impl ConfigurationView
 
 impl View for ConfigurationView
 {
+
+    fn id(&self) -> DockId
+    {
+        "configuration_view".into()
+    }
+
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         let mut configuration = self.configuration_manager.get_copy();
@@ -79,7 +85,8 @@ mod tests
     use passivate_hyp_names::test_name;
 
     use crate::details_view::DetailsView;
-    use crate::{configuration_view::ConfigurationView, view::View};
+    use crate::configuration_view::ConfigurationView;
+    use crate::docking::view::View;
 
     #[test]
     pub fn show_configuration()

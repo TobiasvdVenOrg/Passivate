@@ -6,7 +6,8 @@ use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use passivate_delegation::{Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::view::View;
+use crate::docking::dock_state::DockId;
+use crate::docking::view::View;
 
 struct SnapshotHandles
 {
@@ -131,6 +132,11 @@ impl DetailsView
 
 impl View for DetailsView
 {
+    fn id(&self) -> DockId
+    {
+        "details_view".into()
+    }
+    
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(new_test) = self.test_receiver.try_recv()
@@ -202,9 +208,8 @@ mod tests
     use rstest::*;
 
     use crate::details_view::DetailsView;
+    use crate::docking::view::View;
     use crate::test_run_view::TestRunView;
-    use crate::view::View;
-
     #[test]
     pub fn show_a_passing_test()
     {

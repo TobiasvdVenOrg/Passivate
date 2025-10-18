@@ -3,7 +3,7 @@ use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, Test
 use passivate_delegation::{Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::view::View;
+use crate::docking::{dock_state::DockId, view::View};
 
 pub struct TestRunView
 {
@@ -69,6 +69,11 @@ impl TestRunView
 
 impl View for TestRunView
 {
+    fn id(&self) -> DockId
+    {
+        "test_run_view".into()
+    }
+
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(status) = self.receiver.try_recv()
@@ -146,7 +151,7 @@ mod tests
     use passivate_delegation::Tx;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
 
-    use crate::{test_run_view::TestRunView, view::View};
+    use crate::{docking::view::View, test_run_view::TestRunView};
 
     #[test]
     pub fn show_when_first_test_run_is_starting()

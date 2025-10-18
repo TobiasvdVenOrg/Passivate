@@ -1,23 +1,51 @@
 use egui::Context;
 use egui_dock::{DockArea, Style};
 
-use crate::view::View;
+use crate::docking::tab_viewer::TabViewer;
+use crate::docking::view::View;
 
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DockId(String);
+
+impl From<&str> for DockId
+{
+    fn from(val: &str) -> Self 
+    {
+        DockId(val.to_owned())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct DockState
 {
     state: egui_dock::DockState<DockWrapper>
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct DockWrapper
 {
-    view: Box<dyn View>
+    id: DockId,
+
+    #[serde(skip)]
+    view: Option<Box<dyn View>>
 }
 
 impl DockWrapper
 {
-    fn new(view: Box<dyn View>) -> Self
+    fn new(id: DockId, view: Box<dyn View>) -> Self
     {
-        Self { view }
+        Self { id, view: Some(view) }
+    }
+
+    pub fn get_view(&mut self) -> &mut Box<dyn View>
+    {
+        match &mut self.view
+        {
+            Some(view) => view,
+            None => todo!(),
+        }
     }
 }
 
@@ -27,7 +55,7 @@ impl DockState
     where
         TViews: Iterator<Item = Box<dyn View>>
     {
-        let views = views.map(DockWrapper::new).collect();
+        let views = views.map(|view| DockWrapper::new(view.id(), view)).collect();
 
         let state = egui_dock::DockState::new(views);
 
@@ -42,22 +70,5 @@ impl DockState
             .show_leaf_collapse_buttons(false)
             .show_leaf_close_all_buttons(false)
             .show(egui_context, &mut TabViewer);
-    }
-}
-
-pub struct TabViewer;
-
-impl egui_dock::TabViewer for TabViewer
-{
-    type Tab = DockWrapper;
-
-    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText
-    {
-        tab.view.title().into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab)
-    {
-        tab.view.ui(ui);
     }
 }

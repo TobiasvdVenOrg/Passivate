@@ -1,6 +1,12 @@
 use eframe::Frame;
 use egui::Context;
-use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::{dock_state::DockState}, log_view::LogView, test_run_view::TestRunView, view::View};
+use passivate_views::configuration_view::ConfigurationView;
+use passivate_views::coverage_view::CoverageView;
+use passivate_views::details_view::DetailsView;
+use passivate_views::docking::dock_state::DockState;
+use passivate_views::docking::view::View;
+use passivate_views::log_view::LogView;
+use passivate_views::test_run_view::TestRunView;
 
 pub struct App
 {
@@ -16,7 +22,7 @@ impl App
             Box::new(details_view),
             Box::new(coverage_view),
             Box::new(configuration_view),
-            Box::new(log_view)
+            Box::new(log_view),
         ];
 
         let dock_state = DockState::new(views.into_iter());

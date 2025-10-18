@@ -5,7 +5,8 @@ use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_delegation::Rx;
 
-use crate::view::View;
+use crate::docking::dock_state::DockId;
+use crate::docking::view::View;
 
 pub struct CoverageView
 {
@@ -74,6 +75,11 @@ impl CoverageView
 
 impl View for CoverageView
 {
+    fn id(&self) -> DockId
+    {
+        "coverage_view".into()
+    }
+
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(status) = self.receiver.try_recv()
@@ -118,7 +124,7 @@ mod tests
     use passivate_delegation::{Rx, Tx};
     use passivate_hyp_names::test_name;
 
-    use crate::{coverage_view::CoverageView, view::View};
+    use crate::{coverage_view::CoverageView, docking::view::View};
 
     #[test]
     pub fn show_coverage_hierarchy_fully_collapsed()

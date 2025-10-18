@@ -2,7 +2,7 @@ use egui::ScrollArea;
 use passivate_delegation::Rx;
 use passivate_log::log_message::LogMessage;
 
-use crate::view::View;
+use crate::docking::{dock_state::DockId, view::View};
 
 pub struct LogView
 {
@@ -26,6 +26,11 @@ impl LogView
 
 impl View for LogView
 {
+    fn id(&self) -> DockId
+    {
+        "log_view".into()
+    }
+
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(log) = self.receiver.try_recv()
@@ -68,8 +73,8 @@ mod tests
     use passivate_hyp_names::test_name;
     use passivate_log::log_message::LogMessage;
 
+    use crate::docking::view::View;
     use crate::log_view::LogView;
-    use crate::view::View;
 
     #[test]
     pub fn show_a_single_log()

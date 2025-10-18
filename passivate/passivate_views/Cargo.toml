@@ -14,7 +14,9 @@ passivate_log = { path = "../passivate_log" }
 camino.workspace = true
 chrono.workspace = true
 egui.workspace = true
-egui_dock.workspace = true
+egui_dock = { workspace = true, features = [ "serde" ] }
+serde.workspace = true
+serde_json.workspace = true
 indexmap = { workspace = true, features = [ "serde" ] }
 
 [dev-dependencies]
