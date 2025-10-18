@@ -197,7 +197,7 @@ mod tests
     use egui_kittest::kittest::Queryable;
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
-    use passivate_configuration::configuration::Configuration;
+    use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::change_events::ChangeEvent;
     use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
@@ -244,7 +244,7 @@ mod tests
         let (test_run_tx, test_run_rx) = Tx::new();
         let (details_tx, details_rx) = Tx::new();
 
-        let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
+        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
 
         let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
         let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
@@ -278,7 +278,7 @@ mod tests
     {
         let (test_run_tx, test_run_rx) = Tx::new();
         let (details_tx, details_rx) = Tx::new();
-        let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
+        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
         let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
 
@@ -412,9 +412,9 @@ mod tests
     fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
     {
         ConfigurationManager::new(
-            Configuration {
+            PassivateConfiguration {
                 snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
-                ..Configuration::default()
+                ..PassivateConfiguration::default()
             },
             Tx::stub()
         )

@@ -65,7 +65,7 @@ impl View for ConfigurationView
 
     fn title(&self) -> String
     {
-        "Configuration".to_string()
+        "PassivateConfiguration".to_string()
     }
 }
 
@@ -78,7 +78,7 @@ mod tests
     use egui_kittest::Harness;
     use galvanic_assert::{has_structure, structure};
     use galvanic_assert::{assert_that, matchers::eq};
-    use passivate_configuration::{configuration::Configuration, configuration_manager::ConfigurationManager};
+    use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
     use passivate_core::test_run_model::Snapshots;
     use passivate_core::{change_events::ChangeEvent, coverage::MockComputeCoverage, test_execution::{TestRunHandler, TestRunner}};
     use passivate_delegation::{Rx, Tx};
@@ -91,7 +91,7 @@ mod tests
     #[test]
     pub fn show_configuration()
     {
-        let mut configuration_manager = ConfigurationManager::new(Configuration::default(), Tx::stub());
+        let mut configuration_manager = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), Tx::stub());
 
         let ui = |ui: &mut egui::Ui| {
@@ -113,7 +113,7 @@ mod tests
     #[test]
     pub fn configure_coverage_enabled()
     {
-        let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
+        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let test_run_handler = TestRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
@@ -144,7 +144,7 @@ mod tests
     #[test]
     pub fn configure_snapshots_path()
     {
-        let configuration = ConfigurationManager::new(Configuration::default(), Tx::stub());
+        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let (change_events_tx, change_events_rx) = Tx::new();
         let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
         let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);

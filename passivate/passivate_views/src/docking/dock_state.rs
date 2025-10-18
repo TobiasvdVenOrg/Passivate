@@ -6,7 +6,7 @@ use crate::docking::view::View;
 
 use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct DockId(String);
 
 impl From<&str> for DockId
@@ -26,7 +26,7 @@ pub struct DockState
 #[derive(Serialize, Deserialize)]
 pub struct DockWrapper
 {
-    id: DockId,
+    pub id: DockId,
 
     #[serde(skip)]
     view: Option<Box<dyn View>>
@@ -70,5 +70,9 @@ impl DockState
             .show_leaf_collapse_buttons(false)
             .show_leaf_close_all_buttons(false)
             .show(egui_context, &mut TabViewer);
+    }
+
+    pub fn views(&self) -> Vec<&DockWrapper> {
+        self.state.iter_all_tabs().map(|((_surface, _node), tab)| tab).collect()
     }
 }

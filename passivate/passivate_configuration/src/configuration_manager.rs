@@ -3,23 +3,24 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use camino::Utf8Path;
 use passivate_delegation::Tx;
 
-use crate::configuration::{Configuration, ConfigurationLoadError, ConfigurationPersistError};
+use crate::configuration::{PassivateConfiguration};
+use crate::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
 use crate::configuration_event::ConfigurationEvent;
 use crate::configuration_source::ConfigurationSource;
 
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
-    configuration: Arc<Mutex<Configuration>>,
+    configuration: Arc<Mutex<PassivateConfiguration>>,
     configuration_tx: Tx<ConfigurationEvent>,
-    source: Option<ConfigurationSource>
+    source: Option<ConfigurationSource<PassivateConfiguration>>
 }
 
 impl ConfigurationManager
 {
-    pub fn from_source(configuration_tx: Tx<ConfigurationEvent>, source: ConfigurationSource) -> Result<Self, ConfigurationLoadError>
+    pub fn from_source(configuration_tx: Tx<ConfigurationEvent>, source: ConfigurationSource<PassivateConfiguration>) -> Result<Self, ConfigurationLoadError>
     {
-        let configuration = source.load()?;
+        let configuration = source.load()?.unwrap_or_default();
 
         Ok(Self {
             configuration: Arc::new(Mutex::new(configuration)),
@@ -35,7 +36,7 @@ impl ConfigurationManager
         Self::from_source(configuration_tx, source)
     }
 
-    pub fn new(configuration: Configuration, configuration_tx: Tx<ConfigurationEvent>) -> Self
+    pub fn new(configuration: PassivateConfiguration, configuration_tx: Tx<ConfigurationEvent>) -> Self
     {
         Self {
             configuration: Arc::new(Mutex::new(configuration)),
@@ -46,10 +47,10 @@ impl ConfigurationManager
 
     pub fn default_config(configuration_tx: Tx<ConfigurationEvent>) -> Self
     {
-        Self::new(Configuration::default(), configuration_tx)
+        Self::new(PassivateConfiguration::default(), configuration_tx)
     }
 
-    pub fn update<TUpdater: Fn(&mut Configuration)>(&mut self, updater: TUpdater) -> Result<(), ConfigurationPersistError>
+    pub fn update<TUpdater: Fn(&mut PassivateConfiguration)>(&mut self, updater: TUpdater) -> Result<(), ConfigurationPersistError>
     {
         let mut configuration = self.acquire();
 
@@ -75,20 +76,20 @@ impl ConfigurationManager
         Ok(())
     }
 
-    pub fn get_copy(&self) -> Configuration
+    pub fn get_copy(&self) -> PassivateConfiguration
     {
         let configuration = self.acquire();
 
         configuration.clone()
     }
 
-    pub fn get<TValue, TGet: Fn(&Configuration) -> TValue>(&self, get: TGet) -> TValue
+    pub fn get<TValue, TGet: Fn(&PassivateConfiguration) -> TValue>(&self, get: TGet) -> TValue
     {
         let configuration = self.acquire();
         get(&configuration)
     }
 
-    fn acquire(&self) -> MutexGuard<'_, Configuration>
+    fn acquire(&self) -> MutexGuard<'_, PassivateConfiguration>
     {
         self.configuration.lock().expect("failed to acquire configuration lock.")
     }
@@ -108,7 +109,8 @@ mod tests
     use passivate_testing::path_resolution::{copy_from_data_to_output, test_output_path};
     use passivate_testing::spy_log::SpyLog;
 
-    use crate::configuration::{Configuration, ConfigurationPersistError};
+    use crate::configuration::PassivateConfiguration;
+    use crate::configuration_errors::ConfigurationPersistError;
     use crate::configuration_manager::ConfigurationManager;
     use crate::configuration_source::ConfigurationSource;
 
@@ -146,7 +148,7 @@ mod tests
     {
         let mut source = ConfigurationSource::faux();
 
-        source._when_load().then_return(Ok(Configuration::default()));
+        source._when_load().then_return(Ok(None));
         source._when_persist().then_return(Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(std::io::ErrorKind::Interrupted, "")))));
 
         let mut manager = ConfigurationManager::from_source(Tx::stub(), source)?;
@@ -165,7 +167,7 @@ mod tests
     #[test]
     pub fn configuration_update_changes_configuration()
     {
-        let configuration = Configuration::default();
+        let configuration = PassivateConfiguration::default();
         let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
         manager.update(|c| c.snapshots_path = Some(String::from("Example/path"))).unwrap();
@@ -178,7 +180,7 @@ mod tests
     #[test]
     pub fn configuration_change_is_broadcast()
     {
-        let configuration = Configuration::default();
+        let configuration = PassivateConfiguration::default();
         let (tx, rx1, rx2) = Tx::multi_2();
         let mut manager = ConfigurationManager::new(configuration, tx);
 

@@ -1,8 +1,8 @@
-use crate::configuration::Configuration;
+use crate::configuration::PassivateConfiguration;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct ConfigurationEvent
 {
-    pub old: Configuration,
-    pub new: Configuration
+    pub old: PassivateConfiguration,
+    pub new: PassivateConfiguration
 }

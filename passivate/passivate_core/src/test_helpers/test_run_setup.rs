@@ -3,7 +3,7 @@ use std::fs;
 
 use bon::bon;
 use camino::Utf8PathBuf;
-use passivate_configuration::configuration::Configuration;
+use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
 use passivate_testing::path_resolution::{test_data_path, test_output_path};
@@ -86,7 +86,7 @@ impl TestRunSetup
         let grcov = self.build_grcov();
 
         let configuration = ConfigurationManager::new(
-            Configuration {
+            PassivateConfiguration {
                 coverage_enabled: self.coverage_enabled,
                 snapshots_path: Some(self.get_snapshots_path().to_string())
             },
