@@ -1,11 +1,24 @@
 use egui::Context;
 use egui_dock::{DockArea, Style};
 
-use crate::{docking::tab_viewer::TabViewer, view::View};
+use crate::view::View;
 
 pub struct DockState
 {
-    state: egui_dock::DockState<Box<dyn View>>
+    state: egui_dock::DockState<DockWrapper>
+}
+
+pub struct DockWrapper
+{
+    view: Box<dyn View>
+}
+
+impl DockWrapper
+{
+    fn new(view: Box<dyn View>) -> Self
+    {
+        Self { view }
+    }
 }
 
 impl DockState
@@ -14,7 +27,7 @@ impl DockState
     where
         TViews: Iterator<Item = Box<dyn View>>
     {
-        let views: Vec<Box<dyn View>> = views.collect();
+        let views = views.map(DockWrapper::new).collect();
 
         let state = egui_dock::DockState::new(views);
 
@@ -29,5 +42,22 @@ impl DockState
             .show_leaf_collapse_buttons(false)
             .show_leaf_close_all_buttons(false)
             .show(egui_context, &mut TabViewer);
+    }
+}
+
+pub struct TabViewer;
+
+impl egui_dock::TabViewer for TabViewer
+{
+    type Tab = DockWrapper;
+
+    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText
+    {
+        tab.view.title().into()
+    }
+
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab)
+    {
+        tab.view.ui(ui);
     }
 }
