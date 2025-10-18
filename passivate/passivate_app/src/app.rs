@@ -1,8 +1,7 @@
 use eframe::Frame;
 use egui::Context;
 use egui_dock::{DockArea, DockState, Style, TabViewer};
-
-use crate::views::{ConfigurationView, CoverageView, DetailsView, LogView, TestRunView, View};
+use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, log_view::LogView, test_run_view::TestRunView, view::View};
 
 struct MyTabViewer;
 

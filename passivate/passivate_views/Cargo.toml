@@ -1,0 +1,24 @@
+[package]
+name = "passivate_views"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_core = { path = "../passivate_core" }
+passivate_delegation = { path = "../passivate_delegation" }
+passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_configuration = { path = "../passivate_configuration" }
+passivate_testing = { path = "../passivate_testing" }
+passivate_log = { path = "../passivate_log" }
+
+camino.workspace = true
+chrono.workspace = true
+egui.workspace = true
+egui_dock.workspace = true
+indexmap = { workspace = true, features = [ "serde" ] }
+
+[dev-dependencies]
+egui_kittest.workspace = true
+galvanic-assert.workspace = true
+stdext.workspace = true
+rstest.workspace = true

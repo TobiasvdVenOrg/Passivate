@@ -3,8 +3,10 @@ members = [
     "passivate_core",
     "passivate_app",
     "passivate_delegation",
-    "passivate_hyp_names"
-]
+    "passivate_hyp_names",
+    "passivate_views"
+    ]
+
 resolver = "2"
 
 [profile.dev]

@@ -11,6 +11,7 @@ passivate_notify = { path = "../passivate_notify" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_testing = { path = "../passivate_testing" }
 passivate_log = { path = "../passivate_log" }
+passivate_views = { path = "../passivate_views" }
 
 egui.workspace = true
 egui_dock.workspace = true

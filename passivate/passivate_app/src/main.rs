@@ -1,4 +1,5 @@
-use passivate::{StartupError, run};
+use passivate::{run::run, startup_errors::StartupError};
+
 
 fn main() -> Result<(), StartupError>
 {

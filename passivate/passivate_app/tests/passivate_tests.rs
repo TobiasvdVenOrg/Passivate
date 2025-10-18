@@ -24,7 +24,7 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     use std::time::Duration;
 
     use camino::Utf8Path;
-    use passivate::run_from_path;
+    use passivate::run::run_from_path;
     use tokio::{task, time};
 
     run_from_path(

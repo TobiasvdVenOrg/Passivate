@@ -12,13 +12,15 @@ use passivate_delegation::{Rx, Tx};
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
-use views::{CoverageView, TestRunView};
+use passivate_views::configuration_view::ConfigurationView;
+use passivate_views::coverage_view::CoverageView;
+use passivate_views::details_view::DetailsView;
+use passivate_views::log_view::LogView;
+use passivate_views::test_run_view::TestRunView;
 
 use crate::app::App;
 use crate::error_app::ErrorApp;
 use crate::startup_errors::*;
-use crate::views;
-use crate::views::{ConfigurationView, DetailsView, LogView};
 
 static LOGGER: OnceLock<TxLog> = OnceLock::new();
 
