@@ -1,24 +1,7 @@
 use eframe::Frame;
 use egui::Context;
-use egui_dock::{DockArea, DockState, Style, TabViewer};
-use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, log_view::LogView, test_run_view::TestRunView, view::View};
-
-struct MyTabViewer;
-
-impl TabViewer for MyTabViewer
-{
-    type Tab = Box<dyn View>;
-
-    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText
-    {
-        tab.title().clone().into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab)
-    {
-        tab.ui(ui);
-    }
-}
+use egui_dock::{DockArea, DockState, Style};
+use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::tab_viewer::TabViewer, log_view::LogView, test_run_view::TestRunView, view::View};
 
 pub struct App
 {
@@ -50,7 +33,7 @@ impl eframe::App for App
             .show_close_buttons(false)
             .show_leaf_collapse_buttons(false)
             .show_leaf_close_all_buttons(false)
-            .show(ctx, &mut MyTabViewer);
+            .show(ctx, &mut TabViewer);
 
         ctx.request_repaint();
     }
