@@ -65,7 +65,7 @@ impl View for ConfigurationView
 
     fn title(&self) -> String
     {
-        "PassivateConfiguration".to_string()
+        "Configuration".to_string()
     }
 }
 

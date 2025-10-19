@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::docking::{docking_layout::DockId, view::View};
+use crate::docking::docking_layout::DockId;
+use crate::docking::view::View;
 
 pub struct TabViewer
 {
@@ -10,19 +11,20 @@ pub struct TabViewer
 impl TabViewer
 {
     pub fn new<TViews>(views: TViews) -> Self
-    where 
-        TViews : Iterator<Item = Box<dyn View>>
+    where
+        TViews: Iterator<Item = Box<dyn View>>
     {
-        let views = views.into_iter()
-            .map(|view| (view.id(), view))
-            .collect();
+        let views = views.into_iter().map(|view| (view.id(), view)).collect();
 
         Self { views }
     }
 
     fn get_view(&mut self, id: &DockId) -> &mut Box<dyn View>
     {
-        self.views.get_mut(id).unwrap()
+        self.views.entry(id.clone()).or_insert_with(||
+        {
+            Box::new(PlaceholderView { missing_id: id.clone() })
+        })
     }
 }
 
@@ -39,5 +41,28 @@ impl egui_dock::TabViewer for TabViewer
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab)
     {
         self.get_view(tab).ui(ui);
+    }
+}
+
+struct PlaceholderView
+{
+    missing_id: DockId
+}
+
+impl View for PlaceholderView
+{
+    fn id(&self) -> DockId
+    {
+        self.missing_id.clone()
+    }
+
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    {
+        ui.heading(format!("failed to resolve dock id: {}", self.missing_id));
+    }
+
+    fn title(&self) -> String
+    {
+        format!("{:?}", self.missing_id).to_owned()
     }
 }

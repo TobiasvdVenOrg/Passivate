@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use egui::Context;
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
@@ -12,6 +14,14 @@ impl From<&str> for DockId
     fn from(val: &str) -> Self
     {
         DockId(val.to_owned())
+    }
+}
+
+impl Display for DockId
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "'{}'", self.0)
     }
 }
 

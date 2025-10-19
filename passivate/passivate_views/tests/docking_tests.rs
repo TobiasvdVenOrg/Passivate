@@ -2,6 +2,7 @@ use std::fs;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
+use egui_kittest::Harness;
 use galvanic_assert::assert_that;
 use itertools::Itertools;
 use passivate_configuration::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
@@ -11,6 +12,7 @@ use passivate_testing::path_resolution::{clean_directory, test_output_path};
 use passivate_testing::spy_log::SpyLog;
 use passivate_views::docking::docking_layout::{DockId, DockingLayout};
 use passivate_views::docking::layout_management::LayoutManagement;
+use passivate_views::docking::tab_viewer::TabViewer;
 use passivate_views::docking::view::View;
 
 #[test]
@@ -51,7 +53,22 @@ pub fn failing_to_persist_layout_logs_an_error()
 #[test]
 pub fn placeholder_view_is_used_when_layout_contains_missing_ids()
 {
+    use egui_dock::TabViewer;
 
+    let views: Vec<Box<dyn View>> = Vec::new();
+    let mut tab_viewer = passivate_views::docking::tab_viewer::TabViewer::new(views.into_iter());
+
+    let mut dock_id: DockId = "does not exist".into();
+
+    let ui = |ui: &mut egui::Ui| {
+        tab_viewer.ui(ui, &mut dock_id);
+    };
+
+    let mut harness = Harness::new_ui(ui);
+
+    harness.run();
+    harness.fit_contents();
+    harness.snapshot(&test_name!());
 }
 
 #[test]
