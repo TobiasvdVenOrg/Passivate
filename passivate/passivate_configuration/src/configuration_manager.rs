@@ -159,7 +159,7 @@ mod tests
 
         let error = spy_log.into_iter().exactly_one().unwrap();
 
-        assert_that!(error.contains("error"));
+        assert_that!(error.starts_with("ERROR"));
         
         Ok(())
     }

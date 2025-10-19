@@ -18,9 +18,11 @@ egui_dock = { workspace = true, features = [ "serde" ] }
 serde.workspace = true
 serde_json.workspace = true
 indexmap = { workspace = true, features = [ "serde" ] }
+log.workspace = true
 
 [dev-dependencies]
 egui_kittest.workspace = true
 galvanic-assert.workspace = true
 stdext.workspace = true
 rstest.workspace = true
+itertools.workspace = true

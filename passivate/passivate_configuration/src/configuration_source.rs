@@ -6,14 +6,14 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
 
 #[faux::create]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ConfigurationSource<T>
 {
     kind: ConfigurationSourceKind,
     _t: PhantomData<T>
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum ConfigurationSourceKind
 {
     File(Utf8PathBuf)
