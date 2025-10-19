@@ -12,7 +12,6 @@ use passivate_testing::path_resolution::{clean_directory, test_output_path};
 use passivate_testing::spy_log::SpyLog;
 use passivate_views::docking::docking_layout::{DockId, DockingLayout};
 use passivate_views::docking::layout_management::LayoutManagement;
-use passivate_views::docking::tab_viewer::TabViewer;
 use passivate_views::docking::view::View;
 
 #[test]
