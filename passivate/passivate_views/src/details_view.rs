@@ -6,7 +6,7 @@ use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use passivate_delegation::{Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::docking::dock_state::DockId;
+use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
 
 struct SnapshotHandles

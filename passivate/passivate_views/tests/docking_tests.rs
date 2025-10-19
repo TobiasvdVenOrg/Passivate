@@ -1,7 +1,7 @@
 use passivate_configuration::configuration_source::ConfigurationSource;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::test_output_path;
-use passivate_views::docking::{dock_state::{DockId, DockState}, view::View};
+use passivate_views::docking::{docking_layout::{DockId, DockingLayout}, view::View};
 
 struct TestView
 {
@@ -38,7 +38,7 @@ pub fn dock_state_can_be_reconstructed_from_serialized_form()
         .into_iter()
         .map(|view| Box::new(view) as Box<dyn View>);
 
-    let dock_state = DockState::new(test_views.map(|view| view.id()));
+    let dock_state = DockingLayout::new(test_views.map(|view| view.id()));
 
     let path = test_output_path().join(test_name!()).join("docking_layout.toml");
 

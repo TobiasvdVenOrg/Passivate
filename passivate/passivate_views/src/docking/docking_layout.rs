@@ -1,5 +1,5 @@
 use egui::Context;
-use egui_dock::{DockArea, Style};
+use egui_dock::{DockArea, DockState, Style};
 
 use crate::docking::tab_viewer::TabViewer;
 
@@ -17,18 +17,18 @@ impl From<&str> for DockId
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct DockState
+pub struct DockingLayout
 {
-    state: egui_dock::DockState<DockId>
+    state: DockState<DockId>
 }
 
-impl DockState
+impl DockingLayout
 {
     pub fn new(view_ids: impl Iterator<Item = DockId>) -> Self
     {
         let dock_ids = view_ids.collect();
 
-        let state = egui_dock::DockState::new(dock_ids);
+        let state = DockState::new(dock_ids);
 
         Self { state }
     }

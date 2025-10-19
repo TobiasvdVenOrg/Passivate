@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::docking::{dock_state::DockId, view::View};
+use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct TabViewer
 {

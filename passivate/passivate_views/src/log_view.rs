@@ -2,7 +2,7 @@ use egui::ScrollArea;
 use passivate_delegation::Rx;
 use passivate_log::log_message::LogMessage;
 
-use crate::docking::{dock_state::DockId, view::View};
+use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct LogView
 {

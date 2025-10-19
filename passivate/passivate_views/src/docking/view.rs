@@ -1,4 +1,4 @@
-use crate::docking::dock_state::DockId;
+use crate::docking::docking_layout::DockId;
 
 pub trait View
 {

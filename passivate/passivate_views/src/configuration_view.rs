@@ -2,7 +2,7 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::Tx;
 
-use crate::docking::{dock_state::DockId, view::View};
+use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct ConfigurationView
 {

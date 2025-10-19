@@ -5,7 +5,7 @@ use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_delegation::Rx;
 
-use crate::docking::dock_state::DockId;
+use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
 
 pub struct CoverageView
