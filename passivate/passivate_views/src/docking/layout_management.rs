@@ -49,6 +49,11 @@ impl LayoutManagement
     {
         self.current_layout.show(egui_context, tab_viewer);
     }
+
+    pub fn get_current(&self) -> &DockingLayout
+    {
+        &self.current_layout
+    }
 }
 
 impl Drop for LayoutManagement

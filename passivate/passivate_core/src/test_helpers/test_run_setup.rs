@@ -6,7 +6,7 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
-use passivate_testing::path_resolution::{test_data_path, test_output_path};
+use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
@@ -105,13 +105,7 @@ impl TestRunSetup
     pub fn clean_output(self) -> Self
     {
         let output_path = self.get_output_path();
-
-        if fs::exists(&output_path).expect("Failed to check if output_path exists!")
-        {
-            eprintln!("Cleaning: {:?}", output_path);
-
-            fs::remove_dir_all(&output_path).expect("Failed to clear output path!")
-        }
+        clean_directory(output_path);
 
         self
     }
