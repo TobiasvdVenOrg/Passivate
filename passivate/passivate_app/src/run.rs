@@ -15,7 +15,10 @@ use passivate_notify::notify_change_events::NotifyChangeEvents;
 use passivate_views::configuration_view::ConfigurationView;
 use passivate_views::coverage_view::CoverageView;
 use passivate_views::details_view::DetailsView;
+use passivate_views::docking::tab_viewer::TabViewer;
+use passivate_views::docking::view::View;
 use passivate_views::log_view::LogView;
+use passivate_views::passivate_layout;
 use passivate_views::test_run_view::TestRunView;
 
 use crate::app::App;
@@ -40,7 +43,12 @@ pub fn get_path_arg() -> Result<Utf8PathBuf, MissingArgumentError>
     match path
     {
         Some(p) => Ok(Utf8PathBuf::from(p)),
-        None => Err(MissingArgumentError { argument: "path".to_string() })
+        None =>
+        {
+            Err(MissingArgumentError {
+                argument: "path".to_string()
+            })
+        }
     }
 }
 
@@ -67,9 +75,19 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     let target = OsString::from("x86_64-pc-windows-msvc");
 
     let test_run = TestRun::from_state(TestRunState::FirstRun);
-    let test_runner = TestRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone(), test_run);
+    let test_runner = TestRunner::new(
+        target,
+        workspace_path.clone(),
+        target_path.clone(),
+        coverage_path.clone(),
+        test_run
+    );
 
-    let coverage = Grcov::builder().workspace_path(workspace_path).output_path(coverage_path).binary_path(binary_path).build();
+    let coverage = Grcov::builder()
+        .workspace_path(workspace_path)
+        .output_path(coverage_path)
+        .binary_path(binary_path)
+        .build();
 
     let configuration = ConfigurationManager::from_file(configuration_tx, ".config/passivate.toml")?;
 
@@ -97,10 +115,35 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     let configuration_view = ConfigurationView::new(configuration, change_event_tx);
     let log_view = LogView::new(log_rx);
 
+    let layout = passivate_layout::load(
+        &passivate_path.join("default_layout.toml"),
+        &tests_view,
+        &details_view,
+        &coverage_view,
+        &configuration_view,
+        &log_view
+    )?;
+
+    let views: Vec<Box<dyn View>> = vec![
+        Box::new(tests_view),
+        Box::new(details_view),
+        Box::new(coverage_view),
+        Box::new(configuration_view),
+        Box::new(log_view),
+    ];
+
+    let tab_viewer = TabViewer::new(views.into_iter());
+
     log::info!("Passivate started.");
 
     // Block until app closes
-    run_app(Box::new(App::new(tests_view, details_view, coverage_view, configuration_view, log_view)), context_accessor)?;
+    run_app(
+        Box::new(App::new(
+            layout,
+            tab_viewer
+        )),
+        context_accessor
+    )?;
 
     let _ = change_events.stop();
     drop(change_events);
@@ -113,12 +156,15 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
 fn initialize_logger() -> Result<Rx<LogMessage>, StartupError>
 {
     let (log_tx, log_rx) = Tx::new();
-    LOGGER.set(TxLog::new(log_tx)).map_err(|_| StartupError::LoggerAlreadyInitialized)?;
+    LOGGER
+        .set(TxLog::new(log_tx))
+        .map_err(|_| StartupError::LoggerAlreadyInitialized)?;
     let logger: &'static TxLog = LOGGER.get().unwrap();
-    log::set_logger(logger).map(|()|
-        {
-            log::set_max_level(log::LevelFilter::Info);    
-        }).map_err(StartupError::Logger)?;
+    log::set_logger(logger)
+        .map(|()| {
+            log::set_max_level(log::LevelFilter::Info);
+        })
+        .map_err(StartupError::Logger)?;
 
     Ok(log_rx)
 }
