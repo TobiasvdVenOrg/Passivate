@@ -1,4 +1,3 @@
-use galvanic_assert::{assert_that, has_structure};
 use passivate_configuration::configuration_source::ConfigurationSource;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::test_output_path;
@@ -16,7 +15,7 @@ impl View for TestView
         self.id.clone()
     }
 
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    fn ui(&mut self, _ui: &mut egui_dock::egui::Ui)
     {
         todo!()
     }
@@ -39,17 +38,15 @@ pub fn dock_state_can_be_reconstructed_from_serialized_form()
         .into_iter()
         .map(|view| Box::new(view) as Box<dyn View>);
 
-    let dock_state = DockState::new(test_views);
+    let dock_state = DockState::new(test_views.map(|view| view.id()));
 
     let path = test_output_path().join(test_name!()).join("docking_layout.toml");
-
-    eprintln!("{:?}", path);
 
     let source = ConfigurationSource::from_file(path);
     source.persist(&dock_state).unwrap();
 
     let reloaded = source.load().unwrap().unwrap();
 
-    assert_eq!(id_a, reloaded.views().first().unwrap().id);
-    assert_eq!(id_b, reloaded.views().iter().next_back().unwrap().id);
+    assert_eq!(id_a, **reloaded.views().first().unwrap());
+    assert_eq!(id_b, **reloaded.views().iter().next_back().unwrap());
 }
