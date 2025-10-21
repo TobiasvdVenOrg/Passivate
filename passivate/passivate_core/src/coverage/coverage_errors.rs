@@ -9,6 +9,7 @@ use crate::passivate_cargo::CargoWorkspaceError;
 #[derive(Error, Debug)]
 pub enum CoverageError
 {
+    // TODO: Generalize to "missing dependency" error?
     #[error("grcov is not installed")]
     GrcovNotInstalled(IoErrorKind),
 
