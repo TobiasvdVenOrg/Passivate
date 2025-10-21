@@ -4,12 +4,12 @@ use bon::Builder;
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
+use passivate_hyp_model::test_run::{FailedTestRun, TestRun};
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_execution::TestRunner;
-use crate::test_run_model::{FailedTestRun, TestRun};
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {

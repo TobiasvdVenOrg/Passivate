@@ -6,13 +6,13 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
+use passivate_hyp_model::test_run::TestRun;
 use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
 use crate::coverage::CoverageStatus;
 use crate::passivate_grcov::Grcov;
 use crate::test_execution::{TestRunHandler, TestRunner};
 use crate::test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind};
-use crate::test_run_model::TestRun;
 
 pub struct TestRunSetup
 {

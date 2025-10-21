@@ -1,6 +1,6 @@
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
-use super::SingleTestStatus;
+use crate::single_test_status::SingleTestStatus;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SingleTest

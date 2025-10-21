@@ -3,10 +3,9 @@ use std::io::Error as IoError;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use epaint::ColorImage;
+use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 use png::DecodingError;
 use thiserror::Error;
-
-use super::SingleTest;
 
 pub struct Snapshot
 {
@@ -57,10 +56,11 @@ impl Snapshots
         Self { snapshot_directory }
     }
 
-    pub fn from_test(&self, single_test: &SingleTest) -> Snapshot
+    pub fn from_hyp(&self, hyp_id: &HypId) -> Snapshot
     {
-        let current = self.from_file(Utf8PathBuf::from(&single_test.name).with_extension("png"));
-        let new = self.from_file(Utf8PathBuf::from(&single_test.name).with_extension("new.png"));
+        let file_name = hyp_id.get_name(&HypNameStrategy::Default);
+        let current = self.from_file(Utf8PathBuf::from(&file_name).with_extension("png"));
+        let new = self.from_file(Utf8PathBuf::from(&file_name).with_extension("new.png"));
 
         Snapshot { current, new }
     }

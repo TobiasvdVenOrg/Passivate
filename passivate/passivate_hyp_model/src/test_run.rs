@@ -1,4 +1,5 @@
-use super::{SingleTestStatus, TestCollection, TestRunEvent};
+use crate::{single_test_status::SingleTestStatus, test_collection::TestCollection, test_run_events::TestRunEvent};
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BuildFailedTestRun

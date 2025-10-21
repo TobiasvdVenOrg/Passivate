@@ -22,16 +22,6 @@ pub mod test_execution
     mod_use!(test_run_handler);
 }
 
-pub mod test_run_model
-{
-    mod_use!(single_test);
-    mod_use!(single_test_status);
-    mod_use!(test_run);
-    mod_use!(test_run_events);
-    mod_use!(snapshots);
-    mod_use!(test_collection);
-}
-
 pub mod passivate_cargo
 {
     mod_use!(cargo_workspace);

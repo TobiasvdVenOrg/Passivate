@@ -15,7 +15,8 @@ use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_helpers::test_snapshot_path::TestSnapshotPath;
-use crate::test_run_model::{FailedTestRun, SingleTestStatus, TestRunState};
+use passivate_hyp_model::test_run::{FailedTestRun, TestRunState};
+use passivate_hyp_model::single_test_status::SingleTestStatus;
 
 #[test]
 #[cfg(target_os = "windows")]

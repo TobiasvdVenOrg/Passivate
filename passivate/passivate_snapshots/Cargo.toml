@@ -1,0 +1,12 @@
+[package]
+name = "passivate_snapshots"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_hyp_names = { path = "../passivate_hyp_names" }
+
+epaint.workspace = true
+png.workspace = true
+camino.workspace = true
+thiserror.workspace = true

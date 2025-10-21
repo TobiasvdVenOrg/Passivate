@@ -2,7 +2,7 @@ use core::slice;
 
 use passivate_hyp_names::hyp_id::HypId;
 
-use super::SingleTest;
+use crate::single_test::SingleTest;
 
 #[derive(Default, Clone, Debug)]
 pub struct TestCollection

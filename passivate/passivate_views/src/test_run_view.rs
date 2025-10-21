@@ -1,6 +1,6 @@
 use egui::{Color32, RichText};
-use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunState};
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::docking::{docking_layout::DockId, view::View};
@@ -147,9 +147,9 @@ impl View for TestRunView
 mod tests
 {
     use egui_kittest::Harness;
-    use passivate_core::{test_run_model::{BuildFailedTestRun, SingleTest, SingleTestStatus, TestRun, TestRunEvent, TestRunState}};
     use passivate_delegation::Tx;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
+    use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}, test_run_events::TestRunEvent};
 
     use crate::{docking::view::View, test_run_view::TestRunView};
 

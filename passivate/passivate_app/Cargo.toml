@@ -7,6 +7,7 @@ edition = "2024"
 passivate_core = { path = "../passivate_core" }
 passivate_delegation = { path = "../passivate_delegation" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
 passivate_notify = { path = "../passivate_notify" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_testing = { path = "../passivate_testing" }

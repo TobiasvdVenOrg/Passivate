@@ -2,9 +2,11 @@ use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::change_events::ChangeEvent;
-use passivate_core::test_run_model::{SingleTest, SnapshotError, Snapshots};
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_model::single_test::SingleTest;
+use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_names::hyp_id::HypId;
+use passivate_snapshots::snapshots::{SnapshotError, Snapshots};
 
 use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
@@ -46,12 +48,12 @@ impl DetailsView
         snapshots_path.map(|path| Snapshots::new(Utf8PathBuf::from(path)))
     }
 
-    fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_test: &Option<SingleTest>)
+    fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_hyp: &Option<SingleTest>)
     {
         if let Some(snapshots) = self.get_snapshots()
-            && let Some(new_test) = new_test
+            && let Some(new_hyp) = new_hyp
         {
-            let snapshot = snapshots.from_test(new_test);
+            let snapshot = snapshots.from_hyp(&new_hyp.id);
             let mut are_identical = false;
 
             if let (Some(Ok(current)), Some(Ok(new))) = (&snapshot.current, &snapshot.new)
@@ -68,7 +70,7 @@ impl DetailsView
                 current,
                 new,
                 are_identical,
-                hyp_id: new_test.id.clone()
+                hyp_id: new_hyp.id.clone()
             });
         }
     }
@@ -149,9 +151,9 @@ impl View for DetailsView
         {
             let color = match single_test.status
             {
-                passivate_core::test_run_model::SingleTestStatus::Passed => Color32::GREEN,
-                passivate_core::test_run_model::SingleTestStatus::Failed => Color32::RED,
-                passivate_core::test_run_model::SingleTestStatus::Unknown => Color32::GRAY
+                SingleTestStatus::Passed => Color32::GREEN,
+                SingleTestStatus::Failed => Color32::RED,
+                SingleTestStatus::Unknown => Color32::GRAY
             };
 
             ui.horizontal(|ui| {
@@ -200,8 +202,11 @@ mod tests
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::change_events::ChangeEvent;
-    use passivate_core::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
     use passivate_delegation::Tx;
+    use passivate_hyp_model::single_test::SingleTest;
+    use passivate_hyp_model::single_test_status::SingleTestStatus;
+    use passivate_hyp_model::test_run::TestRun;
+    use passivate_hyp_model::test_run_events::TestRunEvent;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -210,6 +215,7 @@ mod tests
     use crate::details_view::DetailsView;
     use crate::docking::view::View;
     use crate::test_run_view::TestRunView;
+    
     #[test]
     pub fn show_a_passing_test()
     {

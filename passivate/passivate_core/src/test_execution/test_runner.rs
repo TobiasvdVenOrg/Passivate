@@ -13,10 +13,9 @@ use nextest_runner::config::elements::MaxFail;
 use nextest_runner::double_spawn::DoubleSpawnInfo;
 use nextest_runner::input::InputHandlerKind;
 use nextest_runner::list::{RustTestArtifact, TestExecuteContext, TestList};
+use nextest_runner::output::{Color, OutputContext};
 use nextest_runner::platform::BuildPlatforms;
 use nextest_runner::reporter::FinalStatusLevel;
-use nextest_runner::output::OutputContext;
-use nextest_runner::output::Color;
 use nextest_runner::reuse_build::PathMapper;
 use nextest_runner::runner::TestRunnerBuilder;
 use nextest_runner::signal::SignalHandlerKind;
@@ -24,11 +23,14 @@ use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
+use passivate_hyp_model::single_test::SingleTest;
+use passivate_hyp_model::test_run::TestRun;
+use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_model::test_run_events::TestRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
 use super::TestRunError;
 use crate::passivate_nextest::cargo_options;
-use crate::test_run_model::{SingleTest, SingleTestStatus, TestRun, TestRunEvent};
 
 #[faux::create]
 #[derive(Clone)]
@@ -44,7 +46,13 @@ pub struct TestRunner
 #[faux::methods]
 impl TestRunner
 {
-    pub fn new(target: OsString, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf, test_run: TestRun) -> Self
+    pub fn new(
+        target: OsString,
+        working_dir: Utf8PathBuf,
+        target_dir: Utf8PathBuf,
+        coverage_output_dir: Utf8PathBuf,
+        test_run: TestRun
+    ) -> Self
     {
         Self {
             target,
@@ -71,7 +79,14 @@ impl TestRunner
 
         let cargo_options = cargo_options().target_dir(self.target_dir.clone()).call();
 
-        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter, snapshots_path)
+        self.run_hyps_with_options(
+            cargo_options,
+            instrument_coverage,
+            cancellation,
+            sender,
+            filter,
+            snapshots_path
+        )
     }
 
     fn run_hyps_with_options(
@@ -111,7 +126,13 @@ impl TestRunner
         result
     }
 
-    fn run_hyps_internal(&mut self, options: CargoOptions, cancellation: Cancellation, sender: &mut Tx<TestRun>, filter: Vec<String>) -> Result<(), TestRunError>
+    fn run_hyps_internal(
+        &mut self,
+        options: CargoOptions,
+        cancellation: Cancellation,
+        sender: &mut Tx<TestRun>,
+        filter: Vec<String>
+    ) -> Result<(), TestRunError>
     {
         let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
             eprintln!("3 {:?}", error);
@@ -124,7 +145,14 @@ impl TestRunner
         };
 
         let manifest_path = self.working_dir.join("Cargo.toml");
-        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms, output_context).map_err(|error| TestRunError::Temp)?;
+        let graph_data = acquire_graph_data(
+            Some(&manifest_path),
+            Some(&self.target_dir),
+            &options,
+            &build_platforms,
+            output_context
+        )
+        .map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
             eprintln!("1 {:?}", error);
             TestRunError::Temp
@@ -134,7 +162,14 @@ impl TestRunner
         let config_file = None;
         let tool_config_files = Vec::new();
         let experimental = BTreeSet::new();
-        let nextest_config = NextestConfig::from_sources(self.working_dir.clone(), &parse_context, config_file, tool_config_files, &experimental).map_err(|error| {
+        let nextest_config = NextestConfig::from_sources(
+            self.working_dir.clone(),
+            &parse_context,
+            config_file,
+            tool_config_files,
+            &experimental
+        )
+        .map_err(|error| {
             eprintln!("2 {:?}", error);
             TestRunError::Temp
         })?;
@@ -146,10 +181,12 @@ impl TestRunner
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
         let platform_filter = None;
-        let artifacts = RustTestArtifact::from_binary_list(&graph, Arc::new(binary_list), &rust_build_meta, &path_mapper, platform_filter).map_err(|error| {
-            eprintln!("4 {:?}", error);
-            TestRunError::Temp
-        })?;
+        let artifacts =
+            RustTestArtifact::from_binary_list(&graph, Arc::new(binary_list), &rust_build_meta, &path_mapper, platform_filter)
+                .map_err(|error| {
+                    eprintln!("4 {:?}", error);
+                    TestRunError::Temp
+                })?;
         let double_spawn = DoubleSpawnInfo::disabled();
         let target_runner = TargetRunner::empty();
 
@@ -177,13 +214,15 @@ impl TestRunner
 
             for pattern in filter
             {
-                let filterset = Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test).map_err(|error| TestRunError::Temp)?;
+                let filterset = Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test)
+                    .map_err(|error| TestRunError::Temp)?;
                 filter_sets.push(filterset);
             }
 
             let partitioner_builder = None;
 
-            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, filter_sets).map_err(|error| TestRunError::Temp)?
+            TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, filter_sets)
+                .map_err(|error| TestRunError::Temp)?
         };
 
         let cli_configs: Vec<String> = Vec::new();
@@ -260,7 +299,11 @@ impl TestRunner
                         let test_output: Vec<String> = run_statuses
                             .iter()
                             .flat_map(|status| {
-                                if let ChildExecutionOutput::Output { result: _, output, errors: _ } = &status.output
+                                if let ChildExecutionOutput::Output {
+                                    result: _,
+                                    output,
+                                    errors: _
+                                } = &status.output
                                 {
                                     match output
                                     {
@@ -294,7 +337,8 @@ impl TestRunner
                             SingleTestStatus::Failed
                         };
 
-                        let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name).expect("todo: error handling");
+                        let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
+                            .expect("todo: error handling");
                         Some(TestRunEvent::TestFinished(SingleTest::new(hyp_id, status, test_output)))
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
@@ -327,7 +371,9 @@ impl TestRunner
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
-        let strategy = HypNameStrategy::QualifiedWithoutCrate { separator: "::".to_string() };
+        let strategy = HypNameStrategy::QualifiedWithoutCrate {
+            separator: "::".to_string()
+        };
         let filter = vec![hyp_id.get_name(&strategy).to_string()];
 
         if self.test_run.update(TestRunEvent::StartSingle {
@@ -347,7 +393,14 @@ impl TestRunner
 
         let cargo_options = cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
 
-        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, sender, filter, snapshots_path);
+        let result = self.run_hyps_with_options(
+            cargo_options,
+            instrument_coverage,
+            cancellation,
+            sender,
+            filter,
+            snapshots_path
+        );
 
         unsafe {
             std::env::set_var("UPDATE_SNAPSHOTS", "0");

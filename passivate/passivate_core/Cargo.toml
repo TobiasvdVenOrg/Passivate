@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_testing = { path = "../passivate_testing" }
 
@@ -28,8 +29,6 @@ serde.workspace = true
 serde_json.workspace = true
 indexmap.workspace = true
 cargo_metadata.workspace = true
-epaint.workspace = true
-png.workspace = true
 bon.workspace = true
 crossbeam-channel.workspace = true
 dunce.workspace = true
