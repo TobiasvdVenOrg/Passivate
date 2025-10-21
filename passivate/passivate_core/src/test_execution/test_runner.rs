@@ -15,6 +15,8 @@ use nextest_runner::input::InputHandlerKind;
 use nextest_runner::list::{RustTestArtifact, TestExecuteContext, TestList};
 use nextest_runner::platform::BuildPlatforms;
 use nextest_runner::reporter::FinalStatusLevel;
+use nextest_runner::output::OutputContext;
+use nextest_runner::output::Color;
 use nextest_runner::reuse_build::PathMapper;
 use nextest_runner::runner::TestRunnerBuilder;
 use nextest_runner::signal::SignalHandlerKind;
@@ -116,8 +118,13 @@ impl TestRunner
             TestRunError::Temp
         })?;
 
+        let output_context = OutputContext {
+            verbose: false,
+            color: Color::Auto
+        };
+
         let manifest_path = self.working_dir.join("Cargo.toml");
-        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms).map_err(|error| TestRunError::Temp)?;
+        let graph_data = acquire_graph_data(Some(&manifest_path), Some(&self.target_dir), &options, &build_platforms, output_context).map_err(|error| TestRunError::Temp)?;
         let graph = PackageGraph::from_json(graph_data).map_err(|error| {
             eprintln!("1 {:?}", error);
             TestRunError::Temp
@@ -133,7 +140,7 @@ impl TestRunner
         })?;
 
         let binary_list = options
-            .compute_binary_list(&graph, Some(&manifest_path), build_platforms.clone())
+            .compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone())
             .map_err(|error| TestRunError::Temp)?;
 
         let path_mapper = PathMapper::noop();
