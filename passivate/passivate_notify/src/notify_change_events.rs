@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use notify::{Config as NotifyConfig, Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
-use passivate_core::change_events::ChangeEvent;
+use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_delegation::Tx;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;

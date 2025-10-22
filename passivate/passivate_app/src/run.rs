@@ -1,111 +1,35 @@
-use std::ffi::OsString;
-use std::sync::OnceLock;
-
-use camino::{Utf8Path, Utf8PathBuf};
-use egui::Context;
-use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::change_events::ChangeEvent;
-use passivate_core::passivate_grcov::Grcov;
-use passivate_core::test_execution::{TestRunHandler, TestRunner, change_event_thread, test_run_thread};
-use passivate_delegation::{Rx, Tx};
-use passivate_hyp_model::test_run::{TestRun, TestRunState};
-use passivate_log::log_message::LogMessage;
-use passivate_log::tx_log::TxLog;
-use passivate_notify::notify_change_events::NotifyChangeEvents;
-use passivate_views::configuration_view::ConfigurationView;
-use passivate_views::coverage_view::CoverageView;
-use passivate_views::details_view::DetailsView;
-use passivate_views::docking::tab_viewer::TabViewer;
-use passivate_views::docking::view::View;
-use passivate_views::log_view::LogView;
-use passivate_views::passivate_layout;
-use passivate_views::test_run_view::TestRunView;
+use passivate_core::{passivate_args::PassivateArgs, run::{run, PassivateCore}, startup_errors::StartupError};
+use passivate_delegation::Tx;
+use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::{tab_viewer::TabViewer, view::View}, log_view::LogView, passivate_layout, test_run_view::TestRunView};
 
 use crate::app::App;
-use crate::error_app::ErrorApp;
-use crate::startup_errors::*;
 
-static LOGGER: OnceLock<TxLog> = OnceLock::new();
-
-pub fn run(context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+// Called by main
+pub fn run_app(passivate: PassivateCore) -> Result<(), StartupError>
 {
-    match get_path_arg()
-    {
-        Ok(path) => run_from_path(&path, context_accessor),
-        Err(error) => run_app(ErrorApp::boxed(error.into()), context_accessor)
-    }
+    run_app_and_get_context(passivate, |_| {})
 }
 
-pub fn get_path_arg() -> Result<Utf8PathBuf, MissingArgumentError>
+// Called by passivate_tests
+pub fn run_with_args(args: PassivateArgs, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
 {
-    let path = std::env::args().nth(1);
-
-    match path
-    {
-        Some(p) => Ok(Utf8PathBuf::from(p)),
-        None =>
-        {
-            Err(MissingArgumentError {
-                argument: "path".to_string()
-            })
-        }
-    }
+    run(args, |passivate| {
+        run_app_and_get_context(passivate, context_accessor)
+    })
 }
 
-pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
+pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
 {
-    let log_rx = initialize_logger()?;
+    let PassivateCore { 
+        passivate_path,
+        change_event_tx,
+        configuration,
+        log_rx,
+        hyp_run_rx,
+        coverage_rx,
+        test_run } = passivate;
 
-    // Channels
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
-    let (coverage_tx, coverage_rx) = Tx::new();
-    let (configuration_tx, _configuration_rx1) = Tx::new();
     let (details_tx, details_rx) = Tx::new();
-    let (test_run_tx, test_run_rx) = Tx::new();
-    let (change_event_tx, change_event_rx) = Tx::new();
-
-    // Paths
-    let workspace_path = path.to_path_buf();
-    let passivate_path = workspace_path.join("..").join(".passivate");
-    let coverage_path = passivate_path.join("coverage");
-    let target_path = passivate_path.join("target");
-    let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
-
-    // Model
-    let target = OsString::from("x86_64-pc-windows-msvc");
-
-    let test_run = TestRun::from_state(TestRunState::FirstRun);
-    let test_runner = TestRunner::new(
-        target,
-        workspace_path.clone(),
-        target_path.clone(),
-        coverage_path.clone()
-    );
-
-    let coverage = Grcov::builder()
-        .workspace_path(workspace_path)
-        .output_path(coverage_path)
-        .binary_path(binary_path)
-        .build();
-
-    let configuration = ConfigurationManager::from_file(configuration_tx, ".config/passivate.toml")?;
-
-    let test_run_handler = TestRunHandler::builder()
-        .configuration(configuration.clone())
-        .coverage(Box::new(coverage))
-        .hyp_run_tx(hyp_run_tx)
-        .coverage_status_sender(coverage_tx)
-        .runner(test_runner)
-        .build();
-
-    let test_run_thread = test_run_thread(test_run_rx, test_run_handler);
-    let change_event_thread = change_event_thread(change_event_rx, test_run_tx);
-
-    // Send an initial change event to trigger the first test run
-    change_event_tx.send(ChangeEvent::DefaultRun);
-
-    // Notify
-    let mut change_events = NotifyChangeEvents::new(path, change_event_tx.clone())?;
 
     // Views
     let tests_view = TestRunView::new(test_run, hyp_run_rx, details_tx);
@@ -136,40 +60,6 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     log::info!("Passivate started.");
 
     // Block until app closes
-    run_app(
-        Box::new(App::new(
-            layout,
-            tab_viewer
-        )),
-        context_accessor
-    )?;
-
-    let _ = change_events.stop();
-    drop(change_events);
-    let _ = change_event_thread.join();
-    let _ = test_run_thread.join();
-
-    Ok(())
-}
-
-fn initialize_logger() -> Result<Rx<LogMessage>, StartupError>
-{
-    let (log_tx, log_rx) = Tx::new();
-    LOGGER
-        .set(TxLog::new(log_tx))
-        .map_err(|_| StartupError::LoggerAlreadyInitialized)?;
-    let logger: &'static TxLog = LOGGER.get().unwrap();
-    log::set_logger(logger)
-        .map(|()| {
-            log::set_max_level(log::LevelFilter::Info);
-        })
-        .map_err(StartupError::Logger)?;
-
-    Ok(log_rx)
-}
-
-pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Context)>) -> Result<(), StartupError>
-{
     let eframe_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_position([1920.0, 0.0])
@@ -184,7 +74,10 @@ pub fn run_app(app: Box<dyn eframe::App>, context_accessor: Box<dyn FnOnce(Conte
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
 
-            Ok(app)
+            Ok(Box::new(App::new(
+                layout,
+                tab_viewer
+            )))
         })
     )
     .expect("Failed to start Passivate!");

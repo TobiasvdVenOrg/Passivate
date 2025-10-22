@@ -1,8 +1,8 @@
 use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle, TextureOptions};
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_names::hyp_id::HypId;
@@ -30,7 +30,11 @@ pub struct DetailsView
 
 impl DetailsView
 {
-    pub fn new(test_receiver: Rx<Option<SingleTest>>, change_events: Tx<ChangeEvent>, configuration: ConfigurationManager) -> Self
+    pub fn new(
+        test_receiver: Rx<Option<SingleTest>>,
+        change_events: Tx<ChangeEvent>,
+        configuration: ConfigurationManager
+    ) -> Self
     {
         Self {
             test_receiver,
@@ -64,7 +68,9 @@ impl DetailsView
             let current = snapshot
                 .current
                 .map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
-            let new = snapshot.new.map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
+            let new = snapshot
+                .new
+                .map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
 
             self.snapshot_handles = Some(SnapshotHandles {
                 current,
@@ -138,7 +144,7 @@ impl View for DetailsView
     {
         "details_view".into()
     }
-    
+
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(new_test) = self.test_receiver.try_recv()
@@ -162,7 +168,9 @@ impl View for DetailsView
 
                 if ui.button("Pin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::PinHyp { id: single_test.id.clone() });
+                    self.change_events.send(ChangeEvent::PinHyp {
+                        id: single_test.id.clone()
+                    });
                 }
 
                 if ui.button("Unpin").clicked()
@@ -201,12 +209,12 @@ mod tests
     use galvanic_assert::*;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_core::change_events::ChangeEvent;
     use passivate_delegation::{Rx, Tx};
+    use passivate_hyp_model::change_event::ChangeEvent;
+    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
-    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -215,7 +223,7 @@ mod tests
     use crate::details_view::DetailsView;
     use crate::docking::view::View;
     use crate::test_run_view::TestRunView;
-    
+
     #[test]
     pub fn show_a_passing_test()
     {
@@ -254,7 +262,9 @@ mod tests
         let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
 
         let mut test_run = TestRun::default();
-        test_run.tests.add(example_hyp("tests::example_test", SingleTestStatus::Failed));
+        test_run
+            .tests
+            .add(example_hyp("tests::example_test", SingleTestStatus::Failed));
         let mut test_run_view = TestRunView::new(test_run, Rx::stub(), details_tx);
 
         let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
@@ -294,7 +304,10 @@ mod tests
             details_view.ui(ui);
         });
 
-        test_run_tx.send(HypRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Failed)));
+        test_run_tx.send(HypRunEvent::TestFinished(example_hyp(
+            "tests::example_test",
+            SingleTestStatus::Failed
+        )));
 
         test_run_ui.run();
 
@@ -304,7 +317,10 @@ mod tests
         test_run_ui.run();
         details_ui.run();
 
-        test_run_tx.send(HypRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Passed)));
+        test_run_tx.send(HypRunEvent::TestFinished(example_hyp(
+            "tests::example_test",
+            SingleTestStatus::Passed
+        )));
 
         test_run_ui.run();
         details_ui.run();

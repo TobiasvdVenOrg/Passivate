@@ -1,7 +1,9 @@
-use passivate::{run::run, startup_errors::StartupError};
-
+use clap::Parser;
+use passivate_core::{passivate_args::PassivateArgs, run::run, startup_errors::StartupError};
+use passivate::run::run_app;
 
 fn main() -> Result<(), StartupError>
 {
-    run(Box::new(|_context| {}))
+    let args = PassivateArgs::parse();
+    run(args, run_app)
 }

@@ -12,8 +12,8 @@ use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
+use passivate_hyp_model::change_event::ChangeEvent;
 
-use crate::change_events::ChangeEvent;
 use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;

@@ -152,7 +152,7 @@ impl View for TestRunView
 mod tests
 {
     use egui_kittest::Harness;
-    use passivate_delegation::Tx;
+    use passivate_delegation::{Rx, Tx};
     use passivate_hyp_names::{hyp_id::HypId, test_name};
     use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}, hyp_run_events::HypRunEvent};
 
@@ -201,8 +201,7 @@ mod tests
 
     fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
     {
-        let (tx, rx) = Tx::new();
-        let mut tests_status_view = TestRunView::new(tests_status, rx, Tx::stub());
+        let mut tests_status_view = TestRunView::new(tests_status, Rx::stub(), Tx::stub());
 
         let ui = |ui: &mut egui::Ui| {
             tests_status_view.ui(ui);

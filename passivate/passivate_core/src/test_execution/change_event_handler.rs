@@ -1,8 +1,7 @@
 use std::thread::{self, JoinHandle};
 
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-
-use crate::change_events::ChangeEvent;
+use passivate_hyp_model::change_event::ChangeEvent;
 
 pub fn change_event_thread(rx: Rx<ChangeEvent>, tx: Tx<CancellableMessage<ChangeEvent>>) -> JoinHandle<()>
 {

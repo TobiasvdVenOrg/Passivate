@@ -4,11 +4,11 @@ use bon::Builder;
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
+use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::change_events::ChangeEvent;
 use crate::coverage::{ComputeCoverage, CoverageStatus};
 use crate::test_execution::TestRunner;
 
@@ -83,8 +83,14 @@ impl TestRunHandler
         }
 
         let snapshot_path = self.get_snapshots_path();
-           
-        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.hyp_run_tx, Vec::new(), snapshot_path);
+
+        let test_output = self.runner.run_hyps(
+            coverage_enabled,
+            cancellation.clone(),
+            &mut self.hyp_run_tx,
+            Vec::new(),
+            snapshot_path
+        );
 
         if cancellation.is_cancelled()
         {
@@ -115,23 +121,25 @@ impl TestRunHandler
         };
     }
 
-    fn get_snapshots_path(&self) -> Option<Utf8PathBuf> {
-        self.configuration.get(|c| c.snapshots_path.clone())
+    fn get_snapshots_path(&self) -> Option<Utf8PathBuf>
+    {
+        self.configuration
+            .get(|c| c.snapshots_path.clone())
             .map(Utf8PathBuf::try_from)
-            .map_or_else(|| None, |path|
-            {
-                path.map_or_else(|_|
-                {
-                    log::error!("snapshot path was not a valid UTF8 path");
-                    None
-                }, 
-                |p|
-                {
-                    Some(p)
-                })
-            })
+            .map_or_else(
+                || None,
+                |path| {
+                    path.map_or_else(
+                        |_| {
+                            log::error!("snapshot path was not a valid UTF8 path");
+                            None
+                        },
+                        Some
+                    )
+                }
+            )
     }
-    
+
     fn compute_coverage(&mut self, cancellation: Cancellation)
     {
         self.coverage_status_sender.send(CoverageStatus::Running);
@@ -143,14 +151,20 @@ impl TestRunHandler
         match coverage_status
         {
             Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
-            Err(coverage_error) => self.coverage_status_sender.send(CoverageStatus::Error(coverage_error.to_string()))
+            Err(coverage_error) =>
+            {
+                self.coverage_status_sender
+                    .send(CoverageStatus::Error(coverage_error.to_string()))
+            }
         }
     }
 
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
         let snapshot_path = self.get_snapshots_path();
-        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx, snapshot_path);
+        let result = self
+            .runner
+            .run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx, snapshot_path);
 
         if let Err(error) = result
         {

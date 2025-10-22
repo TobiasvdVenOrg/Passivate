@@ -1,6 +1,6 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::change_events::ChangeEvent;
 use passivate_delegation::Tx;
+use passivate_hyp_model::change_event::ChangeEvent;
 
 use crate::docking::{docking_layout::DockId, view::View};
 
@@ -79,8 +79,9 @@ mod tests
     use galvanic_assert::{has_structure, structure};
     use galvanic_assert::{assert_that, matchers::eq};
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
-    use passivate_core::{change_events::ChangeEvent, coverage::MockComputeCoverage, test_execution::{TestRunHandler, TestRunner}};
+    use passivate_core::{coverage::MockComputeCoverage, test_execution::{TestRunHandler, TestRunner}};
     use passivate_delegation::{Rx, Tx};
+    use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_names::test_name;
     use passivate_snapshots::snapshots::Snapshots;
 

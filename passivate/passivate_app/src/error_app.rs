@@ -1,7 +1,6 @@
 use eframe::Frame;
 use egui::Context;
-
-use crate::startup_errors::StartupError;
+use passivate_core::startup_errors::StartupError;
 
 pub struct ErrorApp
 {

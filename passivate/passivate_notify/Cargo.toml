@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_core = { path = "../passivate_core" }
 passivate_delegation = { path = "../passivate_delegation" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
 
 notify.workspace = true
 camino.workspace = true

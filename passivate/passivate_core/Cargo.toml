@@ -9,6 +9,8 @@ passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_hyp_model = { path = "../passivate_hyp_model" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_testing = { path = "../passivate_testing" }
+passivate_log = { path = "../passivate_log" }
+passivate_notify = { path = "../passivate_notify" }
 
 #nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
 #nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
@@ -22,7 +24,6 @@ futures.workspace = true
 fs_extra.workspace = true
 thiserror.workspace = true
 mockall.workspace = true
-enum-as-inner.workspace = true
 duct.workspace = true
 chrono.workspace = true
 serde.workspace = true

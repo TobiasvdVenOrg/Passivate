@@ -4,7 +4,7 @@ use std::io::Error as IoError;
 use std::sync::mpsc::SendError;
 
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
-use passivate_core::change_events::ChangeEvent;
+use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 
 #[derive(Debug)]
@@ -16,7 +16,8 @@ pub enum StartupError
     DirectorySetup(IoError),
     Logger(log::SetLoggerError),
     LoggerAlreadyInitialized,
-    PassivateConfiguration(ConfigurationLoadError)
+    PassivateConfiguration(ConfigurationLoadError),
+    Utf8(String)
 }
 
 #[derive(Debug)]
@@ -71,6 +72,12 @@ impl Display for StartupError
                 writeln!(f)?;
                 write!(f, "{}", load_error)
             }
+            StartupError::Utf8(error) =>
+            {
+                writeln!(f, "expected utf8 encoding")?;
+                writeln!(f)?;
+                write!(f, "{error}")
+            }
         }
     }
 }
@@ -87,7 +94,8 @@ impl Error for StartupError
             StartupError::DirectorySetup(directory_setup_error) => Some(directory_setup_error),
             StartupError::Logger(logger_error) => Some(logger_error),
             StartupError::LoggerAlreadyInitialized => None,
-            StartupError::PassivateConfiguration(load_error) => Some(load_error)
+            StartupError::PassivateConfiguration(load_error) => Some(load_error),
+            StartupError::Utf8(_) => None
         }
     }
 }
