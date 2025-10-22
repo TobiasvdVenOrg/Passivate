@@ -8,7 +8,7 @@ macro_rules! mod_use {
     };
 }
 
-pub mod run;
+pub mod compose;
 pub mod startup_errors;
 pub mod passivate_args;
 

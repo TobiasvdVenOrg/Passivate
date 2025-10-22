@@ -1,4 +1,4 @@
-use passivate_core::{passivate_args::PassivateArgs, run::{run, PassivateCore}, startup_errors::StartupError};
+use passivate_core::{passivate_args::PassivateArgs, compose::{compose, PassivateCore}, startup_errors::StartupError};
 use passivate_delegation::Tx;
 use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::{tab_viewer::TabViewer, view::View}, log_view::LogView, passivate_layout, test_run_view::TestRunView};
 
@@ -13,7 +13,7 @@ pub fn run_app(passivate: PassivateCore) -> Result<(), StartupError>
 // Called by passivate_tests
 pub fn run_with_args(args: PassivateArgs, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
 {
-    run(args, |passivate| {
+    compose(args, |passivate| {
         run_app_and_get_context(passivate, context_accessor)
     })
 }

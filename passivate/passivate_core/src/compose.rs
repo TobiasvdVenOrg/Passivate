@@ -31,7 +31,7 @@ pub struct PassivateCore
     pub test_run: TestRun
 }
 
-pub fn run(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Result<(), StartupError>) -> Result<(), StartupError>
+pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Result<(), StartupError>) -> Result<(), StartupError>
 {
     let log_rx = initialize_logger()?;
 
