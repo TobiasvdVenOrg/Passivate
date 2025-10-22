@@ -64,7 +64,7 @@ impl<T> IntoIterator for Rx<T>
 
     fn into_iter(self) -> <Rx<T> as IntoIterator>::IntoIter
     {
-        self.rx.try_iter().collect::<Vec<_>>().into_iter()
+        self.drain().into_iter()
     }
 }
 
