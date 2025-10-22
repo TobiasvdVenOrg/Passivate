@@ -32,7 +32,6 @@ impl egui_dock::TabViewer for TabViewer
 {
     type Tab = DockId;
 
-    // Implement this as lookup, not the view being a field of the Tab (DockWrapper can just be a DockId)
     fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText
     {
         self.get_view(tab).title().into()

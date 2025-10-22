@@ -119,7 +119,7 @@ mod tests
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_status_sender(Tx::stub())
             .runner(TestRunner::faux())
-            .tests_status_sender(Tx::stub())
+            .hyp_run_tx(Tx::stub())
             .build();
 
         let (change_events_tx, change_events_rx) = Tx::new();
@@ -136,7 +136,7 @@ mod tests
 
         harness.run();
 
-        assert_that!(&change_events_rx.last().expect("expected change event"), eq(ChangeEvent::DefaultRun));
+        assert_that!(&change_events_rx.drain().last().expect("expected change event").clone(), eq(ChangeEvent::DefaultRun));
 
         assert!(test_run_handler.coverage_enabled());
     }
@@ -166,7 +166,7 @@ mod tests
 
         drop(harness);
 
-        assert_that!(&change_events_rx.last().expect("expected change event"), eq(ChangeEvent::DefaultRun));
+        assert_that!(&change_events_rx.drain().last().expect("expected change event").clone(), eq(ChangeEvent::DefaultRun));
 
         assert_that!(
             &details_view.get_snapshots(),

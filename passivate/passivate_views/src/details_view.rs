@@ -202,11 +202,11 @@ mod tests
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::change_events::ChangeEvent;
-    use passivate_delegation::Tx;
+    use passivate_delegation::{Rx, Tx};
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
-    use passivate_hyp_model::test_run_events::TestRunEvent;
+    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -247,13 +247,15 @@ mod tests
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let (test_run_tx, test_run_rx) = Tx::new();
         let (details_tx, details_rx) = Tx::new();
 
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
 
         let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
-        let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
+
+        let mut test_run = TestRun::default();
+        test_run.tests.add(example_hyp("tests::example_test", SingleTestStatus::Failed));
+        let mut test_run_view = TestRunView::new(test_run, Rx::stub(), details_tx);
 
         let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
             test_run_view.ui(ui);
@@ -262,10 +264,6 @@ mod tests
         let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
             details_view.ui(ui);
         });
-
-        let mut test_run = TestRun::default();
-        test_run.tests.add(example_hyp("tests::example_test", SingleTestStatus::Failed));
-        test_run_tx.send(test_run);
 
         test_run_ui.run();
 
@@ -286,7 +284,7 @@ mod tests
         let (details_tx, details_rx) = Tx::new();
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
-        let mut test_run_view = TestRunView::new(test_run_rx, details_tx);
+        let mut test_run_view = TestRunView::with_default_status(test_run_rx, details_tx);
 
         let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
             test_run_view.ui(ui);
@@ -296,9 +294,7 @@ mod tests
             details_view.ui(ui);
         });
 
-        let mut test_run = TestRun::default();
-        test_run.update(TestRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Failed)));
-        test_run_tx.send(test_run.clone());
+        test_run_tx.send(HypRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Failed)));
 
         test_run_ui.run();
 
@@ -308,8 +304,7 @@ mod tests
         test_run_ui.run();
         details_ui.run();
 
-        test_run.update(TestRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Passed)));
-        test_run_tx.send(test_run);
+        test_run_tx.send(HypRunEvent::TestFinished(example_hyp("tests::example_test", SingleTestStatus::Passed)));
 
         test_run_ui.run();
         details_ui.run();
@@ -384,7 +379,7 @@ mod tests
         approve.click();
         harness.run();
 
-        let approval_run = test_run_rx.last().unwrap();
+        let approval_run = test_run_rx.drain().last().unwrap().clone();
 
         assert_that!(
             &approval_run,

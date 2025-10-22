@@ -4,7 +4,8 @@ use bon::Builder;
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-use passivate_hyp_model::test_run::{FailedTestRun, TestRun};
+use passivate_hyp_model::hyp_run_events::HypRunEvent;
+use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::change_events::ChangeEvent;
@@ -28,7 +29,7 @@ pub struct TestRunHandler
 {
     runner: TestRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
-    tests_status_sender: Tx<TestRun>,
+    hyp_run_tx: Tx<HypRunEvent>,
     coverage_status_sender: Tx<CoverageStatus>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>
@@ -83,7 +84,7 @@ impl TestRunHandler
 
         let snapshot_path = self.get_snapshots_path();
            
-        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.tests_status_sender, Vec::new(), snapshot_path);
+        let test_output = self.runner.run_hyps(coverage_enabled, cancellation.clone(), &mut self.hyp_run_tx, Vec::new(), snapshot_path);
 
         if cancellation.is_cancelled()
         {
@@ -109,7 +110,7 @@ impl TestRunHandler
                 let error_status = FailedTestRun {
                     inner_error_display: test_error.to_string()
                 };
-                self.tests_status_sender.send(TestRun::from_failed(error_status));
+                self.hyp_run_tx.send(HypRunEvent::HypRunError(error_status));
             }
         };
     }
@@ -149,14 +150,14 @@ impl TestRunHandler
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
         let snapshot_path = self.get_snapshots_path();
-        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.tests_status_sender, snapshot_path);
+        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx, snapshot_path);
 
         if let Err(error) = result
         {
             let error_status = FailedTestRun {
                 inner_error_display: error.to_string()
             };
-            self.tests_status_sender.send(TestRun::from_failed(error_status));
+            self.hyp_run_tx.send(HypRunEvent::HypRunError(error_status));
         }
     }
 

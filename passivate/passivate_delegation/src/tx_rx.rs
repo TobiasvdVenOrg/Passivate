@@ -40,14 +40,9 @@ impl<T> Rx<T>
         Rx { rx }
     }
 
-    pub fn last(&self) -> Option<T>
+    pub fn drain(&self) -> Vec<T>
     {
-        self.rx.try_iter().last()
-    }
-
-    pub fn next(&self) -> Option<T>
-    {
-        self.rx.try_iter().next()
+        self.rx.try_iter().collect()
     }
 
     pub fn recv(&self) -> Result<T, RxError>
@@ -58,6 +53,18 @@ impl<T> Rx<T>
     pub fn try_recv(&self) -> Result<T, RxError>
     {
         Ok(self.rx.try_recv()?)
+    }
+}
+
+#[faux::methods]
+impl<T> IntoIterator for Rx<T>
+{
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> <Rx<T> as IntoIterator>::IntoIter
+    {
+        self.rx.try_iter().collect::<Vec<_>>().into_iter()
     }
 }
 
@@ -114,7 +121,7 @@ where
     pub fn stub() -> Self
     {
         let mut tx = Tx::faux();
-        tx._when_send().then(|_| { });
+        tx._when_send().then(|_| {});
 
         tx
     }
@@ -125,10 +132,9 @@ impl<T: 'static> Rx<T>
     pub fn stub() -> Self
     {
         let mut rx = Rx::faux();
-        rx._when_last().then(|_| None);
-        rx._when_next().then(|_| None);
-        rx._when_recv().then(|_| Err(RxError::Recv(crossbeam_channel::RecvError { })));
-        rx._when_try_recv().then(|_| Err(RxError::TryRecv(crossbeam_channel::TryRecvError::Empty)));
+        rx._when_recv().then(|_| Err(RxError::Recv(crossbeam_channel::RecvError {})));
+        rx._when_try_recv()
+            .then(|_| Err(RxError::TryRecv(crossbeam_channel::TryRecvError::Empty)));
 
         rx
     }

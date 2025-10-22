@@ -186,8 +186,8 @@ mod tests
 
         manager.update(|c| c.coverage_enabled = true).unwrap();
 
-        let broadcast1 = rx1.last().unwrap();
-        let broadcast2 = rx2.last().unwrap();
+        let broadcast1 = rx1.drain().last().unwrap().clone();
+        let broadcast2 = rx2.drain().last().unwrap().clone();
 
         assert_eq!(broadcast1, broadcast2);
     }

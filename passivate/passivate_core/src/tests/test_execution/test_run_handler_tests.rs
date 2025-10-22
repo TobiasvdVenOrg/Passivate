@@ -5,7 +5,10 @@ use galvanic_assert::matchers::collection::contains_in_order;
 use galvanic_assert::matchers::*;
 use galvanic_assert::{assert_that, is_variant};
 use itertools::Itertools;
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
+use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
@@ -15,17 +18,15 @@ use crate::coverage::compute_coverage;
 use crate::test_execution::{TestRunError, TestRunHandler, TestRunner};
 use crate::test_helpers::test_run_setup::TestRunSetup;
 use crate::test_helpers::test_snapshot_path::TestSnapshotPath;
-use passivate_hyp_model::test_run::{FailedTestRun, TestRunState};
-use passivate_hyp_model::single_test_status::SingleTestStatus;
 
 #[test]
 #[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -40,19 +41,24 @@ pub fn handle_single_test_run()
         Cancellation::default()
     );
 
-    let final_state = test_run_rx.last().unwrap();
+    let test_run = TestRun::from_events(hyp_run_rx);
 
-    assert_that!(&final_state.state, is_variant!(TestRunState::Idle));
-    assert!(final_state.tests.into_iter().all(|test| { test.status == SingleTestStatus::Passed }));
+    assert_that!(&test_run.state, is_variant!(TestRunState::Idle));
+    assert!(
+        test_run
+            .tests
+            .into_iter()
+            .all(|test| { test.status == SingleTestStatus::Passed })
+    );
 }
 
 #[test]
 pub fn single_hyp_run_only_runs_one_exact_hyp()
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -67,9 +73,9 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
         Cancellation::default()
     );
 
-    let final_state = test_run_rx.last().unwrap();
+    let test_run = TestRun::from_events(hyp_run_rx);
 
-    let single_hyp = final_state.tests.into_iter().exactly_one().expect("expected exactly one test");
+    let single_hyp = test_run.tests.into_iter().exactly_one().expect("expected exactly one test");
     assert_that!(&single_hyp.id, eq(hyp_to_run));
 }
 
@@ -77,10 +83,10 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 #[cfg(target_os = "windows")]
 pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -88,30 +94,33 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let all_hyps = test_run_rx.last().unwrap();
+    let test_run = TestRun::from_events(hyp_run_rx.drain());
 
-    let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
+    let pinned_hyp = test_run.tests.into_iter().next().unwrap();
 
-    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id.clone() }, Cancellation::default());
+    handler.handle(
+        ChangeEvent::PinHyp {
+            id: pinned_hyp.id.clone()
+        },
+        Cancellation::default()
+    );
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let pinned_run = test_run_rx.last().unwrap();
+    let pinned_run = TestRun::from_events(hyp_run_rx.drain());
+
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(
-        pinned_run
-            .tests
-            .into_iter()
-            .all(|test| { (test.id == pinned_hyp.id && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown })
-    );
+    assert!(pinned_run.tests.into_iter().all(|test| {
+        (test.id == pinned_hyp.id && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown
+    }));
 }
 
 #[test]
 #[cfg(target_os = "windows")]
 pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -119,7 +128,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let all_hyps = test_run_rx.last().unwrap();
+    let all_hyps = TestRun::from_events(hyp_run_rx.drain());
 
     let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
 
@@ -127,9 +136,15 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     handler.handle(ChangeEvent::ClearPinnedHyps, Cancellation::default());
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let test_run = test_run_rx.last().unwrap();
+    let test_run = TestRun::from_events(hyp_run_rx.drain());
+
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(test_run.tests.into_iter().all(|test| { test.status == SingleTestStatus::Passed }));
+    assert!(
+        test_run
+            .tests
+            .into_iter()
+            .all(|test| { test.status == SingleTestStatus::Passed })
+    );
 }
 
 #[test]
@@ -202,10 +217,10 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -215,9 +230,9 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let state = test_run_rx.last().unwrap();
+    let hyp_run = TestRun::from_events(hyp_run_rx);
 
-    let failed_test = state.tests.find(&failed_test).unwrap();
+    let failed_test = hyp_run.tests.find(&failed_test).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -237,10 +252,10 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .build()
         .clean_output()
         .build_test_run_handler();
@@ -251,9 +266,9 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let state = test_run_rx.last().unwrap();
+    let hyp_run = TestRun::from_events(hyp_run_rx);
 
-    let failed_test = state.tests.find(&failed_hyp).unwrap();
+    let failed_test = hyp_run.tests.find(&failed_hyp).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -273,27 +288,25 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
-    use passivate_configuration::configuration_manager::ConfigurationManager;
-
     let mut test_runner = TestRunner::faux();
     test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
-    let (test_run_tx, test_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunHandler::builder()
         .runner(test_runner)
         .coverage(Box::new(compute_coverage::stub()))
-        .tests_status_sender(test_run_tx)
+        .hyp_run_tx(hyp_run_tx)
         .coverage_status_sender(Tx::stub())
         .configuration(ConfigurationManager::default_config(Tx::stub()))
         .build();
 
     handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let last = test_run_rx.last().unwrap().state;
+    let state = TestRun::from_events(hyp_run_rx).state;
 
     assert_eq!(
-        last,
+        state,
         TestRunState::Failed(FailedTestRun {
             inner_error_display: "test run cancelled".to_string()
         })

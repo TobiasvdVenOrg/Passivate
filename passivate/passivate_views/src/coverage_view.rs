@@ -261,7 +261,7 @@ mod tests
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_status_sender(Tx::stub())
             .runner(TestRunner::faux())
-            .tests_status_sender(Tx::stub())
+            .hyp_run_tx(Tx::stub())
             .build();
 
         let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());

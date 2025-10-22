@@ -57,7 +57,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     let log_rx = initialize_logger()?;
 
     // Channels
-    let (tests_status_tx, tests_status_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = Tx::new();
     let (coverage_tx, coverage_rx) = Tx::new();
     let (configuration_tx, _configuration_rx1) = Tx::new();
     let (details_tx, details_rx) = Tx::new();
@@ -79,8 +79,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
         target,
         workspace_path.clone(),
         target_path.clone(),
-        coverage_path.clone(),
-        test_run
+        coverage_path.clone()
     );
 
     let coverage = Grcov::builder()
@@ -94,7 +93,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     let test_run_handler = TestRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
-        .tests_status_sender(tests_status_tx)
+        .hyp_run_tx(hyp_run_tx)
         .coverage_status_sender(coverage_tx)
         .runner(test_runner)
         .build();
@@ -109,7 +108,7 @@ pub fn run_from_path(path: &Utf8Path, context_accessor: Box<dyn FnOnce(Context)>
     let mut change_events = NotifyChangeEvents::new(path, change_event_tx.clone())?;
 
     // Views
-    let tests_view = TestRunView::new(tests_status_rx, details_tx);
+    let tests_view = TestRunView::new(test_run, hyp_run_rx, details_tx);
     let details_view = DetailsView::new(details_rx, change_event_tx.clone(), configuration.clone());
     let coverage_view = CoverageView::new(coverage_rx, configuration.clone());
     let configuration_view = ConfigurationView::new(configuration, change_event_tx);

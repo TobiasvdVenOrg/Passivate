@@ -25,7 +25,7 @@ pub fn test_run_sends_coverage_result() -> Result<(), IoError>
 
     setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
 
-    let result = coverage_rx.last().unwrap();
+    let result = coverage_rx.drain().last().unwrap().clone();
 
     match result
     {

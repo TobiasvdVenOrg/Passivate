@@ -1,10 +1,10 @@
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::single_test::SingleTest;
+use crate::{single_test::SingleTest, test_run::FailedTestRun};
 
 
 #[derive(Debug, Clone)]
-pub enum TestRunEvent
+pub enum HypRunEvent
 {
     Start,
     StartSingle
@@ -21,5 +21,6 @@ pub enum TestRunEvent
     {
         hyp: HypId,
         message: String
-    }
+    },
+    HypRunError(FailedTestRun)
 }

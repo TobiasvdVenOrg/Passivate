@@ -6,7 +6,7 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
-use passivate_hyp_model::test_run::TestRun;
+use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
 use crate::coverage::CoverageStatus;
@@ -20,7 +20,7 @@ pub struct TestRunSetup
     workspace_path: Utf8PathBuf,
     base_output_path: Utf8PathBuf,
     base_workspace_path: Utf8PathBuf,
-    tests_status_sender: Tx<TestRun>,
+    hyp_run_tx: Tx<HypRunEvent>,
     coverage_sender: Tx<CoverageStatus>,
     coverage_enabled: bool,
     override_snapshot_path: TestSnapshotPath
@@ -36,7 +36,7 @@ impl TestRunSetup
         #[builder(default = test_output_path())] base_output_path: Utf8PathBuf,
         #[builder(default = test_data_path())] base_workspace_path: Utf8PathBuf,
         #[builder(default = false)] coverage_enabled: bool,
-        #[builder(default = Tx::stub())] tests_status_sender: Tx<TestRun>,
+        #[builder(default = Tx::stub())] hyp_run_tx: Tx<HypRunEvent>,
         #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>,
         #[builder(default = TestSnapshotPath::default())] override_snapshot_path: TestSnapshotPath
     ) -> Self
@@ -47,7 +47,7 @@ impl TestRunSetup
             base_output_path,
             base_workspace_path,
             coverage_enabled,
-            tests_status_sender,
+            hyp_run_tx,
             coverage_sender,
             override_snapshot_path
         }
@@ -74,8 +74,7 @@ impl TestRunSetup
             target,
             self.get_workspace_path().clone(),
             self.get_output_path().clone(),
-            self.get_coverage_path().clone(),
-            TestRun::default()
+            self.get_coverage_path().clone()
         )
     }
 
@@ -96,7 +95,7 @@ impl TestRunSetup
         TestRunHandler::builder()
             .runner(runner)
             .coverage(Box::new(grcov))
-            .tests_status_sender(self.tests_status_sender)
+            .hyp_run_tx(self.hyp_run_tx)
             .coverage_status_sender(self.coverage_sender)
             .configuration(configuration)
             .build()

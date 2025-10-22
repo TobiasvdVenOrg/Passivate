@@ -26,7 +26,7 @@ use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::test_run::TestRun;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
-use passivate_hyp_model::test_run_events::TestRunEvent;
+use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
 use super::TestRunError;
@@ -39,8 +39,7 @@ pub struct TestRunner
     target: OsString,
     working_dir: Utf8PathBuf,
     target_dir: Utf8PathBuf,
-    coverage_output_dir: Utf8PathBuf,
-    test_run: TestRun
+    coverage_output_dir: Utf8PathBuf
 }
 
 #[faux::methods]
@@ -50,16 +49,14 @@ impl TestRunner
         target: OsString,
         working_dir: Utf8PathBuf,
         target_dir: Utf8PathBuf,
-        coverage_output_dir: Utf8PathBuf,
-        test_run: TestRun
+        coverage_output_dir: Utf8PathBuf
     ) -> Self
     {
         Self {
             target,
             working_dir,
             target_dir,
-            coverage_output_dir,
-            test_run
+            coverage_output_dir
         }
     }
 
@@ -67,15 +64,12 @@ impl TestRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        sender: &mut Tx<TestRun>,
+        tx: &mut Tx<HypRunEvent>,
         filter: Vec<String>,
         snapshots_path: Option<Utf8PathBuf>
     ) -> Result<(), TestRunError>
     {
-        if self.test_run.update(TestRunEvent::Start)
-        {
-            sender.send(self.test_run.clone());
-        }
+        tx.send(HypRunEvent::Start);
 
         let cargo_options = cargo_options().target_dir(self.target_dir.clone()).call();
 
@@ -83,7 +77,7 @@ impl TestRunner
             cargo_options,
             instrument_coverage,
             cancellation,
-            sender,
+            tx,
             filter,
             snapshots_path
         )
@@ -94,7 +88,7 @@ impl TestRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        sender: &mut Tx<TestRun>,
+        tx: &mut Tx<HypRunEvent>,
         filter: Vec<String>,
         snapshots_path: Option<Utf8PathBuf>
     ) -> Result<(), TestRunError>
@@ -115,7 +109,7 @@ impl TestRunner
             }
         }
 
-        let result = self.run_hyps_internal(options, cancellation, sender, filter);
+        let result = self.run_hyps_internal(options, cancellation, tx, filter);
 
         unsafe {
             std::env::remove_var("PASSIVATE_SNAPSHOT_DIR");
@@ -130,7 +124,7 @@ impl TestRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        sender: &mut Tx<TestRun>,
+        tx: &mut Tx<HypRunEvent>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -339,21 +333,20 @@ impl TestRunner
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
                             .expect("todo: error handling");
-                        Some(TestRunEvent::TestFinished(SingleTest::new(hyp_id, status, test_output)))
+                        Some(HypRunEvent::TestFinished(SingleTest::new(hyp_id, status, test_output)))
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
                         start_time: _,
                         elapsed: _,
                         run_stats: _
-                    } => Some(TestRunEvent::TestsCompleted),
+                    } => Some(HypRunEvent::TestsCompleted),
                     _ => None
                 };
 
                 if let Some(event) = event
-                    && self.test_run.update(event.clone())
                 {
-                    sender.send(self.test_run.clone());
+                    tx.send(event);
                 }
             })
             .map_err(|error| TestRunError::Temp)?;
@@ -366,7 +359,7 @@ impl TestRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        sender: &mut Tx<TestRun>,
+        tx: &mut Tx<HypRunEvent>,
         snapshots_path: Option<Utf8PathBuf>
     ) -> Result<(), TestRunError>
     {
@@ -374,15 +367,13 @@ impl TestRunner
         let strategy = HypNameStrategy::QualifiedWithoutCrate {
             separator: "::".to_string()
         };
+
         let filter = vec![hyp_id.get_name(&strategy).to_string()];
 
-        if self.test_run.update(TestRunEvent::StartSingle {
+        tx.send(HypRunEvent::StartSingle {
             hyp: hyp_id.clone(),
             clear_tests: true
-        })
-        {
-            sender.send(self.test_run.clone());
-        }
+        });
 
         if update_snapshots
         {
@@ -397,7 +388,7 @@ impl TestRunner
             cargo_options,
             instrument_coverage,
             cancellation,
-            sender,
+            tx,
             filter,
             snapshots_path
         );

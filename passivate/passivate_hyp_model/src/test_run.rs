@@ -1,4 +1,4 @@
-use crate::{single_test_status::SingleTestStatus, test_collection::TestCollection, test_run_events::TestRunEvent};
+use crate::{single_test_status::SingleTestStatus, test_collection::TestCollection, hyp_run_events::HypRunEvent};
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -41,16 +41,30 @@ impl TestRun
         }
     }
 
+    pub fn from_events<TEvents>(events: TEvents) -> Self
+    where 
+        TEvents: IntoIterator<Item = HypRunEvent>
+    {
+        let mut test_run = Self::from_state(TestRunState::Idle);
+
+        for event in events
+        {
+            test_run.update(event);
+        }
+
+        test_run
+    }
+
     pub fn from_failed(failure: FailedTestRun) -> Self
     {
         Self::from_state(TestRunState::Failed(failure))
     }
 
-    pub fn update(&mut self, event: TestRunEvent) -> bool
+    pub fn update(&mut self, event: HypRunEvent) -> bool
     {
         match event
         {
-            TestRunEvent::Start =>
+            HypRunEvent::Start =>
             {
                 self.state = TestRunState::Running;
                 for test in &mut self.tests
@@ -61,7 +75,7 @@ impl TestRun
 
                 true
             }
-            TestRunEvent::StartSingle { hyp, clear_tests } =>
+            HypRunEvent::StartSingle { hyp, clear_tests } =>
             {
                 if let Some(mut hyp) = self.tests.find(&hyp)
                 {
@@ -80,7 +94,7 @@ impl TestRun
 
                 false
             }
-            TestRunEvent::TestFinished(test) =>
+            HypRunEvent::TestFinished(test) =>
             {
                 self.state = TestRunState::Running;
 
@@ -88,27 +102,27 @@ impl TestRun
 
                 true
             }
-            TestRunEvent::NoTests =>
+            HypRunEvent::NoTests =>
             {
                 self.state = TestRunState::Idle;
                 true
             }
-            TestRunEvent::Compiling(message) =>
+            HypRunEvent::Compiling(message) =>
             {
                 self.state = TestRunState::Building(message.clone());
                 true
             }
-            TestRunEvent::TestsCompleted =>
+            HypRunEvent::TestsCompleted =>
             {
                 self.state = TestRunState::Idle;
                 true
             }
-            TestRunEvent::BuildError(message) =>
+            HypRunEvent::BuildError(message) =>
             {
                 self.state = TestRunState::BuildFailed(BuildFailedTestRun { message });
                 true
             }
-            TestRunEvent::ErrorOutput { hyp, message } =>
+            HypRunEvent::ErrorOutput { hyp, message } =>
             {
                 if !message.is_empty()
                     && let Some(mut updated_test) = self.tests.find(&hyp)
@@ -119,6 +133,11 @@ impl TestRun
                 }
 
                 false
+            }
+            HypRunEvent::HypRunError(message) =>
+            {
+                *self = TestRun::from_failed(message);
+                true
             }
         }
     }

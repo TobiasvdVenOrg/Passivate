@@ -1,13 +1,13 @@
 use egui::{Color32, RichText};
 use passivate_delegation::{Rx, Tx};
-use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct TestRunView
 {
-    receiver: Rx<TestRun>,
+    receiver: Rx<HypRunEvent>,
     test_details: Tx<Option<SingleTest>>,
     status: TestRun,
     selected_hyp: Option<HypId>
@@ -15,14 +15,19 @@ pub struct TestRunView
 
 impl TestRunView
 {
-    pub fn new(receiver: Rx<TestRun>, test_details: Tx<Option<SingleTest>>) -> TestRunView
+    pub fn new(status: TestRun, receiver: Rx<HypRunEvent>, test_details: Tx<Option<SingleTest>>) -> Self
     {
         TestRunView {
             receiver,
             test_details,
-            status: TestRun::default(),
+            status,
             selected_hyp: None
         }
+    }
+
+    pub fn with_default_status(receiver: Rx<HypRunEvent>, test_details: Tx<Option<SingleTest>>) -> Self
+    {
+        Self::new(TestRun::default(), receiver, test_details)
     }
 
     fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest>
@@ -76,9 +81,9 @@ impl View for TestRunView
 
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
-        if let Ok(status) = self.receiver.try_recv()
+        if let Ok(event) = self.receiver.try_recv()
         {
-            self.status = status;
+            self.status.update(event);
             self.send_selected_hyp_details();
         }
 
@@ -149,7 +154,7 @@ mod tests
     use egui_kittest::Harness;
     use passivate_delegation::Tx;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}, test_run_events::TestRunEvent};
+    use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}, hyp_run_events::HypRunEvent};
 
     use crate::{docking::view::View, test_run_view::TestRunView};
 
@@ -189,7 +194,7 @@ mod tests
     {
         let mut active = TestRun::default();
         active.tests.add(example_hyp("example_test", SingleTestStatus::Unknown));
-        active.update(TestRunEvent::Compiling("The build is working on something right now!".to_string()));
+        active.update(HypRunEvent::Compiling("The build is working on something right now!".to_string()));
 
         run_and_snapshot(active, &test_name!());
     }
@@ -197,15 +202,13 @@ mod tests
     fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
     {
         let (tx, rx) = Tx::new();
-        let mut tests_status_view = TestRunView::new(rx, Tx::stub());
+        let mut tests_status_view = TestRunView::new(tests_status, rx, Tx::stub());
 
         let ui = |ui: &mut egui::Ui| {
             tests_status_view.ui(ui);
         };
 
         let mut harness = Harness::new_ui(ui);
-
-        tx.send(tests_status);
 
         harness.run();
         harness.fit_contents();
