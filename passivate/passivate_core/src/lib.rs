@@ -16,7 +16,6 @@ pub mod test_execution
 {
     mod_use!(change_event_handler);
     mod_use!(test_runner);
-    mod_use!(test_run_iterator);
     mod_use!(test_run_errors);
     mod_use!(test_run_handler);
 }
