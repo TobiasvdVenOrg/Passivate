@@ -1,4 +1,5 @@
-use crate::{single_test::SelectedHyp, test_run::TestRun};
+use crate::single_test::SelectedHyp;
+use crate::test_run::TestRun;
 
 pub struct PassivateState
 {

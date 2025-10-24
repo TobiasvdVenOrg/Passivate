@@ -12,10 +12,25 @@ pub struct SingleTest
     pub output: Vec<String>
 }
 
+pub trait SelectHyp
+{
+    fn select(&mut self, hyp: SingleTest);
+}
+
 pub struct SelectedHyp
 {
     pub hyp: SingleTest,
     pub snapshot_handles: Option<SnapshotHandles>
+}
+
+impl SelectHyp for &mut Option<SelectedHyp>
+{
+    fn select(&mut self, hyp: crate::single_test::SingleTest)
+    {
+        let selected = Some(SelectedHyp { hyp, snapshot_handles: None });
+
+        **self = selected;
+    }
 }
 
 impl SingleTest

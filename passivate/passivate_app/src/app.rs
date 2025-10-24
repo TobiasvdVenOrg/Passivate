@@ -45,20 +45,31 @@ impl eframe::App for App<'_>
             self.state.hyp_run.update(hyp_run_event);
         }
 
-        let mut layout = self.layout.get_current();
+        let layout = self.layout.get_current();
 
-        DockArea::new(&mut layout.get_state())
+        let mut tab_viewer = Bla {
+            dock_views: &mut self.dock_views,
+            state: self.state
+        };
+
+        DockArea::new(layout.get_state())
             .style(Style::from_egui(ctx.style().as_ref()))
             .show_close_buttons(false)
             .show_leaf_collapse_buttons(false)
             .show_leaf_close_all_buttons(false)
-            .show(ctx, self);
+            .show(ctx, &mut tab_viewer);
 
         ctx.request_repaint();
     }
 }
 
-impl TabViewer for App<'_>
+struct Bla<'a>
+{
+    dock_views: &'a mut DockViews<PassivateView>,
+    state: &'a mut PassivateState,
+}
+
+impl TabViewer for Bla<'_>
 {
     type Tab = DockId;
 
@@ -85,11 +96,11 @@ impl TabViewer for App<'_>
             {
                 match view
                 {
-                    PassivateView::Configuration(configuration_view) => todo!(),
-                    PassivateView::Coverage(coverage_view) => todo!(),
-                    PassivateView::Details(details_view) => todo!(),
-                    PassivateView::Log(log_view) => todo!(),
-                    PassivateView::TestRun(test_run_view) => todo!(),
+                    PassivateView::Configuration(configuration_view) => configuration_view.ui(ui),
+                    PassivateView::Coverage(coverage_view) => coverage_view.ui(ui),
+                    PassivateView::Details(details_view) => details_view.ui(ui, &self.state.selected_hyp),
+                    PassivateView::Log(log_view) => log_view.ui(ui),
+                    PassivateView::TestRun(test_run_view) => test_run_view.ui(ui, &self.state.hyp_run, &mut self.state.selected_hyp)
                 }
             },
             DockView::Placeholder(placeholder_view) => placeholder_view.ui(ui)

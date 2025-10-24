@@ -26,7 +26,7 @@ impl DetailsView
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: Option<&SelectedHyp>)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: &Option<SelectedHyp>)
     {
         if let Some(details) = &details
         {
@@ -146,7 +146,7 @@ mod tests
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::passivate_state::PassivateState;
-    use passivate_hyp_model::single_test::SingleTest;
+    use passivate_hyp_model::single_test::{SelectedHyp, SingleTest};
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
     use passivate_hyp_names::hyp_id::HypId;
@@ -192,53 +192,57 @@ mod tests
 
         let mut details_view = DetailsView::new(Tx::stub(), configuration);
 
-        // TODO: This test will fail as the test run view no longer directly communicates to the details view (through a channel)
-        // To keep this full flow tested, we need to introduce the system that stores the "selected test" and passes it into the details view
-        let mut test_run = TestRun::default();
-        test_run
+        let mut passivate_state = PassivateState {
+            hyp_run: TestRun::default(),
+            selected_hyp: None
+        };
+
+        passivate_state.hyp_run
             .tests
             .add(example_hyp("tests::example_test", SingleTestStatus::Failed));
 
         let mut test_run_view = TestRunView;
 
-        let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            test_run_view.ui(ui, &test_run);
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            test_run_view.ui(ui, &passivate_state.hyp_run, &mut passivate_state.selected_hyp);
+            details_view.ui(ui, &passivate_state.selected_hyp);
         });
 
-        let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            details_view.ui(ui);
-        });
+        ui.run();
 
-        test_run_ui.run();
-
-        let test_entry = test_run_ui.get_by_label("example_test");
+        let test_entry = ui.get_by_label("example_test");
         test_entry.click();
 
-        test_run_ui.run();
-        details_ui.run();
-
-        details_ui.fit_contents();
-        details_ui.snapshot(&test_name!());
+        ui.run();
+        ui.fit_contents();
+        ui.snapshot(&test_name!());
     }
 
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
+        let (tx, rx) = Tx::new();
+
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let mut details_view = DetailsView::new(Tx::stub(), configuration);
         let mut test_run_view = TestRunView;
 
-        let state = PassivateState {
+        let mut state = PassivateState {
             hyp_run: TestRun::default(),
             selected_hyp: None
         };
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            if let Ok(event) = rx.try_recv()
+            {
+                state.hyp_run.update(event);
+            }
+            
             test_run_view.ui(ui, &state.hyp_run, &mut state.selected_hyp);
-            details_view.ui(ui, );
+            details_view.ui(ui, &state.selected_hyp);
         });
 
-        test_run.update(HypRunEvent::TestFinished(example_hyp(
+        tx.send(HypRunEvent::TestFinished(example_hyp(
             "tests::example_test",
             SingleTestStatus::Failed
         )));
@@ -250,7 +254,7 @@ mod tests
 
         ui.run();
 
-        test_run.update(HypRunEvent::TestFinished(example_hyp(
+        tx.send(HypRunEvent::TestFinished(example_hyp(
             "tests::example_test",
             SingleTestStatus::Passed
         )));
@@ -312,13 +316,13 @@ mod tests
 
         let mut details_view = DetailsView::new(test_run_tx, configuration);
         
-        let details = HypDetails {
+        let details = Some(SelectedHyp {
             hyp: snapshot_test,
             snapshot_handles: None
-        };
+        });
 
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui, Some(&details));
+            details_view.ui(ui, &details);
         };
         
         let mut harness = Harness::new_ui(ui);
@@ -346,13 +350,13 @@ mod tests
 
         let mut details_view = DetailsView::new(Tx::stub(), configuration);
 
-        let details = HypDetails {
+        let details = Some(SelectedHyp {
             hyp: single_test,
             snapshot_handles: None
-        };
+        });
 
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui, Some(&details));
+            details_view.ui(ui, &details);
         };
 
         let mut harness = Harness::new_ui(ui);

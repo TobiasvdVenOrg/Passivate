@@ -45,9 +45,9 @@ impl LayoutManagement
         }
     }
 
-    pub fn get_current(&self) -> &DockingLayout
+    pub fn get_current(&mut self) -> &mut DockingLayout
     {
-        &self.current_layout
+        &mut self.current_layout
     }
 }
 

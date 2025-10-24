@@ -135,7 +135,7 @@ mod tests
 
         let ui = |ui: &mut egui::Ui| {
             configuration_view.ui(ui);
-            details_view.ui(ui);
+            details_view.ui(ui, &None);
         };
 
         let mut harness = Harness::new_ui(ui);

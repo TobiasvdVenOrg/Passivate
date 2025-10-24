@@ -55,7 +55,7 @@ pub fn placeholder_view_is_used_when_layout_contains_missing_ids()
     use egui_dock::TabViewer;
 
     let views: Vec<Box<dyn View>> = Vec::new();
-    let mut tab_viewer = passivate_views::docking::tab_viewer::TabViewer::new(views.into_iter());
+    let mut tab_viewer = passivate_views::docking::dock_views::TabViewer::new(views.into_iter());
 
     let mut dock_id: DockId = "does not exist".into();
 
