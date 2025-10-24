@@ -22,16 +22,8 @@ impl LogView
     {
         Self { receiver, logs: vec![] }
     }
-}
 
-impl View for LogView
-{
-    fn id(&self) -> DockId
-    {
-        "log_view".into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         if let Ok(log) = self.receiver.try_recv()
         {
@@ -52,11 +44,6 @@ impl View for LogView
                 });
             }
         });
-    }
-
-    fn title(&self) -> String
-    {
-        "Log".to_string()
     }
 }
 

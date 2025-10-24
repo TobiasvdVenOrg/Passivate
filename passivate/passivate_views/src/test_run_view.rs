@@ -1,93 +1,16 @@
 use egui::{Color32, RichText};
-use passivate_delegation::{Rx, Tx};
-use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::docking::{docking_layout::DockId, view::View};
-
-pub struct TestRunView
-{
-    receiver: Rx<HypRunEvent>,
-    test_details: Tx<Option<SingleTest>>,
-    status: TestRun,
-    selected_hyp: Option<HypId>
-}
+pub struct TestRunView;
 
 impl TestRunView
 {
-    pub fn new(status: TestRun, receiver: Rx<HypRunEvent>, test_details: Tx<Option<SingleTest>>) -> Self
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun, selected_hyp: &mut Option<HypId>)
     {
-        TestRunView {
-            receiver,
-            test_details,
-            status,
-            selected_hyp: None
-        }
-    }
+        // TODO: Some system that handles the updating of a TestRun needs to look at which test is selected and pass that to DetailsView, instead of a channel from this view
 
-    pub fn with_default_status(receiver: Rx<HypRunEvent>, test_details: Tx<Option<SingleTest>>) -> Self
-    {
-        Self::new(TestRun::default(), receiver, test_details)
-    }
-
-    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest>
-    {
-        let text = RichText::new(&test.name).size(16.0).color(color);
-
-        if ui.button(text).clicked()
-        {
-            return Some(test.clone());
-        }
-
-        None
-    }
-
-    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest)
-    {
-        let text = RichText::new(&test.name).size(16.0).color(Color32::GRAY);
-
-        ui.label(text);
-    }
-
-    fn send_selected_hyp_details(&mut self)
-    {
-        if let Some(selected_hyp) = &self.selected_hyp
-        {
-            self.test_details.send(self.status.tests.find(selected_hyp));
-        }
-    }
-
-    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) -> Option<SingleTest>
-    {
-        match test.status
-        {
-            SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
-            SingleTestStatus::Unknown =>
-            {
-                self.test_label(ui, test);
-                None
-            }
-        }
-    }
-}
-
-impl View for TestRunView
-{
-    fn id(&self) -> DockId
-    {
-        "test_run_view".into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
-    {
-        if let Ok(event) = self.receiver.try_recv()
-        {
-            self.status.update(event);
-            self.send_selected_hyp_details();
-        }
-
-        match &self.status.state
+        match &test_run.state
         {
             TestRunState::FirstRun =>
             {
@@ -95,7 +18,7 @@ impl View for TestRunView
             }
             TestRunState::Idle =>
             {
-                if self.status.tests.is_empty()
+                if test_run.tests.is_empty()
                 {
                     ui.heading("No tests found.");
                 }
@@ -125,26 +48,46 @@ impl View for TestRunView
             }
         }
 
-        let mut send = false;
-
-        for test in &self.status.tests
+        for test in &test_run.tests
         {
             if let Some(new_selection) = self.show_test(ui, test)
             {
-                self.selected_hyp = Some(new_selection.id);
-                send = true;
+                *selected_hyp = Some(new_selection.id);
             }
-        }
-
-        if send
-        {
-            self.send_selected_hyp_details();
         }
     }
 
-    fn title(&self) -> String
+    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest>
     {
-        "Tests Status".to_string()
+        let text = RichText::new(&test.name).size(16.0).color(color);
+
+        if ui.button(text).clicked()
+        {
+            return Some(test.clone());
+        }
+
+        None
+    }
+
+    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest)
+    {
+        let text = RichText::new(&test.name).size(16.0).color(Color32::GRAY);
+
+        ui.label(text);
+    }
+
+    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) -> Option<SingleTest>
+    {
+        match test.status
+        {
+            SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
+            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+            SingleTestStatus::Unknown =>
+            {
+                self.test_label(ui, test);
+                None
+            }
+        }
     }
 }
 
@@ -152,11 +95,10 @@ impl View for TestRunView
 mod tests
 {
     use egui_kittest::Harness;
-    use passivate_delegation::{Rx, Tx};
     use passivate_hyp_names::{hyp_id::HypId, test_name};
     use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}, hyp_run_events::HypRunEvent};
 
-    use crate::{docking::view::View, test_run_view::TestRunView};
+    use crate::test_run_view::TestRunView;
 
     #[test]
     pub fn show_when_first_test_run_is_starting()
@@ -201,10 +143,11 @@ mod tests
 
     fn run_and_snapshot(tests_status: TestRun, snapshot_name: &str)
     {
-        let mut tests_status_view = TestRunView::new(tests_status, Rx::stub(), Tx::stub());
+        let mut tests_status_view = TestRunView;
+        let mut selected_hyp = None;
 
         let ui = |ui: &mut egui::Ui| {
-            tests_status_view.ui(ui);
+            tests_status_view.ui(ui, &tests_status, &mut selected_hyp);
         };
 
         let mut harness = Harness::new_ui(ui);

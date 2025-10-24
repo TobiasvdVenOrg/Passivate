@@ -1,47 +1,74 @@
 use camino::Utf8PathBuf;
-use egui::{Color32, RichText, TextureHandle, TextureOptions};
+use egui::{Color32, RichText, TextureHandle};
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_delegation::{Rx, Tx};
-use passivate_hyp_model::change_event::ChangeEvent;
-use passivate_hyp_model::single_test::SingleTest;
+use passivate_delegation::Tx;
+use passivate_hyp_model::{change_event::ChangeEvent, single_test::SelectedHyp};
 use passivate_hyp_model::single_test_status::SingleTestStatus;
-use passivate_hyp_names::hyp_id::HypId;
 use passivate_snapshots::snapshots::{SnapshotError, Snapshots};
-
-use crate::docking::docking_layout::DockId;
-use crate::docking::view::View;
-
-struct SnapshotHandles
-{
-    pub current: Option<Result<TextureHandle, SnapshotError>>,
-    pub new: Option<Result<TextureHandle, SnapshotError>>,
-    pub are_identical: bool,
-    pub hyp_id: HypId
-}
+use passivate_snapshots::SnapshotHandles;
 
 pub struct DetailsView
 {
-    test_receiver: Rx<Option<SingleTest>>,
     change_events: Tx<ChangeEvent>,
-    configuration: ConfigurationManager,
-    single_test: Option<SingleTest>,
-    snapshot_handles: Option<SnapshotHandles>
+    configuration: ConfigurationManager
 }
 
 impl DetailsView
 {
     pub fn new(
-        test_receiver: Rx<Option<SingleTest>>,
         change_events: Tx<ChangeEvent>,
         configuration: ConfigurationManager
     ) -> Self
     {
         Self {
-            test_receiver,
             change_events,
-            configuration,
-            single_test: None,
-            snapshot_handles: None
+            configuration
+        }
+    }
+
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: Option<&SelectedHyp>)
+    {
+        if let Some(details) = &details
+        {
+            let color = match details.hyp.status
+            {
+                SingleTestStatus::Passed => Color32::GREEN,
+                SingleTestStatus::Failed => Color32::RED,
+                SingleTestStatus::Unknown => Color32::GRAY
+            };
+
+            ui.horizontal(|ui| {
+                let text = RichText::new(&details.hyp.name).size(16.0).color(color);
+                ui.heading(text);
+
+                if ui.button("Pin").clicked()
+                {
+                    self.change_events.send(ChangeEvent::PinHyp {
+                        id: details.hyp.id.clone()
+                    });
+                }
+
+                if ui.button("Unpin").clicked()
+                {
+                    self.change_events.send(ChangeEvent::ClearPinnedHyps);
+                }
+            });
+
+            if !details.hyp.output.is_empty()
+            {
+                ui.add_space(16.0);
+
+                for output in &details.hyp.output
+                {
+                    let output_line = RichText::new(output).size(12.0).color(color);
+                    ui.label(output_line);
+                }
+            }
+
+            if let Some(snapshot_handles) = &details.snapshot_handles
+            {
+                self.draw_snapshots(ui, snapshot_handles);
+            }
         }
     }
 
@@ -52,72 +79,40 @@ impl DetailsView
         snapshots_path.map(|path| Snapshots::new(Utf8PathBuf::from(path)))
     }
 
-    fn check_for_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, new_hyp: &Option<SingleTest>)
+    fn draw_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
     {
-        if let Some(snapshots) = self.get_snapshots()
-            && let Some(new_hyp) = new_hyp
+        if let Some(current) = &snapshot_handles.current
         {
-            let snapshot = snapshots.from_hyp(&new_hyp.id);
-            let mut are_identical = false;
-
-            if let (Some(Ok(current)), Some(Ok(new))) = (&snapshot.current, &snapshot.new)
+            if snapshot_handles.are_identical
             {
-                are_identical = current == new;
-            }
-
-            let current = snapshot
-                .current
-                .map(|current| current.map(|s| ui.ctx().load_texture("current_snapshot", s, TextureOptions::LINEAR)));
-            let new = snapshot
-                .new
-                .map(|new| new.map(|s| ui.ctx().load_texture("new_snapshot", s, TextureOptions::LINEAR)));
-
-            self.snapshot_handles = Some(SnapshotHandles {
-                current,
-                new,
-                are_identical,
-                hyp_id: new_hyp.id.clone()
-            });
-        }
-    }
-
-    fn draw_snapshots(&mut self, ui: &mut egui_dock::egui::Ui)
-    {
-        if let Some(snapshot_handles) = &mut self.snapshot_handles
-        {
-            if let Some(current) = &snapshot_handles.current
-            {
-                if snapshot_handles.are_identical
-                {
-                    Self::draw_snapshot(ui, current);
-                    return;
-                }
-
-                if snapshot_handles.new.is_some()
-                {
-                    ui.heading("Current");
-                }
-
                 Self::draw_snapshot(ui, current);
+                return;
             }
 
-            if let Some(new) = &snapshot_handles.new
+            if snapshot_handles.new.is_some()
             {
-                ui.horizontal(|ui| {
-                    ui.heading("New");
-
-                    let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
-                    if ui.button(approve).clicked()
-                    {
-                        self.change_events.send(ChangeEvent::SingleHyp {
-                            id: snapshot_handles.hyp_id.clone(),
-                            update_snapshots: true
-                        });
-                    }
-                });
-
-                Self::draw_snapshot(ui, new);
+                ui.heading("Current");
             }
+
+            Self::draw_snapshot(ui, current);
+        }
+
+        if let Some(new) = &snapshot_handles.new
+        {
+            ui.horizontal(|ui| {
+                ui.heading("New");
+
+                let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
+                if ui.button(approve).clicked()
+                {
+                    self.change_events.send(ChangeEvent::SingleHyp {
+                        id: snapshot_handles.hyp_id.clone(),
+                        update_snapshots: true
+                    });
+                }
+            });
+
+            Self::draw_snapshot(ui, new);
         }
     }
 
@@ -138,68 +133,6 @@ impl DetailsView
     }
 }
 
-impl View for DetailsView
-{
-    fn id(&self) -> DockId
-    {
-        "details_view".into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
-    {
-        if let Ok(new_test) = self.test_receiver.try_recv()
-        {
-            self.check_for_snapshots(ui, &new_test);
-            self.single_test = new_test;
-        }
-
-        if let Some(single_test) = &self.single_test
-        {
-            let color = match single_test.status
-            {
-                SingleTestStatus::Passed => Color32::GREEN,
-                SingleTestStatus::Failed => Color32::RED,
-                SingleTestStatus::Unknown => Color32::GRAY
-            };
-
-            ui.horizontal(|ui| {
-                let text = RichText::new(&single_test.name).size(16.0).color(color);
-                ui.heading(text);
-
-                if ui.button("Pin").clicked()
-                {
-                    self.change_events.send(ChangeEvent::PinHyp {
-                        id: single_test.id.clone()
-                    });
-                }
-
-                if ui.button("Unpin").clicked()
-                {
-                    self.change_events.send(ChangeEvent::ClearPinnedHyps);
-                }
-            });
-
-            if !single_test.output.is_empty()
-            {
-                ui.add_space(16.0);
-
-                for output in &single_test.output
-                {
-                    let output_line = RichText::new(output).size(12.0).color(color);
-                    ui.label(output_line);
-                }
-            }
-        }
-
-        self.draw_snapshots(ui);
-    }
-
-    fn title(&self) -> String
-    {
-        "Details".to_string()
-    }
-}
-
 #[cfg(test)]
 mod tests
 {
@@ -209,9 +142,10 @@ mod tests
     use galvanic_assert::*;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_delegation::{Rx, Tx};
+    use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
+    use passivate_hyp_model::passivate_state::PassivateState;
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
@@ -221,7 +155,6 @@ mod tests
     use rstest::*;
 
     use crate::details_view::DetailsView;
-    use crate::docking::view::View;
     use crate::test_run_view::TestRunView;
 
     #[test]
@@ -255,20 +188,21 @@ mod tests
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let (details_tx, details_rx) = Tx::new();
-
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
 
-        let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub(), configuration);
 
+        // TODO: This test will fail as the test run view no longer directly communicates to the details view (through a channel)
+        // To keep this full flow tested, we need to introduce the system that stores the "selected test" and passes it into the details view
         let mut test_run = TestRun::default();
         test_run
             .tests
             .add(example_hyp("tests::example_test", SingleTestStatus::Failed));
-        let mut test_run_view = TestRunView::new(test_run, Rx::stub(), details_tx);
+
+        let mut test_run_view = TestRunView;
 
         let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            test_run_view.ui(ui);
+            test_run_view.ui(ui, &test_run);
         });
 
         let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
@@ -290,43 +224,40 @@ mod tests
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
-        let (test_run_tx, test_run_rx) = Tx::new();
-        let (details_tx, details_rx) = Tx::new();
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-        let mut details_view = DetailsView::new(details_rx, Tx::stub(), configuration);
-        let mut test_run_view = TestRunView::with_default_status(test_run_rx, details_tx);
+        let mut details_view = DetailsView::new(Tx::stub(), configuration);
+        let mut test_run_view = TestRunView;
 
-        let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            test_run_view.ui(ui);
+        let state = PassivateState {
+            hyp_run: TestRun::default(),
+            selected_hyp: None
+        };
+
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            test_run_view.ui(ui, &state.hyp_run, &mut state.selected_hyp);
+            details_view.ui(ui, );
         });
 
-        let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            details_view.ui(ui);
-        });
-
-        test_run_tx.send(HypRunEvent::TestFinished(example_hyp(
+        test_run.update(HypRunEvent::TestFinished(example_hyp(
             "tests::example_test",
             SingleTestStatus::Failed
         )));
 
-        test_run_ui.run();
+        ui.run();
 
-        let test_entry = test_run_ui.get_by_label("example_test");
+        let test_entry = ui.get_by_label("example_test");
         test_entry.click();
 
-        test_run_ui.run();
-        details_ui.run();
+        ui.run();
 
-        test_run_tx.send(HypRunEvent::TestFinished(example_hyp(
+        test_run.update(HypRunEvent::TestFinished(example_hyp(
             "tests::example_test",
             SingleTestStatus::Passed
         )));
 
-        test_run_ui.run();
-        details_ui.run();
-
-        details_ui.fit_contents();
-        details_ui.snapshot(&test_name!());
+        ui.run();
+        ui.fit_contents();
+        ui.snapshot(&test_name!());
     }
 
     #[test]
@@ -376,19 +307,22 @@ mod tests
     {
         let snapshot_test = example_hyp(hyp, SingleTestStatus::Failed);
 
-        let (details_tx, details_rx) = Tx::new();
         let (test_run_tx, test_run_rx) = Tx::new();
         let configuration = get_configuration_with_example_snapshots_path();
 
-        let mut details_view = DetailsView::new(details_rx, test_run_tx, configuration);
-
-        let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui);
+        let mut details_view = DetailsView::new(test_run_tx, configuration);
+        
+        let details = HypDetails {
+            hyp: snapshot_test,
+            snapshot_handles: None
         };
 
+        let ui = |ui: &mut egui::Ui| {
+            details_view.ui(ui, Some(&details));
+        };
+        
         let mut harness = Harness::new_ui(ui);
-
-        details_tx.send(Some(snapshot_test));
+        
         harness.run();
 
         let approve = harness.get_by_label("Approve");
@@ -408,18 +342,20 @@ mod tests
 
     fn show_test(test_name: &str, single_test: SingleTest)
     {
-        let (tx, rx) = Tx::new();
         let configuration = get_configuration_with_example_snapshots_path();
 
-        let mut details_view = DetailsView::new(rx, Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub(), configuration);
+
+        let details = HypDetails {
+            hyp: single_test,
+            snapshot_handles: None
+        };
 
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui);
+            details_view.ui(ui, Some(&details));
         };
 
         let mut harness = Harness::new_ui(ui);
-
-        tx.send(Some(single_test));
 
         harness.run();
         harness.fit_contents();

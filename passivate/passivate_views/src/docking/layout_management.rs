@@ -45,11 +45,6 @@ impl LayoutManagement
         }
     }
 
-    pub fn show_current(&mut self, egui_context: &egui::Context, tab_viewer: &mut super::tab_viewer::TabViewer)
-    {
-        self.current_layout.show(egui_context, tab_viewer);
-    }
-
     pub fn get_current(&self) -> &DockingLayout
     {
         &self.current_layout

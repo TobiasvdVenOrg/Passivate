@@ -1,4 +1,4 @@
 pub mod docking_layout;
-pub mod view;
-pub mod tab_viewer;
+pub mod dock_views;
 pub mod layout_management;
+pub mod view;

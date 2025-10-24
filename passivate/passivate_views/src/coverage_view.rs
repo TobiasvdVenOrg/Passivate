@@ -5,9 +5,6 @@ use passivate_core::coverage::CoverageStatus;
 use passivate_core::passivate_grcov::CovdirJson;
 use passivate_delegation::Rx;
 
-use crate::docking::docking_layout::DockId;
-use crate::docking::view::View;
-
 pub struct CoverageView
 {
     receiver: Rx<CoverageStatus>,
@@ -24,6 +21,33 @@ impl CoverageView
             configuration,
             status: CoverageStatus::Disabled
         }
+    }
+
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    {
+        if let Ok(status) = self.receiver.try_recv()
+        {
+            self.status = status;
+        }
+
+        match &self.status
+        {
+            CoverageStatus::Disabled => self.draw_disabled(ui),
+            CoverageStatus::Error(coverage_error) =>
+            {
+                let text = RichText::new(coverage_error).size(16.0).color(Color32::RED);
+                ui.heading(text);
+            }
+            CoverageStatus::Preparing =>
+            {
+                ui.heading("Preparing...");
+            }
+            CoverageStatus::Running =>
+            {
+                ui.heading("Running...");
+            }
+            CoverageStatus::Done(json) => Self::draw_coverage(ui, json, egui::Id::new(format!("root{}", json.name)))
+        };
     }
 
     fn draw_coverage(ui: &mut egui_dock::egui::Ui, coverage: &CovdirJson, id: egui::Id)
@@ -73,46 +97,6 @@ impl CoverageView
     }
 }
 
-impl View for CoverageView
-{
-    fn id(&self) -> DockId
-    {
-        "coverage_view".into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
-    {
-        if let Ok(status) = self.receiver.try_recv()
-        {
-            self.status = status;
-        }
-
-        match &self.status
-        {
-            CoverageStatus::Disabled => self.draw_disabled(ui),
-            CoverageStatus::Error(coverage_error) =>
-            {
-                let text = RichText::new(coverage_error).size(16.0).color(Color32::RED);
-                ui.heading(text);
-            }
-            CoverageStatus::Preparing =>
-            {
-                ui.heading("Preparing...");
-            }
-            CoverageStatus::Running =>
-            {
-                ui.heading("Running...");
-            }
-            CoverageStatus::Done(json) => Self::draw_coverage(ui, json, egui::Id::new(format!("root{}", json.name)))
-        };
-    }
-
-    fn title(&self) -> String
-    {
-        "Coverage".to_string()
-    }
-}
-
 #[cfg(test)]
 mod tests
 {
@@ -124,7 +108,7 @@ mod tests
     use passivate_delegation::{Rx, Tx};
     use passivate_hyp_names::test_name;
 
-    use crate::{coverage_view::CoverageView, docking::view::View};
+    use crate::coverage_view::CoverageView;
 
     #[test]
     pub fn show_coverage_hierarchy_fully_collapsed()

@@ -2,8 +2,6 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
 
-use crate::docking::{docking_layout::DockId, view::View};
-
 pub struct ConfigurationView
 {
     configuration_manager: ConfigurationManager,
@@ -21,17 +19,8 @@ impl ConfigurationView
             change_event_tx
         }
     }
-}
 
-impl View for ConfigurationView
-{
-
-    fn id(&self) -> DockId
-    {
-        "configuration_view".into()
-    }
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
     {
         let mut configuration = self.configuration_manager.get_copy();
 
@@ -62,11 +51,6 @@ impl View for ConfigurationView
             }
         });
     }
-
-    fn title(&self) -> String
-    {
-        "Configuration".to_string()
-    }
 }
 
 #[cfg(test)]
@@ -80,14 +64,13 @@ mod tests
     use galvanic_assert::{assert_that, matchers::eq};
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
     use passivate_core::{coverage::MockComputeCoverage, test_execution::{TestRunHandler, TestRunner}};
-    use passivate_delegation::{Rx, Tx};
+    use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_names::test_name;
     use passivate_snapshots::snapshots::Snapshots;
 
     use crate::details_view::DetailsView;
     use crate::configuration_view::ConfigurationView;
-    use crate::docking::view::View;
 
     #[test]
     pub fn show_configuration()
@@ -148,7 +131,7 @@ mod tests
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let (change_events_tx, change_events_rx) = Tx::new();
         let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
-        let mut details_view = DetailsView::new(Rx::stub(), Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub(), configuration);
 
         let ui = |ui: &mut egui::Ui| {
             configuration_view.ui(ui);

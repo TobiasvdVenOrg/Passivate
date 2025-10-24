@@ -6,6 +6,7 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
+use passivate_hyp_model::passivate_state::PassivateState;
 use crate::coverage::CoverageStatus;
 use crate::passivate_args::PassivateArgs;
 use crate::passivate_grcov::Grcov;
@@ -22,13 +23,13 @@ static LOGGER: OnceLock<TxLog> = OnceLock::new();
 
 pub struct PassivateCore
 {
+    pub state: PassivateState,
     pub passivate_path: Utf8PathBuf,
     pub change_event_tx: Tx<ChangeEvent>,
     pub configuration: ConfigurationManager,
     pub log_rx: Rx<LogMessage>,
     pub hyp_run_rx: Rx<HypRunEvent>,
-    pub coverage_rx: Rx<CoverageStatus>,
-    pub test_run: TestRun
+    pub coverage_rx: Rx<CoverageStatus>
 }
 
 pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Result<(), StartupError>) -> Result<(), StartupError>
@@ -53,7 +54,7 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
 
-    let test_run = TestRun::from_state(TestRunState::FirstRun);
+    let hyp_run = TestRun::from_state(TestRunState::FirstRun);
     let test_runner = TestRunner::new(
         target,
         workspace_path.clone(),
@@ -86,14 +87,19 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
     // Notify
     let mut change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;
 
+    let state = PassivateState {
+        hyp_run,
+        selected_hyp: None
+    };
+
     main_loop(PassivateCore {
+        state,
         passivate_path,
         change_event_tx,
         configuration,
         log_rx,
         hyp_run_rx,
-        coverage_rx,
-        test_run
+        coverage_rx
     })?;
 
     let _ = change_events.stop();

@@ -7,6 +7,7 @@ edition = "2024"
 passivate_core = { path = "../passivate_core" }
 passivate_views = { path = "../passivate_views" }
 passivate_delegation = { path = "../passivate_delegation" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
 
 clap.workspace = true
 egui.workspace = true

@@ -1,4 +1,5 @@
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+use passivate_snapshots::SnapshotHandles;
 
 use crate::single_test_status::SingleTestStatus;
 
@@ -9,6 +10,12 @@ pub struct SingleTest
     pub name: String,
     pub status: SingleTestStatus,
     pub output: Vec<String>
+}
+
+pub struct SelectedHyp
+{
+    pub hyp: SingleTest,
+    pub snapshot_handles: Option<SnapshotHandles>
 }
 
 impl SingleTest
