@@ -2,6 +2,7 @@ use std::fs;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
+use egui_dock::TabViewer;
 use egui_kittest::Harness;
 use galvanic_assert::assert_that;
 use itertools::Itertools;
@@ -10,6 +11,7 @@ use passivate_configuration::configuration_source::ConfigurationSource;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::{clean_directory, test_output_path};
 use passivate_testing::spy_log::SpyLog;
+use passivate_views::docking::dock_views::{DockViewer, DockViews};
 use passivate_views::docking::docking_layout::{DockId, DockingLayout};
 use passivate_views::docking::layout_management::LayoutManagement;
 use passivate_views::docking::view::View;
@@ -39,7 +41,9 @@ pub fn failing_to_persist_layout_logs_an_error()
     {
         let mut source = ConfigurationSource::faux();
         source._when_load().then_return(Ok(None));
-        source._when_persist().then_return(Err(ConfigurationPersistError::Path(Utf8PathBuf::new())));
+        source
+            ._when_persist()
+            .then_return(Err(ConfigurationPersistError::Path(Utf8PathBuf::new())));
 
         let _layout = LayoutManagement::from_source_or_default(source, || DockingLayout::new(vec![].into_iter())).unwrap();
     }
@@ -49,18 +53,38 @@ pub fn failing_to_persist_layout_logs_an_error()
     assert_that!(error.starts_with("ERROR"));
 }
 
+struct TestView;
+
+impl View for TestView
+{
+    fn id(&self) -> DockId
+    {
+        todo!()
+    }
+
+    fn title(&self) -> String
+    {
+        todo!()
+    }
+}
+
 #[test]
 pub fn placeholder_view_is_used_when_layout_contains_missing_ids()
 {
-    use egui_dock::TabViewer;
+    let mut dock_views = DockViews::new(Vec::new());
+    let mut state = ();
+    let custom_ui = |_ui: &mut egui::Ui, _view: &mut TestView, _state: &mut ()| panic!();
 
-    let views: Vec<Box<dyn View>> = Vec::new();
-    let mut tab_viewer = passivate_views::docking::dock_views::TabViewer::new(views.into_iter());
+    let mut dock_viewer = DockViewer {
+        dock_views: &mut dock_views,
+        state: &mut state,
+        custom_ui
+    };
 
     let mut dock_id: DockId = "does not exist".into();
 
     let ui = |ui: &mut egui::Ui| {
-        tab_viewer.ui(ui, &mut dock_id);
+        dock_viewer.ui(ui, &mut dock_id);
     };
 
     let mut harness = Harness::new_ui(ui);
@@ -83,10 +107,10 @@ pub fn dock_state_can_be_reconstructed_from_serialized_form()
     let path = dir.join("docking_layout.toml");
 
     {
-        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(test_ids.into_iter())).unwrap();   
+        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(test_ids.into_iter())).unwrap();
     }
 
-    let reloaded = LayoutManagement::from_file_or_default(&path, || panic!()).unwrap();
+    let mut reloaded = LayoutManagement::from_file_or_default(&path, || panic!()).unwrap();
 
     assert_eq!(id_a, **reloaded.get_current().views().first().unwrap());
     assert_eq!(id_b, **reloaded.get_current().views().iter().next_back().unwrap());
