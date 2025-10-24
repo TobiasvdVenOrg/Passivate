@@ -30,7 +30,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
 
     // Views
     let tests_view = PassivateView::TestRun(TestRunView);
-    let details_view = PassivateView::Details(DetailsView::new(change_event_tx.clone(), configuration.clone()));
+    let details_view = PassivateView::Details(DetailsView::new(change_event_tx.clone()));
     let coverage_view = PassivateView::Coverage(CoverageView::new(coverage_rx, configuration.clone()));
     let configuration_view = PassivateView::Configuration(ConfigurationView::new(configuration, change_event_tx));
     let log_view = PassivateView::Log(LogView::new(log_rx));

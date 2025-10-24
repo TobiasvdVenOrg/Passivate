@@ -1,28 +1,23 @@
-use camino::Utf8PathBuf;
 use egui::{Color32, RichText, TextureHandle};
-use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
+use passivate_hyp_model::snapshots::snapshot_handles::SnapshotHandles;
+use passivate_hyp_model::snapshots::SnapshotError;
 use passivate_hyp_model::{change_event::ChangeEvent, single_test::SelectedHyp};
 use passivate_hyp_model::single_test_status::SingleTestStatus;
-use passivate_snapshots::snapshots::{SnapshotError, Snapshots};
-use passivate_snapshots::SnapshotHandles;
 
 pub struct DetailsView
 {
-    change_events: Tx<ChangeEvent>,
-    configuration: ConfigurationManager
+    change_events: Tx<ChangeEvent>
 }
 
 impl DetailsView
 {
     pub fn new(
-        change_events: Tx<ChangeEvent>,
-        configuration: ConfigurationManager
+        change_events: Tx<ChangeEvent>
     ) -> Self
     {
         Self {
-            change_events,
-            configuration
+            change_events
         }
     }
 
@@ -70,13 +65,6 @@ impl DetailsView
                 self.draw_snapshots(ui, snapshot_handles);
             }
         }
-    }
-
-    pub fn get_snapshots(&self) -> Option<Snapshots>
-    {
-        let snapshots_path = self.configuration.get(|c| c.snapshots_path.clone());
-
-        snapshots_path.map(|path| Snapshots::new(Utf8PathBuf::from(path)))
     }
 
     fn draw_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
@@ -136,12 +124,11 @@ impl DetailsView
 #[cfg(test)]
 mod tests
 {
+    use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
-    use passivate_configuration::configuration::PassivateConfiguration;
-    use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
@@ -188,9 +175,7 @@ mod tests
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-
-        let mut details_view = DetailsView::new(Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub());
 
         let mut passivate_state = PassivateState {
             hyp_run: TestRun::default(),
@@ -223,8 +208,7 @@ mod tests
     {
         let (tx, rx) = Tx::new();
 
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-        let mut details_view = DetailsView::new(Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub());
         let mut test_run_view = TestRunView;
 
         let mut state = PassivateState {
@@ -312,10 +296,10 @@ mod tests
         let snapshot_test = example_hyp(hyp, SingleTestStatus::Failed);
 
         let (test_run_tx, test_run_rx) = Tx::new();
-        let configuration = get_configuration_with_example_snapshots_path();
 
-        let mut details_view = DetailsView::new(test_run_tx, configuration);
+        let mut details_view = DetailsView::new(test_run_tx);
         
+        // TODO: Snapshots path to initialize this
         let details = Some(SelectedHyp {
             hyp: snapshot_test,
             snapshot_handles: None
@@ -346,9 +330,7 @@ mod tests
 
     fn show_test(test_name: &str, single_test: SingleTest)
     {
-        let configuration = get_configuration_with_example_snapshots_path();
-
-        let mut details_view = DetailsView::new(Tx::stub(), configuration);
+        let mut details_view = DetailsView::new(Tx::stub());
 
         let details = Some(SelectedHyp {
             hyp: single_test,
@@ -366,15 +348,9 @@ mod tests
         harness.snapshot(test_name);
     }
 
-    fn get_configuration_with_example_snapshots_path() -> ConfigurationManager
+    fn get_example_snapshots_path() -> Utf8PathBuf
     {
-        ConfigurationManager::new(
-            PassivateConfiguration {
-                snapshots_path: Some(test_data_path().join("example_snapshots").to_string()),
-                ..PassivateConfiguration::default()
-            },
-            Tx::stub()
-        )
+        test_data_path().join("example_snapshots")
     }
 
     fn example_hyp(name: &str, status: SingleTestStatus) -> SingleTest

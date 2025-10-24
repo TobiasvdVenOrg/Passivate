@@ -3,8 +3,6 @@ use passivate_hyp_names::hyp_id::HypId;
 
 use crate::snapshots::SnapshotError;
 
-pub mod snapshots;
-
 pub struct SnapshotHandles
 {
     pub current: Option<Result<TextureHandle, SnapshotError>>,

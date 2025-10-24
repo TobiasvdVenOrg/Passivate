@@ -1,7 +1,6 @@
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
-use passivate_snapshots::SnapshotHandles;
 
-use crate::single_test_status::SingleTestStatus;
+use crate::{single_test_status::SingleTestStatus, snapshots::snapshot_handles::SnapshotHandles};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SingleTest

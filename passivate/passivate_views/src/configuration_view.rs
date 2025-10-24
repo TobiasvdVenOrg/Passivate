@@ -24,7 +24,9 @@ impl ConfigurationView
     {
         let mut configuration = self.configuration_manager.get_copy();
 
-        if ui.toggle_value(&mut configuration.coverage_enabled, "Compute Coverage").changed()
+        if ui
+            .toggle_value(&mut configuration.coverage_enabled, "Compute Coverage")
+            .changed()
         {
             _ = self.configuration_manager.update(|c| {
                 c.coverage_enabled = configuration.coverage_enabled;
@@ -56,20 +58,19 @@ impl ConfigurationView
 #[cfg(test)]
 mod tests
 {
-    use camino::Utf8PathBuf;
     use egui::accesskit::Role;
-    use egui_kittest::kittest::{Key, Queryable};
     use egui_kittest::Harness;
-    use galvanic_assert::{has_structure, structure};
-    use galvanic_assert::{assert_that, matchers::eq};
-    use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
-    use passivate_core::{coverage::MockComputeCoverage, test_execution::{TestRunHandler, TestRunner}};
+    use egui_kittest::kittest::{Key, Queryable};
+    use galvanic_assert::assert_that;
+    use galvanic_assert::matchers::eq;
+    use passivate_configuration::configuration::PassivateConfiguration;
+    use passivate_configuration::configuration_manager::ConfigurationManager;
+    use passivate_core::coverage::MockComputeCoverage;
+    use passivate_core::test_execution::{TestRunHandler, TestRunner};
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_names::test_name;
-    use passivate_snapshots::snapshots::Snapshots;
 
-    use crate::details_view::DetailsView;
     use crate::configuration_view::ConfigurationView;
 
     #[test]
@@ -84,10 +85,12 @@ mod tests
 
         let mut harness = Harness::new_ui(ui);
 
-        configuration_manager.update(|c| {
-            c.coverage_enabled = true;
-            c.snapshots_path = Some(String::from("tests/snapshots"));
-        }).unwrap();
+        configuration_manager
+            .update(|c| {
+                c.coverage_enabled = true;
+                c.snapshots_path = Some(String::from("tests/snapshots"));
+            })
+            .unwrap();
 
         harness.run();
         harness.fit_contents();
@@ -120,22 +123,23 @@ mod tests
 
         harness.run();
 
-        assert_that!(&change_events_rx.drain().last().expect("expected change event").clone(), eq(ChangeEvent::DefaultRun));
+        assert_that!(
+            &change_events_rx.drain().last().expect("expected change event").clone(),
+            eq(ChangeEvent::DefaultRun)
+        );
 
         assert!(test_run_handler.coverage_enabled());
     }
 
     #[test]
-    pub fn configure_snapshots_path()
+    pub fn configuring_snapshots_path_starts_test_run()
     {
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
         let (change_events_tx, change_events_rx) = Tx::new();
         let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
-        let mut details_view = DetailsView::new(Tx::stub(), configuration);
 
         let ui = |ui: &mut egui::Ui| {
             configuration_view.ui(ui);
-            details_view.ui(ui, &None);
         };
 
         let mut harness = Harness::new_ui(ui);
@@ -150,15 +154,14 @@ mod tests
 
         drop(harness);
 
-        assert_that!(&change_events_rx.drain().last().expect("expected change event").clone(), eq(ChangeEvent::DefaultRun));
-
         assert_that!(
-            &details_view.get_snapshots(),
-            structure!(Option<Snapshots>::Some [
-                has_structure!(Snapshots {
-                    snapshot_directory: eq(Utf8PathBuf::from("Some/Path/To/Snapshots"))
-                })
-            ])
+            &change_events_rx.drain().last().expect("expected change event").clone(),
+            eq(ChangeEvent::DefaultRun)
+        );
+
+        assert_eq!(
+            configuration.get(|c| c.snapshots_path.clone()).unwrap().as_str(),
+            "Some/Path/To/Snapshots"
         );
     }
 }

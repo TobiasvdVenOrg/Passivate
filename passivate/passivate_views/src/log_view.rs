@@ -2,8 +2,6 @@ use egui::ScrollArea;
 use passivate_delegation::Rx;
 use passivate_log::log_message::LogMessage;
 
-use crate::docking::{docking_layout::DockId, view::View};
-
 pub struct LogView
 {
     receiver: Rx<LogMessage>,
@@ -60,7 +58,6 @@ mod tests
     use passivate_hyp_names::test_name;
     use passivate_log::log_message::LogMessage;
 
-    use crate::docking::view::View;
     use crate::log_view::LogView;
 
     #[test]

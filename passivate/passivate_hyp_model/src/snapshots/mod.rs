@@ -1,3 +1,5 @@
+pub mod snapshot_handles;
+
 use std::fs::File;
 use std::io::Error as IoError;
 
