@@ -3,14 +3,15 @@ use std::thread::{self, JoinHandle};
 use bon::Builder;
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
+use passivate_coverage::compute_coverage::ComputeCoverage;
+use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::coverage::{ComputeCoverage, CoverageStatus};
-use crate::test_execution::TestRunner;
+use crate::test_runner::TestRunner;
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {

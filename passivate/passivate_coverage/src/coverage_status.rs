@@ -1,4 +1,4 @@
-use crate::passivate_grcov::CovdirJson;
+use crate::grcov::covdir_json::CovdirJson;
 
 #[derive(Clone, PartialEq)]
 pub enum CoverageStatus

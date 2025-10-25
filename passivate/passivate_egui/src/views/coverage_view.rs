@@ -1,8 +1,8 @@
 use egui::collapsing_header::CollapsingState;
 use egui::{Color32, RichText};
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::coverage::CoverageStatus;
-use passivate_core::passivate_grcov::CovdirJson;
+use passivate_coverage::coverage_status::CoverageStatus;
+use passivate_coverage::grcov::covdir_json::CovdirJson;
 use passivate_delegation::Rx;
 
 pub struct CoverageView
@@ -104,8 +104,9 @@ mod tests
     use egui_kittest::{kittest::Queryable, Harness};
     use indexmap::IndexMap;
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
-    use passivate_core::{coverage::{CoverageStatus, MockComputeCoverage}, passivate_grcov::CovdirJson, test_execution::{TestRunHandler, TestRunner}};
+    use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_delegation::{Rx, Tx};
+    use passivate_hyp_execution::{test_run_handler::TestRunHandler, test_runner::TestRunner};
     use passivate_hyp_names::test_name;
 
     use crate::coverage_view::CoverageView;

@@ -1,10 +1,9 @@
 use std::io::ErrorKind as IoErrorKind;
 use camino::Utf8PathBuf;
 
+use passivate_cargo::cargo_workspace_errors::CargoWorkspaceError;
 use passivate_delegation::Cancelled;
 use thiserror::Error;
-
-use crate::passivate_cargo::CargoWorkspaceError;
 
 #[derive(Error, Debug)]
 pub enum CoverageError

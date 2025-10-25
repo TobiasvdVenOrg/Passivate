@@ -4,13 +4,16 @@ use std::sync::OnceLock;
 
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
+use passivate_coverage::coverage_status::CoverageStatus;
+use passivate_coverage::grcov::Grcov;
+use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_hyp_execution::change_event_handler::change_event_thread;
+use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
+use passivate_hyp_execution::test_runner::TestRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
-use passivate_hyp_model::passivate_state::PassivateState;
-use crate::coverage::CoverageStatus;
 use crate::passivate_args::PassivateArgs;
-use crate::passivate_grcov::Grcov;
-use crate::test_execution::{TestRunHandler, TestRunner, change_event_thread, test_run_thread};
+use crate::passivate_state::{PassivateState, PersistedPassivateState};
 use passivate_delegation::{Rx, Tx};
 use passivate_hyp_model::test_run::{TestRun, TestRunState};
 use passivate_log::log_message::LogMessage;
@@ -88,8 +91,11 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
     let mut change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;
 
     let state = PassivateState {
-        hyp_run,
-        selected_hyp: None
+        persisted: PersistedPassivateState {
+            hyp_run,
+            selected_hyp: None,
+        },
+        view: PassivateViewState::default(),
     };
 
     main_loop(PassivateCore {

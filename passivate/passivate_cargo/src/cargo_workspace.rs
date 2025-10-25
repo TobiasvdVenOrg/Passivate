@@ -1,7 +1,8 @@
 use std::fs;
 use camino::{Utf8Path, Utf8PathBuf};
+use cargo_metadata::MetadataCommand;
 
-use super::CargoWorkspaceError;
+use crate::cargo_workspace_errors::CargoWorkspaceError;
 
 pub fn projects(workspace: &Utf8Path) -> Result<Vec<Utf8PathBuf>, CargoWorkspaceError>
 {
@@ -31,7 +32,7 @@ pub fn projects(workspace: &Utf8Path) -> Result<Vec<Utf8PathBuf>, CargoWorkspace
         }
     }
 
-    let metadata = cargo_metadata::MetadataCommand::new().manifest_path(toml).no_deps().exec()?;
+    let metadata = MetadataCommand::new().manifest_path(toml).no_deps().exec()?;
 
     let project_names = metadata
         .packages

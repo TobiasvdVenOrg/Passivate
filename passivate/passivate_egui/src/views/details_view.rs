@@ -149,7 +149,6 @@ mod tests
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
-    use passivate_hyp_model::passivate_state::PassivateState;
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
@@ -194,20 +193,18 @@ mod tests
     {
         let mut details_view = DetailsView::new(Tx::stub());
 
-        let mut passivate_state = PassivateState {
-            hyp_run: TestRun::default(),
-            selected_hyp: None
-        };
+        let mut hyp_run = TestRun::default();
+        let mut selected_hyp = None;
 
-        passivate_state.hyp_run
+        hyp_run
             .tests
             .add(example_hyp("tests::example_test", SingleTestStatus::Failed));
 
         let mut test_run_view = TestRunView;
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            test_run_view.ui(ui, &passivate_state.hyp_run, &mut passivate_state.selected_hyp);
-            details_view.ui(ui, &passivate_state.selected_hyp);
+            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
+            details_view.ui(ui, &selected_hyp);
         });
 
         ui.run();
@@ -228,19 +225,17 @@ mod tests
         let mut details_view = DetailsView::new(Tx::stub());
         let mut test_run_view = TestRunView;
 
-        let mut state = PassivateState {
-            hyp_run: TestRun::default(),
-            selected_hyp: None
-        };
+        let mut hyp_run = TestRun::default();
+        let mut selected_hyp = None;
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             if let Ok(event) = rx.try_recv()
             {
-                state.hyp_run.update(event);
+                hyp_run.update(event);
             }
             
-            test_run_view.ui(ui, &state.hyp_run, &mut state.selected_hyp);
-            details_view.ui(ui, &state.selected_hyp);
+            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
+            details_view.ui(ui, &selected_hyp);
         });
 
         tx.send(HypRunEvent::TestFinished(example_hyp(

@@ -1,13 +1,9 @@
 use std::ffi::OsString;
 
 use camino::Utf8PathBuf;
-use galvanic_assert::matchers::collection::*;
-use galvanic_assert::matchers::eq;
-use galvanic_assert::{assert_that, structure};
+use galvanic_assert::{assert_that, matchers::{collection::contains_in_order, eq}, structure};
+use passivate_cargo::{cargo_workspace, cargo_workspace_errors::CargoWorkspaceError};
 use passivate_testing::path_resolution::get_default_workspace_path;
-
-use crate::passivate_cargo::cargo_workspace;
-use crate::passivate_cargo::cargo_workspace_errors::CargoWorkspaceError;
 
 #[test]
 pub fn query_single_project()

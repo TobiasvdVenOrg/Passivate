@@ -3,5 +3,6 @@ pub mod passivate_layout;
 pub mod snapshots;
 pub mod views;
 pub mod passivate_view;
+pub mod passivate_view_state;
 
 pub use views::*;

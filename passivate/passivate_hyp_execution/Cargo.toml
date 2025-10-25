@@ -1,0 +1,31 @@
+[package]
+name = "passivate_hyp_execution"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_delegation = { path = "../passivate_delegation" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
+passivate_configuration = { path = "../passivate_configuration" }
+passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_coverage = { path = "../passivate_coverage" }
+passivate_testing = { path = "../passivate_testing" }
+
+#nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
+#nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
+nextest-runner = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-runner" }
+nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-filtering" }
+
+log.workspace = true
+bon.workspace = true
+thiserror.workspace = true
+camino.workspace = true
+faux.workspace = true
+dunce.workspace = true
+guppy.workspace = true
+itertools.workspace = true
+stdext.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+galvanic-assert.workspace = true

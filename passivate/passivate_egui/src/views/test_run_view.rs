@@ -95,7 +95,7 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, passivate_state::PassivateState, single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
+    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
 
     use crate::test_run_view::TestRunView;
 
@@ -143,13 +143,10 @@ mod tests
     fn run_and_snapshot(hyp_run: TestRun, snapshot_name: &str)
     {
         let mut test_run_view = TestRunView;
-        let mut state = PassivateState {
-                hyp_run,
-                selected_hyp: None
-            };
+        let mut selected_hyp = None;
 
         let ui = move |ui: &mut egui::Ui| {
-            test_run_view.ui(ui, &state.hyp_run, &mut state.selected_hyp);
+            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
         };
 
         let mut harness = Harness::new_ui(ui);

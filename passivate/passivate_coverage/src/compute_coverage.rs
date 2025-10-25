@@ -1,6 +1,6 @@
 use passivate_delegation::Cancellation;
 
-use super::{CoverageError, CoverageStatus};
+use crate::{coverage_errors::CoverageError, coverage_status::CoverageStatus};
 
 #[mockall::automock]
 pub trait ComputeCoverage

@@ -65,9 +65,10 @@ mod tests
     use galvanic_assert::matchers::eq;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_core::coverage::MockComputeCoverage;
-    use passivate_core::test_execution::{TestRunHandler, TestRunner};
+    use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
+    use passivate_hyp_execution::test_run_handler::TestRunHandler;
+    use passivate_hyp_execution::test_runner::TestRunner;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_names::test_name;
 

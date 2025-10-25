@@ -28,8 +28,8 @@ use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
-use super::TestRunError;
-use crate::passivate_nextest::cargo_options;
+use crate::test_run_errors::TestRunError;
+use crate::nextest_cargo_options;
 
 #[faux::create]
 #[derive(Clone)]
@@ -70,7 +70,7 @@ impl TestRunner
     {
         tx.send(HypRunEvent::Start);
 
-        let cargo_options = cargo_options().target_dir(self.target_dir.clone()).call();
+        let cargo_options = nextest_cargo_options::cargo_options().target_dir(self.target_dir.clone()).call();
 
         self.run_hyps_with_options(
             cargo_options,
@@ -381,7 +381,7 @@ impl TestRunner
             }
         }
 
-        let cargo_options = cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
+        let cargo_options = nextest_cargo_options::cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
 
         let result = self.run_hyps_with_options(
             cargo_options,

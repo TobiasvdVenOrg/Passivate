@@ -1,0 +1,17 @@
+[package]
+name = "passivate_cargo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+camino.workspace = true
+thiserror.workspace = true
+cargo_metadata.workspace = true
+dunce.workspace = true
+
+[dev-dependencies]
+passivate_testing = { path = "../passivate_testing" }
+
+stdext.workspace = true
+pretty_assertions.workspace = true
+galvanic-assert.workspace = true

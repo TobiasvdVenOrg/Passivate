@@ -1,0 +1,19 @@
+[package]
+name = "passivate_coverage"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
+passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_hyp_model = { path = "../passivate_hyp_model" }
+passivate_cargo = { path = "../passivate_cargo" }
+
+bon.workspace = true
+camino.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+faux.workspace = true
+mockall.workspace = true
+indexmap.workspace = true
+serde_json.workspace = true

@@ -7,16 +7,13 @@ edition = "2024"
 passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_hyp_model = { path = "../passivate_hyp_model" }
+passivate_hyp_execution = { path = "../passivate_hyp_execution" }
 passivate_configuration = { path = "../passivate_configuration" }
-passivate_testing = { path = "../passivate_testing" }
 passivate_log = { path = "../passivate_log" }
 passivate_notify = { path = "../passivate_notify" }
-
-#nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
-#nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
-
-nextest-runner = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-runner" }
-nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-filtering" }
+passivate_egui = { path = "../passivate_egui" }
+passivate_coverage = { path = "../passivate_coverage" }
+passivate_testing = { path = "../passivate_testing" }
 
 faux.workspace = true
 clap.workspace = true
@@ -28,8 +25,6 @@ duct.workspace = true
 chrono.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-indexmap.workspace = true
-cargo_metadata.workspace = true
 bon.workspace = true
 crossbeam-channel.workspace = true
 dunce.workspace = true

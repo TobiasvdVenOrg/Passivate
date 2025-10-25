@@ -1,14 +1,18 @@
+pub mod covdir_json;
+
 use std::fs;
 use std::io::Error as IoError;
 use camino::{Utf8Path, Utf8PathBuf};
+use passivate_cargo::cargo_workspace;
 use std::process::Command;
 use std::time::Duration;
 
 use passivate_delegation::Cancellation;
 
-use super::CovdirJson;
-use crate::coverage::{ComputeCoverage, CoverageError, CoverageStatus, NoProfrawFilesError, NoProfrawFilesKind};
-use crate::passivate_cargo::cargo_workspace;
+use crate::compute_coverage::ComputeCoverage;
+use crate::coverage_errors::{CoverageError, NoProfrawFilesError, NoProfrawFilesKind};
+use crate::coverage_status::CoverageStatus;
+use crate::grcov::covdir_json::CovdirJson;
 
 #[derive(bon::Builder)]
 pub struct Grcov
