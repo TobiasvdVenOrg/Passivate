@@ -6,3 +6,4 @@ pub mod details_view;
 pub mod docking;
 pub mod passivate_layout;
 pub mod passivate_view;
+pub mod snapshots;

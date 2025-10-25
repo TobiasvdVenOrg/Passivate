@@ -7,7 +7,3 @@ edition = "2024"
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 
 enum-as-inner.workspace = true
-camino.workspace = true
-epaint.workspace = true
-png.workspace = true
-thiserror.workspace = true

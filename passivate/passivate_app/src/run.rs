@@ -1,5 +1,5 @@
 use passivate_core::{passivate_args::PassivateArgs, compose::{compose, PassivateCore}, startup_errors::StartupError};
-use passivate_views::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, test_run_view::TestRunView};
+use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, test_run_view::TestRunView};
 
 use crate::app::App;
 

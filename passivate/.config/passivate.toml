@@ -1,2 +1,2 @@
 coverage_enabled = false
-snapshots_path = 'F:\Projects\Passivate\passivate\passivate_views\tests\snapshots'
+snapshots_path = 'F:\Projects\Passivate\passivate\passivate_egui\tests\snapshots'

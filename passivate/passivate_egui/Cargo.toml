@@ -1,5 +1,5 @@
 [package]
-name = "passivate_views"
+name = "passivate_egui"
 version = "0.1.0"
 edition = "2024"
 
@@ -20,6 +20,9 @@ serde.workspace = true
 serde_json.workspace = true
 indexmap = { workspace = true, features = [ "serde" ] }
 log.workspace = true
+thiserror.workspace = true
+png.workspace = true
+epaint.workspace = true
 
 [dev-dependencies]
 egui_kittest.workspace = true

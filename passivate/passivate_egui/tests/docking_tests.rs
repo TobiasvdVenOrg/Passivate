@@ -11,10 +11,10 @@ use passivate_configuration::configuration_source::ConfigurationSource;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::{clean_directory, test_output_path};
 use passivate_testing::spy_log::SpyLog;
-use passivate_views::docking::dock_views::{DockViewer, DockViews};
-use passivate_views::docking::docking_layout::{DockId, DockingLayout};
-use passivate_views::docking::layout_management::LayoutManagement;
-use passivate_views::docking::view::View;
+use passivate_egui::docking::dock_views::{DockViewer, DockViews};
+use passivate_egui::docking::docking_layout::{DockId, DockingLayout};
+use passivate_egui::docking::layout_management::LayoutManagement;
+use passivate_egui::docking::view::View;
 
 #[test]
 pub fn loading_a_default_layout_will_succeed_when_no_file_exists_and_later_create_the_file()

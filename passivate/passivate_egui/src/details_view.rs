@@ -1,13 +1,17 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
-use passivate_hyp_model::snapshots::snapshot_handles::SnapshotHandles;
-use passivate_hyp_model::snapshots::SnapshotError;
-use passivate_hyp_model::{change_event::ChangeEvent, single_test::SelectedHyp};
+use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_names::hyp_id::HypId;
+
+use crate::snapshots::snapshot_handles::SnapshotHandles;
+use crate::snapshots::SnapshotError;
 
 pub struct DetailsView
 {
-    change_events: Tx<ChangeEvent>
+    change_events: Tx<ChangeEvent>,
+    snapshot_handles: Option<SnapshotHandles>
 }
 
 impl DetailsView
@@ -17,15 +21,16 @@ impl DetailsView
     ) -> Self
     {
         Self {
-            change_events
+            change_events,
+            snapshot_handles: None
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: &Option<SelectedHyp>)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: &Option<SingleTest>, load_snapshots: impl FnOnce(&HypId) -> SnapshotHandles)
     {
         if let Some(details) = &details
         {
-            let color = match details.hyp.status
+            let color = match details.status
             {
                 SingleTestStatus::Passed => Color32::GREEN,
                 SingleTestStatus::Failed => Color32::RED,
@@ -33,13 +38,13 @@ impl DetailsView
             };
 
             ui.horizontal(|ui| {
-                let text = RichText::new(&details.hyp.name).size(16.0).color(color);
+                let text = RichText::new(&details.name).size(16.0).color(color);
                 ui.heading(text);
 
                 if ui.button("Pin").clicked()
                 {
                     self.change_events.send(ChangeEvent::PinHyp {
-                        id: details.hyp.id.clone()
+                        id: details.id.clone()
                     });
                 }
 
@@ -49,25 +54,37 @@ impl DetailsView
                 }
             });
 
-            if !details.hyp.output.is_empty()
+            if !details.output.is_empty()
             {
                 ui.add_space(16.0);
 
-                for output in &details.hyp.output
+                for output in &details.output
                 {
                     let output_line = RichText::new(output).size(12.0).color(color);
                     ui.label(output_line);
                 }
             }
 
-            if let Some(snapshot_handles) = &details.snapshot_handles
+            let mut reload_snapshots = true;
+
+            if let Some(snapshot_handles) = &self.snapshot_handles
             {
-                self.draw_snapshots(ui, snapshot_handles);
+                reload_snapshots = snapshot_handles.hyp_id != details.id;
+
+                if !reload_snapshots
+                {
+                    self.draw_snapshots(ui, snapshot_handles);
+                }
+            }
+
+            if reload_snapshots
+            {
+                self.snapshot_handles = Some(load_snapshots(&details.id));
             }
         }
     }
 
-    fn draw_snapshots(&mut self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
+    fn draw_snapshots(&self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
     {
         if let Some(current) = &snapshot_handles.current
         {
@@ -133,7 +150,7 @@ mod tests
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::passivate_state::PassivateState;
-    use passivate_hyp_model::single_test::{SelectedHyp, SingleTest};
+    use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
     use passivate_hyp_names::hyp_id::HypId;
@@ -301,8 +318,7 @@ mod tests
         
         // TODO: Snapshots path to initialize this
         let details = Some(SelectedHyp {
-            hyp: snapshot_test,
-            snapshot_handles: None
+            hyp: snapshot_test
         });
 
         let ui = |ui: &mut egui::Ui| {

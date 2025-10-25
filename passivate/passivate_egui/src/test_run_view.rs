@@ -1,11 +1,11 @@
 use egui::{Color32, RichText};
-use passivate_hyp_model::{single_test::{SelectHyp, SingleTest}, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
 
 pub struct TestRunView;
 
 impl TestRunView
 {
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun, mut select_hyp: impl SelectHyp)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun, selected_hyp: &mut Option<SingleTest>)
     {
         // TODO: Some system that handles the updating of a TestRun needs to look at which test is selected and pass that to DetailsView, instead of a channel from this view
 
@@ -51,7 +51,7 @@ impl TestRunView
         {
             if let Some(new_selection) = self.show_test(ui, test)
             {
-                select_hyp.select(new_selection);
+                *selected_hyp = Some(new_selection);
             }
         }
     }
