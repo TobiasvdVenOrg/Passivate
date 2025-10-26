@@ -3,23 +3,11 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_names::hyp_id::HypId;
 
+use crate::passivate_view_state::HypDetails;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 use crate::snapshots::SnapshotError;
-
-pub struct HypDetails
-{
-    hyp: SingleTest,
-    snapshot_handles: Option<SnapshotHandles>
-}
-
-impl HypDetails
-{
-    pub fn new(hyp: SingleTest, snapshot_handles: Option<SnapshotHandles>) -> Self
-    {
-        Self { hyp, snapshot_handles }
-    }
-}
 
 pub struct DetailsView
 {
@@ -151,17 +139,14 @@ mod tests
     use galvanic_assert::*;
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
-    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
-    use passivate_hyp_model::test_run::TestRun;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
     use crate::details_view::{DetailsView, HypDetails};
-    use crate::test_run_view::TestRunView;
 
     #[test]
     pub fn show_a_passing_test()
@@ -189,52 +174,6 @@ mod tests
         );
 
         show_test(&test_name!(), failing_test);
-    }
-
-    #[test]
-    pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
-    {
-        let (tx, rx) = Tx::new();
-
-        let mut details_view = DetailsView::new(Tx::stub());
-        let mut test_run_view = TestRunView;
-
-        let mut hyp_run = TestRun::default();
-
-        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            if let Ok(event) = rx.try_recv()
-            {
-                hyp_run.update(event);
-            }
-            
-            if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
-            {
-                let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
-                let hyp_details = HypDetails::new(selected_hyp.clone(), None);
-                details_view.ui(ui, Some(&hyp_details));
-            }
-        });
-
-        tx.send(HypRunEvent::TestFinished(example_hyp(
-            "tests::example_test",
-            SingleTestStatus::Failed
-        )));
-
-        ui.run();
-
-        let test_entry = ui.get_by_label("example_test");
-        test_entry.click();
-
-        ui.run();
-
-        tx.send(HypRunEvent::TestFinished(example_hyp(
-            "tests::example_test",
-            SingleTestStatus::Passed
-        )));
-
-        ui.run();
-        ui.fit_contents();
-        ui.snapshot(&test_name!());
     }
 
     #[test]

@@ -1,7 +1,6 @@
 use std::thread::{self, JoinHandle};
 
 use bon::Builder;
-use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;

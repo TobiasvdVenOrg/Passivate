@@ -25,6 +25,7 @@ dunce.workspace = true
 camino.workspace = true
 eframe.workspace = true
 log.workspace = true
+itertools.workspace = true
 
 [dev-dependencies]
 mockall.workspace = true

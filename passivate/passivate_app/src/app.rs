@@ -11,7 +11,7 @@ pub struct App<'a>
 {
     layout: LayoutManagement,
     dock_views: DockViews<PassivateView>,
-    state: &'a mut AppState<'a>
+    state: &'a mut AppState
 }
 
 impl<'a> App<'a>
@@ -19,7 +19,7 @@ impl<'a> App<'a>
     pub fn new(
         layout: LayoutManagement,
         dock_views: DockViews<PassivateView>,
-        state: &'a mut AppState<'a>
+        state: &'a mut AppState
     ) -> Self
     {
         Self {

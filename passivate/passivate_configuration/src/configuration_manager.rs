@@ -107,7 +107,8 @@ mod tests
     use galvanic_assert::matchers::eq;
     use itertools::Itertools;
     use passivate_delegation::Tx;
-    use passivate_testing::path_resolution::{copy_from_data_to_output, test_output_path};
+    use passivate_hyp_names::test_name;
+    use passivate_testing::path_resolution::{clean_directory, copy_from_data_to_output, test_output_path};
     use passivate_testing::spy_log::SpyLog;
 
     use crate::configuration::PassivateConfiguration;
@@ -134,7 +135,11 @@ mod tests
     #[test]
     pub fn when_configuration_is_persisted_for_the_first_time_a_file_is_created() -> Result<(), Box<dyn Error>>
     {
-        let file = test_output_path().join("example_configurations/new_configuration.toml");
+        let dir = test_output_path().join(test_name!());
+
+        clean_directory(&dir);
+        
+        let file = dir.join("new_configuration.toml");
 
         let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
 

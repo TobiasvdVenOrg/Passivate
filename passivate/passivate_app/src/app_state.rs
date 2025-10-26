@@ -1,21 +1,20 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
-use passivate_egui::details_view::HypDetails;
 use passivate_egui::passivate_view::PassivateView;
-use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_egui::passivate_view_state::{HypDetails, PassivateViewState};
 use passivate_egui::snapshots::Snapshots;
 use passivate_egui::snapshots::snapshot_handles::SnapshotHandles;
 
-pub struct AppState<'a>
+pub struct AppState
 {
-    pub state: &'a mut PassivateState,
+    pub state: PassivateState,
     pub view_state: PassivateViewState,
     pub configuration: ConfigurationManager
 }
 
-impl<'a> AppState<'a>
+impl AppState
 {
-    pub fn new(state: &'a mut PassivateState, view_state: PassivateViewState, configuration: ConfigurationManager) -> Self
+    pub fn new(state: PassivateState, view_state: PassivateViewState, configuration: ConfigurationManager) -> Self
     {
         Self {
             state,
@@ -24,9 +23,10 @@ impl<'a> AppState<'a>
         }
     }
 
-    pub fn update(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut AppState<'_>)
+    pub fn update(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut AppState)
     {
         state.state.update();
+        state.view_state.update(&state.state);
 
         match view
         {
@@ -62,6 +62,8 @@ pub mod tests
     use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
+    use galvanic_assert::{assert_that, is_variant};
+    use itertools::Itertools;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::{PassivateState, PersistedPassivateState};
@@ -69,6 +71,7 @@ pub mod tests
     use passivate_egui::passivate_view::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_egui::{DetailsView, TestRunView};
+    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_test::SingleTest;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
@@ -81,23 +84,7 @@ pub mod tests
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let mut hyp_run = TestRun::default();
-        let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        let example_hyp = SingleTest::new(hyp_id, SingleTestStatus::Failed, vec![]);
-        hyp_run.tests.add(example_hyp);
-        let hyp_run_state = PersistedPassivateState {
-            hyp_run,
-            selected_hyp: None
-        };
-
-        let mut passivate_state = PassivateState::with_persisted_state(hyp_run_state, Rx::stub());
-        let view_state = PassivateViewState::default();
-        let configuration = ConfigurationManager::new(PassivateConfiguration {
-            snapshot_directories: vec![get_example_snapshots_path()],
-            ..PassivateConfiguration::default()
-        }, Tx::stub());
-
-        let mut app_state = AppState::new(&mut passivate_state, view_state, configuration);
+        let mut app_state = example_app_state(Rx::stub());
 
         {
             let mut test_run_view = PassivateView::TestRun(TestRunView);
@@ -123,8 +110,73 @@ pub mod tests
         details_ui.snapshot(&test_name!());
     }
 
+    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState {
+        let mut hyp_run = TestRun::default();
+        let example_hyp = example_hyp();
+        hyp_run.tests.add(example_hyp);
+        let hyp_run_state = PersistedPassivateState {
+            hyp_run,
+            selected_hyp: None
+        };
+        
+        let passivate_state = PassivateState::with_persisted_state(hyp_run_state, hyp_run_rx);
+        let view_state = PassivateViewState::default();
+        let configuration = ConfigurationManager::new(PassivateConfiguration {
+            snapshot_directories: vec![get_example_snapshots_path()],
+            ..PassivateConfiguration::default()
+        }, Tx::stub());
+        
+        AppState::new(passivate_state, view_state, configuration)
+    }
+    
+    #[test]
+    pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
+    {
+        let (hyp_run_tx, hyp_run_rx) = Tx::new();
+
+        let mut app_state = example_app_state(hyp_run_rx);
+
+        {
+            let mut test_run_view = PassivateView::TestRun(TestRunView);
+            let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                AppState::update(ui, &mut test_run_view, &mut app_state);
+            });
+            
+            test_run_ui.run();
+            let test_entry = test_run_ui.get_by_label("example_test");
+            test_entry.click();
+            test_run_ui.run();
+        }
+
+        {
+            let mut details_view = PassivateView::Details(DetailsView::new(Tx::stub()));
+            let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                AppState::update(ui, &mut details_view, &mut app_state);
+            });
+
+            details_ui.run();
+
+            let mut example_hyp = example_hyp();
+            example_hyp.status = SingleTestStatus::Passed;
+            hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
+
+            details_ui.run();
+            details_ui.fit_contents();
+            details_ui.snapshot(&test_name!());
+        }
+        
+        let hyp = app_state.state.persisted.hyp_run.tests.iter().exactly_one().unwrap();
+        assert_that!(&hyp.status, is_variant!(SingleTestStatus::Passed));
+    }
+
     fn get_example_snapshots_path() -> Utf8PathBuf
     {
         test_data_path().join("example_snapshots")
+    }
+
+    fn example_hyp() -> SingleTest 
+    {
+        let hyp_id = HypId::new("example_crate", "example_test").unwrap();
+        SingleTest::new(hyp_id, SingleTestStatus::Failed, vec![])
     }
 }

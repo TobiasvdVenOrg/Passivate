@@ -1,4 +1,5 @@
 use core::slice;
+use std::slice::{Iter, IterMut};
 
 use itertools::Itertools;
 use passivate_hyp_names::hyp_id::HypId;
@@ -51,6 +52,16 @@ impl TestCollection
     pub fn is_empty(&self) -> bool
     {
         self.tests.is_empty()
+    }
+
+    pub fn iter(&self) -> Iter<'_, SingleTest>
+    {
+        self.tests.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, SingleTest>
+    {
+        self.tests.iter_mut()
     }
 }
 
