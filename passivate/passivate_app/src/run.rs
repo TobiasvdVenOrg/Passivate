@@ -1,19 +1,11 @@
-use passivate_core::{passivate_args::PassivateArgs, compose::{compose, PassivateCore}, startup_errors::StartupError};
+use passivate_core::{compose::PassivateCore, startup_errors::StartupError};
 use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, passivate_view_state::PassivateViewState, test_run_view::TestRunView};
 
-use crate::app::App;
+use crate::{app::App, app_state::AppState};
 
-// Called by main
 pub fn run_app(passivate: PassivateCore) -> Result<(), StartupError>
 {
     run_app_and_get_context(passivate, |_| {})
-}
-
-// Called by passivate_tests
-pub fn run_with_args(args: PassivateArgs, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
-{
-    let passivate = compose(args)?;
-    run_app_and_get_context(passivate, context_accessor)
 }
 
 pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
@@ -24,7 +16,6 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
         change_event_tx,
         configuration,
         log_rx,
-        hyp_run_rx,
         coverage_rx,
     .. } = passivate;
 
@@ -56,6 +47,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
     };
 
     let view_state = PassivateViewState::default();
+    let mut app_state = AppState::new(&mut state, view_state, configuration);
 
     eframe::run_native(
         "Passivate",
@@ -66,10 +58,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
             Ok(Box::new(App::new(
                 layout,
                 dock_views,
-                &mut state,
-                view_state,
-                hyp_run_rx,
-                configuration
+                &mut app_state
             )))
         })
     )

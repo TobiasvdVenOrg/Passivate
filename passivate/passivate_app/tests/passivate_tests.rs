@@ -24,16 +24,16 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     use std::time::Duration;
 
     use camino::Utf8PathBuf;
-    use passivate::run::run_with_args;
-    use passivate_core::passivate_args::PassivateArgs;
+    use passivate::run::run_app_and_get_context;
+    use passivate_core::{compose::compose, passivate_args::PassivateArgs};
     use tokio::{task, time};
 
-    let passivate_args = PassivateArgs::builder()
+    let args = PassivateArgs::builder()
         .manifest_directory(Utf8PathBuf::from("..\\..\\test_data\\simple_project"))
         .build();
 
-    run_with_args(
-        passivate_args,
+    let passivate = compose(args)?;
+    run_app_and_get_context(passivate, 
         Box::new(move |context: egui::Context| {
             task::spawn(async move {
                 // Asynchronously send a close window command to passivate after some delay

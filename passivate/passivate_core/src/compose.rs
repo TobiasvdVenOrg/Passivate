@@ -11,11 +11,9 @@ use passivate_hyp_execution::change_event_handler::change_event_thread;
 use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
 use passivate_hyp_execution::test_runner::TestRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
-use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use crate::passivate_args::PassivateArgs;
-use crate::passivate_state::{PassivateState, PersistedPassivateState};
+use crate::passivate_state::PassivateState;
 use passivate_delegation::{Rx, Tx};
-use passivate_hyp_model::test_run::{TestRun, TestRunState};
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
@@ -31,7 +29,6 @@ pub struct PassivateCore
     pub change_event_tx: Tx<ChangeEvent>,
     pub configuration: ConfigurationManager,
     pub log_rx: Rx<LogMessage>,
-    pub hyp_run_rx: Rx<HypRunEvent>,
     pub coverage_rx: Rx<CoverageStatus>,
     change_events: NotifyChangeEvents,
     change_event_thread: JoinHandle<()>,
@@ -70,7 +67,6 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
 
-    let hyp_run = TestRun::from_state(TestRunState::FirstRun);
     let test_runner = TestRunner::new(
         target,
         workspace_path.clone(),
@@ -103,12 +99,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     // Notify
     let change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;
 
-    let state = PassivateState {
-        persisted: PersistedPassivateState {
-            hyp_run,
-            selected_hyp: None,
-        }
-    };
+    let state = PassivateState::new(hyp_run_rx);
 
     Ok(PassivateCore {
         state,
@@ -116,7 +107,6 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
         change_event_tx,
         configuration,
         log_rx,
-        hyp_run_rx,
         coverage_rx,
         change_events,
         change_event_thread,
