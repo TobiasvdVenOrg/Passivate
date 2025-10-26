@@ -13,6 +13,11 @@ pub fn load(
 {
     LayoutManagement::from_file_or_default(path, ||
     {
-        DockingLayout::new(views.iter().map(|view| view.id()))
+        default(views)
     })
+}
+
+pub fn default(views: &[PassivateView]) -> DockingLayout
+{
+    DockingLayout::new(views.iter().map(|view| view.id()))
 }

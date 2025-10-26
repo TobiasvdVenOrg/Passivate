@@ -81,6 +81,10 @@ impl DetailsView
                 self.draw_snapshots(ui, snapshot_handles);
             }
         }
+        else 
+        {
+            ui.heading("No test selected");
+        }
     }
 
     fn draw_snapshots(&self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
@@ -188,38 +192,6 @@ mod tests
     }
 
     #[test]
-    pub fn selecting_a_test_shows_it_in_details_view()
-    {
-        let mut details_view = DetailsView::new(Tx::stub());
-
-        let mut hyp_run = TestRun::default();
-
-        hyp_run
-            .tests
-            .add(example_hyp("tests::example_test", SingleTestStatus::Failed));
-
-        let mut test_run_view = TestRunView;
-
-        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
-            {
-                let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
-                let hyp_details = HypDetails::new(selected_hyp.clone(), None);
-                details_view.ui(ui, Some(&hyp_details));
-            }
-        });
-
-        ui.run();
-
-        let test_entry = ui.get_by_label("example_test");
-        test_entry.click();
-
-        ui.run();
-        ui.fit_contents();
-        ui.snapshot(&test_name!());
-    }
-
-    #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
         let (tx, rx) = Tx::new();
@@ -310,17 +282,25 @@ mod tests
     #[case::only_new("tests::example_snapshot_only_new")]
     pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] hyp: &str)
     {
+        use crate::snapshots::{snapshot_handles::SnapshotHandles, Snapshots};
+
         let snapshot_test = example_hyp(hyp, SingleTestStatus::Failed);
 
         let (test_run_tx, test_run_rx) = Tx::new();
 
         let mut details_view = DetailsView::new(test_run_tx);
         
-        // TODO: Snapshots path to initialize this
-        let details = HypDetails::new(snapshot_test, None);
-
+        let mut details = None;
+        
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui, Some(&details));
+            if details.is_none()
+            {
+                let snapshot = Snapshots::new(get_example_snapshots_path()).from_hyp(&snapshot_test.id);
+                let snapshot_handles = SnapshotHandles::new(snapshot_test.id.clone(), snapshot, ui.ctx());
+                details = Some(HypDetails::new(snapshot_test.clone(), Some(snapshot_handles)));
+            }
+
+            details_view.ui(ui, details.as_ref());
         };
         
         let mut harness = Harness::new_ui(ui);

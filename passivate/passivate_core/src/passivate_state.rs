@@ -18,6 +18,14 @@ impl PassivateState
         }
     }
 
+    pub fn with_persisted_state(persisted: PersistedPassivateState, hyp_run_rx: Rx<HypRunEvent>) -> Self
+    {
+        Self {
+            persisted,
+            hyp_run_rx
+        }
+    }
+
     pub fn update(&mut self)
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
