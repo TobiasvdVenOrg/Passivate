@@ -77,21 +77,25 @@ impl TestRun
             }
             HypRunEvent::StartSingle { hyp, clear_tests } =>
             {
-                if let Some(mut hyp) = self.tests.find(&hyp)
+                if let Some(hyp) =
+                {
+                    if clear_tests
+                    {
+                        self.tests.clear_except(&hyp)
+                    }
+                    else 
+                    {
+                        self.tests.find_mut(&hyp)
+                    }
+                }
                 {
                     self.state = TestRunState::Running;
                     hyp.status = SingleTestStatus::Unknown;
                     hyp.output.clear();
 
-                    if clear_tests
-                    {
-                        self.tests.clear();
-                        self.tests.add_or_update(hyp);
-                    }
-
                     return true;
                 }
-
+                
                 false
             }
             HypRunEvent::TestFinished(test) =>
@@ -125,10 +129,9 @@ impl TestRun
             HypRunEvent::ErrorOutput { hyp, message } =>
             {
                 if !message.is_empty()
-                    && let Some(mut updated_test) = self.tests.find(&hyp)
+                    && let Some(updated_test) = self.tests.find_mut(&hyp)
                 {
                     updated_test.output.push(message);
-                    self.tests.add_or_update(updated_test);
                     return true;
                 }
 

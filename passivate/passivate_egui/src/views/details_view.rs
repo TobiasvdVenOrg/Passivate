@@ -3,15 +3,27 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
-use passivate_hyp_names::hyp_id::HypId;
 
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 use crate::snapshots::SnapshotError;
 
+pub struct HypDetails<'a>
+{
+    hyp: &'a SingleTest,
+    snapshot_handles: Option<SnapshotHandles>
+}
+
+impl<'a> HypDetails<'a>
+{
+    pub fn new(hyp: &'a SingleTest, snapshot_handles: Option<SnapshotHandles>) -> Self
+    {
+        Self { hyp, snapshot_handles }
+    }
+}
+
 pub struct DetailsView
 {
-    change_events: Tx<ChangeEvent>,
-    snapshot_handles: Option<SnapshotHandles>
+    change_events: Tx<ChangeEvent>
 }
 
 impl DetailsView
@@ -21,16 +33,15 @@ impl DetailsView
     ) -> Self
     {
         Self {
-            change_events,
-            snapshot_handles: None
+            change_events
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: &Option<SingleTest>, load_snapshots: impl FnOnce(&HypId) -> SnapshotHandles)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: Option<&HypDetails>)
     {
         if let Some(details) = &details
         {
-            let color = match details.status
+            let color = match details.hyp.status
             {
                 SingleTestStatus::Passed => Color32::GREEN,
                 SingleTestStatus::Failed => Color32::RED,
@@ -38,13 +49,13 @@ impl DetailsView
             };
 
             ui.horizontal(|ui| {
-                let text = RichText::new(&details.name).size(16.0).color(color);
+                let text = RichText::new(&details.hyp.name).size(16.0).color(color);
                 ui.heading(text);
 
                 if ui.button("Pin").clicked()
                 {
                     self.change_events.send(ChangeEvent::PinHyp {
-                        id: details.id.clone()
+                        id: details.hyp.id.clone()
                     });
                 }
 
@@ -54,32 +65,20 @@ impl DetailsView
                 }
             });
 
-            if !details.output.is_empty()
+            if !details.hyp.output.is_empty()
             {
                 ui.add_space(16.0);
 
-                for output in &details.output
+                for output in &details.hyp.output
                 {
                     let output_line = RichText::new(output).size(12.0).color(color);
                     ui.label(output_line);
                 }
             }
 
-            let mut reload_snapshots = true;
-
-            if let Some(snapshot_handles) = &self.snapshot_handles
+            if let Some(snapshot_handles) = &details.snapshot_handles
             {
-                reload_snapshots = snapshot_handles.hyp_id != details.id;
-
-                if !reload_snapshots
-                {
-                    self.draw_snapshots(ui, snapshot_handles);
-                }
-            }
-
-            if reload_snapshots
-            {
-                self.snapshot_handles = Some(load_snapshots(&details.id));
+                self.draw_snapshots(ui, snapshot_handles);
             }
         }
     }
@@ -157,7 +156,7 @@ mod tests
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
-    use crate::details_view::DetailsView;
+    use crate::details_view::{DetailsView, HypDetails};
     use crate::test_run_view::TestRunView;
 
     #[test]
@@ -194,7 +193,6 @@ mod tests
         let mut details_view = DetailsView::new(Tx::stub());
 
         let mut hyp_run = TestRun::default();
-        let mut selected_hyp = None;
 
         hyp_run
             .tests
@@ -203,8 +201,12 @@ mod tests
         let mut test_run_view = TestRunView;
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
-            details_view.ui(ui, &selected_hyp);
+            if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
+            {
+                let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
+                let hyp_details = HypDetails::new(selected_hyp, None);
+                details_view.ui(ui, Some(&hyp_details));
+            }
         });
 
         ui.run();
@@ -226,7 +228,6 @@ mod tests
         let mut test_run_view = TestRunView;
 
         let mut hyp_run = TestRun::default();
-        let mut selected_hyp = None;
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             if let Ok(event) = rx.try_recv()
@@ -234,8 +235,12 @@ mod tests
                 hyp_run.update(event);
             }
             
-            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
-            details_view.ui(ui, &selected_hyp);
+            if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
+            {
+                let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
+                let hyp_details = HypDetails::new(selected_hyp, None);
+                details_view.ui(ui, Some(&hyp_details));
+            }
         });
 
         tx.send(HypRunEvent::TestFinished(example_hyp(
@@ -312,12 +317,10 @@ mod tests
         let mut details_view = DetailsView::new(test_run_tx);
         
         // TODO: Snapshots path to initialize this
-        let details = Some(SelectedHyp {
-            hyp: snapshot_test
-        });
+        let details = HypDetails::new(&snapshot_test, None);
 
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui, &details);
+            details_view.ui(ui, Some(&details));
         };
         
         let mut harness = Harness::new_ui(ui);
@@ -343,13 +346,11 @@ mod tests
     {
         let mut details_view = DetailsView::new(Tx::stub());
 
-        let details = Some(SelectedHyp {
-            hyp: single_test,
-            snapshot_handles: None
-        });
+        // TODO: Snapshots path to initialize this
+        let details = HypDetails::new(&single_test, None);
 
         let ui = |ui: &mut egui::Ui| {
-            details_view.ui(ui, &details);
+            details_view.ui(ui, Some(&details));
         };
 
         let mut harness = Harness::new_ui(ui);

@@ -102,6 +102,7 @@ mod tests
     use std::fs;
     use std::sync::Arc;
 
+    use camino::Utf8PathBuf;
     use galvanic_assert::assert_that;
     use galvanic_assert::matchers::eq;
     use itertools::Itertools;
@@ -137,7 +138,7 @@ mod tests
 
         let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
 
-        manager.update(|c| c.snapshots_path = Some("first/change".to_owned())).unwrap();
+        manager.update(|c| c.snapshots_path = Some(Utf8PathBuf::from("first/change"))).unwrap();
 
         assert!(fs::exists(file)?);
         Ok(())
@@ -170,11 +171,11 @@ mod tests
         let configuration = PassivateConfiguration::default();
         let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
-        manager.update(|c| c.snapshots_path = Some(String::from("Example/path"))).unwrap();
+        manager.update(|c| c.snapshots_path = Some(Utf8PathBuf::from("Example/path"))).unwrap();
 
         let snapshots_path = manager.get(|c| c.snapshots_path.clone());
 
-        assert_eq!(Some("Example/path"), snapshots_path.as_deref());
+        assert_eq!(Some(Utf8PathBuf::from("Example/path")), snapshots_path);
     }
 
     #[test]

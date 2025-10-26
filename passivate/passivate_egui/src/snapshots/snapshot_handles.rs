@@ -13,7 +13,7 @@ pub struct SnapshotHandles
 
 impl SnapshotHandles
 {
-    pub fn new(hyp_id: HypId, snapshot: Snapshot, egui_context: egui::Context) -> Self
+    pub fn new(hyp_id: HypId, snapshot: Snapshot, egui_context: &egui::Context) -> Self
     {
         let mut are_identical = false;
 

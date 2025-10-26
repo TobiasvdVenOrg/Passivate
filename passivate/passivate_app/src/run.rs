@@ -1,5 +1,5 @@
 use passivate_core::{passivate_args::PassivateArgs, compose::{compose, PassivateCore}, startup_errors::StartupError};
-use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, test_run_view::TestRunView};
+use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, passivate_view_state::PassivateViewState, test_run_view::TestRunView};
 
 use crate::app::App;
 
@@ -32,7 +32,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
     let tests_view = PassivateView::TestRun(TestRunView);
     let details_view = PassivateView::Details(DetailsView::new(change_event_tx.clone()));
     let coverage_view = PassivateView::Coverage(CoverageView::new(coverage_rx, configuration.clone()));
-    let configuration_view = PassivateView::Configuration(ConfigurationView::new(configuration, change_event_tx));
+    let configuration_view = PassivateView::Configuration(ConfigurationView::new(configuration.clone(), change_event_tx));
     let log_view = PassivateView::Log(LogView::new(log_rx));
 
     let views = [tests_view, details_view, coverage_view, configuration_view, log_view];
@@ -55,6 +55,8 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
         ..Default::default()
     };
 
+    let view_state = PassivateViewState::default();
+
     eframe::run_native(
         "Passivate",
         eframe_options,
@@ -65,7 +67,9 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
                 layout,
                 dock_views,
                 &mut state,
-                hyp_run_rx
+                view_state,
+                hyp_run_rx,
+                configuration
             )))
         })
     )

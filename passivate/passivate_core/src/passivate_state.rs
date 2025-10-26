@@ -1,14 +1,13 @@
-use passivate_egui::passivate_view_state::PassivateViewState;
-use passivate_hyp_model::{single_test::SingleTest, test_run::TestRun};
+use passivate_hyp_model::test_run::TestRun;
+use passivate_hyp_names::hyp_id::HypId;
 
 pub struct PassivateState
 {
-    pub persisted: PersistedPassivateState,
-    pub view: PassivateViewState
+    pub persisted: PersistedPassivateState
 }
 
 pub struct PersistedPassivateState
 {
     pub hyp_run: TestRun,
-    pub selected_hyp: Option<SingleTest>
+    pub selected_hyp: Option<HypId>
 }

@@ -11,7 +11,6 @@ passivate_hyp_execution = { path = "../passivate_hyp_execution" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_log = { path = "../passivate_log" }
 passivate_notify = { path = "../passivate_notify" }
-passivate_egui = { path = "../passivate_egui" }
 passivate_coverage = { path = "../passivate_coverage" }
 passivate_testing = { path = "../passivate_testing" }
 

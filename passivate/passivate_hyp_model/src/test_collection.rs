@@ -1,5 +1,6 @@
 use core::slice;
 
+use itertools::Itertools;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::single_test::SingleTest;
@@ -26,14 +27,25 @@ impl TestCollection
         };
     }
 
-    pub fn find(&self, id: &HypId) -> Option<SingleTest>
+    pub fn find(&self, id: &HypId) -> Option<&SingleTest>
     {
-        self.tests.iter().find(|t| t.id == *id).cloned()
+        self.tests.iter().find(|t| t.id == *id)
+    }
+
+    pub fn find_mut(&mut self, id: &HypId) -> Option<&mut SingleTest>
+    {
+        self.tests.iter_mut().find(|t| t.id == *id)
     }
 
     pub fn clear(&mut self)
     {
         self.tests.clear();
+    }
+
+    pub fn clear_except(&mut self, id: &HypId) -> Option<&mut SingleTest>
+    {
+        self.tests.retain(|h| h.id == *id);
+        self.tests.iter_mut().exactly_one().map_or(None, |h| Some(h))
     }
 
     pub fn is_empty(&self) -> bool

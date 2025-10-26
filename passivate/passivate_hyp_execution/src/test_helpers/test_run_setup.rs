@@ -86,7 +86,7 @@ impl TestRunSetup
         let configuration = ConfigurationManager::new(
             PassivateConfiguration {
                 coverage_enabled: self.coverage_enabled,
-                snapshots_path: Some(self.get_snapshots_path().to_string())
+                snapshots_path: Some(self.get_snapshots_path())
             },
             Tx::stub()
         );

@@ -1,8 +1,14 @@
+use camino::Utf8PathBuf;
 use eframe::Frame;
 use egui::Context;
 use egui_dock::{DockArea, Style};
+use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_delegation::Rx;
+use passivate_egui::details_view::HypDetails;
+use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_egui::snapshots::snapshot_handles::SnapshotHandles;
+use passivate_egui::snapshots::Snapshots;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_egui::docking::dock_views::{DockViewer, DockViews};
 use passivate_egui::docking::layout_management::LayoutManagement;
@@ -13,7 +19,9 @@ pub struct App<'a>
     layout: LayoutManagement,
     dock_views: DockViews<PassivateView>,
     state: &'a mut PassivateState,
-    hyp_run_rx: Rx<HypRunEvent>
+    view_state: PassivateViewState<'a>,
+    hyp_run_rx: Rx<HypRunEvent>,
+    configuration: ConfigurationManager
 }
 
 impl<'a> App<'a>
@@ -22,14 +30,18 @@ impl<'a> App<'a>
         layout: LayoutManagement,
         dock_views: DockViews<PassivateView>,
         state: &'a mut PassivateState,
-        hyp_run_rx: Rx<HypRunEvent>
+        view_state: PassivateViewState<'a>,
+        hyp_run_rx: Rx<HypRunEvent>,
+        configuration: ConfigurationManager
     ) -> Self
     {
         Self {
             layout,
             dock_views,
             state,
-            hyp_run_rx
+            view_state,
+            hyp_run_rx,
+            configuration
         }
     }
 
@@ -41,15 +53,30 @@ impl<'a> App<'a>
         }
     }
 
-    fn custom_ui(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut PassivateState)
+    fn custom_ui(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut App<'_>)
     {
         match view
         {
             PassivateView::Configuration(configuration_view) => configuration_view.ui(ui),
             PassivateView::Coverage(coverage_view) => coverage_view.ui(ui),
-            PassivateView::Details(details_view) => details_view.ui(ui, &state.persisted.selected_hyp, Self::load_snapshots),
+            PassivateView::Details(details_view) => details_view.ui(ui, state.view_state.hyp_details.as_ref()),
             PassivateView::Log(log_view) => log_view.ui(ui),
-            PassivateView::TestRun(test_run_view) => test_run_view.ui(ui, &state.persisted.hyp_run, &mut state.persisted.selected_hyp)
+            PassivateView::TestRun(test_run_view) => 
+            {
+                if let Some(selected_id) = test_run_view.ui(ui, &state.state.persisted.hyp_run)
+                {
+                    if let Some(snapshots_path) = state.configuration.get(|c| c.snapshots_path.clone())
+                    {
+                        state.state.persisted.selected_hyp = Some(selected_id.clone());
+
+
+                        let hyp = state.state.persisted.hyp_run.tests.find(&selected_id).expect("huh?");
+                        let snapshot = Snapshots::new(snapshots_path).from_hyp(&selected_id);
+                        let snapshot_handles = SnapshotHandles::new(selected_id.clone(), snapshot, ui.ctx());
+                        state.view_state.hyp_details = Some(HypDetails::new(hyp, Some(snapshot_handles)));
+                    }
+                }
+            }
         }
     }
 }
@@ -64,7 +91,7 @@ impl eframe::App for App<'_>
 
         let mut dock_viewer = DockViewer {
             dock_views: &mut self.dock_views,
-            state: self.state,
+            state: self,
             custom_ui: Self::custom_ui
         };
 

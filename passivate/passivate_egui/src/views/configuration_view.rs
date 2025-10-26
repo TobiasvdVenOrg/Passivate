@@ -1,3 +1,4 @@
+use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
@@ -37,7 +38,7 @@ impl ConfigurationView
 
         if let Some(configured_snapshots_path) = &configuration.snapshots_path
         {
-            self.snapshots_path_field.clone_from(configured_snapshots_path);
+            self.snapshots_path_field.clone_from(&configured_snapshots_path.to_string());
         }
 
         ui.horizontal(|ui| {
@@ -46,7 +47,7 @@ impl ConfigurationView
             if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
             {
                 _ = self.configuration_manager.update(|c| {
-                    c.snapshots_path = Some(self.snapshots_path_field.clone());
+                    c.snapshots_path = Some(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
                 });
 
                 self.change_event_tx.send(ChangeEvent::DefaultRun);
@@ -58,6 +59,7 @@ impl ConfigurationView
 #[cfg(test)]
 mod tests
 {
+    use camino::Utf8PathBuf;
     use egui::accesskit::Role;
     use egui_kittest::Harness;
     use egui_kittest::kittest::{Key, Queryable};
@@ -89,7 +91,7 @@ mod tests
         configuration_manager
             .update(|c| {
                 c.coverage_enabled = true;
-                c.snapshots_path = Some(String::from("tests/snapshots"));
+                c.snapshots_path = Some(Utf8PathBuf::from("tests/snapshots"));
             })
             .unwrap();
 

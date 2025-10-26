@@ -237,7 +237,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
-        &failed_test.output.into_iter().skip(2).collect::<Vec<_>>(),
+        &failed_test.output.clone().into_iter().skip(2).collect::<Vec<_>>(),
         contains_in_order(vec![
             "assertion `left == right` failed".to_string(),
             "  left: 5".to_string(),
@@ -273,7 +273,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
-        &failed_test.output.into_iter().skip(2).collect::<Vec<_>>(),
+        &failed_test.output.clone().into_iter().skip(2).collect::<Vec<_>>(),
         contains_in_order(vec![
             "assertion `left == right` failed".to_string(),
             "  left: 5".to_string(),

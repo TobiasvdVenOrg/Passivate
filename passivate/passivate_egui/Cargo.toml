@@ -12,6 +12,7 @@ passivate_configuration = { path = "../passivate_configuration" }
 passivate_testing = { path = "../passivate_testing" }
 passivate_log = { path = "../passivate_log" }
 passivate_coverage = { path = "../passivate_coverage" }
+passivate_core = { path = "../passivate_core" }
 
 camino.workspace = true
 chrono.workspace = true

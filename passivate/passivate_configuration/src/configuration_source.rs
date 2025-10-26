@@ -81,6 +81,7 @@ where
 #[cfg(test)]
 mod tests
 {
+    use camino::Utf8PathBuf;
     use galvanic_assert::matchers::eq;
     use galvanic_assert::{assert_that, has_structure, structure};
     use passivate_testing::path_resolution::test_data_path;
@@ -99,7 +100,7 @@ mod tests
             &configuration,
             has_structure!(PassivateConfiguration {
                 coverage_enabled: eq(false),
-                snapshots_path: eq(Some("a/path/to/snapshots".to_string()))
+                snapshots_path: eq(Some(Utf8PathBuf::from("a/path/to/snapshots")))
             })
         );
     }

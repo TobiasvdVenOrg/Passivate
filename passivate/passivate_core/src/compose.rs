@@ -6,7 +6,6 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
-use passivate_egui::passivate_view_state::PassivateViewState;
 use passivate_hyp_execution::change_event_handler::change_event_thread;
 use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
 use passivate_hyp_execution::test_runner::TestRunner;
@@ -94,8 +93,7 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
         persisted: PersistedPassivateState {
             hyp_run,
             selected_hyp: None,
-        },
-        view: PassivateViewState::default(),
+        }
     };
 
     main_loop(PassivateCore {

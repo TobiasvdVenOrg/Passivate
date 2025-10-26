@@ -1,14 +1,13 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_names::hyp_id::HypId;
 
 pub struct TestRunView;
 
 impl TestRunView
 {
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun, selected_hyp: &mut Option<SingleTest>)
+    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun) -> Option<HypId>
     {
-        // TODO: Some system that handles the updating of a TestRun needs to look at which test is selected and pass that to DetailsView, instead of a channel from this view
-
         match &test_run.state
         {
             TestRunState::FirstRun =>
@@ -47,13 +46,17 @@ impl TestRunView
             }
         }
 
+        let mut selected_hyp = None;
+
         for test in &test_run.tests
         {
             if let Some(new_selection) = self.show_test(ui, test)
             {
-                *selected_hyp = Some(new_selection);
+                selected_hyp = Some(new_selection.id)
             }
         }
+
+        selected_hyp
     }
 
     fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest>
@@ -143,10 +146,9 @@ mod tests
     fn run_and_snapshot(hyp_run: TestRun, snapshot_name: &str)
     {
         let mut test_run_view = TestRunView;
-        let mut selected_hyp = None;
 
         let ui = move |ui: &mut egui::Ui| {
-            test_run_view.ui(ui, &hyp_run, &mut selected_hyp);
+            _ = test_run_view.ui(ui, &hyp_run);
         };
 
         let mut harness = Harness::new_ui(ui);

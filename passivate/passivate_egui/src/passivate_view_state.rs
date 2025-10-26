@@ -1,7 +1,17 @@
-use crate::snapshots::snapshot_handles::SnapshotHandles;
+use passivate_core::passivate_state::PassivateState;
+
+use crate::details_view::HypDetails;
 
 #[derive(Default)]
-pub struct PassivateViewState
+pub struct PassivateViewState<'a>
 {
-    snapshot_handles: Option<SnapshotHandles>
+    pub hyp_details: Option<HypDetails<'a>>
+}
+
+impl PassivateViewState<'_>
+{
+    pub fn update(old: &PassivateState, new: &PassivateState)
+    {
+
+    }
 }
