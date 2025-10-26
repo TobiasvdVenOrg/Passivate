@@ -5,5 +5,6 @@ use passivate::run::run_app;
 fn main() -> Result<(), StartupError>
 {
     let args = PassivateArgs::parse();
-    compose(args, run_app)
+    let passivate = compose(args)?;
+    run_app(passivate)
 }

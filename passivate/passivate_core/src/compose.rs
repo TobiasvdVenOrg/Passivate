@@ -1,6 +1,7 @@
 use std::env;
 use std::ffi::OsString;
 use std::sync::OnceLock;
+use std::thread::JoinHandle;
 
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
@@ -31,10 +32,23 @@ pub struct PassivateCore
     pub configuration: ConfigurationManager,
     pub log_rx: Rx<LogMessage>,
     pub hyp_run_rx: Rx<HypRunEvent>,
-    pub coverage_rx: Rx<CoverageStatus>
+    pub coverage_rx: Rx<CoverageStatus>,
+    change_events: NotifyChangeEvents,
+    change_event_thread: JoinHandle<()>,
+    test_run_thread: JoinHandle<TestRunHandler>
 }
 
-pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Result<(), StartupError>) -> Result<(), StartupError>
+impl PassivateCore
+{
+    pub fn stop(mut self)
+    {
+        _ = self.change_events.stop();
+        _ = self.change_event_thread.join();
+        _ = self.test_run_thread.join();
+    }
+}
+
+pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
 {
     let log_rx = initialize_logger()?;
 
@@ -87,7 +101,7 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
     change_event_tx.send(ChangeEvent::DefaultRun);
 
     // Notify
-    let mut change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;
+    let change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;
 
     let state = PassivateState {
         persisted: PersistedPassivateState {
@@ -96,22 +110,18 @@ pub fn compose(args: PassivateArgs, main_loop: impl FnOnce(PassivateCore) -> Res
         }
     };
 
-    main_loop(PassivateCore {
+    Ok(PassivateCore {
         state,
         passivate_path,
         change_event_tx,
         configuration,
         log_rx,
         hyp_run_rx,
-        coverage_rx
-    })?;
-
-    let _ = change_events.stop();
-    drop(change_events);
-    let _ = change_event_thread.join();
-    let _ = test_run_thread.join();
-
-    Ok(())
+        coverage_rx,
+        change_events,
+        change_event_thread,
+        test_run_thread
+    })
 }
 
 fn initialize_logger() -> Result<Rx<LogMessage>, StartupError>

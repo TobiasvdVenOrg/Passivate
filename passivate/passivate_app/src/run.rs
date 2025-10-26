@@ -12,9 +12,8 @@ pub fn run_app(passivate: PassivateCore) -> Result<(), StartupError>
 // Called by passivate_tests
 pub fn run_with_args(args: PassivateArgs, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
 {
-    compose(args, |passivate| {
-        run_app_and_get_context(passivate, context_accessor)
-    })
+    let passivate = compose(args)?;
+    run_app_and_get_context(passivate, context_accessor)
 }
 
 pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
@@ -26,7 +25,8 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
         configuration,
         log_rx,
         hyp_run_rx,
-        coverage_rx } = passivate;
+        coverage_rx,
+    .. } = passivate;
 
     // Views
     let tests_view = PassivateView::TestRun(TestRunView);
