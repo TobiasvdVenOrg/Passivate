@@ -295,7 +295,7 @@ mod tests
         let ui = |ui: &mut egui::Ui| {
             if details.is_none()
             {
-                let snapshot = Snapshots::new(get_example_snapshots_path()).from_hyp(&snapshot_test.id);
+                let snapshot = Snapshots::new(vec![get_example_snapshots_path()]).from_hyp(&snapshot_test.id);
                 let snapshot_handles = SnapshotHandles::new(snapshot_test.id.clone(), snapshot, ui.ctx());
                 details = Some(HypDetails::new(snapshot_test.clone(), Some(snapshot_handles)));
             }

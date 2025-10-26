@@ -36,23 +36,25 @@ impl ConfigurationView
             self.change_event_tx.send(ChangeEvent::DefaultRun);
         }
 
-        if let Some(configured_snapshots_path) = &configuration.snapshots_path
+        ui.label("Snapshot Directories");
+
+        for snapshot_directory in &configuration.snapshot_directories
         {
-            self.snapshots_path_field.clone_from(&configured_snapshots_path.to_string());
+            ui.horizontal(|ui| {
+                ui.add_space(10.0);
+                ui.label(snapshot_directory.as_str());
+            });
         }
 
-        ui.horizontal(|ui| {
-            ui.label("Snapshots Path:");
+        if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
+        {
+            _ = self.configuration_manager.update(|c| {
+                c.snapshot_directories.push(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
+            });
 
-            if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
-            {
-                _ = self.configuration_manager.update(|c| {
-                    c.snapshots_path = Some(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
-                });
-
-                self.change_event_tx.send(ChangeEvent::DefaultRun);
-            }
-        });
+            self.snapshots_path_field = String::new();
+            self.change_event_tx.send(ChangeEvent::DefaultRun);
+        }
     }
 }
 
@@ -65,6 +67,7 @@ mod tests
     use egui_kittest::kittest::{Key, Queryable};
     use galvanic_assert::assert_that;
     use galvanic_assert::matchers::eq;
+    use itertools::Itertools;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::compute_coverage::MockComputeCoverage;
@@ -91,7 +94,7 @@ mod tests
         configuration_manager
             .update(|c| {
                 c.coverage_enabled = true;
-                c.snapshots_path = Some(Utf8PathBuf::from("tests/snapshots"));
+                c.snapshot_directories.push(Utf8PathBuf::from("tests/snapshots"));
             })
             .unwrap();
 
@@ -163,7 +166,7 @@ mod tests
         );
 
         assert_eq!(
-            configuration.get(|c| c.snapshots_path.clone()).unwrap().as_str(),
+            configuration.get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone()).as_str(),
             "Some/Path/To/Snapshots"
         );
     }

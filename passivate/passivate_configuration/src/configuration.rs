@@ -5,5 +5,5 @@ use serde::{Serialize, Deserialize};
 pub struct PassivateConfiguration
 {
     pub coverage_enabled: bool,
-    pub snapshots_path: Option<Utf8PathBuf>
+    pub snapshot_directories: Vec<Utf8PathBuf>
 }

@@ -1,2 +1,2 @@
 coverage_enabled = false
-snapshots_path = "a/path/to/snapshots"
+snapshot_directories = [ "a/path/to/snapshots", "a/different/path/to/snapshots" ]

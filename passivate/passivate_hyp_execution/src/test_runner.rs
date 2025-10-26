@@ -64,8 +64,7 @@ impl TestRunner
         instrument_coverage: bool,
         cancellation: Cancellation,
         tx: &mut Tx<HypRunEvent>,
-        filter: Vec<String>,
-        snapshots_path: Option<Utf8PathBuf>
+        filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
         tx.send(HypRunEvent::Start);
@@ -77,8 +76,7 @@ impl TestRunner
             instrument_coverage,
             cancellation,
             tx,
-            filter,
-            snapshots_path
+            filter
         )
     }
 
@@ -88,19 +86,13 @@ impl TestRunner
         instrument_coverage: bool,
         cancellation: Cancellation,
         tx: &mut Tx<HypRunEvent>,
-        filter: Vec<String>,
-        snapshots_path: Option<Utf8PathBuf>
+        filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
 
         unsafe {
-            if let Some(snapshots_path) = snapshots_path
-            {
-                std::env::set_var("PASSIVATE_SNAPSHOT_DIR", snapshots_path);
-            }
-
             if instrument_coverage
             {
                 std::env::set_var("RUSTFLAGS", "-C instrument-coverage");
@@ -111,7 +103,6 @@ impl TestRunner
         let result = self.run_hyps_internal(options, cancellation, tx, filter);
 
         unsafe {
-            std::env::remove_var("PASSIVATE_SNAPSHOT_DIR");
             std::env::remove_var("RUSTFLAGS");
             std::env::remove_var("LLVM_PROFILE_FILE");
         }
@@ -358,8 +349,7 @@ impl TestRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypRunEvent>,
-        snapshots_path: Option<Utf8PathBuf>
+        tx: &mut Tx<HypRunEvent>
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
@@ -388,8 +378,7 @@ impl TestRunner
             instrument_coverage,
             cancellation,
             tx,
-            filter,
-            snapshots_path
+            filter
         );
 
         unsafe {

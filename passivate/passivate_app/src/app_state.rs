@@ -37,16 +37,20 @@ impl<'a> AppState<'a>
             PassivateView::TestRun(test_run_view) => 
             {
                 if let Some(selected_id) = test_run_view.ui(ui, &state.state.persisted.hyp_run)
-                    && let Some(snapshots_path) = state.configuration.get(|c| c.snapshots_path.clone())
+                {
+                    let snapshot_directories = state.configuration.get(|c| c.snapshot_directories.clone());
+
+                    if !snapshot_directories.is_empty()
                     {
                         state.state.persisted.selected_hyp = Some(selected_id.clone());
 
                         let hyp = state.state.persisted.hyp_run.tests.find(&selected_id).expect("huh?");
-                        let snapshot = Snapshots::new(snapshots_path).from_hyp(&selected_id);
+                        let snapshot = Snapshots::new(snapshot_directories).from_hyp(&selected_id);
                         let snapshot_handles = SnapshotHandles::new(selected_id.clone(), snapshot, ui.ctx());
 
                         state.view_state.hyp_details = Some(HypDetails::new(hyp.clone(), Some(snapshot_handles)));
                     }
+                }
             }
         }
     }
@@ -89,7 +93,7 @@ pub mod tests
         let mut passivate_state = PassivateState::with_persisted_state(hyp_run_state, Rx::stub());
         let view_state = PassivateViewState::default();
         let configuration = ConfigurationManager::new(PassivateConfiguration {
-            snapshots_path: Some(get_example_snapshots_path()),
+            snapshot_directories: vec![get_example_snapshots_path()],
             ..PassivateConfiguration::default()
         }, Tx::stub());
 

@@ -18,7 +18,7 @@ pub struct Snapshot
 #[derive(Clone, Debug)]
 pub struct Snapshots
 {
-    pub snapshot_directory: Utf8PathBuf
+    pub snapshot_directories: Vec<Utf8PathBuf>
 }
 
 #[derive(Error, Debug)]
@@ -53,9 +53,9 @@ pub enum SnapshotError
 
 impl Snapshots
 {
-    pub fn new(snapshot_directory: Utf8PathBuf) -> Self
+    pub fn new(snapshot_directories: Vec<Utf8PathBuf>) -> Self
     {
-        Self { snapshot_directory }
+        Self { snapshot_directories }
     }
 
     pub fn from_hyp(&self, hyp_id: &HypId) -> Snapshot
@@ -69,17 +69,20 @@ impl Snapshots
 
     pub fn from_file(&self, file_path: Utf8PathBuf) -> Option<Result<ColorImage, SnapshotError>>
     {
-        let path = self.snapshot_directory.join(&file_path);
-
-        if let Some(open_result) = Self::open_file(&path)
+        for directory in &self.snapshot_directories
         {
-            return match open_result
-            {
-                Ok(file) => Some(Self::decode_image(file, file_path)),
-                Err(error) => Some(Err(error))
-            };
-        }
+            let path = directory.join(&file_path);
 
+            if let Some(open_result) = Self::open_file(&path)
+            {
+                return match open_result
+                {
+                    Ok(file) => Some(Self::decode_image(file, file_path)),
+                    Err(error) => Some(Err(error))
+                };
+            }
+        }
+        
         None
     }
 

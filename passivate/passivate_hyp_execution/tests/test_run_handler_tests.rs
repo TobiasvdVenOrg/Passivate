@@ -153,11 +153,18 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
-        .override_snapshot_path(TestSnapshotPath::relative_to_output("snapshots"))
+        .override_snapshot_directories(vec!(TestSnapshotPath::relative_to_output("snapshots")))
         .build()
         .clean_snapshots();
 
-    let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
+    let snapshots_dir = setup.get_snapshot_directories().into_iter().exactly_one().unwrap();
+
+    // The sample project uses this envvar to determine where to output snapshots
+    // The purpose is so that multiple tests can re-use the same sample project
+    // but have separate snapshot directories that don't interfere with each other
+    unsafe { std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir); }
+
+    let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let mut handler = setup.build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
@@ -183,12 +190,19 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
-        .override_snapshot_path(TestSnapshotPath::relative_to_output("snapshots"))
+        .override_snapshot_directories(vec![TestSnapshotPath::relative_to_output("snapshots")])
         .build()
         .clean_snapshots();
 
-    let expected_approved_snapshot = setup.get_snapshots_path().join("example_snapshot.png");
-    let expected_unapproved_snapshot = setup.get_snapshots_path().join("different_example_snapshot.new.png");
+    let snapshots_dir = setup.get_snapshot_directories().into_iter().exactly_one().unwrap();
+
+    // The sample project uses this envvar to determine where to output snapshots
+    // The purpose is so that multiple tests can re-use the same sample project
+    // but have separate snapshot directories that don't interfere with each other
+    unsafe { std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir); }
+
+    let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
+    let expected_unapproved_snapshot = snapshots_dir.join("different_example_snapshot.new.png");
 
     let mut handler = setup.build_test_run_handler();
 

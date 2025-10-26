@@ -22,7 +22,7 @@ pub struct TestRunSetup
     hyp_run_tx: Tx<HypRunEvent>,
     coverage_sender: Tx<CoverageStatus>,
     coverage_enabled: bool,
-    override_snapshot_path: TestSnapshotPath
+    override_snapshot_directories: Vec<TestSnapshotPath>
 }
 
 #[bon]
@@ -37,7 +37,7 @@ impl TestRunSetup
         #[builder(default = false)] coverage_enabled: bool,
         #[builder(default = Tx::stub())] hyp_run_tx: Tx<HypRunEvent>,
         #[builder(default = Tx::stub())] coverage_sender: Tx<CoverageStatus>,
-        #[builder(default = TestSnapshotPath::default())] override_snapshot_path: TestSnapshotPath
+        #[builder(default = Vec::new())] override_snapshot_directories: Vec<TestSnapshotPath>
     ) -> Self
     {
         Self {
@@ -48,7 +48,7 @@ impl TestRunSetup
             coverage_enabled,
             hyp_run_tx,
             coverage_sender,
-            override_snapshot_path
+            override_snapshot_directories
         }
     }
 
@@ -86,7 +86,7 @@ impl TestRunSetup
         let configuration = ConfigurationManager::new(
             PassivateConfiguration {
                 coverage_enabled: self.coverage_enabled,
-                snapshots_path: Some(self.get_snapshots_path())
+                snapshot_directories: self.get_snapshot_directories()
             },
             Tx::stub()
         );
@@ -110,13 +110,16 @@ impl TestRunSetup
 
     pub fn clean_snapshots(self) -> Self
     {
-        let snapshots_path = self.get_snapshots_path();
+        let snapshot_directories = self.get_snapshot_directories();
 
-        if fs::exists(&snapshots_path).expect("Failed to check if output_path exists!")
+        for snapshots_path in snapshot_directories
         {
-            eprintln!("Cleaning snapshots_path: {:?}", snapshots_path);
+            if fs::exists(&snapshots_path).expect("Failed to check if output_path exists!")
+            {
+                eprintln!("Cleaning snapshots_path: {:?}", snapshots_path);
 
-            fs::remove_dir_all(&snapshots_path).expect("Failed to clear output path!")
+                fs::remove_dir_all(&snapshots_path).expect("Failed to clear output path!")
+            }
         }
 
         self
@@ -147,13 +150,15 @@ impl TestRunSetup
         self.get_output_path().join("debug")
     }
 
-    pub fn get_snapshots_path(&self) -> Utf8PathBuf
+    pub fn get_snapshot_directories(&self) -> Vec<Utf8PathBuf>
     {
-        match &self.override_snapshot_path
-        {
-            TestSnapshotPath { kind: TestSnapshotPathKind::Normal, path } => path.clone(),
-            TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToOutput, path } => self.get_output_path().join(path),
-            TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToWorkspace, path }=> self.get_workspace_path().join(path),
-        }
+        self.override_snapshot_directories.iter().map(|p| {
+            match &p
+            {
+                TestSnapshotPath { kind: TestSnapshotPathKind::Normal, path } => path.clone(),
+                TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToOutput, path } => self.get_output_path().join(path),
+                TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToWorkspace, path }=> self.get_workspace_path().join(path),
+            }
+        }).collect()
     }
 }

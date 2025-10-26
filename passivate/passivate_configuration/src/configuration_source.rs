@@ -82,6 +82,7 @@ where
 mod tests
 {
     use camino::Utf8PathBuf;
+    use galvanic_assert::matchers::collection::contains_in_order;
     use galvanic_assert::matchers::eq;
     use galvanic_assert::{assert_that, has_structure, structure};
     use passivate_testing::path_resolution::test_data_path;
@@ -100,7 +101,9 @@ mod tests
             &configuration,
             has_structure!(PassivateConfiguration {
                 coverage_enabled: eq(false),
-                snapshots_path: eq(Some(Utf8PathBuf::from("a/path/to/snapshots")))
+                snapshot_directories: contains_in_order(vec![
+                    Utf8PathBuf::from("a/path/to/snapshots"),
+                    Utf8PathBuf::from("a/different/path/to/snapshots")])
             })
         );
     }

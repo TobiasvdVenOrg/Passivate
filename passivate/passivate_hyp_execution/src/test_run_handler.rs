@@ -83,14 +83,11 @@ impl TestRunHandler
             return;
         }
 
-        let snapshot_path = self.get_snapshots_path();
-
         let test_output = self.runner.run_hyps(
             coverage_enabled,
             cancellation.clone(),
             &mut self.hyp_run_tx,
-            Vec::new(),
-            snapshot_path
+            Vec::new()
         );
 
         if cancellation.is_cancelled()
@@ -122,25 +119,6 @@ impl TestRunHandler
         };
     }
 
-    fn get_snapshots_path(&self) -> Option<Utf8PathBuf>
-    {
-        self.configuration
-            .get(|c| c.snapshots_path.clone())
-            .map(Utf8PathBuf::try_from)
-            .map_or_else(
-                || None,
-                |path| {
-                    path.map_or_else(
-                        |_| {
-                            log::error!("snapshot path was not a valid UTF8 path");
-                            None
-                        },
-                        Some
-                    )
-                }
-            )
-    }
-
     fn compute_coverage(&mut self, cancellation: Cancellation)
     {
         self.coverage_status_sender.send(CoverageStatus::Running);
@@ -162,10 +140,9 @@ impl TestRunHandler
 
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let snapshot_path = self.get_snapshots_path();
         let result = self
             .runner
-            .run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx, snapshot_path);
+            .run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx);
 
         if let Err(error) = result
         {

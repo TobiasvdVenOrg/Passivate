@@ -138,7 +138,7 @@ mod tests
 
         let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
 
-        manager.update(|c| c.snapshots_path = Some(Utf8PathBuf::from("first/change"))).unwrap();
+        manager.update(|c| c.snapshot_directories.push(Utf8PathBuf::from("first/change"))).unwrap();
 
         assert!(fs::exists(file)?);
         Ok(())
@@ -171,11 +171,11 @@ mod tests
         let configuration = PassivateConfiguration::default();
         let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
-        manager.update(|c| c.snapshots_path = Some(Utf8PathBuf::from("Example/path"))).unwrap();
+        manager.update(|c| c.snapshot_directories.push(Utf8PathBuf::from("Example/path"))).unwrap();
 
-        let snapshots_path = manager.get(|c| c.snapshots_path.clone());
+        let snapshots_path = manager.get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone());
 
-        assert_eq!(Some(Utf8PathBuf::from("Example/path")), snapshots_path);
+        assert_eq!(Utf8PathBuf::from("Example/path"), snapshots_path);
     }
 
     #[test]
