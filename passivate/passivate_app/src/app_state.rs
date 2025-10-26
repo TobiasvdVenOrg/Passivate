@@ -36,15 +36,15 @@ impl AppState
             PassivateView::Log(log_view) => log_view.ui(ui),
             PassivateView::TestRun(test_run_view) => 
             {
-                if let Some(selected_id) = test_run_view.ui(ui, &state.state.persisted.hyp_run)
+                if let Some(selected_id) = test_run_view.ui(ui, &state.state.hyp_run)
                 {
                     let snapshot_directories = state.configuration.get(|c| c.snapshot_directories.clone());
 
                     if !snapshot_directories.is_empty()
                     {
-                        state.state.persisted.selected_hyp = Some(selected_id.clone());
+                        state.state.selected_hyp = Some(selected_id.clone());
 
-                        let hyp = state.state.persisted.hyp_run.tests.find(&selected_id).expect("huh?");
+                        let hyp = state.state.hyp_run.tests.find(&selected_id).expect("huh?");
                         let snapshot = Snapshots::new(snapshot_directories).from_hyp(&selected_id);
                         let snapshot_handles = SnapshotHandles::new(selected_id.clone(), snapshot, ui.ctx());
 
@@ -66,7 +66,7 @@ pub mod tests
     use itertools::Itertools;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_core::passivate_state::{PassivateState, PersistedPassivateState};
+    use passivate_core::passivate_state::PassivateState;
     use passivate_delegation::{Rx, Tx};
     use passivate_egui::passivate_view::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
@@ -114,12 +114,8 @@ pub mod tests
         let mut hyp_run = TestRun::default();
         let example_hyp = example_hyp();
         hyp_run.tests.add(example_hyp);
-        let hyp_run_state = PersistedPassivateState {
-            hyp_run,
-            selected_hyp: None
-        };
         
-        let passivate_state = PassivateState::with_persisted_state(hyp_run_state, hyp_run_rx);
+        let passivate_state = PassivateState::with_initial_run_state(hyp_run, hyp_run_rx);
         let view_state = PassivateViewState::default();
         let configuration = ConfigurationManager::new(PassivateConfiguration {
             snapshot_directories: vec![get_example_snapshots_path()],
@@ -165,7 +161,7 @@ pub mod tests
             details_ui.snapshot(&test_name!());
         }
         
-        let hyp = app_state.state.persisted.hyp_run.tests.iter().exactly_one().unwrap();
+        let hyp = app_state.state.hyp_run.tests.iter().exactly_one().unwrap();
         assert_that!(&hyp.status, is_variant!(SingleTestStatus::Passed));
     }
 

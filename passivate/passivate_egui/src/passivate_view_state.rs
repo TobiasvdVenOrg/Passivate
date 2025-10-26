@@ -14,7 +14,7 @@ impl PassivateViewState
     pub fn update(&mut self, state: &PassivateState)
     {
         if let Some(details) = &mut self.hyp_details
-            && let Some(hyp) = state.persisted.hyp_run.tests.find(&details.hyp.id)
+            && let Some(hyp) = state.hyp_run.tests.find(&details.hyp.id)
             {
                 details.hyp = hyp.clone();
             }
