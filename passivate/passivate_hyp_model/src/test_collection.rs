@@ -45,7 +45,7 @@ impl TestCollection
     pub fn clear_except(&mut self, id: &HypId) -> Option<&mut SingleTest>
     {
         self.tests.retain(|h| h.id == *id);
-        self.tests.iter_mut().exactly_one().map_or(None, |h| Some(h))
+        self.tests.iter_mut().exactly_one().ok()
     }
 
     pub fn is_empty(&self) -> bool
