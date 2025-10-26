@@ -144,7 +144,7 @@ mod tests
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
-    use crate::details_view::{DetailsView, HypDetails};
+    use crate::{details_view::{DetailsView, HypDetails}, snapshots::{snapshot_handles::SnapshotHandles, Snapshots}};
 
     #[test]
     pub fn show_a_passing_test()
@@ -263,10 +263,11 @@ mod tests
     {
         let mut details_view = DetailsView::new(Tx::stub());
 
-        // TODO: Snapshots path to initialize this
-        let details = HypDetails::new(single_test, None);
-
         let ui = |ui: &mut egui::Ui| {
+            let snapshot = Snapshots::new(vec![get_example_snapshots_path()]).from_hyp(&single_test.id);
+            let snapshot_handles = SnapshotHandles::new(single_test.id.clone(), snapshot, ui.ctx());
+            let details = HypDetails::new(single_test.clone(), Some(snapshot_handles));
+
             details_view.ui(ui, Some(&details));
         };
 
