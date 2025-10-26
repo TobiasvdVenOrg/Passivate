@@ -1,9 +1,7 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
-use passivate_hyp_model::single_test::SingleTest;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
-use passivate_hyp_names::hyp_id::HypId;
 
 use crate::passivate_view_state::HypDetails;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
