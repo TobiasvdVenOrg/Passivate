@@ -64,7 +64,7 @@ impl View for PlaceholderView
 pub struct DockViewer<'a, TView, TState, TCustomUi>
     where 
         TView : View,
-        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &mut TState)
+        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &'a mut TState)
 {
     pub dock_views: &'a mut DockViews<TView>,
     pub state: &'a mut TState,

@@ -1,4 +1,3 @@
-use camino::Utf8PathBuf;
 use eframe::Frame;
 use egui::Context;
 use egui_dock::{DockArea, Style};
@@ -14,14 +13,19 @@ use passivate_egui::docking::dock_views::{DockViewer, DockViews};
 use passivate_egui::docking::layout_management::LayoutManagement;
 use passivate_egui::passivate_view::PassivateView;
 
+pub struct AppState<'a>
+{
+    state: &'a mut PassivateState,
+    view_state: PassivateViewState,
+    configuration: ConfigurationManager
+}
+
 pub struct App<'a>
 {
     layout: LayoutManagement,
     dock_views: DockViews<PassivateView>,
-    state: &'a mut PassivateState,
-    view_state: PassivateViewState<'a>,
-    hyp_run_rx: Rx<HypRunEvent>,
-    configuration: ConfigurationManager
+    state: AppState<'a>,
+    hyp_run_rx: Rx<HypRunEvent>
 }
 
 impl<'a> App<'a>
@@ -30,7 +34,7 @@ impl<'a> App<'a>
         layout: LayoutManagement,
         dock_views: DockViews<PassivateView>,
         state: &'a mut PassivateState,
-        view_state: PassivateViewState<'a>,
+        view_state: PassivateViewState,
         hyp_run_rx: Rx<HypRunEvent>,
         configuration: ConfigurationManager
     ) -> Self
@@ -38,10 +42,12 @@ impl<'a> App<'a>
         Self {
             layout,
             dock_views,
-            state,
-            view_state,
-            hyp_run_rx,
-            configuration
+            state: AppState {
+                state,
+                view_state,
+                configuration
+            },
+            hyp_run_rx
         }
     }
 
@@ -49,11 +55,11 @@ impl<'a> App<'a>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
-            self.state.persisted.hyp_run.update(hyp_run_event);
+            self.state.state.persisted.hyp_run.update(hyp_run_event);
         }
     }
 
-    fn custom_ui(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut App<'_>)
+    fn custom_ui(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut AppState<'_>)
     {
         match view
         {
@@ -64,18 +70,16 @@ impl<'a> App<'a>
             PassivateView::TestRun(test_run_view) => 
             {
                 if let Some(selected_id) = test_run_view.ui(ui, &state.state.persisted.hyp_run)
-                {
-                    if let Some(snapshots_path) = state.configuration.get(|c| c.snapshots_path.clone())
+                    && let Some(snapshots_path) = state.configuration.get(|c| c.snapshots_path.clone())
                     {
                         state.state.persisted.selected_hyp = Some(selected_id.clone());
-
 
                         let hyp = state.state.persisted.hyp_run.tests.find(&selected_id).expect("huh?");
                         let snapshot = Snapshots::new(snapshots_path).from_hyp(&selected_id);
                         let snapshot_handles = SnapshotHandles::new(selected_id.clone(), snapshot, ui.ctx());
-                        state.view_state.hyp_details = Some(HypDetails::new(hyp, Some(snapshot_handles)));
+                        
+                        state.view_state.hyp_details = Some(HypDetails::new(hyp.clone(), Some(snapshot_handles)));
                     }
-                }
             }
         }
     }
@@ -83,7 +87,7 @@ impl<'a> App<'a>
 
 impl eframe::App for App<'_>
 {
-    fn update(&mut self, ctx: &Context, _frame: &mut Frame)
+    fn update<'a>(&mut self, ctx: &Context, _frame: &mut Frame)
     {
         self.main_update();
 
@@ -91,7 +95,7 @@ impl eframe::App for App<'_>
 
         let mut dock_viewer = DockViewer {
             dock_views: &mut self.dock_views,
-            state: self,
+            state: &mut self.state,
             custom_ui: Self::custom_ui
         };
 

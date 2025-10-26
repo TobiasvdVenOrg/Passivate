@@ -3,12 +3,12 @@ use passivate_core::passivate_state::PassivateState;
 use crate::details_view::HypDetails;
 
 #[derive(Default)]
-pub struct PassivateViewState<'a>
+pub struct PassivateViewState
 {
-    pub hyp_details: Option<HypDetails<'a>>
+    pub hyp_details: Option<HypDetails>
 }
 
-impl PassivateViewState<'_>
+impl PassivateViewState
 {
     pub fn update(old: &PassivateState, new: &PassivateState)
     {

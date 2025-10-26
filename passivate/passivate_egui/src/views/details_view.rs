@@ -7,15 +7,15 @@ use passivate_hyp_model::single_test_status::SingleTestStatus;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 use crate::snapshots::SnapshotError;
 
-pub struct HypDetails<'a>
+pub struct HypDetails
 {
-    hyp: &'a SingleTest,
+    hyp: SingleTest,
     snapshot_handles: Option<SnapshotHandles>
 }
 
-impl<'a> HypDetails<'a>
+impl HypDetails
 {
-    pub fn new(hyp: &'a SingleTest, snapshot_handles: Option<SnapshotHandles>) -> Self
+    pub fn new(hyp: SingleTest, snapshot_handles: Option<SnapshotHandles>) -> Self
     {
         Self { hyp, snapshot_handles }
     }
@@ -204,7 +204,7 @@ mod tests
             if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
             {
                 let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
-                let hyp_details = HypDetails::new(selected_hyp, None);
+                let hyp_details = HypDetails::new(selected_hyp.clone(), None);
                 details_view.ui(ui, Some(&hyp_details));
             }
         });
@@ -238,7 +238,7 @@ mod tests
             if let Some(selected_hyp_id) = test_run_view.ui(ui, &hyp_run)
             {
                 let selected_hyp = hyp_run.tests.find(&selected_hyp_id).unwrap();
-                let hyp_details = HypDetails::new(selected_hyp, None);
+                let hyp_details = HypDetails::new(selected_hyp.clone(), None);
                 details_view.ui(ui, Some(&hyp_details));
             }
         });
@@ -317,7 +317,7 @@ mod tests
         let mut details_view = DetailsView::new(test_run_tx);
         
         // TODO: Snapshots path to initialize this
-        let details = HypDetails::new(&snapshot_test, None);
+        let details = HypDetails::new(snapshot_test, None);
 
         let ui = |ui: &mut egui::Ui| {
             details_view.ui(ui, Some(&details));
@@ -347,7 +347,7 @@ mod tests
         let mut details_view = DetailsView::new(Tx::stub());
 
         // TODO: Snapshots path to initialize this
-        let details = HypDetails::new(&single_test, None);
+        let details = HypDetails::new(single_test, None);
 
         let ui = |ui: &mut egui::Ui| {
             details_view.ui(ui, Some(&details));
