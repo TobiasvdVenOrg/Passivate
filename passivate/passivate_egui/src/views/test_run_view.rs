@@ -1,5 +1,5 @@
 use egui::{Color32, RichText};
-use passivate_hyp_model::{single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{single_hyp::SingleHyp, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
 use passivate_hyp_names::hyp_id::HypId;
 
 pub struct TestRunView;
@@ -59,7 +59,7 @@ impl TestRunView
         selected_hyp
     }
 
-    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest, color: Color32) -> Option<SingleTest>
+    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp, color: Color32) -> Option<SingleHyp>
     {
         let text = RichText::new(&test.name).size(16.0).color(color);
 
@@ -71,14 +71,14 @@ impl TestRunView
         None
     }
 
-    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest)
+    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp)
     {
         let text = RichText::new(&test.name).size(16.0).color(Color32::GRAY);
 
         ui.label(text);
     }
 
-    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleTest) -> Option<SingleTest>
+    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp) -> Option<SingleHyp>
     {
         match test.status
         {
@@ -98,7 +98,7 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_test::SingleTest, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
+    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_hyp::SingleHyp, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
 
     use crate::test_run_view::TestRunView;
 
@@ -158,9 +158,9 @@ mod tests
         harness.snapshot(snapshot_name);
     }
 
-    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleTest
+    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleHyp
     {
         let id = HypId::new("example_crate", name).unwrap();
-        SingleTest::new(id, status, vec![])
+        SingleHyp::new(id, status, vec![])
     }
 }

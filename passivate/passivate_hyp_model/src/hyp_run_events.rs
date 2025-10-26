@@ -1,6 +1,6 @@
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::{single_test::SingleTest, test_run::FailedTestRun};
+use crate::{single_hyp::SingleHyp, test_run::FailedTestRun};
 
 
 #[derive(Debug, Clone)]
@@ -14,7 +14,7 @@ pub enum HypRunEvent
     },
     Compiling(String),
     BuildError(String),
-    TestFinished(SingleTest),
+    TestFinished(SingleHyp),
     TestsCompleted,
     NoTests,
     ErrorOutput

@@ -23,7 +23,7 @@ use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
-use passivate_hyp_model::single_test::SingleTest;
+use passivate_hyp_model::single_hyp::SingleHyp;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
@@ -323,7 +323,7 @@ impl TestRunner
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
                             .expect("todo: error handling");
-                        Some(HypRunEvent::TestFinished(SingleTest::new(hyp_id, status, test_output)))
+                        Some(HypRunEvent::TestFinished(SingleHyp::new(hyp_id, status, test_output)))
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,

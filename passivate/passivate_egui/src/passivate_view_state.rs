@@ -1,5 +1,5 @@
 use passivate_core::passivate_state::PassivateState;
-use passivate_hyp_model::single_test::SingleTest;
+use passivate_hyp_model::single_hyp::SingleHyp;
 
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 
@@ -23,13 +23,13 @@ impl PassivateViewState
 
 pub struct HypDetails
 {
-    pub hyp: SingleTest,
+    pub hyp: SingleHyp,
     pub snapshot_handles: Option<SnapshotHandles>
 }
 
 impl HypDetails
 {
-    pub fn new(hyp: SingleTest, snapshot_handles: Option<SnapshotHandles>) -> Self
+    pub fn new(hyp: SingleHyp, snapshot_handles: Option<SnapshotHandles>) -> Self
     {
         Self { hyp, snapshot_handles }
     }

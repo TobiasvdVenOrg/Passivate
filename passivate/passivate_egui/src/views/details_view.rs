@@ -137,7 +137,7 @@ mod tests
     use galvanic_assert::*;
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
-    use passivate_hyp_model::single_test::SingleTest;
+    use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
@@ -165,7 +165,7 @@ mod tests
     #[test]
     pub fn show_a_failing_test_with_output()
     {
-        let failing_test = SingleTest::new(
+        let failing_test = SingleHyp::new(
             HypId::new("example_crate", "example_test").unwrap(),
             SingleTestStatus::Failed,
             vec!["this is some error output".to_string(), "you messed up".to_string()]
@@ -259,7 +259,7 @@ mod tests
         );
     }
 
-    fn show_test(test_name: &str, single_test: SingleTest)
+    fn show_test(test_name: &str, single_test: SingleHyp)
     {
         let mut details_view = DetailsView::new(Tx::stub());
 
@@ -283,9 +283,9 @@ mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleTest
+    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleHyp
     {
         let id = HypId::new("example_crate", name).unwrap();
-        SingleTest::new(id, status, vec![])
+        SingleHyp::new(id, status, vec![])
     }
 }

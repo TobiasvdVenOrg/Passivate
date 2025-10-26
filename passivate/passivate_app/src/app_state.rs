@@ -72,7 +72,7 @@ pub mod tests
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_egui::{DetailsView, TestRunView};
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
-    use passivate_hyp_model::single_test::SingleTest;
+    use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_test_status::SingleTestStatus;
     use passivate_hyp_model::test_run::TestRun;
     use passivate_hyp_names::hyp_id::HypId;
@@ -170,9 +170,9 @@ pub mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp() -> SingleTest 
+    fn example_hyp() -> SingleHyp 
     {
         let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        SingleTest::new(hyp_id, SingleTestStatus::Failed, vec![])
+        SingleHyp::new(hyp_id, SingleTestStatus::Failed, vec![])
     }
 }

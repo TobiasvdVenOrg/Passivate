@@ -4,22 +4,22 @@ use std::slice::{Iter, IterMut};
 use itertools::Itertools;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::single_test::SingleTest;
+use crate::single_hyp::SingleHyp;
 
 #[derive(Default, Clone, Debug)]
 pub struct TestCollection
 {
-    tests: Vec<SingleTest>
+    tests: Vec<SingleHyp>
 }
 
 impl TestCollection
 {
-    pub fn add(&mut self, test: SingleTest)
+    pub fn add(&mut self, test: SingleHyp)
     {
         self.tests.push(test);
     }
 
-    pub fn add_or_update(&mut self, test: SingleTest)
+    pub fn add_or_update(&mut self, test: SingleHyp)
     {
         match self.tests.iter_mut().find(|t| t.id == test.id)
         {
@@ -28,12 +28,12 @@ impl TestCollection
         };
     }
 
-    pub fn find(&self, id: &HypId) -> Option<&SingleTest>
+    pub fn find(&self, id: &HypId) -> Option<&SingleHyp>
     {
         self.tests.iter().find(|t| t.id == *id)
     }
 
-    pub fn find_mut(&mut self, id: &HypId) -> Option<&mut SingleTest>
+    pub fn find_mut(&mut self, id: &HypId) -> Option<&mut SingleHyp>
     {
         self.tests.iter_mut().find(|t| t.id == *id)
     }
@@ -43,7 +43,7 @@ impl TestCollection
         self.tests.clear();
     }
 
-    pub fn clear_except(&mut self, id: &HypId) -> Option<&mut SingleTest>
+    pub fn clear_except(&mut self, id: &HypId) -> Option<&mut SingleHyp>
     {
         self.tests.retain(|h| h.id == *id);
         self.tests.iter_mut().exactly_one().ok()
@@ -54,12 +54,12 @@ impl TestCollection
         self.tests.is_empty()
     }
 
-    pub fn iter(&self) -> Iter<'_, SingleTest>
+    pub fn iter(&self) -> Iter<'_, SingleHyp>
     {
         self.tests.iter()
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<'_, SingleTest>
+    pub fn iter_mut(&mut self) -> IterMut<'_, SingleHyp>
     {
         self.tests.iter_mut()
     }
@@ -68,7 +68,7 @@ impl TestCollection
 impl IntoIterator for TestCollection
 {
     type IntoIter = std::vec::IntoIter<Self::Item>;
-    type Item = SingleTest;
+    type Item = SingleHyp;
 
     fn into_iter(self) -> Self::IntoIter
     {
@@ -78,8 +78,8 @@ impl IntoIterator for TestCollection
 
 impl<'a> IntoIterator for &'a TestCollection
 {
-    type IntoIter = slice::Iter<'a, SingleTest>;
-    type Item = &'a SingleTest;
+    type IntoIter = slice::Iter<'a, SingleHyp>;
+    type Item = &'a SingleHyp;
 
     fn into_iter(self) -> Self::IntoIter
     {
@@ -89,8 +89,8 @@ impl<'a> IntoIterator for &'a TestCollection
 
 impl<'a> IntoIterator for &'a mut TestCollection
 {
-    type IntoIter = slice::IterMut<'a, SingleTest>;
-    type Item = &'a mut SingleTest;
+    type IntoIter = slice::IterMut<'a, SingleHyp>;
+    type Item = &'a mut SingleHyp;
 
     fn into_iter(self) -> Self::IntoIter
     {

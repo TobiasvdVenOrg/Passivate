@@ -3,7 +3,7 @@ use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 use crate::single_test_status::SingleTestStatus;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct SingleTest
+pub struct SingleHyp
 {
     pub id: HypId,
     pub name: String,
@@ -11,7 +11,7 @@ pub struct SingleTest
     pub output: Vec<String>
 }
 
-impl SingleTest
+impl SingleHyp
 {
     pub fn new(id: HypId, status: SingleTestStatus, output: Vec<String>) -> Self
     {
