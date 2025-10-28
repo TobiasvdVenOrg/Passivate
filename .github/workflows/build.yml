@@ -2,19 +2,13 @@ name: Build Passivate
 run-name: Build Passivate
 on: [push, workflow_dispatch]
 jobs:
-  Explore-GitHub-Actions:
+  Build Passivate:
     runs-on: self-hosted
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
       - run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-update-default-toolchain
           . "$HOME/.cargo/env"
-          rustup toolchain uninstall stable
-          rustup toolchain install stable
-          rustup target add x86_64-unknown-linux-gnu
-          rustup target add x86_64-pc-windows-gnu
-          rustup target add aarch64-unknown-linux-gnu
           cd passivate
           cargo test --target aarch64-unknown-linux-gnu
           cargo build --release --target x86_64-pc-windows-gnu
