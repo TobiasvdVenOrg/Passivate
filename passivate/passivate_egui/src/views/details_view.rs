@@ -1,6 +1,6 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 
 use crate::passivate_view_state::HypDetails;
@@ -9,13 +9,13 @@ use crate::snapshots::SnapshotError;
 
 pub struct DetailsView
 {
-    change_events: Tx<ChangeEvent>
+    change_events: Tx<HypRunTrigger>
 }
 
 impl DetailsView
 {
     pub fn new(
-        change_events: Tx<ChangeEvent>
+        change_events: Tx<HypRunTrigger>
     ) -> Self
     {
         Self {
@@ -40,14 +40,14 @@ impl DetailsView
 
                 if ui.button("Pin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::PinHyp {
+                    self.change_events.send(HypRunTrigger::PinHyp {
                         id: details.hyp.id.clone()
                     });
                 }
 
                 if ui.button("Unpin").clicked()
                 {
-                    self.change_events.send(ChangeEvent::ClearPinnedHyps);
+                    self.change_events.send(HypRunTrigger::ClearPinnedHyps);
                 }
             });
 
@@ -99,7 +99,7 @@ impl DetailsView
                 let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
                 if ui.button(approve).clicked()
                 {
-                    self.change_events.send(ChangeEvent::SingleHyp {
+                    self.change_events.send(HypRunTrigger::SingleHyp {
                         id: snapshot_handles.hyp_id.clone(),
                         update_snapshots: true
                     });
@@ -136,7 +136,7 @@ mod tests
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
     use passivate_delegation::Tx;
-    use passivate_hyp_model::change_event::ChangeEvent;
+    use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_hyp_status::SingleHypStatus;
     use passivate_hyp_names::hyp_id::HypId;
@@ -252,7 +252,7 @@ mod tests
 
         assert_that!(
             &approval_run,
-            has_structure!(ChangeEvent::SingleHyp {
+            has_structure!(HypRunTrigger::SingleHyp {
                 id: eq(HypId::new("example_crate", hyp).unwrap()),
                 update_snapshots: eq(true)
             })

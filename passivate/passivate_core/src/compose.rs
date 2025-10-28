@@ -10,7 +10,7 @@ use passivate_coverage::grcov::Grcov;
 use passivate_hyp_execution::change_event_handler::change_event_thread;
 use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
 use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use crate::passivate_args::PassivateArgs;
 use crate::passivate_state::PassivateState;
 use passivate_delegation::{Rx, Tx};
@@ -26,7 +26,7 @@ pub struct PassivateCore
 {
     pub state: PassivateState,
     pub passivate_path: Utf8PathBuf,
-    pub change_event_tx: Tx<ChangeEvent>,
+    pub change_event_tx: Tx<HypRunTrigger>,
     pub configuration: ConfigurationManager,
     pub log_rx: Rx<LogMessage>,
     pub coverage_rx: Rx<CoverageStatus>,
@@ -94,7 +94,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     let change_event_thread = change_event_thread(change_event_rx, test_run_tx);
 
     // Send an initial change event to trigger the first test run
-    change_event_tx.send(ChangeEvent::DefaultRun);
+    change_event_tx.send(HypRunTrigger::DefaultRun);
 
     // Notify
     let change_events = NotifyChangeEvents::new(&workspace_path, change_event_tx.clone())?;

@@ -1,18 +1,18 @@
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 
 pub struct ConfigurationView
 {
     configuration_manager: ConfigurationManager,
     snapshots_path_field: String,
-    change_event_tx: Tx<ChangeEvent>
+    change_event_tx: Tx<HypRunTrigger>
 }
 
 impl ConfigurationView
 {
-    pub fn new(configuration_manager: ConfigurationManager, change_event_tx: Tx<ChangeEvent>) -> Self
+    pub fn new(configuration_manager: ConfigurationManager, change_event_tx: Tx<HypRunTrigger>) -> Self
     {
         Self {
             configuration_manager,
@@ -33,7 +33,7 @@ impl ConfigurationView
                 c.coverage_enabled = configuration.coverage_enabled;
             });
 
-            self.change_event_tx.send(ChangeEvent::DefaultRun);
+            self.change_event_tx.send(HypRunTrigger::DefaultRun);
         }
 
         ui.label("Snapshot Directories");
@@ -53,7 +53,7 @@ impl ConfigurationView
             });
 
             self.snapshots_path_field = String::new();
-            self.change_event_tx.send(ChangeEvent::DefaultRun);
+            self.change_event_tx.send(HypRunTrigger::DefaultRun);
         }
     }
 }
@@ -74,7 +74,7 @@ mod tests
     use passivate_delegation::Tx;
     use passivate_hyp_execution::test_run_handler::TestRunHandler;
     use passivate_hyp_execution::hyp_runner::HypRunner;
-    use passivate_hyp_model::change_event::ChangeEvent;
+    use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_names::test_name;
 
     use crate::configuration_view::ConfigurationView;
@@ -131,7 +131,7 @@ mod tests
 
         assert_that!(
             &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(ChangeEvent::DefaultRun)
+            eq(HypRunTrigger::DefaultRun)
         );
 
         assert!(test_run_handler.coverage_enabled());
@@ -162,7 +162,7 @@ mod tests
 
         assert_that!(
             &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(ChangeEvent::DefaultRun)
+            eq(HypRunTrigger::DefaultRun)
         );
 
         assert_eq!(

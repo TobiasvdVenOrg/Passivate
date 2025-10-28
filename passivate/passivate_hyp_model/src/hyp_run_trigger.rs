@@ -1,7 +1,7 @@
 use passivate_hyp_names::hyp_id::HypId;
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum ChangeEvent
+pub enum HypRunTrigger
 {
     DefaultRun,
     SingleHyp

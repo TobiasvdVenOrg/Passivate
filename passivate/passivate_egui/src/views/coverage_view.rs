@@ -304,7 +304,7 @@ mod tests
     //     let (coverage_sender, coverage_receiver) = tx_rx();
     //     let mut test_runner = ChangeEventHandler::new(Box::new(run_tests), Box::new(compute_coverage), tests_sender, coverage_sender);
 
-    //     test_runner.handle_event(ChangeEvent::File);
+    //     test_runner.handle_event(HypRunTrigger::File);
 
     //     let (change_event_sender, _change_event_receiver) = tx_rx();
     //     let mut coverage_view = CoverageView::new(coverage_receiver, change_event_sender);

@@ -13,7 +13,7 @@ use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
 use passivate_hyp_execution::test_run_errors::TestRunError;
 use passivate_hyp_execution::test_run_handler::TestRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
 use passivate_hyp_names::hyp_id::HypId;
@@ -35,7 +35,7 @@ pub fn handle_single_test_run()
     let hyp_to_run = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleHyp {
+        HypRunTrigger::SingleHyp {
             id: hyp_to_run,
             update_snapshots: false
         },
@@ -67,7 +67,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
     let hyp_to_run = HypId::new("add_tests", "add_2_and_2_is_4").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleHyp {
+        HypRunTrigger::SingleHyp {
             id: hyp_to_run.clone(),
             update_snapshots: false
         },
@@ -93,19 +93,19 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
         .build_test_run_handler();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let test_run = TestRun::from_events(hyp_run_rx.drain());
 
     let pinned_hyp = test_run.tests.into_iter().next().unwrap();
 
     handler.handle(
-        ChangeEvent::PinHyp {
+        HypRunTrigger::PinHyp {
             id: pinned_hyp.id.clone()
         },
         Cancellation::default()
     );
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let pinned_run = TestRun::from_events(hyp_run_rx.drain());
 
@@ -127,15 +127,15 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
         .build_test_run_handler();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let all_hyps = TestRun::from_events(hyp_run_rx.drain());
 
     let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
 
-    handler.handle(ChangeEvent::PinHyp { id: pinned_hyp.id }, Cancellation::default());
-    handler.handle(ChangeEvent::ClearPinnedHyps, Cancellation::default());
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::PinHyp { id: pinned_hyp.id }, Cancellation::default());
+    handler.handle(HypRunTrigger::ClearPinnedHyps, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let test_run = TestRun::from_events(hyp_run_rx.drain());
 
@@ -168,12 +168,12 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     let mut handler = setup.build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleHyp {
+        HypRunTrigger::SingleHyp {
             id: snapshot_hyp_id,
             update_snapshots: true
         },
@@ -207,12 +207,12 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     let mut handler = setup.build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
 
     handler.handle(
-        ChangeEvent::SingleHyp {
+        HypRunTrigger::SingleHyp {
             id: snapshot_hyp_id,
             update_snapshots: true
         },
@@ -220,7 +220,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     );
 
     // Run all tests again, which should no approve snapshots
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     assert_that!(fs::exists(expected_approved_snapshot)?);
     assert_that!(fs::exists(expected_unapproved_snapshot)?);
@@ -241,7 +241,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
         .build_test_run_handler();
 
     // Run all tests first to generate a new snapshot
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
@@ -276,8 +276,8 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
         .build_test_run_handler();
 
     // Run tests twice
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
@@ -316,7 +316,7 @@ pub fn when_test_run_fails_error_is_reported()
         .configuration(ConfigurationManager::default_config(Tx::stub()))
         .build();
 
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let state = TestRun::from_events(hyp_run_rx).state;
 

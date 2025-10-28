@@ -4,7 +4,7 @@ use std::io::Error as IoError;
 use std::sync::mpsc::SendError;
 
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 
 #[derive(Debug)]
@@ -12,7 +12,7 @@ pub enum StartupError
 {
     MissingArgument(MissingArgumentError),
     NotifyChangeEvents(NotifyChangeEventsError),
-    Channel(SendError<ChangeEvent>),
+    Channel(SendError<HypRunTrigger>),
     DirectorySetup(IoError),
     Logger(log::SetLoggerError),
     LoggerAlreadyInitialized,
@@ -116,9 +116,9 @@ impl From<MissingArgumentError> for StartupError
     }
 }
 
-impl From<SendError<ChangeEvent>> for StartupError
+impl From<SendError<HypRunTrigger>> for StartupError
 {
-    fn from(error: SendError<ChangeEvent>) -> Self
+    fn from(error: SendError<HypRunTrigger>) -> Self
     {
         StartupError::Channel(error)
     }

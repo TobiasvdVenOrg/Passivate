@@ -5,14 +5,14 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::hyp_runner::HypRunner;
 
-pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
+pub fn test_run_thread(rx: Rx<CancellableMessage<HypRunTrigger>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
@@ -37,22 +37,22 @@ pub struct TestRunHandler
 
 impl TestRunHandler
 {
-    pub fn handle(&mut self, event: ChangeEvent, cancellation: Cancellation)
+    pub fn handle(&mut self, event: HypRunTrigger, cancellation: Cancellation)
     {
         match event
         {
-            ChangeEvent::DefaultRun => self.run_hyps(cancellation.clone()),
-            ChangeEvent::PinHyp { id } =>
+            HypRunTrigger::DefaultRun => self.run_hyps(cancellation.clone()),
+            HypRunTrigger::PinHyp { id } =>
             {
                 self.pinned_hyp = Some(id);
                 self.run_hyps(cancellation.clone());
             }
-            ChangeEvent::ClearPinnedHyps =>
+            HypRunTrigger::ClearPinnedHyps =>
             {
                 self.pinned_hyp = None;
                 self.run_hyps(cancellation.clone());
             }
-            ChangeEvent::SingleHyp { id, update_snapshots } => self.run_hyp(&id, update_snapshots, cancellation.clone())
+            HypRunTrigger::SingleHyp { id, update_snapshots } => self.run_hyp(&id, update_snapshots, cancellation.clone())
         }
     }
 

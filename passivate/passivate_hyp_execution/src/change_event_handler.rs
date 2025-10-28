@@ -1,9 +1,9 @@
 use std::thread::{self, JoinHandle};
 
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 
-pub fn change_event_thread(rx: Rx<ChangeEvent>, tx: Tx<CancellableMessage<ChangeEvent>>) -> JoinHandle<()>
+pub fn change_event_thread(rx: Rx<HypRunTrigger>, tx: Tx<CancellableMessage<HypRunTrigger>>) -> JoinHandle<()>
 {
     thread::spawn(move || {
         let mut cancellation = Cancellation::default();

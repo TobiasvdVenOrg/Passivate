@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use notify::{Config as NotifyConfig, Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_delegation::Tx;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;
@@ -17,7 +17,7 @@ pub struct NotifyChangeEvents
 
 impl NotifyChangeEvents
 {
-    pub fn new(path: &Utf8Path, change_events: Tx<ChangeEvent>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
+    pub fn new(path: &Utf8Path, change_events: Tx<HypRunTrigger>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
@@ -42,14 +42,14 @@ impl NotifyChangeEvents
                                 {
                                     if &modified > last_modification
                                     {
-                                        let change_event = ChangeEvent::DefaultRun;
+                                        let change_event = HypRunTrigger::DefaultRun;
 
                                         change_events.send(change_event);
                                     }
                                 }
                                 else
                                 {
-                                    let change_event = ChangeEvent::DefaultRun;
+                                    let change_event = HypRunTrigger::DefaultRun;
 
                                     change_events.send(change_event);
                                 }

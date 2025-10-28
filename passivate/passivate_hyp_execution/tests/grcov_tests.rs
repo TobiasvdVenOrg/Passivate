@@ -11,7 +11,7 @@ use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::test_output_path;
 use pretty_assertions::assert_eq;
 
-use passivate_hyp_model::change_event::ChangeEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 
 #[test]
 pub fn test_run_sends_coverage_result() -> Result<(), IoError>
@@ -22,7 +22,7 @@ pub fn test_run_sends_coverage_result() -> Result<(), IoError>
         .coverage_sender(coverage_tx)
         .build();
 
-    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let result = coverage_rx.drain().last().unwrap().clone();
 
@@ -48,7 +48,7 @@ pub fn test_run_outputs_coverage_file_for_project() -> Result<(), IoError>
 
     let output_path = setup.get_output_path();
 
-    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
@@ -63,7 +63,7 @@ pub fn test_run_outputs_coverage_file_for_workspace() -> Result<(), IoError>
 
     let output_path = setup.get_output_path();
 
-    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let file_data = expected_lcov_metadata(&output_path);
     assert!(file_data.is_ok(), "Expected coverage output file did not exist: {:?}", file_data);
@@ -80,11 +80,11 @@ pub fn repeat_test_runs_do_not_accumulate_profraw_files() -> Result<(), IoError>
 
     let mut handler = setup.clean_output().build_test_run_handler();
 
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let first_run = get_profraw_count(&coverage_path)?;
 
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let second_run = get_profraw_count(&coverage_path)?;
 
@@ -104,11 +104,11 @@ pub fn repeat_test_runs_do_not_delete_lcov_file() -> Result<(), IoError>
 
     let mut handler = setup.clean_output().build_test_run_handler();
 
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let first_run_metadata = expected_lcov_metadata(&output_path)?;
 
-    handler.handle(ChangeEvent::DefaultRun, Cancellation::default());
+    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let second_run_metadata = expected_lcov_metadata(&output_path)?;
 
@@ -192,7 +192,7 @@ pub fn no_coverage_related_files_are_generated_when_coverage_is_disabled() -> Re
     let coverage_path = setup.get_coverage_path();
     let output_path = setup.get_output_path();
 
-    setup.clean_output().build_test_run_handler().handle(ChangeEvent::DefaultRun, Cancellation::default());
+    setup.clean_output().build_test_run_handler().handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let profraw_count = get_profraw_count(&coverage_path)?;
     assert_eq!(0, profraw_count);
