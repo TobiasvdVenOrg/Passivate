@@ -24,7 +24,7 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_model::single_hyp::SingleHyp;
-use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
@@ -314,11 +314,11 @@ impl HypRunner
 
                         let status = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
                         {
-                            SingleTestStatus::Passed
+                            SingleHypStatus::Passed
                         }
                         else
                         {
-                            SingleTestStatus::Failed
+                            SingleHypStatus::Failed
                         };
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)

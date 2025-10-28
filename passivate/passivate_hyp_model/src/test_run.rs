@@ -1,4 +1,4 @@
-use crate::{single_test_status::SingleTestStatus, test_collection::TestCollection, hyp_run_events::HypRunEvent};
+use crate::{single_hyp_status::SingleHypStatus, test_collection::TestCollection, hyp_run_events::HypRunEvent};
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -69,7 +69,7 @@ impl TestRun
                 self.state = TestRunState::Running;
                 for test in &mut self.tests
                 {
-                    test.status = SingleTestStatus::Unknown;
+                    test.status = SingleHypStatus::Unknown;
                     test.output.clear();
                 }
 
@@ -90,7 +90,7 @@ impl TestRun
                 }
                 {
                     self.state = TestRunState::Running;
-                    hyp.status = SingleTestStatus::Unknown;
+                    hyp.status = SingleHypStatus::Unknown;
                     hyp.output.clear();
 
                     return true;

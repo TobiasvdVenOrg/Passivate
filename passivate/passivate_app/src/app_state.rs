@@ -73,7 +73,7 @@ pub mod tests
     use passivate_egui::{DetailsView, TestRunView};
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
-    use passivate_hyp_model::single_test_status::SingleTestStatus;
+    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
     use passivate_hyp_model::test_run::TestRun;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
@@ -153,7 +153,7 @@ pub mod tests
             details_ui.run();
 
             let mut example_hyp = example_hyp();
-            example_hyp.status = SingleTestStatus::Passed;
+            example_hyp.status = SingleHypStatus::Passed;
             hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
 
             details_ui.run();
@@ -162,7 +162,7 @@ pub mod tests
         }
         
         let hyp = app_state.state.hyp_run.tests.iter().exactly_one().unwrap();
-        assert_that!(&hyp.status, is_variant!(SingleTestStatus::Passed));
+        assert_that!(&hyp.status, is_variant!(SingleHypStatus::Passed));
     }
 
     fn get_example_snapshots_path() -> Utf8PathBuf
@@ -173,6 +173,6 @@ pub mod tests
     fn example_hyp() -> SingleHyp 
     {
         let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        SingleHyp::new(hyp_id, SingleTestStatus::Failed, vec![])
+        SingleHyp::new(hyp_id, SingleHypStatus::Failed, vec![])
     }
 }

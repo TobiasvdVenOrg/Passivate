@@ -14,7 +14,7 @@ use passivate_hyp_execution::test_run_errors::TestRunError;
 use passivate_hyp_execution::test_run_handler::TestRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
-use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
@@ -49,7 +49,7 @@ pub fn handle_single_test_run()
         test_run
             .tests
             .into_iter()
-            .all(|test| { test.status == SingleTestStatus::Passed })
+            .all(|test| { test.status == SingleHypStatus::Passed })
     );
 }
 
@@ -111,7 +111,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 
     // Assert that all tests are unknown, except the pinned test, which is passing
     assert!(pinned_run.tests.into_iter().all(|test| {
-        (test.id == pinned_hyp.id && test.status == SingleTestStatus::Passed) || test.status == SingleTestStatus::Unknown
+        (test.id == pinned_hyp.id && test.status == SingleHypStatus::Passed) || test.status == SingleHypStatus::Unknown
     }));
 }
 
@@ -144,7 +144,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
         test_run
             .tests
             .into_iter()
-            .all(|test| { test.status == SingleTestStatus::Passed })
+            .all(|test| { test.status == SingleHypStatus::Passed })
     );
 }
 

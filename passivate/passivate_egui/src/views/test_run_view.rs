@@ -1,5 +1,5 @@
 use egui::{Color32, RichText};
-use passivate_hyp_model::{single_hyp::SingleHyp, single_test_status::SingleTestStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{TestRun, TestRunState}};
 use passivate_hyp_names::hyp_id::HypId;
 
 pub struct TestRunView;
@@ -82,9 +82,9 @@ impl TestRunView
     {
         match test.status
         {
-            SingleTestStatus::Failed => self.test_button(ui, test, Color32::RED),
-            SingleTestStatus::Passed => self.test_button(ui, test, Color32::GREEN),
-            SingleTestStatus::Unknown =>
+            SingleHypStatus::Failed => self.test_button(ui, test, Color32::RED),
+            SingleHypStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+            SingleHypStatus::Unknown =>
             {
                 self.test_label(ui, test);
                 None
@@ -98,7 +98,7 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_hyp::SingleHyp, single_test_status::SingleTestStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
+    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
 
     use crate::test_run_view::TestRunView;
 
@@ -128,7 +128,7 @@ mod tests
     pub fn show_tests_with_unknown_status_greyed_out()
     {
         let mut active = TestRun::default();
-        active.tests.add(example_hyp("example_test", SingleTestStatus::Unknown));
+        active.tests.add(example_hyp("example_test", SingleHypStatus::Unknown));
 
         run_and_snapshot(active, &test_name!());
     }
@@ -137,7 +137,7 @@ mod tests
     pub fn show_build_status_above_tests_while_compiling()
     {
         let mut active = TestRun::default();
-        active.tests.add(example_hyp("example_test", SingleTestStatus::Unknown));
+        active.tests.add(example_hyp("example_test", SingleHypStatus::Unknown));
         active.update(HypRunEvent::Compiling("The build is working on something right now!".to_string()));
 
         run_and_snapshot(active, &test_name!());
@@ -158,7 +158,7 @@ mod tests
         harness.snapshot(snapshot_name);
     }
 
-    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleHyp
+    fn example_hyp(name: &str, status: SingleHypStatus) -> SingleHyp
     {
         let id = HypId::new("example_crate", name).unwrap();
         SingleHyp::new(id, status, vec![])

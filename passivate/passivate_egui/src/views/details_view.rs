@@ -1,7 +1,7 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
 use passivate_hyp_model::change_event::ChangeEvent;
-use passivate_hyp_model::single_test_status::SingleTestStatus;
+use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 
 use crate::passivate_view_state::HypDetails;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
@@ -29,9 +29,9 @@ impl DetailsView
         {
             let color = match details.hyp.status
             {
-                SingleTestStatus::Passed => Color32::GREEN,
-                SingleTestStatus::Failed => Color32::RED,
-                SingleTestStatus::Unknown => Color32::GRAY
+                SingleHypStatus::Passed => Color32::GREEN,
+                SingleHypStatus::Failed => Color32::RED,
+                SingleHypStatus::Unknown => Color32::GRAY
             };
 
             ui.horizontal(|ui| {
@@ -138,7 +138,7 @@ mod tests
     use passivate_delegation::Tx;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
-    use passivate_hyp_model::single_test_status::SingleTestStatus;
+    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -149,7 +149,7 @@ mod tests
     #[test]
     pub fn show_a_passing_test()
     {
-        let failing_test = example_hyp("example_crate::example_test", SingleTestStatus::Passed);
+        let failing_test = example_hyp("example_crate::example_test", SingleHypStatus::Passed);
 
         show_test(&test_name!(), failing_test);
     }
@@ -157,7 +157,7 @@ mod tests
     #[test]
     pub fn show_a_failing_test()
     {
-        let failing_test = example_hyp("example_crate::example_test", SingleTestStatus::Failed);
+        let failing_test = example_hyp("example_crate::example_test", SingleHypStatus::Failed);
 
         show_test(&test_name!(), failing_test);
     }
@@ -167,7 +167,7 @@ mod tests
     {
         let failing_test = SingleHyp::new(
             HypId::new("example_crate", "example_test").unwrap(),
-            SingleTestStatus::Failed,
+            SingleHypStatus::Failed,
             vec!["this is some error output".to_string(), "you messed up".to_string()]
         );
 
@@ -177,7 +177,7 @@ mod tests
     #[test]
     pub fn show_snapshot_associated_with_test_rgb()
     {
-        let test_with_snapshot = example_hyp("tests::example_snapshot_rgb", SingleTestStatus::Failed);
+        let test_with_snapshot = example_hyp("tests::example_snapshot_rgb", SingleHypStatus::Failed);
 
         show_test(&test_name!(), test_with_snapshot);
     }
@@ -185,7 +185,7 @@ mod tests
     #[test]
     pub fn show_snapshot_associated_with_test_rgba()
     {
-        let test_with_snapshot = example_hyp("tests::example_snapshot_rgba", SingleTestStatus::Failed);
+        let test_with_snapshot = example_hyp("tests::example_snapshot_rgba", SingleHypStatus::Failed);
 
         show_test(&test_name!(), test_with_snapshot);
     }
@@ -193,7 +193,7 @@ mod tests
     #[test]
     pub fn show_current_and_new_snapshots_associated_with_test()
     {
-        let test_with_changed_snapshot = example_hyp("tests::example_snapshot_changed", SingleTestStatus::Failed);
+        let test_with_changed_snapshot = example_hyp("tests::example_snapshot_changed", SingleHypStatus::Failed);
 
         show_test(&test_name!(), test_with_changed_snapshot);
     }
@@ -201,7 +201,7 @@ mod tests
     #[test]
     pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snapshot()
     {
-        let test_first_run = example_hyp("tests::example_snapshot_only_new", SingleTestStatus::Failed);
+        let test_first_run = example_hyp("tests::example_snapshot_only_new", SingleHypStatus::Failed);
 
         show_test(&test_name!(), test_first_run);
     }
@@ -209,7 +209,7 @@ mod tests
     #[test]
     pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identical()
     {
-        let test_run_identical_snapshot = example_hyp("tests::example_snapshot_identical", SingleTestStatus::Failed);
+        let test_run_identical_snapshot = example_hyp("tests::example_snapshot_identical", SingleHypStatus::Failed);
 
         show_test(&test_name!(), test_run_identical_snapshot);
     }
@@ -221,7 +221,7 @@ mod tests
     {
         use crate::snapshots::{snapshot_handles::SnapshotHandles, Snapshots};
 
-        let snapshot_test = example_hyp(hyp, SingleTestStatus::Failed);
+        let snapshot_test = example_hyp(hyp, SingleHypStatus::Failed);
 
         let (test_run_tx, test_run_rx) = Tx::new();
 
@@ -283,7 +283,7 @@ mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp(name: &str, status: SingleTestStatus) -> SingleHyp
+    fn example_hyp(name: &str, status: SingleHypStatus) -> SingleHyp
     {
         let id = HypId::new("example_crate", name).unwrap();
         SingleHyp::new(id, status, vec![])
