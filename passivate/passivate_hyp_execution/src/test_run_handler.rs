@@ -7,7 +7,6 @@ use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
-use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::hyp_runner::HypRunner;
@@ -110,10 +109,7 @@ impl TestRunHandler
             }
             Err(test_error) =>
             {
-                let error_status = FailedTestRun {
-                    inner_error_display: test_error.to_string()
-                };
-                self.hyp_run_tx.send(HypRunEvent::HypRunError(error_status));
+                self.hyp_run_tx.send(HypRunEvent::HypRunError(test_error.to_string()));
             }
         };
     }
@@ -145,10 +141,7 @@ impl TestRunHandler
 
         if let Err(error) = result
         {
-            let error_status = FailedTestRun {
-                inner_error_display: error.to_string()
-            };
-            self.hyp_run_tx.send(HypRunEvent::HypRunError(error_status));
+            self.hyp_run_tx.send(HypRunEvent::HypRunError(error.to_string()));
         }
     }
 

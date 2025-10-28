@@ -16,7 +16,7 @@ use passivate_hyp_execution::test_run_handler::TestRunHandler;
 use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-use passivate_hyp_model::test_run::{FailedTestRun, TestRun};
+use passivate_hyp_model::test_run::TestRun;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
@@ -329,8 +329,6 @@ pub fn when_test_run_fails_error_is_reported()
 
     assert_eq!(
         state,
-        HypRunState::Failed(FailedTestRun {
-            inner_error_display: "test run cancelled".to_string()
-        })
+        HypRunState::Failed("test run cancelled".to_string())
     );
 }

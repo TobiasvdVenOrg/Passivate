@@ -34,14 +34,14 @@ impl TestRunView
             {
                 ui.heading("Build failed.");
 
-                let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
+                let text = RichText::new(build_failure).size(16.0).color(Color32::RED);
                 ui.label(text);
             }
             HypRunState::Failed(run_tests_error_status) =>
             {
                 ui.heading("Failed to run tests.");
 
-                let text = RichText::new(&run_tests_error_status.inner_error_display).size(16.0).color(Color32::RED);
+                let text = RichText::new(run_tests_error_status).size(16.0).color(Color32::RED);
                 ui.label(text);
             }
         }
@@ -98,7 +98,7 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{BuildFailedTestRun, TestRun}};
+    use passivate_hyp_model::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::TestRun};
 
     use crate::test_run_view::TestRunView;
 
@@ -117,9 +117,7 @@ mod tests
     #[test]
     pub fn show_when_build_failed()
     {
-        let build_failed = TestRun::from_state(HypRunState::BuildFailed(BuildFailedTestRun {
-            message: "Something didn't compile!".to_string()
-        }));
+        let build_failed = TestRun::from_state(HypRunState::BuildFailed("Something didn't compile!".to_string()));
 
         run_and_snapshot(build_failed, &test_name!());
     }

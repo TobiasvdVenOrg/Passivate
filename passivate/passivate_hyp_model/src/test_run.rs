@@ -1,18 +1,5 @@
 use crate::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp_status::SingleHypStatus, test_collection::TestCollection};
 
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct BuildFailedTestRun
-{
-    pub message: String
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct FailedTestRun
-{
-    pub inner_error_display: String
-}
-
 #[derive(Debug, Clone)]
 pub struct TestRun
 {
@@ -42,11 +29,6 @@ impl TestRun
         }
 
         test_run
-    }
-
-    pub fn from_failed(failure: FailedTestRun) -> Self
-    {
-        Self::from_state(HypRunState::Failed(failure))
     }
 
     pub fn update(&mut self, event: HypRunEvent) -> bool
@@ -112,7 +94,7 @@ impl TestRun
             }
             HypRunEvent::BuildError(message) =>
             {
-                self.state = HypRunState::BuildFailed(BuildFailedTestRun { message });
+                self.state = HypRunState::BuildFailed(message);
                 true
             }
             HypRunEvent::ErrorOutput { hyp, message } =>
@@ -128,7 +110,7 @@ impl TestRun
             }
             HypRunEvent::HypRunError(message) =>
             {
-                *self = TestRun::from_failed(message);
+                self.state = HypRunState::Failed(message);
                 true
             }
         }

@@ -1,5 +1,3 @@
-use crate::test_run::{BuildFailedTestRun, FailedTestRun};
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum HypRunState
@@ -8,6 +6,6 @@ pub enum HypRunState
     Idle,
     Building(String),
     Running,
-    BuildFailed(BuildFailedTestRun),
-    Failed(FailedTestRun)
+    BuildFailed(String),
+    Failed(String)
 }

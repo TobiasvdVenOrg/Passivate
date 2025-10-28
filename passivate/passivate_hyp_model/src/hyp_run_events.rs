@@ -1,6 +1,6 @@
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::{single_hyp::SingleHyp, test_run::FailedTestRun};
+use crate::single_hyp::SingleHyp;
 
 
 #[derive(Debug, Clone)]
@@ -22,5 +22,5 @@ pub enum HypRunEvent
         hyp: HypId,
         message: String
     },
-    HypRunError(FailedTestRun)
+    HypRunError(String)
 }
