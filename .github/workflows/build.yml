@@ -2,7 +2,7 @@ name: Build Passivate
 run-name: Build Passivate
 on: [push, workflow_dispatch]
 jobs:
-  Build Passivate:
+  Build-Passivate:
     runs-on: self-hosted
     steps:
       - name: Check out repository code
