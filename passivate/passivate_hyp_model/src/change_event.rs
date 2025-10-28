@@ -1,7 +1,6 @@
-use enum_as_inner::EnumAsInner;
 use passivate_hyp_names::hyp_id::HypId;
 
-#[derive(Clone, EnumAsInner, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ChangeEvent
 {
     DefaultRun,

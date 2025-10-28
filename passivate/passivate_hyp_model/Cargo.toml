@@ -6,5 +6,4 @@ edition = "2024"
 [dependencies]
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 
-enum-as-inner.workspace = true
 itertools.workspace = true
