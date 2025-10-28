@@ -8,14 +8,15 @@ use itertools::Itertools;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::compute_coverage;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
+use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_execution::test_helpers::test_run_setup::TestRunSetup;
 use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
 use passivate_hyp_execution::test_run_errors::TestRunError;
 use passivate_hyp_execution::test_run_handler::TestRunHandler;
-use passivate_hyp_execution::hyp_runner::HypRunner;
+use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
+use passivate_hyp_model::test_run::{FailedTestRun, TestRun};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
@@ -24,6 +25,8 @@ use pretty_assertions::assert_eq;
 #[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
+    use passivate_hyp_model::hyp_run_state::HypRunState;
+
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
     let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
@@ -44,7 +47,7 @@ pub fn handle_single_test_run()
 
     let test_run = TestRun::from_events(hyp_run_rx);
 
-    assert_that!(&test_run.state, is_variant!(TestRunState::Idle));
+    assert_that!(&test_run.state, is_variant!(HypRunState::Idle));
     assert!(
         test_run
             .tests
@@ -153,7 +156,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
     let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
-        .override_snapshot_directories(vec!(TestSnapshotPath::relative_to_output("snapshots")))
+        .override_snapshot_directories(vec![TestSnapshotPath::relative_to_output("snapshots")])
         .build()
         .clean_snapshots();
 
@@ -162,7 +165,9 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     // The sample project uses this envvar to determine where to output snapshots
     // The purpose is so that multiple tests can re-use the same sample project
     // but have separate snapshot directories that don't interfere with each other
-    unsafe { std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir); }
+    unsafe {
+        std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir);
+    }
 
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let mut handler = setup.build_test_run_handler();
@@ -199,7 +204,9 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     // The sample project uses this envvar to determine where to output snapshots
     // The purpose is so that multiple tests can re-use the same sample project
     // but have separate snapshot directories that don't interfere with each other
-    unsafe { std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir); }
+    unsafe {
+        std::env::set_var("PASSIVATE_SNAPSHOT_DIR", &snapshots_dir);
+    }
 
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let expected_unapproved_snapshot = snapshots_dir.join("different_example_snapshot.new.png");
@@ -322,7 +329,7 @@ pub fn when_test_run_fails_error_is_reported()
 
     assert_eq!(
         state,
-        TestRunState::Failed(FailedTestRun {
+        HypRunState::Failed(FailedTestRun {
             inner_error_display: "test run cancelled".to_string()
         })
     );

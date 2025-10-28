@@ -1,4 +1,4 @@
-use crate::{single_hyp_status::SingleHypStatus, test_collection::TestCollection, hyp_run_events::HypRunEvent};
+use crate::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp_status::SingleHypStatus, test_collection::TestCollection};
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -13,27 +13,16 @@ pub struct FailedTestRun
     pub inner_error_display: String
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum TestRunState
-{
-    FirstRun,
-    Idle,
-    Building(String),
-    Running,
-    BuildFailed(BuildFailedTestRun),
-    Failed(FailedTestRun)
-}
-
 #[derive(Debug, Clone)]
 pub struct TestRun
 {
-    pub state: TestRunState,
+    pub state: HypRunState,
     pub tests: TestCollection
 }
 
 impl TestRun
 {
-    pub fn from_state(state: TestRunState) -> Self
+    pub fn from_state(state: HypRunState) -> Self
     {
         Self {
             state,
@@ -45,7 +34,7 @@ impl TestRun
     where 
         TEvents: IntoIterator<Item = HypRunEvent>
     {
-        let mut test_run = Self::from_state(TestRunState::Idle);
+        let mut test_run = Self::from_state(HypRunState::Idle);
 
         for event in events
         {
@@ -57,7 +46,7 @@ impl TestRun
 
     pub fn from_failed(failure: FailedTestRun) -> Self
     {
-        Self::from_state(TestRunState::Failed(failure))
+        Self::from_state(HypRunState::Failed(failure))
     }
 
     pub fn update(&mut self, event: HypRunEvent) -> bool
@@ -66,7 +55,7 @@ impl TestRun
         {
             HypRunEvent::Start =>
             {
-                self.state = TestRunState::Running;
+                self.state = HypRunState::Running;
                 for test in &mut self.tests
                 {
                     test.status = SingleHypStatus::Unknown;
@@ -89,7 +78,7 @@ impl TestRun
                     }
                 }
                 {
-                    self.state = TestRunState::Running;
+                    self.state = HypRunState::Running;
                     hyp.status = SingleHypStatus::Unknown;
                     hyp.output.clear();
 
@@ -100,7 +89,7 @@ impl TestRun
             }
             HypRunEvent::TestFinished(test) =>
             {
-                self.state = TestRunState::Running;
+                self.state = HypRunState::Running;
 
                 self.tests.add_or_update(test);
 
@@ -108,22 +97,22 @@ impl TestRun
             }
             HypRunEvent::NoTests =>
             {
-                self.state = TestRunState::Idle;
+                self.state = HypRunState::Idle;
                 true
             }
             HypRunEvent::Compiling(message) =>
             {
-                self.state = TestRunState::Building(message.clone());
+                self.state = HypRunState::Building(message.clone());
                 true
             }
             HypRunEvent::TestsCompleted =>
             {
-                self.state = TestRunState::Idle;
+                self.state = HypRunState::Idle;
                 true
             }
             HypRunEvent::BuildError(message) =>
             {
-                self.state = TestRunState::BuildFailed(BuildFailedTestRun { message });
+                self.state = HypRunState::BuildFailed(BuildFailedTestRun { message });
                 true
             }
             HypRunEvent::ErrorOutput { hyp, message } =>
@@ -151,7 +140,7 @@ impl Default for TestRun
     fn default() -> Self
     {
         Self {
-            state: TestRunState::Idle,
+            state: HypRunState::Idle,
             tests: TestCollection::default()
         }
     }

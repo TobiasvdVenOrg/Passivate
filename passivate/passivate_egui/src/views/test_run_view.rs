@@ -1,5 +1,5 @@
 use egui::{Color32, RichText};
-use passivate_hyp_model::{single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{TestRun, TestRunState}};
+use passivate_hyp_model::{hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::TestRun};
 use passivate_hyp_names::hyp_id::HypId;
 
 pub struct TestRunView;
@@ -10,34 +10,34 @@ impl TestRunView
     {
         match &test_run.state
         {
-            TestRunState::FirstRun =>
+            HypRunState::FirstRun =>
             {
                 ui.heading("Starting first test run...");
             }
-            TestRunState::Idle =>
+            HypRunState::Idle =>
             {
                 if test_run.tests.is_empty()
                 {
                     ui.heading("No tests found.");
                 }
             }
-            TestRunState::Building(message) =>
+            HypRunState::Building(message) =>
             {
                 ui.heading("Building");
 
                 let text = RichText::new(message).size(12.0).color(Color32::YELLOW);
                 ui.label(text);
             }
-            TestRunState::Running =>
+            HypRunState::Running =>
             {}
-            TestRunState::BuildFailed(build_failure) =>
+            HypRunState::BuildFailed(build_failure) =>
             {
                 ui.heading("Build failed.");
 
                 let text = RichText::new(&build_failure.message).size(16.0).color(Color32::RED);
                 ui.label(text);
             }
-            TestRunState::Failed(run_tests_error_status) =>
+            HypRunState::Failed(run_tests_error_status) =>
             {
                 ui.heading("Failed to run tests.");
 
@@ -98,26 +98,26 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{BuildFailedTestRun, TestRun, TestRunState}};
+    use passivate_hyp_model::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::{BuildFailedTestRun, TestRun}};
 
     use crate::test_run_view::TestRunView;
 
     #[test]
     pub fn show_when_first_test_run_is_starting()
     {
-        run_and_snapshot(TestRun::from_state(TestRunState::FirstRun), &test_name!());
+        run_and_snapshot(TestRun::from_state(HypRunState::FirstRun), &test_name!());
     }
 
     #[test]
     pub fn show_when_no_tests_were_found()
     {
-        run_and_snapshot(TestRun::from_state(TestRunState::Idle), &test_name!());
+        run_and_snapshot(TestRun::from_state(HypRunState::Idle), &test_name!());
     }
 
     #[test]
     pub fn show_when_build_failed()
     {
-        let build_failed = TestRun::from_state(TestRunState::BuildFailed(BuildFailedTestRun {
+        let build_failed = TestRun::from_state(HypRunState::BuildFailed(BuildFailedTestRun {
             message: "Something didn't compile!".to_string()
         }));
 
