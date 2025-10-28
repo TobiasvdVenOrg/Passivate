@@ -4,6 +4,7 @@ use passivate_egui::passivate_view::PassivateView;
 use passivate_egui::passivate_view_state::{HypDetails, PassivateViewState};
 use passivate_egui::snapshots::Snapshots;
 use passivate_egui::snapshots::snapshot_handles::SnapshotHandles;
+use passivate_hyp_model::hyp_run_events::HypRunChange;
 
 pub struct AppState
 {
@@ -25,8 +26,18 @@ impl AppState
 
     pub fn update(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut AppState)
     {
-        state.state.update();
-        state.view_state.update(&state.state);
+        if let Some(change) = state.state.update()
+        {
+            match change
+            {
+                HypRunChange::HypDetailsChanged(single_hyp) => {
+                    if let Some(details) = &mut state.view_state.hyp_details
+                    {
+                        details.hyp = single_hyp.clone();
+                    }
+                },
+            }
+        }
 
         match view
         {
@@ -36,19 +47,18 @@ impl AppState
             PassivateView::Log(log_view) => log_view.ui(ui),
             PassivateView::TestRun(test_run_view) => 
             {
-                if let Some(selected_id) = test_run_view.ui(ui, &state.state.hyp_run)
+                if let Some(selected_hyp) = test_run_view.ui(ui, &state.state.hyp_run)
                 {
+                    state.state.selected_hyp = Some(selected_hyp.id.clone());
+
                     let snapshot_directories = state.configuration.get(|c| c.snapshot_directories.clone());
 
                     if !snapshot_directories.is_empty()
                     {
-                        state.state.selected_hyp = Some(selected_id.clone());
+                        let snapshot = Snapshots::new(snapshot_directories).from_hyp(&selected_hyp.id);
+                        let snapshot_handles = SnapshotHandles::new(selected_hyp.id.clone(), snapshot, ui.ctx());
 
-                        let hyp = state.state.hyp_run.tests.find(&selected_id).expect("huh?");
-                        let snapshot = Snapshots::new(snapshot_directories).from_hyp(&selected_id);
-                        let snapshot_handles = SnapshotHandles::new(selected_id.clone(), snapshot, ui.ctx());
-
-                        state.view_state.hyp_details = Some(HypDetails::new(hyp.clone(), Some(snapshot_handles)));
+                        state.view_state.hyp_details = Some(HypDetails::new(selected_hyp.clone(), Some(snapshot_handles)));
                     }
                 }
             }
@@ -113,7 +123,7 @@ pub mod tests
     fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState {
         let mut hyp_run = TestRun::default();
         let example_hyp = example_hyp();
-        hyp_run.tests.add(example_hyp);
+        hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
         
         let passivate_state = PassivateState::with_initial_run_state(hyp_run, hyp_run_rx);
         let view_state = PassivateViewState::default();
@@ -161,7 +171,7 @@ pub mod tests
             details_ui.snapshot(&test_name!());
         }
         
-        let hyp = app_state.state.hyp_run.tests.iter().exactly_one().unwrap();
+        let hyp = app_state.state.hyp_run.hyps.values().exactly_one().unwrap();
         assert_that!(&hyp.status, is_variant!(SingleHypStatus::Passed));
     }
 

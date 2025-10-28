@@ -24,3 +24,8 @@ pub enum HypRunEvent
     },
     HypRunError(String)
 }
+
+pub enum HypRunChange<'a>
+{
+    HypDetailsChanged(&'a SingleHyp)
+}

@@ -1,10 +1,14 @@
-use crate::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp_status::SingleHypStatus, test_collection::TestCollection};
+use std::collections::HashMap;
+
+use passivate_hyp_names::hyp_id::HypId;
+
+use crate::{hyp_run_events::{HypRunChange, HypRunEvent}, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus};
 
 #[derive(Debug, Clone)]
 pub struct TestRun
 {
     pub state: HypRunState,
-    pub tests: TestCollection
+    pub hyps: HashMap<HypId, SingleHyp>
 }
 
 impl TestRun
@@ -13,7 +17,7 @@ impl TestRun
     {
         Self {
             state,
-            tests: TestCollection::default()
+            hyps: HashMap::default()
         }
     }
 
@@ -31,20 +35,20 @@ impl TestRun
         test_run
     }
 
-    pub fn update(&mut self, event: HypRunEvent) -> bool
+    pub fn update(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
     {
+        let mut change = None;
+
         match event
         {
             HypRunEvent::Start =>
             {
                 self.state = HypRunState::Running;
-                for test in &mut self.tests
+                for test in &mut self.hyps.values_mut()
                 {
                     test.status = SingleHypStatus::Unknown;
                     test.output.clear();
                 }
-
-                true
             }
             HypRunEvent::StartSingle { hyp, clear_tests } =>
             {
@@ -52,68 +56,61 @@ impl TestRun
                 {
                     if clear_tests
                     {
-                        self.tests.clear_except(&hyp)
+                        self.hyps.retain(|id, _| 
+                        {
+                            *id == hyp
+                        });
                     }
-                    else 
-                    {
-                        self.tests.find_mut(&hyp)
-                    }
+
+                    self.hyps.get_mut(&hyp)
                 }
                 {
                     self.state = HypRunState::Running;
                     hyp.status = SingleHypStatus::Unknown;
                     hyp.output.clear();
-
-                    return true;
                 }
-                
-                false
             }
-            HypRunEvent::TestFinished(test) =>
+            HypRunEvent::TestFinished(hyp) =>
             {
                 self.state = HypRunState::Running;
 
-                self.tests.add_or_update(test);
+                let existing = self.hyps.get_mut(&hyp.id).expect("hyp finished that did not exist");
+                *existing = hyp;
 
-                true
+                change = Some(HypRunChange::HypDetailsChanged(existing));
             }
             HypRunEvent::NoTests =>
             {
                 self.state = HypRunState::Idle;
-                true
             }
             HypRunEvent::Compiling(message) =>
             {
                 self.state = HypRunState::Building(message.clone());
-                true
             }
             HypRunEvent::TestsCompleted =>
             {
                 self.state = HypRunState::Idle;
-                true
             }
             HypRunEvent::BuildError(message) =>
             {
                 self.state = HypRunState::BuildFailed(message);
-                true
             }
             HypRunEvent::ErrorOutput { hyp, message } =>
             {
-                if !message.is_empty()
-                    && let Some(updated_test) = self.tests.find_mut(&hyp)
-                {
-                    updated_test.output.push(message);
-                    return true;
-                }
-
-                false
+                self.hyps.entry(hyp).and_modify(|h| h.output.push(message));
             }
             HypRunEvent::HypRunError(message) =>
             {
                 self.state = HypRunState::Failed(message);
-                true
             }
         }
+
+        change
+    }
+
+    pub fn add_hyp(&mut self, hyp: SingleHyp) -> Option<SingleHyp>
+    {
+        self.hyps.insert(hyp.id.clone(), hyp)
     }
 }
 
@@ -123,7 +120,7 @@ impl Default for TestRun
     {
         Self {
             state: HypRunState::Idle,
-            tests: TestCollection::default()
+            hyps: HashMap::default()
         }
     }
 }

@@ -1,5 +1,5 @@
 use passivate_core::passivate_state::PassivateState;
-use passivate_hyp_model::single_hyp::SingleHyp;
+use passivate_hyp_model::{hyp_run_events::HypRunChange, single_hyp::SingleHyp};
 
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 
@@ -11,14 +11,14 @@ pub struct PassivateViewState
 
 impl PassivateViewState
 {
-    pub fn update(&mut self, state: &PassivateState)
-    {
-        if let Some(details) = &mut self.hyp_details
-            && let Some(hyp) = state.hyp_run.tests.find(&details.hyp.id)
-            {
-                details.hyp = hyp.clone();
-            }
-    }
+    // pub fn update(&mut self, state: &PassivateState, change: Option<&HypRunChange<'_>>)
+    // {
+    //     if let Some(details) = &mut self.hyp_details
+    //         && let Some(hyp) = state.hyp_run.tests.find(&details.hyp.id)
+    //         {
+    //             details.hyp = hyp.clone();
+    //         }
+    // }
 }
 
 pub struct HypDetails

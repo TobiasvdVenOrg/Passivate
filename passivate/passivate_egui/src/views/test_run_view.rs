@@ -1,12 +1,11 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::{hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, test_run::TestRun};
-use passivate_hyp_names::hyp_id::HypId;
 
 pub struct TestRunView;
 
 impl TestRunView
 {
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &TestRun) -> Option<HypId>
+    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &'a TestRun) -> Option<&'a SingleHyp>
     {
         match &test_run.state
         {
@@ -16,7 +15,7 @@ impl TestRunView
             }
             HypRunState::Idle =>
             {
-                if test_run.tests.is_empty()
+                if test_run.hyps.is_empty()
                 {
                     ui.heading("No tests found.");
                 }
@@ -48,45 +47,45 @@ impl TestRunView
 
         let mut selected_hyp = None;
 
-        for test in &test_run.tests
+        for hyp in test_run.hyps.values()
         {
-            if let Some(new_selection) = self.show_test(ui, test)
+            if let Some(new_selection) = self.show_hyp(ui, hyp)
             {
-                selected_hyp = Some(new_selection.id)
+                selected_hyp = Some(new_selection)
             }
         }
 
         selected_hyp
     }
 
-    fn test_button(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp, color: Color32) -> Option<SingleHyp>
+    fn hyp_button<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a SingleHyp, color: Color32) -> Option<&'a SingleHyp>
     {
-        let text = RichText::new(&test.name).size(16.0).color(color);
+        let text = RichText::new(&hyp.name).size(16.0).color(color);
 
         if ui.button(text).clicked()
         {
-            return Some(test.clone());
+            return Some(hyp);
         }
 
         None
     }
 
-    fn test_label(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp)
+    fn hyp_label(&self, ui: &mut egui_dock::egui::Ui, hyp: &SingleHyp)
     {
-        let text = RichText::new(&test.name).size(16.0).color(Color32::GRAY);
+        let text = RichText::new(&hyp.name).size(16.0).color(Color32::GRAY);
 
         ui.label(text);
     }
 
-    fn show_test(&self, ui: &mut egui_dock::egui::Ui, test: &SingleHyp) -> Option<SingleHyp>
+    fn show_hyp<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a SingleHyp) -> Option<&'a SingleHyp>
     {
-        match test.status
+        match hyp.status
         {
-            SingleHypStatus::Failed => self.test_button(ui, test, Color32::RED),
-            SingleHypStatus::Passed => self.test_button(ui, test, Color32::GREEN),
+            SingleHypStatus::Failed => self.hyp_button(ui, hyp, Color32::RED),
+            SingleHypStatus::Passed => self.hyp_button(ui, hyp, Color32::GREEN),
             SingleHypStatus::Unknown =>
             {
-                self.test_label(ui, test);
+                self.hyp_label(ui, hyp);
                 None
             }
         }
@@ -126,7 +125,7 @@ mod tests
     pub fn show_tests_with_unknown_status_greyed_out()
     {
         let mut active = TestRun::default();
-        active.tests.add(example_hyp("example_test", SingleHypStatus::Unknown));
+        active.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
 
         run_and_snapshot(active, &test_name!());
     }
@@ -135,7 +134,7 @@ mod tests
     pub fn show_build_status_above_tests_while_compiling()
     {
         let mut active = TestRun::default();
-        active.tests.add(example_hyp("example_test", SingleHypStatus::Unknown));
+        active.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
         active.update(HypRunEvent::Compiling("The build is working on something right now!".to_string()));
 
         run_and_snapshot(active, &test_name!());

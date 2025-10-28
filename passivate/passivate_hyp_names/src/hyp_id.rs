@@ -29,7 +29,7 @@ impl HypNameStrategy
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct HypId
 {
     crate_parts: Vec<String>,

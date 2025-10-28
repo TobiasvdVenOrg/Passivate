@@ -50,8 +50,8 @@ pub fn handle_single_test_run()
     assert_that!(&test_run.state, is_variant!(HypRunState::Idle));
     assert!(
         test_run
-            .tests
-            .into_iter()
+            .hyps
+            .values()
             .all(|test| { test.status == SingleHypStatus::Passed })
     );
 }
@@ -79,7 +79,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let test_run = TestRun::from_events(hyp_run_rx);
 
-    let single_hyp = test_run.tests.into_iter().exactly_one().expect("expected exactly one test");
+    let single_hyp = test_run.hyps.values().exactly_one().expect("expected exactly one test");
     assert_that!(&single_hyp.id, eq(hyp_to_run));
 }
 
@@ -100,7 +100,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 
     let test_run = TestRun::from_events(hyp_run_rx.drain());
 
-    let pinned_hyp = test_run.tests.into_iter().next().unwrap();
+    let pinned_hyp = test_run.hyps.values().next().unwrap();
 
     handler.handle(
         HypRunTrigger::PinHyp {
@@ -113,7 +113,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     let pinned_run = TestRun::from_events(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(pinned_run.tests.into_iter().all(|test| {
+    assert!(pinned_run.hyps.values().all(|test| {
         (test.id == pinned_hyp.id && test.status == SingleHypStatus::Passed) || test.status == SingleHypStatus::Unknown
     }));
 }
@@ -134,7 +134,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 
     let all_hyps = TestRun::from_events(hyp_run_rx.drain());
 
-    let pinned_hyp = all_hyps.tests.into_iter().next().unwrap().to_owned();
+    let pinned_hyp = all_hyps.hyps.values().next().unwrap().to_owned();
 
     handler.handle(HypRunTrigger::PinHyp { id: pinned_hyp.id }, Cancellation::default());
     handler.handle(HypRunTrigger::ClearPinnedHyps, Cancellation::default());
@@ -145,8 +145,8 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     // Assert that all tests are unknown, except the pinned test, which is passing
     assert!(
         test_run
-            .tests
-            .into_iter()
+            .hyps
+            .values()
             .all(|test| { test.status == SingleHypStatus::Passed })
     );
 }
@@ -254,7 +254,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let hyp_run = TestRun::from_events(hyp_run_rx);
 
-    let failed_test = hyp_run.tests.find(&failed_test).unwrap();
+    let failed_test = hyp_run.hyps.get(&failed_test).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -290,7 +290,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let hyp_run = TestRun::from_events(hyp_run_rx);
 
-    let failed_test = hyp_run.tests.find(&failed_hyp).unwrap();
+    let failed_test = hyp_run.hyps.get(&failed_hyp).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic

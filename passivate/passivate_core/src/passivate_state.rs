@@ -1,5 +1,6 @@
 use passivate_delegation::Rx;
-use passivate_hyp_model::{hyp_run_events::HypRunEvent, test_run::TestRun};
+use passivate_hyp_model::hyp_run_events::{HypRunChange, HypRunEvent};
+use passivate_hyp_model::test_run::TestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
 pub struct PassivateState
@@ -25,16 +26,18 @@ impl PassivateState
         }
     }
 
-    pub fn update(&mut self)
+    pub fn update(&mut self) -> Option<HypRunChange<'_>>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
-            self.process_event(hyp_run_event);
+            return self.process_event(hyp_run_event);
         }
+
+        None
     }
 
-    pub fn process_event(&mut self, event: HypRunEvent)
+    pub fn process_event(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
     {
-        self.hyp_run.update(event);
+        self.hyp_run.update(event)
     }
 }
