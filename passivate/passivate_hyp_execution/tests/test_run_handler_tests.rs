@@ -12,7 +12,7 @@ use passivate_hyp_execution::test_helpers::test_run_setup::TestRunSetup;
 use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
 use passivate_hyp_execution::test_run_errors::TestRunError;
 use passivate_hyp_execution::test_run_handler::TestRunHandler;
-use passivate_hyp_execution::test_runner::HypRunner;
+use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};

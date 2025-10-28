@@ -11,7 +11,7 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
-use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, test_run_handler::TestRunHandler, test_runner::HypRunner};
+use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, test_run_handler::TestRunHandler, hyp_runner::HypRunner};
 
 pub struct TestRunSetup
 {

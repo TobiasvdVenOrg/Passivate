@@ -10,7 +10,7 @@ use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::test_runner::HypRunner;
+use crate::hyp_runner::HypRunner;
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {

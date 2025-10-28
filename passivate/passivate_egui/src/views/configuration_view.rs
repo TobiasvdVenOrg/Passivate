@@ -73,7 +73,7 @@ mod tests
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
     use passivate_hyp_execution::test_run_handler::TestRunHandler;
-    use passivate_hyp_execution::test_runner::HypRunner;
+    use passivate_hyp_execution::hyp_runner::HypRunner;
     use passivate_hyp_model::change_event::ChangeEvent;
     use passivate_hyp_names::test_name;
 
