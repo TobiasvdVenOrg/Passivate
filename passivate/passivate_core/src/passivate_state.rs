@@ -29,7 +29,12 @@ impl PassivateState
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
-            self.hyp_run.update(hyp_run_event);
+            self.process_event(hyp_run_event);
         }
+    }
+
+    pub fn process_event(&mut self, event: HypRunEvent)
+    {
+        self.hyp_run.update(event);
     }
 }
