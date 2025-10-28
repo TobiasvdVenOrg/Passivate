@@ -11,7 +11,7 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
-use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, test_run_handler::TestRunHandler, test_runner::TestRunner};
+use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, test_run_handler::TestRunHandler, test_runner::HypRunner};
 
 pub struct TestRunSetup
 {
@@ -61,7 +61,7 @@ impl TestRunSetup
             .build()
     }
 
-    pub fn build_test_runner(&self) -> TestRunner
+    pub fn build_test_runner(&self) -> HypRunner
     {
         #[cfg(target_os = "windows")]
         let target = OsString::from("x86_64-pc-windows-msvc");
@@ -69,7 +69,7 @@ impl TestRunSetup
         #[cfg(target_os = "linux")]
         let target = OsString::from("aarch64-unknown-linux-gnu");
 
-        TestRunner::new(
+        HypRunner::new(
             target,
             self.get_workspace_path().clone(),
             self.get_output_path().clone(),

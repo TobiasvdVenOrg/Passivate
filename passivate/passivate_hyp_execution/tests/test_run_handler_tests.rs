@@ -12,7 +12,7 @@ use passivate_hyp_execution::test_helpers::test_run_setup::TestRunSetup;
 use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
 use passivate_hyp_execution::test_run_errors::TestRunError;
 use passivate_hyp_execution::test_run_handler::TestRunHandler;
-use passivate_hyp_execution::test_runner::TestRunner;
+use passivate_hyp_execution::test_runner::HypRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
 use passivate_hyp_model::single_test_status::SingleTestStatus;
 use passivate_hyp_model::test_run::{FailedTestRun, TestRun, TestRunState};
@@ -303,7 +303,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
-    let mut test_runner = TestRunner::faux();
+    let mut test_runner = HypRunner::faux();
     test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
     let (hyp_run_tx, hyp_run_rx) = Tx::new();

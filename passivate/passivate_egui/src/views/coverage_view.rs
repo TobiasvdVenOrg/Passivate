@@ -106,7 +106,7 @@ mod tests
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
     use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_delegation::{Rx, Tx};
-    use passivate_hyp_execution::{test_run_handler::TestRunHandler, test_runner::TestRunner};
+    use passivate_hyp_execution::{test_run_handler::TestRunHandler, test_runner::HypRunner};
     use passivate_hyp_names::test_name;
 
     use crate::coverage_view::CoverageView;
@@ -245,7 +245,7 @@ mod tests
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_status_sender(Tx::stub())
-            .runner(TestRunner::faux())
+            .runner(HypRunner::faux())
             .hyp_run_tx(Tx::stub())
             .build();
 

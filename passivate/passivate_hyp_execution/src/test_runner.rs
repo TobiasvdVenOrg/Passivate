@@ -33,7 +33,7 @@ use crate::nextest_cargo_options;
 
 #[faux::create]
 #[derive(Clone)]
-pub struct TestRunner
+pub struct HypRunner
 {
     target: OsString,
     working_dir: Utf8PathBuf,
@@ -42,7 +42,7 @@ pub struct TestRunner
 }
 
 #[faux::methods]
-impl TestRunner
+impl HypRunner
 {
     pub fn new(
         target: OsString,

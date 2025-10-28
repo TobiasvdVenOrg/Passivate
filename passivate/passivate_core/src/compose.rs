@@ -9,7 +9,7 @@ use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
 use passivate_hyp_execution::change_event_handler::change_event_thread;
 use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
-use passivate_hyp_execution::test_runner::TestRunner;
+use passivate_hyp_execution::test_runner::HypRunner;
 use passivate_hyp_model::change_event::ChangeEvent;
 use crate::passivate_args::PassivateArgs;
 use crate::passivate_state::PassivateState;
@@ -67,7 +67,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
 
-    let test_runner = TestRunner::new(
+    let test_runner = HypRunner::new(
         target,
         workspace_path.clone(),
         target_path.clone(),

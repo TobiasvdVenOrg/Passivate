@@ -10,7 +10,7 @@ use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_model::test_run::FailedTestRun;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::test_runner::TestRunner;
+use crate::test_runner::HypRunner;
 
 pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
 {
@@ -27,7 +27,7 @@ pub fn test_run_thread(rx: Rx<CancellableMessage<ChangeEvent>>, mut handler: Tes
 #[derive(Builder)]
 pub struct TestRunHandler
 {
-    runner: TestRunner,
+    runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
     hyp_run_tx: Tx<HypRunEvent>,
     coverage_status_sender: Tx<CoverageStatus>,
