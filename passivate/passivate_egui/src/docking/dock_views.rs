@@ -61,20 +61,20 @@ impl View for PlaceholderView
     }
 }
 
-pub struct DockViewer<'a, TView, TState, TCustomUi>
+pub struct DockViewer<'a, TView, TContext, TCustomUi>
     where 
         TView : View,
-        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &'a mut TState)
+        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &'a mut TContext)
 {
     pub dock_views: &'a mut DockViews<TView>,
-    pub state: &'a mut TState,
+    pub context: &'a mut TContext,
     pub custom_ui: TCustomUi
 }
 
-impl<TView, TState, TCustomUi> TabViewer for DockViewer<'_, TView, TState, TCustomUi>
+impl<TView, TContext, TCustomUi> TabViewer for DockViewer<'_, TView, TContext, TCustomUi>
     where 
         TView : View,
-        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &mut TState)
+        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &mut TContext)
 {
     type Tab = DockId;
 
@@ -97,7 +97,7 @@ impl<TView, TState, TCustomUi> TabViewer for DockViewer<'_, TView, TState, TCust
 
         match dock_view
         {
-            DockView::View(view) => (self.custom_ui)(ui, view, self.state),
+            DockView::View(view) => (self.custom_ui)(ui, view, self.context),
             DockView::Placeholder(placeholder_view) => placeholder_view.ui(ui),
         }
     }

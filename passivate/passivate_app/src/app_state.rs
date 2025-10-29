@@ -1,10 +1,9 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
-use passivate_core::passivate_state_change::PassivateStateChange;
+use passivate_egui::docking::dock_views::DockViews;
+use passivate_egui::docking::docking_layout::DockingLayout;
 use passivate_egui::passivate_view::PassivateView;
-use passivate_egui::passivate_view_state::{HypDetails, PassivateViewState};
-use passivate_egui::snapshots::Snapshots;
-use passivate_egui::snapshots::snapshot_handles::SnapshotHandles;
+use passivate_egui::passivate_view_state::PassivateViewState;
 
 pub struct AppState
 {
@@ -24,46 +23,19 @@ impl AppState
         }
     }
 
-    pub fn update(ui: &mut egui::Ui, view: &mut PassivateView, state: &mut AppState)
+    pub fn update(&mut self, ctx: &egui::Context)
     {
-        if let Some(change) = state.state.update()
+        let change = self.state.update();
+
+        if let Some(change) = &change
         {
-            match change
-            {
-                PassivateStateChange::HypDetailsChanged(single_hyp) => {
-                    if let Some(details) = &mut state.view_state.hyp_details
-                    && details.hyp.id == single_hyp.id
-                    {
-                        details.hyp = single_hyp.clone();
-                    }
-                },
-            }
+            self.view_state.update(change, &self.configuration, ctx);
         }
-
-        match view
-        {
-            PassivateView::Configuration(configuration_view) => configuration_view.ui(ui),
-            PassivateView::Coverage(coverage_view) => coverage_view.ui(ui),
-            PassivateView::Details(details_view) => details_view.ui(ui, state.view_state.hyp_details.as_ref()),
-            PassivateView::Log(log_view) => log_view.ui(ui),
-            PassivateView::HypRun(test_run_view) => 
-            {
-                if let Some(selected_hyp) = test_run_view.ui(ui, &state.state.hyp_run)
-                {
-                    state.state.selected_hyp = Some(selected_hyp.id.clone());
-
-                    let snapshot_directories = state.configuration.get(|c| c.snapshot_directories.clone());
-
-                    if !snapshot_directories.is_empty()
-                    {
-                        let snapshot = Snapshots::new(snapshot_directories).from_hyp(&selected_hyp.id);
-                        let snapshot_handles = SnapshotHandles::new(selected_hyp.id.clone(), snapshot, ui.ctx());
-
-                        state.view_state.hyp_details = Some(HypDetails::new(selected_hyp.clone(), Some(snapshot_handles)));
-                    }
-                }
-            }
-        }
+    }
+    
+    pub fn ui(&self, egui_context: &egui::Context, layout: &mut DockingLayout, dock_views: &mut DockViews<PassivateView>)
+    {
+        self.view_state.ui(&self.state, egui_context, dock_views, layout);
     }
 }
 
@@ -82,10 +54,10 @@ pub mod tests
     use passivate_egui::passivate_view::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_egui::{DetailsView, TestRunView};
+    use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-    use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -102,7 +74,7 @@ pub mod tests
             let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
                 AppState::update(ui, &mut test_run_view, &mut app_state);
             });
-            
+
             test_run_ui.run();
             let test_entry = test_run_ui.get_by_label("example_test");
             test_entry.click();
@@ -121,21 +93,25 @@ pub mod tests
         details_ui.snapshot(&test_name!());
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState {
+    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState
+    {
         let mut hyp_run = HypRun::default();
         let example_hyp = example_hyp();
         hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
-        
+
         let passivate_state = PassivateState::with_initial_run_state(hyp_run, hyp_run_rx);
         let view_state = PassivateViewState::default();
-        let configuration = ConfigurationManager::new(PassivateConfiguration {
-            snapshot_directories: vec![get_example_snapshots_path()],
-            ..PassivateConfiguration::default()
-        }, Tx::stub());
-        
+        let configuration = ConfigurationManager::new(
+            PassivateConfiguration {
+                snapshot_directories: vec![get_example_snapshots_path()],
+                ..PassivateConfiguration::default()
+            },
+            Tx::stub()
+        );
+
         AppState::new(passivate_state, view_state, configuration)
     }
-    
+
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
@@ -148,7 +124,7 @@ pub mod tests
             let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
                 AppState::update(ui, &mut test_run_view, &mut app_state);
             });
-            
+
             test_run_ui.run();
             let test_entry = test_run_ui.get_by_label("example_test");
             test_entry.click();
@@ -171,7 +147,7 @@ pub mod tests
             details_ui.fit_contents();
             details_ui.snapshot(&test_name!());
         }
-        
+
         let hyp = app_state.state.hyp_run.hyps.values().exactly_one().unwrap();
         assert_that!(&hyp.status, is_variant!(SingleHypStatus::Passed));
     }
@@ -181,7 +157,7 @@ pub mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp() -> SingleHyp 
+    fn example_hyp() -> SingleHyp
     {
         let hyp_id = HypId::new("example_crate", "example_test").unwrap();
         SingleHyp::new(hyp_id, SingleHypStatus::Failed, vec![])

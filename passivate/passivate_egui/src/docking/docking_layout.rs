@@ -44,7 +44,7 @@ impl DockingLayout
         self.state.iter_all_tabs().map(|((_surface, _node), tab)| tab).collect()
     }
 
-    pub fn get_state(&mut self) -> &mut DockState<DockId>
+    pub fn dock_state(&mut self) -> &mut DockState<DockId>
     {
         &mut self.state
     }
