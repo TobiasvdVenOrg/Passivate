@@ -6,7 +6,7 @@ pub enum PassivateView
     Coverage(CoverageView),
     Details(DetailsView),
     Log(LogView),
-    TestRun(TestRunView)
+    HypRun(TestRunView)
 }
 
 impl View for PassivateView
@@ -19,7 +19,7 @@ impl View for PassivateView
             PassivateView::Coverage(_) => DockId::from("coverage_view"),
             PassivateView::Details(_) => DockId::from("details_view"),
             PassivateView::Log(_) => DockId::from("log_view"),
-            PassivateView::TestRun(_) => DockId::from("test_run_view"),
+            PassivateView::HypRun(_) => DockId::from("test_run_view"),
         }
     }
 
@@ -31,7 +31,7 @@ impl View for PassivateView
             PassivateView::Coverage(_) => String::from("Coverage"),
             PassivateView::Details(_) => String::from("Details"),
             PassivateView::Log(_) => String::from("Log"),
-            PassivateView::TestRun(_) => String::from("Tests"),
+            PassivateView::HypRun(_) => String::from("Tests"),
         }
     }
 }

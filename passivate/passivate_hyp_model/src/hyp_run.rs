@@ -5,13 +5,13 @@ use passivate_hyp_names::hyp_id::HypId;
 use crate::{hyp_run_events::{HypRunChange, HypRunEvent}, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus};
 
 #[derive(Debug, Clone)]
-pub struct TestRun
+pub struct HypRun
 {
     pub state: HypRunState,
     pub hyps: HashMap<HypId, SingleHyp>
 }
 
-impl TestRun
+impl HypRun
 {
     pub fn from_state(state: HypRunState) -> Self
     {
@@ -120,7 +120,7 @@ impl TestRun
     }
 }
 
-impl Default for TestRun
+impl Default for HypRun
 {
     fn default() -> Self
     {

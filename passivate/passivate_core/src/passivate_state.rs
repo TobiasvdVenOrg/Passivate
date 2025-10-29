@@ -1,11 +1,11 @@
 use passivate_delegation::Rx;
 use passivate_hyp_model::hyp_run_events::{HypRunChange, HypRunEvent};
-use passivate_hyp_model::test_run::TestRun;
+use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_names::hyp_id::HypId;
 
 pub struct PassivateState
 {
-    pub hyp_run: TestRun,
+    pub hyp_run: HypRun,
     pub selected_hyp: Option<HypId>,
     hyp_run_rx: Rx<HypRunEvent>
 }
@@ -14,10 +14,10 @@ impl PassivateState
 {
     pub fn new(hyp_run_rx: Rx<HypRunEvent>) -> Self
     {
-        Self::with_initial_run_state(TestRun::default(), hyp_run_rx)
+        Self::with_initial_run_state(HypRun::default(), hyp_run_rx)
     }
 
-    pub fn with_initial_run_state(hyp_run: TestRun, hyp_run_rx: Rx<HypRunEvent>) -> Self
+    pub fn with_initial_run_state(hyp_run: HypRun, hyp_run_rx: Rx<HypRunEvent>) -> Self
     {
         Self {
             hyp_run,

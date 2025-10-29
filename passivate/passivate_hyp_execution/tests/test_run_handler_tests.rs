@@ -16,7 +16,7 @@ use passivate_hyp_execution::test_run_handler::TestRunHandler;
 use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-use passivate_hyp_model::test_run::TestRun;
+use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use pretty_assertions::assert_eq;
@@ -45,7 +45,7 @@ pub fn handle_single_test_run()
         Cancellation::default()
     );
 
-    let test_run = TestRun::from_events(hyp_run_rx);
+    let test_run = HypRun::from_events(hyp_run_rx);
 
     assert_that!(&test_run.state, is_variant!(HypRunState::Idle));
     assert!(
@@ -77,7 +77,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
         Cancellation::default()
     );
 
-    let test_run = TestRun::from_events(hyp_run_rx);
+    let test_run = HypRun::from_events(hyp_run_rx);
 
     let single_hyp = test_run.hyps.values().exactly_one().expect("expected exactly one test");
     assert_that!(&single_hyp.id, eq(hyp_to_run));
@@ -98,7 +98,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let test_run = TestRun::from_events(hyp_run_rx.drain());
+    let test_run = HypRun::from_events(hyp_run_rx.drain());
 
     let pinned_hyp = test_run.hyps.values().next().unwrap();
 
@@ -110,7 +110,7 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     );
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let pinned_run = TestRun::from_events(hyp_run_rx.drain());
+    let pinned_run = HypRun::from_events(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
     assert!(pinned_run.hyps.values().all(|test| {
@@ -132,7 +132,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let all_hyps = TestRun::from_events(hyp_run_rx.drain());
+    let all_hyps = HypRun::from_events(hyp_run_rx.drain());
 
     let pinned_hyp = all_hyps.hyps.values().next().unwrap().to_owned();
 
@@ -140,7 +140,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     handler.handle(HypRunTrigger::ClearPinnedHyps, Cancellation::default());
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let test_run = TestRun::from_events(hyp_run_rx.drain());
+    let test_run = HypRun::from_events(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
     assert!(
@@ -252,7 +252,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let hyp_run = TestRun::from_events(hyp_run_rx);
+    let hyp_run = HypRun::from_events(hyp_run_rx);
 
     let failed_test = hyp_run.hyps.get(&failed_test).unwrap();
 
@@ -288,7 +288,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let hyp_run = TestRun::from_events(hyp_run_rx);
+    let hyp_run = HypRun::from_events(hyp_run_rx);
 
     let failed_test = hyp_run.hyps.get(&failed_hyp).unwrap();
 
@@ -325,7 +325,7 @@ pub fn when_test_run_fails_error_is_reported()
 
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let state = TestRun::from_events(hyp_run_rx).state;
+    let state = HypRun::from_events(hyp_run_rx).state;
 
     assert_eq!(
         state,

@@ -46,7 +46,7 @@ impl AppState
             PassivateView::Coverage(coverage_view) => coverage_view.ui(ui),
             PassivateView::Details(details_view) => details_view.ui(ui, state.view_state.hyp_details.as_ref()),
             PassivateView::Log(log_view) => log_view.ui(ui),
-            PassivateView::TestRun(test_run_view) => 
+            PassivateView::HypRun(test_run_view) => 
             {
                 if let Some(selected_hyp) = test_run_view.ui(ui, &state.state.hyp_run)
                 {
@@ -85,7 +85,7 @@ pub mod tests
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-    use passivate_hyp_model::test_run::TestRun;
+    use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -98,7 +98,7 @@ pub mod tests
         let mut app_state = example_app_state(Rx::stub());
 
         {
-            let mut test_run_view = PassivateView::TestRun(TestRunView);
+            let mut test_run_view = PassivateView::HypRun(TestRunView);
             let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
                 AppState::update(ui, &mut test_run_view, &mut app_state);
             });
@@ -122,7 +122,7 @@ pub mod tests
     }
 
     fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState {
-        let mut hyp_run = TestRun::default();
+        let mut hyp_run = HypRun::default();
         let example_hyp = example_hyp();
         hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
         
@@ -144,7 +144,7 @@ pub mod tests
         let mut app_state = example_app_state(hyp_run_rx);
 
         {
-            let mut test_run_view = PassivateView::TestRun(TestRunView);
+            let mut test_run_view = PassivateView::HypRun(TestRunView);
             let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
                 AppState::update(ui, &mut test_run_view, &mut app_state);
             });
