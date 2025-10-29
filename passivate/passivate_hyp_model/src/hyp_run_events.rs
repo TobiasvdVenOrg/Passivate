@@ -27,5 +27,5 @@ pub enum HypRunEvent
 
 pub enum HypRunChange<'a>
 {
-    HypDetailsChanged(&'a SingleHyp)
+    HypUpdated(&'a SingleHyp)
 }

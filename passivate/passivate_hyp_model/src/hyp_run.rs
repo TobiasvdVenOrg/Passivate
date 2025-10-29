@@ -83,7 +83,7 @@ impl HypRun
                     Entry::Vacant(vacant_entry) => vacant_entry.insert(hyp),
                 };
                 
-                change = Some(HypRunChange::HypDetailsChanged(inserted));
+                change = Some(HypRunChange::HypUpdated(inserted));
             }
             HypRunEvent::NoTests =>
             {

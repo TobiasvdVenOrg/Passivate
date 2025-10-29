@@ -3,6 +3,8 @@ use passivate_hyp_model::hyp_run_events::{HypRunChange, HypRunEvent};
 use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_names::hyp_id::HypId;
 
+use crate::passivate_state_change::PassivateStateChange;
+
 pub struct PassivateState
 {
     pub hyp_run: HypRun,
@@ -26,17 +28,32 @@ impl PassivateState
         }
     }
 
-    pub fn update(&mut self) -> Option<HypRunChange<'_>>
+    pub fn update(&mut self) -> Option<PassivateStateChange<'_>>
+    {
+        self.try_process_hyp_run_event().map(Self::map_hyp_run_change)
+    }
+
+    fn map_hyp_run_change(change: HypRunChange<'_>) -> PassivateStateChange<'_>
+    {
+        match change
+        {
+            HypRunChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp),
+        }
+    }
+
+    fn try_process_hyp_run_event(&mut self) -> Option<HypRunChange<'_>>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
-            return self.process_event(hyp_run_event);
+            self.process_hyp_run_event(hyp_run_event)
         }
-
-        None
+        else 
+        {
+            None
+        }
     }
 
-    pub fn process_event(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
+    fn process_hyp_run_event(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
     {
         self.hyp_run.update(event)
     }

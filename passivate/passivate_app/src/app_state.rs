@@ -1,10 +1,10 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
+use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_egui::passivate_view::PassivateView;
 use passivate_egui::passivate_view_state::{HypDetails, PassivateViewState};
 use passivate_egui::snapshots::Snapshots;
 use passivate_egui::snapshots::snapshot_handles::SnapshotHandles;
-use passivate_hyp_model::hyp_run_events::HypRunChange;
 
 pub struct AppState
 {
@@ -30,7 +30,7 @@ impl AppState
         {
             match change
             {
-                HypRunChange::HypDetailsChanged(single_hyp) => {
+                PassivateStateChange::HypDetailsChanged(single_hyp) => {
                     if let Some(details) = &mut state.view_state.hyp_details
                     && details.hyp.id == single_hyp.id
                     {
