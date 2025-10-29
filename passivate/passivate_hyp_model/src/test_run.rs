@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Entry};
 
 use passivate_hyp_names::hyp_id::HypId;
 
@@ -74,10 +74,16 @@ impl TestRun
             {
                 self.state = HypRunState::Running;
 
-                let existing = self.hyps.get_mut(&hyp.id).expect("hyp finished that did not exist");
-                *existing = hyp;
-
-                change = Some(HypRunChange::HypDetailsChanged(existing));
+                let inserted = match self.hyps.entry(hyp.id.clone())
+                {
+                    Entry::Occupied(mut occupied_entry) => {
+                        occupied_entry.insert(hyp);
+                        occupied_entry.into_mut()
+                    },
+                    Entry::Vacant(vacant_entry) => vacant_entry.insert(hyp),
+                };
+                
+                change = Some(HypRunChange::HypDetailsChanged(inserted));
             }
             HypRunEvent::NoTests =>
             {

@@ -32,6 +32,7 @@ impl AppState
             {
                 HypRunChange::HypDetailsChanged(single_hyp) => {
                     if let Some(details) = &mut state.view_state.hyp_details
+                    && details.hyp.id == single_hyp.id
                     {
                         details.hyp = single_hyp.clone();
                     }
