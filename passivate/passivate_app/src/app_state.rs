@@ -7,18 +7,20 @@ use passivate_egui::passivate_view_state::PassivateViewState;
 
 pub struct AppState
 {
-    pub state: PassivateState,
-    pub view_state: PassivateViewState,
-    pub configuration: ConfigurationManager
+    state: PassivateState,
+    view_state: PassivateViewState,
+    dock_views: DockViews<PassivateView>,
+    configuration: ConfigurationManager
 }
 
 impl AppState
 {
-    pub fn new(state: PassivateState, view_state: PassivateViewState, configuration: ConfigurationManager) -> Self
+    pub fn new(state: PassivateState, view_state: PassivateViewState, dock_views: DockViews<PassivateView>, configuration: ConfigurationManager) -> Self
     {
         Self {
             state,
             view_state,
+            dock_views,
             configuration
         }
     }
@@ -33,11 +35,11 @@ impl AppState
         }
     }
 
-    pub fn update_and_ui(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout, dock_views: &mut DockViews<PassivateView>)
+    pub fn update_and_ui(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout)
     {
         self.update(egui_context);
-        
-        let changes = self.view_state.ui(&self.state, egui_context, dock_views, layout);
+
+        let changes = self.view_state.ui(&self.state, egui_context, &mut self.dock_views, layout);
 
         for change in &changes
         {

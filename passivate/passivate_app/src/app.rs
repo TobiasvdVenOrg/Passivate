@@ -9,7 +9,6 @@ use crate::app_state::AppState;
 pub struct App<'a>
 {
     layout: LayoutManagement,
-    dock_views: DockViews<PassivateView>,
     state: &'a mut AppState
 }
 
@@ -17,20 +16,18 @@ impl<'a> App<'a>
 {
     pub fn new(
         layout: LayoutManagement,
-        dock_views: DockViews<PassivateView>,
         state: &'a mut AppState
     ) -> Self
     {
         Self {
             layout,
-            dock_views,
             state
         }
     }
 
     fn main_update(&mut self, ctx: &Context)
     {
-        self.state.update_and_ui(ctx, self.layout.get_current(), &mut self.dock_views);
+        self.state.update_and_ui(ctx, self.layout.get_current());
     }
 }
 

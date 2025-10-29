@@ -47,7 +47,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
     };
 
     let view_state = PassivateViewState::default();
-    let mut app_state = AppState::new(state, view_state, configuration);
+    let mut app_state = AppState::new(state, view_state, dock_views, configuration);
 
     eframe::run_native(
         "Passivate",
@@ -57,7 +57,6 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
 
             Ok(Box::new(App::new(
                 layout,
-                dock_views,
                 &mut app_state
             )))
         })
