@@ -23,19 +23,26 @@ impl AppState
         }
     }
 
-    pub fn update(&mut self, ctx: &egui::Context)
+    pub fn update(&mut self, egui_context: &egui::Context)
     {
         let change = self.state.update();
 
         if let Some(change) = &change
         {
-            self.view_state.update(change, &self.configuration, ctx);
+            self.view_state.update(change, &self.configuration, egui_context);
         }
     }
-    
-    pub fn ui(&self, egui_context: &egui::Context, layout: &mut DockingLayout, dock_views: &mut DockViews<PassivateView>)
+
+    pub fn update_and_ui(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout, dock_views: &mut DockViews<PassivateView>)
     {
-        self.view_state.ui(&self.state, egui_context, dock_views, layout);
+        self.update(egui_context);
+        
+        let changes = self.view_state.ui(&self.state, egui_context, dock_views, layout);
+
+        for change in &changes
+        {
+            self.view_state.update(change, &self.configuration, egui_context);
+        }
     }
 }
 
@@ -53,7 +60,7 @@ pub mod tests
     use passivate_delegation::{Rx, Tx};
     use passivate_egui::passivate_view::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
-    use passivate_egui::{DetailsView, TestRunView};
+    use passivate_egui::{DetailsView, TestRunView, passivate_layout};
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
@@ -72,6 +79,8 @@ pub mod tests
         {
             let mut test_run_view = PassivateView::HypRun(TestRunView);
             let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                app_state.update(ui.ctx());
+                app_state.ui(ui.ctx(), passivate_layout::default(app_state), dock_views);
                 AppState::update(ui, &mut test_run_view, &mut app_state);
             });
 

@@ -16,16 +16,16 @@ pub struct PassivateViewState
     pub hyp_details: Option<HypDetails>
 }
 
-pub struct PassivateViewContext<'a>
+pub struct PassivateViewContext<'a, 'b>
 {
-    state: &'a PassivateState,
     view_state: &'a PassivateViewState,
-    changes: Vec<PassivateStateChange<'a>>
+    state: &'b PassivateState,
+    changes: Vec<PassivateStateChange<'b>>
 }
 
-impl<'a> PassivateViewContext<'a>
+impl<'a, 'b> PassivateViewContext<'a, 'b>
 {
-    fn new(state: &'a PassivateState, view_state: &'a PassivateViewState) -> Self
+    fn new(view_state: &'a PassivateViewState, state: &'b PassivateState) -> Self
     {
         Self {
             state,
@@ -37,12 +37,7 @@ impl<'a> PassivateViewContext<'a>
 
 impl PassivateViewState
 {
-    pub fn update(
-        &mut self,
-        change: &PassivateStateChange,
-        configuration: &ConfigurationManager,
-        egui_context: &egui::Context
-    )
+    pub fn update(&mut self, change: &PassivateStateChange, configuration: &ConfigurationManager, egui_context: &egui::Context)
     {
         match change
         {
@@ -67,15 +62,15 @@ impl PassivateViewState
         };
     }
 
-    pub fn ui(
+    pub fn ui<'b>(
         &self,
-        state: &PassivateState,
+        state: &'b PassivateState,
         egui_context: &egui::Context,
         dock_views: &mut DockViews<PassivateView>,
         layout: &mut DockingLayout
-    )
+    ) -> Vec<PassivateStateChange<'b>>
     {
-        let mut passivate_context = PassivateViewContext::new(state, self);
+        let mut passivate_context = PassivateViewContext::new(self, state);
 
         let mut dock_viewer = DockViewer {
             dock_views,
@@ -91,9 +86,11 @@ impl PassivateViewState
             .show(egui_context, &mut dock_viewer);
 
         egui_context.request_repaint();
+
+        passivate_context.changes
     }
 
-    fn internal_ui<'a>(ui: &mut egui::Ui, view: &mut PassivateView, context: &mut PassivateViewContext<'a>)
+    fn internal_ui<'a, 'b>(ui: &mut egui::Ui, view: &mut PassivateView, context: &mut PassivateViewContext<'a, 'b>)
     {
         let change = {
             let state = context.state;

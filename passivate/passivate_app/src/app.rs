@@ -30,8 +30,7 @@ impl<'a> App<'a>
 
     fn main_update(&mut self, ctx: &Context)
     {
-        self.state.update(ctx);
-        self.state.ui(ctx, self.layout.get_current(), &mut self.dock_views);
+        self.state.update_and_ui(ctx, self.layout.get_current(), &mut self.dock_views);
     }
 }
 
