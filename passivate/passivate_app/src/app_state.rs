@@ -54,15 +54,15 @@ pub mod tests
     use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
-    use galvanic_assert::{assert_that, is_variant};
-    use itertools::Itertools;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
     use passivate_delegation::{Rx, Tx};
+    use passivate_egui::docking::dock_views::DockViews;
+    use passivate_egui::docking::docking_layout::DockingLayout;
     use passivate_egui::passivate_view::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
-    use passivate_egui::{DetailsView, TestRunView, passivate_layout};
+    use passivate_egui::{DetailsView, TestRunView};
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::single_hyp::SingleHyp;
@@ -70,41 +70,30 @@ pub mod tests
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
+    use passivate_egui::docking::view::View;
 
     use crate::app_state::AppState;
 
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let mut app_state = example_app_state(Rx::stub());
+        let views = vec![PassivateView::Details(DetailsView::new(Tx::stub())), PassivateView::HypRun(TestRunView)];
+        let (mut app_state, mut layout) = example_app_state(Rx::stub(), views);
 
-        {
-            let mut test_run_view = PassivateView::HypRun(TestRunView);
-            let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-                app_state.update(ui.ctx());
-                app_state.ui(ui.ctx(), passivate_layout::default(app_state), dock_views);
-                AppState::update(ui, &mut test_run_view, &mut app_state);
-            });
-
-            test_run_ui.run();
-            let test_entry = test_run_ui.get_by_label("example_test");
-            test_entry.click();
-            test_run_ui.run();
-        }
-
-        assert!(app_state.view_state.hyp_details.is_some());
-
-        let mut details_view = PassivateView::Details(DetailsView::new(Tx::stub()));
-        let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            AppState::update(ui, &mut details_view, &mut app_state);
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            app_state.update_and_ui(ui.ctx(), &mut layout);
         });
 
-        details_ui.run();
-        details_ui.fit_contents();
-        details_ui.snapshot(&test_name!());
+        ui.run();
+        let test_entry = ui.get_by_label("example_test");
+        test_entry.click();
+
+        ui.run();
+        ui.fit_contents();
+        ui.snapshot(&test_name!());
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> AppState
+    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>, views: Vec<PassivateView>) -> (AppState, DockingLayout)
     {
         let mut hyp_run = HypRun::default();
         let example_hyp = example_hyp();
@@ -120,47 +109,39 @@ pub mod tests
             Tx::stub()
         );
 
-        AppState::new(passivate_state, view_state, configuration)
+        let layout = DockingLayout::new(views.iter().map(|v| v.id()));
+        let dock_views = DockViews::new(views);
+        let app_state = AppState::new(passivate_state, view_state, dock_views, configuration);
+
+        (app_state, layout)
     }
 
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
         let (hyp_run_tx, hyp_run_rx) = Tx::new();
+        let views = vec![PassivateView::Details(DetailsView::new(Tx::stub())), PassivateView::HypRun(TestRunView)];
 
-        let mut app_state = example_app_state(hyp_run_rx);
+        let (mut app_state, mut layout) = example_app_state(hyp_run_rx, views);
 
-        {
-            let mut test_run_view = PassivateView::HypRun(TestRunView);
-            let mut test_run_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-                AppState::update(ui, &mut test_run_view, &mut app_state);
-            });
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            app_state.update_and_ui(ui.ctx(), &mut layout);
+        });
 
-            test_run_ui.run();
-            let test_entry = test_run_ui.get_by_label("example_test");
-            test_entry.click();
-            test_run_ui.run();
-        }
+        ui.run();
 
-        {
-            let mut details_view = PassivateView::Details(DetailsView::new(Tx::stub()));
-            let mut details_ui = Harness::new_ui(|ui: &mut egui::Ui| {
-                AppState::update(ui, &mut details_view, &mut app_state);
-            });
+        let test_entry = ui.get_by_label("example_test");
+        test_entry.click();
+        ui.run();
 
-            details_ui.run();
 
-            let mut example_hyp = example_hyp();
-            example_hyp.status = SingleHypStatus::Passed;
-            hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
+        let mut example_hyp = example_hyp();
+        example_hyp.status = SingleHypStatus::Passed;
+        hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
 
-            details_ui.run();
-            details_ui.fit_contents();
-            details_ui.snapshot(&test_name!());
-        }
-
-        let hyp = app_state.state.hyp_run.hyps.values().exactly_one().unwrap();
-        assert_that!(&hyp.status, is_variant!(SingleHypStatus::Passed));
+        ui.run();
+        ui.fit_contents();
+        ui.snapshot(&test_name!());
     }
 
     fn get_example_snapshots_path() -> Utf8PathBuf

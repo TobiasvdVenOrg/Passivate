@@ -72,12 +72,12 @@ impl View for TestView
 pub fn placeholder_view_is_used_when_layout_contains_missing_ids()
 {
     let mut dock_views = DockViews::new(Vec::new());
-    let mut state = ();
+    let mut context = ();
     let custom_ui = |_ui: &mut egui::Ui, _view: &mut TestView, _state: &mut ()| panic!();
 
     let mut dock_viewer = DockViewer {
         dock_views: &mut dock_views,
-        state: &mut state,
+        context: &mut context,
         custom_ui
     };
 

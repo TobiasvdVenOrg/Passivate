@@ -1,8 +1,6 @@
 use eframe::Frame;
 use egui::Context;
-use passivate_egui::docking::dock_views::DockViews;
 use passivate_egui::docking::layout_management::LayoutManagement;
-use passivate_egui::passivate_view::PassivateView;
 
 use crate::app_state::AppState;
 
