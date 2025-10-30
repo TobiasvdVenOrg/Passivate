@@ -6,7 +6,7 @@ use passivate_hyp_model::single_hyp::SingleHyp;
 
 use crate::docking::dock_views::{DockViewer, DockViews};
 use crate::docking::docking_layout::DockingLayout;
-use crate::passivate_view::PassivateView;
+use crate::passivate_views::PassivateView;
 use crate::snapshots::Snapshots;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 

@@ -2,7 +2,7 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_egui::docking::dock_views::DockViews;
 use passivate_egui::docking::docking_layout::DockingLayout;
-use passivate_egui::passivate_view::PassivateView;
+use passivate_egui::passivate_views::PassivateView;
 use passivate_egui::passivate_view_state::PassivateViewState;
 
 pub struct AppState
@@ -60,7 +60,7 @@ pub mod tests
     use passivate_delegation::{Rx, Tx};
     use passivate_egui::docking::dock_views::DockViews;
     use passivate_egui::docking::docking_layout::DockingLayout;
-    use passivate_egui::passivate_view::PassivateView;
+    use passivate_egui::passivate_views::PassivateView;
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_egui::{DetailsView, TestRunView};
     use passivate_hyp_model::hyp_run::HypRun;
@@ -109,7 +109,7 @@ pub mod tests
             Tx::stub()
         );
 
-        let layout = DockingLayout::new(views.iter().map(|v| v.id()));
+        let layout = DockingLayout::new(views.ids());
         let dock_views = DockViews::new(views);
         let app_state = AppState::new(passivate_state, view_state, dock_views, configuration);
 

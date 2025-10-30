@@ -30,10 +30,8 @@ pub struct DockingLayout
 
 impl DockingLayout
 {
-    pub fn new(view_ids: impl Iterator<Item = DockId>) -> Self
+    pub fn new(dock_ids: Vec<DockId>) -> Self
     {
-        let dock_ids = view_ids.collect();
-
         let state = DockState::new(dock_ids);
 
         Self { state }

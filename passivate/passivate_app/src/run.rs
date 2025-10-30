@@ -1,5 +1,5 @@
 use passivate_core::{compose::PassivateCore, startup_errors::StartupError};
-use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view::PassivateView, passivate_view_state::PassivateViewState, test_run_view::TestRunView};
+use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view_state::PassivateViewState, passivate_views::{PassivateView, PassivateViews}, test_run_view::TestRunView};
 
 use crate::{app::App, app_state::AppState};
 
@@ -20,20 +20,20 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
     .. } = passivate;
 
     // Views
-    let tests_view = PassivateView::HypRun(TestRunView);
-    let details_view = PassivateView::Details(DetailsView::new(change_event_tx.clone()));
-    let coverage_view = PassivateView::Coverage(CoverageView::new(coverage_rx, configuration.clone()));
-    let configuration_view = PassivateView::Configuration(ConfigurationView::new(configuration.clone(), change_event_tx));
-    let log_view = PassivateView::Log(LogView::new(log_rx));
+    let tests_view = TestRunView;
+    let details_view = DetailsView::new(change_event_tx.clone());
+    let coverage_view = CoverageView::new(coverage_rx, configuration.clone());
+    let configuration_view = ConfigurationView::new(configuration.clone(), change_event_tx);
+    let log_view = LogView::new(log_rx);
 
-    let views = [tests_view, details_view, coverage_view, configuration_view, log_view];
+    let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
     let layout = passivate_layout::load(
         &passivate_path.join("default_layout.toml"),
         &views
     )?;
 
-    let dock_views = DockViews::new(views);
+    let dock_views = DockViews::new(views.into());
 
     log::info!("Passivate started.");
 

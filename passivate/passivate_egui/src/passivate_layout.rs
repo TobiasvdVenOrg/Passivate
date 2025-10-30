@@ -3,12 +3,11 @@ use passivate_configuration::configuration_errors::ConfigurationLoadError;
 
 use crate::docking::docking_layout::DockingLayout;
 use crate::docking::layout_management::LayoutManagement;
-use crate::docking::view::View;
-use crate::passivate_view::PassivateView;
+use crate::passivate_views::PassivateViews;
 
 pub fn load(
     path: &Utf8Path,
-    views: &[PassivateView]
+    views: &PassivateViews
 ) -> Result<LayoutManagement, ConfigurationLoadError>
 {
     LayoutManagement::from_file_or_default(path, ||
@@ -17,7 +16,7 @@ pub fn load(
     })
 }
 
-pub fn default(views: &[PassivateView]) -> DockingLayout
+pub fn default(views: &PassivateViews) -> DockingLayout
 {
-    DockingLayout::new(views.iter().map(|view| view.id()))
+    DockingLayout::new(views.ids().into_iter().collect())
 }

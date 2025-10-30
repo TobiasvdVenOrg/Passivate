@@ -1,3 +1,5 @@
+mod helpers;
+
 use std::fs;
 use std::sync::Arc;
 
@@ -25,7 +27,7 @@ pub fn loading_a_default_layout_will_succeed_when_no_file_exists_and_later_creat
     let path = dir.join("does_not_exist_yet.toml");
 
     {
-        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(vec![].into_iter()))?;
+        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(vec![]))?;
     }
 
     assert!(fs::exists(path).map_err(Arc::new)?);
@@ -45,7 +47,7 @@ pub fn failing_to_persist_layout_logs_an_error()
             ._when_persist()
             .then_return(Err(ConfigurationPersistError::Path(Utf8PathBuf::new())));
 
-        let _layout = LayoutManagement::from_source_or_default(source, || DockingLayout::new(vec![].into_iter())).unwrap();
+        let _layout = LayoutManagement::from_source_or_default(source, || DockingLayout::new(vec![])).unwrap();
     }
 
     let error = spy_log.into_iter().exactly_one().unwrap();
@@ -107,7 +109,7 @@ pub fn dock_state_can_be_reconstructed_from_serialized_form()
     let path = dir.join("docking_layout.toml");
 
     {
-        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(test_ids.into_iter())).unwrap();
+        let _layout = LayoutManagement::from_file_or_default(&path, || DockingLayout::new(test_ids)).unwrap();
     }
 
     let mut reloaded = LayoutManagement::from_file_or_default(&path, || panic!()).unwrap();
