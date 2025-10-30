@@ -1,3 +1,6 @@
+use passivate_configuration::configuration_manager::ConfigurationManager;
+use passivate_delegation::{Rx, Tx};
+
 use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
 use crate::views::*;
@@ -37,6 +40,18 @@ impl PassivateViews
             configuration_view: PassivateView::Configuration(configuration_view),
             log_view: PassivateView::Log(log_view)
         }
+    }
+
+    pub fn stub() -> Self
+    {
+        let configuration = ConfigurationManager::default_config(Tx::stub());
+
+        PassivateViews::new(
+            TestRunView, 
+            DetailsView::new(Tx::stub()), 
+            CoverageView::new(Rx::stub(), configuration.clone()), 
+            ConfigurationView::new(configuration, Tx::stub()),
+            LogView::new(Rx::stub()))
     }
 
     pub fn get(&self) -> [&PassivateView; 5]

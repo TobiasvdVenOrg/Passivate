@@ -10,8 +10,7 @@ pub fn load(
     views: &PassivateViews
 ) -> Result<LayoutManagement, ConfigurationLoadError>
 {
-    LayoutManagement::from_file_or_default(path, ||
-    {
+    LayoutManagement::from_file_or_default(path, || {
         default(views)
     })
 }
