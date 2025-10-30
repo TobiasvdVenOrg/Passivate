@@ -41,6 +41,15 @@ impl PassivateViewState
     {
         match change
         {
+            PassivateStateChange::HypSelected(hyp) =>
+            {
+                let hyp = (*hyp).clone();
+                let mut hyp_details = HypDetails::new(hyp, None);
+
+                Self::check_for_snapshots(&mut hyp_details, configuration, egui_context);
+
+                self.hyp_details = Some(hyp_details);
+            },
             PassivateStateChange::HypDetailsChanged(hyp) =>
             {
                 if let Some(details) = &mut self.hyp_details
@@ -48,18 +57,24 @@ impl PassivateViewState
                 {
                     details.hyp = (*hyp).clone();
 
-                    let snapshot_directories = configuration.get(|c| c.snapshot_directories.clone());
-
-                    if !snapshot_directories.is_empty()
-                    {
-                        let snapshot = Snapshots::new(snapshot_directories).from_hyp(&hyp.id);
-                        let snapshot_handles = SnapshotHandles::new(hyp.id.clone(), snapshot, egui_context);
-
-                        details.snapshot_handles = Some(snapshot_handles);
-                    }
+                    Self::check_for_snapshots(details, configuration, egui_context);
                 }
             }
         };
+    }
+
+    fn check_for_snapshots(details: &mut HypDetails, configuration: &ConfigurationManager, egui_context: &egui::Context)
+    {
+        let snapshot_directories = configuration.get(|c| c.snapshot_directories.clone());
+
+        if !snapshot_directories.is_empty()
+        {
+            let hyp_id = details.hyp.id.clone();
+            let snapshot = Snapshots::new(snapshot_directories).from_hyp(&hyp_id);
+            let snapshot_handles = SnapshotHandles::new(hyp_id, snapshot, egui_context);
+
+            details.snapshot_handles = Some(snapshot_handles);
+        }
     }
 
     pub fn ui<'b>(
@@ -122,7 +137,7 @@ impl PassivateViewState
                 {
                     test_run_view
                         .ui(ui, &state.hyp_run)
-                        .map(PassivateStateChange::HypDetailsChanged)
+                        .map(PassivateStateChange::HypSelected)
                 }
             }
         };

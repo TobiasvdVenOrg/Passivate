@@ -134,11 +134,11 @@ impl View for PassivateView
     {
         match self
         {
-            PassivateView::Configuration(_) => DockId::from("configuration_view"),
-            PassivateView::Coverage(_) => DockId::from("coverage_view"),
-            PassivateView::Details(_) => DockId::from("details_view"),
-            PassivateView::Log(_) => DockId::from("log_view"),
-            PassivateView::HypRun(_) => DockId::from("test_run_view")
+            PassivateView::Configuration(v) => v.id(),
+            PassivateView::Coverage(v) => v.id(),
+            PassivateView::Details(v) => v.id(),
+            PassivateView::Log(v) => v.id(),
+            PassivateView::HypRun(v) => v.id()
         }
     }
 
@@ -146,11 +146,11 @@ impl View for PassivateView
     {
         match self
         {
-            PassivateView::Configuration(_) => String::from("Configuration"),
-            PassivateView::Coverage(_) => String::from("Coverage"),
-            PassivateView::Details(_) => String::from("Details"),
-            PassivateView::Log(_) => String::from("Log"),
-            PassivateView::HypRun(_) => String::from("Tests")
+            PassivateView::Configuration(v) => v.title(),
+            PassivateView::Coverage(v) => v.title(),
+            PassivateView::Details(v) => v.title(),
+            PassivateView::Log(v) => v.title(),
+            PassivateView::HypRun(v) => v.title()
         }
     }
 }

@@ -1,7 +1,22 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::{hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, hyp_run::HypRun};
 
+use crate::docking::{docking_layout::DockId, view::View};
+
 pub struct TestRunView;
+
+impl View for TestRunView
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("hyp_run_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Tests")
+    }
+}
 
 impl TestRunView
 {

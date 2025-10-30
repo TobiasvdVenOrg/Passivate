@@ -60,6 +60,7 @@ pub mod tests
     use passivate_delegation::{Rx, Tx};
     use passivate_egui::docking::dock_views::DockViews;
     use passivate_egui::docking::docking_layout::DockingLayout;
+    use passivate_egui::passivate_layout;
     use passivate_egui::passivate_views::PassivateViews;
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_hyp_model::hyp_run::HypRun;
@@ -86,6 +87,7 @@ pub mod tests
         test_entry.click();
 
         ui.step();
+        ui.step();
         ui.snapshot(&test_name!());
     }
 
@@ -100,19 +102,17 @@ pub mod tests
             app_state.update_and_ui(ui.ctx(), &mut layout);
         });
 
-        ui.run();
+        ui.step();
 
         let test_entry = ui.get_by_label("example_test");
         test_entry.click();
-        ui.run();
-
+        ui.step();
 
         let mut example_hyp = example_hyp();
         example_hyp.status = SingleHypStatus::Passed;
         hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
 
-        ui.run();
-        ui.fit_contents();
+        ui.step();
         ui.snapshot(&test_name!());
     }
 
@@ -134,7 +134,7 @@ pub mod tests
 
         let views= PassivateViews::stub();
 
-        let layout = DockingLayout::new(views.ids().into_iter().collect());
+        let layout = passivate_layout::default(&views);
         let dock_views = DockViews::new(views.into());
         let app_state = AppState::new(passivate_state, view_state, dock_views, configuration);
 

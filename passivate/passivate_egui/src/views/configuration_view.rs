@@ -3,11 +3,26 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 
+use crate::docking::{docking_layout::DockId, view::View};
+
 pub struct ConfigurationView
 {
     configuration_manager: ConfigurationManager,
     snapshots_path_field: String,
     change_event_tx: Tx<HypRunTrigger>
+}
+
+impl View for ConfigurationView
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("configuration_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Configuration")
+    }
 }
 
 impl ConfigurationView
@@ -49,7 +64,8 @@ impl ConfigurationView
         if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
         {
             _ = self.configuration_manager.update(|c| {
-                c.snapshot_directories.push(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
+                c.snapshot_directories
+                    .push(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
             });
 
             self.snapshots_path_field = String::new();
@@ -72,8 +88,8 @@ mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
-    use passivate_hyp_execution::test_run_handler::TestRunHandler;
     use passivate_hyp_execution::hyp_runner::HypRunner;
+    use passivate_hyp_execution::test_run_handler::TestRunHandler;
     use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_names::test_name;
 
@@ -166,7 +182,9 @@ mod tests
         );
 
         assert_eq!(
-            configuration.get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone()).as_str(),
+            configuration
+                .get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone())
+                .as_str(),
             "Some/Path/To/Snapshots"
         );
     }

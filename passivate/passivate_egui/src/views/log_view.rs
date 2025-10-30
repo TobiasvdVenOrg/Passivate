@@ -2,6 +2,8 @@ use egui::ScrollArea;
 use passivate_delegation::Rx;
 use passivate_log::log_message::LogMessage;
 
+use crate::docking::{docking_layout::DockId, view::View};
+
 pub struct LogView
 {
     receiver: Rx<LogMessage>,
@@ -12,6 +14,19 @@ struct LogEntry
 {
     timestamp: String,
     message: String
+}
+
+impl View for LogView
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("log_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Log")
+    }
 }
 
 impl LogView

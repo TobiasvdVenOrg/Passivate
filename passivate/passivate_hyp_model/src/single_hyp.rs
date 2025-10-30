@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
 use crate::single_hyp_status::SingleHypStatus;
@@ -23,5 +25,13 @@ impl SingleHyp
             status,
             output
         }
+    }
+}
+
+impl Display for SingleHyp
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{} - {:?}", self.name, self.status)
     }
 }

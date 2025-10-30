@@ -3,6 +3,8 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 
+use crate::docking::docking_layout::DockId;
+use crate::docking::view::View;
 use crate::passivate_view_state::HypDetails;
 use crate::snapshots::snapshot_handles::SnapshotHandles;
 use crate::snapshots::SnapshotError;
@@ -10,6 +12,19 @@ use crate::snapshots::SnapshotError;
 pub struct DetailsView
 {
     change_events: Tx<HypRunTrigger>
+}
+
+impl View for DetailsView
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("details_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Details")
+    }
 }
 
 impl DetailsView
