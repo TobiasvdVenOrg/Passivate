@@ -24,7 +24,10 @@ impl log::Log for TxLog
 
     fn log(&self, record: &log::Record)
     {
-        self.tx.send(LogMessage::new(format!("{} - {}", record.level(), record.args())));
+        if record.metadata().target().starts_with("passivate")
+        {
+            self.tx.send(LogMessage::new(format!("{} - {}", record.level(), record.args())));
+        }
     }
 
     fn flush(&self) {}
