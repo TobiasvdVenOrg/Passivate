@@ -16,7 +16,7 @@ pub enum PassivateView
 
 pub struct PassivateViews
 {
-    tests_view: PassivateView,
+    hyp_run_view: PassivateView,
     details_view: PassivateView,
     coverage_view: PassivateView,
     configuration_view: PassivateView,
@@ -26,7 +26,7 @@ pub struct PassivateViews
 impl PassivateViews
 {
     pub fn new(
-        tests_view: TestRunView,
+        hyp_run_view: TestRunView,
         details_view: DetailsView,
         coverage_view: CoverageView,
         configuration_view: ConfigurationView,
@@ -34,7 +34,7 @@ impl PassivateViews
     ) -> Self
     {
         Self {
-            tests_view: PassivateView::HypRun(tests_view),
+            hyp_run_view: PassivateView::HypRun(hyp_run_view),
             details_view: PassivateView::Details(details_view),
             coverage_view: PassivateView::Coverage(coverage_view),
             configuration_view: PassivateView::Configuration(configuration_view),
@@ -57,7 +57,7 @@ impl PassivateViews
     pub fn get(&self) -> [&PassivateView; 5]
     {
         [
-            &self.tests_view,
+            &self.hyp_run_view,
             &self.details_view,
             &self.coverage_view,
             &self.configuration_view,
@@ -68,7 +68,7 @@ impl PassivateViews
     pub fn into(self) -> Vec<PassivateView>
     {
         [
-            self.tests_view,
+            self.hyp_run_view,
             self.details_view,
             self.coverage_view,
             self.configuration_view,
@@ -84,11 +84,21 @@ impl PassivateViews
 
     pub fn hyp_run_view(&self) -> &TestRunView
     {
-        match &self.tests_view
+        match &self.hyp_run_view
         {
             PassivateView::HypRun(test_run_view) => test_run_view,
             _ => panic!("expected hyp run view")
         }
+    }
+
+    pub fn except_hyp_run_view(&self) -> [&PassivateView; 4]
+    {
+        [
+            &self.details_view,
+            &self.coverage_view,
+            &self.configuration_view,
+            &self.log_view
+        ]
     }
 
     pub fn details_view(&self) -> &DetailsView
@@ -100,6 +110,16 @@ impl PassivateViews
         }
     }
 
+    pub fn except_details_view(&self) -> [&PassivateView; 4]
+    {
+        [
+            &self.hyp_run_view,
+            &self.coverage_view,
+            &self.configuration_view,
+            &self.log_view
+        ]
+    }
+
     pub fn coverage_view(&self) -> &CoverageView
     {
         match &self.coverage_view
@@ -107,6 +127,16 @@ impl PassivateViews
             PassivateView::Coverage(coverage_view) => coverage_view,
             _ => panic!("expected coverage view")
         }
+    }
+
+    pub fn except_coverage_view(&self) -> [&PassivateView; 4]
+    {
+        [
+            &self.hyp_run_view,
+            &self.details_view,
+            &self.configuration_view,
+            &self.log_view
+        ]
     }
 
     pub fn configuration_view(&self) -> &ConfigurationView
@@ -118,6 +148,16 @@ impl PassivateViews
         }
     }
 
+    pub fn except_configuration_view(&self) -> [&PassivateView; 4]
+    {
+        [
+            &self.hyp_run_view,
+            &self.details_view,
+            &self.coverage_view,
+            &self.log_view
+        ]
+    }
+
     pub fn log_view(&self) -> &LogView
     {
         match &self.log_view
@@ -125,6 +165,16 @@ impl PassivateViews
             PassivateView::Log(log_view) => log_view,
             _ => panic!("expected log view")
         }
+    }
+
+    pub fn except_log_view(&self) -> [&PassivateView; 4]
+    {
+        [
+            &self.hyp_run_view,
+            &self.details_view,
+            &self.coverage_view,
+            &self.configuration_view
+        ]
     }
 }
 
