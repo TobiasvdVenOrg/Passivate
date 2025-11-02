@@ -28,7 +28,7 @@ use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
-use crate::test_run_errors::TestRunError;
+use crate::hyp_run_errors::TestRunError;
 use crate::nextest_cargo_options;
 
 #[faux::create]
@@ -118,6 +118,8 @@ impl HypRunner
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
+        log::info!("Starting test run");
+
         let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
             eprintln!("3 {:?}", error);
             TestRunError::Temp
@@ -142,6 +144,8 @@ impl HypRunner
             TestRunError::Temp
         })?;
 
+        log::info!("Completed 'metadata'");
+
         let parse_context = ParseContext::new(&graph);
         let config_file = None;
         let tool_config_files = Vec::new();
@@ -161,6 +165,8 @@ impl HypRunner
         let binary_list = options
             .compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone())
             .map_err(|error| TestRunError::Temp)?;
+
+        log::info!("Completed 'test --no-run'");
 
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
@@ -232,6 +238,8 @@ impl HypRunner
             eprintln!("7 {:?}", error);
             TestRunError::Temp
         })?;
+
+        log::info!("Completed test list");
 
         let mut runner_builder = TestRunnerBuilder::default();
         runner_builder.set_max_fail(MaxFail::from_fail_fast(false));
@@ -340,6 +348,8 @@ impl HypRunner
                 }
             })
             .map_err(|error| TestRunError::Temp)?;
+
+        log::info!("Completed test run");
 
         Ok(())
     }

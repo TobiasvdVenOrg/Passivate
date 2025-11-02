@@ -11,7 +11,7 @@ use passivate_hyp_names::hyp_id::HypId;
 
 use crate::hyp_runner::HypRunner;
 
-pub fn test_run_thread(rx: Rx<CancellableMessage<HypRunTrigger>>, mut handler: TestRunHandler) -> JoinHandle<TestRunHandler>
+pub fn test_run_thread(rx: Rx<CancellableMessage<HypRunTrigger>>, mut handler: HypRunHandler) -> JoinHandle<HypRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
@@ -24,7 +24,7 @@ pub fn test_run_thread(rx: Rx<CancellableMessage<HypRunTrigger>>, mut handler: T
 }
 
 #[derive(Builder)]
-pub struct TestRunHandler
+pub struct HypRunHandler
 {
     runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
@@ -34,7 +34,7 @@ pub struct TestRunHandler
     pinned_hyp: Option<HypId>
 }
 
-impl TestRunHandler
+impl HypRunHandler
 {
     pub fn handle(&mut self, event: HypRunTrigger, cancellation: Cancellation)
     {

@@ -1,23 +1,37 @@
-use passivate_core::{compose::PassivateCore, startup_errors::StartupError};
-use passivate_egui::{configuration_view::ConfigurationView, coverage_view::CoverageView, details_view::DetailsView, docking::dock_views::DockViews, log_view::LogView, passivate_layout, passivate_view_state::PassivateViewState, passivate_views::{PassivateView, PassivateViews}, test_run_view::TestRunView};
+use passivate_core::compose::PassivateCore;
+use passivate_core::startup_errors::StartupError;
+use passivate_egui::configuration_view::ConfigurationView;
+use passivate_egui::coverage_view::CoverageView;
+use passivate_egui::details_view::DetailsView;
+use passivate_egui::docking::dock_views::DockViews;
+use passivate_egui::log_view::LogView;
+use passivate_egui::passivate_layout;
+use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_egui::passivate_views::PassivateViews;
+use passivate_egui::test_run_view::TestRunView;
 
-use crate::{app::App, app_state::AppState};
+use crate::app::App;
+use crate::app_state::AppState;
 
 pub fn run_app(passivate: PassivateCore) -> Result<(), StartupError>
 {
     run_app_and_get_context(passivate, |_| {})
 }
 
-pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl FnOnce(egui::Context)) -> Result<(), StartupError>
+pub fn run_app_and_get_context(
+    passivate: PassivateCore,
+    context_accessor: impl FnOnce(egui::Context)
+) -> Result<(), StartupError>
 {
-    let PassivateCore { 
+    let PassivateCore {
         state,
         passivate_path,
         change_event_tx,
         configuration,
         log_rx,
         coverage_rx,
-    .. } = passivate;
+        ..
+    } = passivate;
 
     // Views
     let tests_view = TestRunView;
@@ -28,10 +42,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
 
     let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
-    let layout = passivate_layout::load(
-        &passivate_path.join("default_layout.toml"),
-        &views
-    )?;
+    let layout = passivate_layout::load(&passivate_path.join("default_layout.toml"), &views)?;
 
     let dock_views = DockViews::new(views.into());
 
@@ -55,10 +66,7 @@ pub fn run_app_and_get_context(passivate: PassivateCore, context_accessor: impl 
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
 
-            Ok(Box::new(App::new(
-                layout,
-                &mut app_state
-            )))
+            Ok(Box::new(App::new(layout, &mut app_state)))
         })
     )
     .expect("Failed to start Passivate!");

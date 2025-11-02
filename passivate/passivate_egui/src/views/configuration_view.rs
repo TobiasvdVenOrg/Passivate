@@ -89,7 +89,7 @@ mod tests
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
     use passivate_hyp_execution::hyp_runner::HypRunner;
-    use passivate_hyp_execution::test_run_handler::TestRunHandler;
+    use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
     use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_names::test_name;
 
@@ -123,7 +123,7 @@ mod tests
     pub fn configure_coverage_enabled()
     {
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-        let test_run_handler = TestRunHandler::builder()
+        let test_run_handler = HypRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_status_sender(Tx::stub())

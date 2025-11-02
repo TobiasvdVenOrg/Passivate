@@ -8,7 +8,7 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
 use passivate_hyp_execution::change_event_handler::change_event_thread;
-use passivate_hyp_execution::test_run_handler::{test_run_thread, TestRunHandler};
+use passivate_hyp_execution::hyp_run_handler::{test_run_thread, HypRunHandler};
 use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use crate::passivate_args::PassivateArgs;
@@ -32,7 +32,7 @@ pub struct PassivateCore
     pub coverage_rx: Rx<CoverageStatus>,
     change_events: NotifyChangeEvents,
     change_event_thread: JoinHandle<()>,
-    test_run_thread: JoinHandle<TestRunHandler>
+    test_run_thread: JoinHandle<HypRunHandler>
 }
 
 impl PassivateCore
@@ -82,7 +82,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
 
     let configuration = ConfigurationManager::from_file(configuration_tx, ".config/passivate.toml")?;
 
-    let test_run_handler = TestRunHandler::builder()
+    let test_run_handler = HypRunHandler::builder()
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
         .hyp_run_tx(hyp_run_tx)

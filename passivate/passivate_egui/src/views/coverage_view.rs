@@ -122,7 +122,7 @@ mod tests
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
     use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_delegation::{Rx, Tx};
-    use passivate_hyp_execution::{test_run_handler::TestRunHandler, hyp_runner::HypRunner};
+    use passivate_hyp_execution::{hyp_run_handler::HypRunHandler, hyp_runner::HypRunner};
     use passivate_hyp_names::test_name;
 
     use crate::coverage_view::CoverageView;
@@ -257,7 +257,7 @@ mod tests
     pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
     {
         let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-        let test_run_handler = TestRunHandler::builder()
+        let test_run_handler = HypRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_status_sender(Tx::stub())

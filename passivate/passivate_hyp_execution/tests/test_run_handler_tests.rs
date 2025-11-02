@@ -11,8 +11,8 @@ use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_execution::test_helpers::test_run_setup::TestRunSetup;
 use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
-use passivate_hyp_execution::test_run_errors::TestRunError;
-use passivate_hyp_execution::test_run_handler::TestRunHandler;
+use passivate_hyp_execution::hyp_run_errors::TestRunError;
+use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
 use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
@@ -315,7 +315,7 @@ pub fn when_test_run_fails_error_is_reported()
 
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunHandler::builder()
+    let mut handler = HypRunHandler::builder()
         .runner(test_runner)
         .coverage(Box::new(compute_coverage::stub()))
         .hyp_run_tx(hyp_run_tx)

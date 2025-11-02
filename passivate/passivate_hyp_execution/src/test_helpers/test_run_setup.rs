@@ -11,7 +11,7 @@ use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
 use passivate_testing::path_resolution::{clean_directory, test_data_path, test_output_path};
 
-use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, test_run_handler::TestRunHandler, hyp_runner::HypRunner};
+use crate::{test_helpers::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind}, hyp_run_handler::HypRunHandler, hyp_runner::HypRunner};
 
 pub struct TestRunSetup
 {
@@ -77,7 +77,7 @@ impl TestRunSetup
         )
     }
 
-    pub fn build_test_run_handler(self) -> TestRunHandler
+    pub fn build_test_run_handler(self) -> HypRunHandler
     {
         let runner = self.build_test_runner();
 
@@ -91,7 +91,7 @@ impl TestRunSetup
             Tx::stub()
         );
 
-        TestRunHandler::builder()
+        HypRunHandler::builder()
             .runner(runner)
             .coverage(Box::new(grcov))
             .hyp_run_tx(self.hyp_run_tx)
