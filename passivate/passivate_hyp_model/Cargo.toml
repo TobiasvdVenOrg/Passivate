@@ -7,3 +7,6 @@ edition = "2024"
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 
 itertools.workspace = true
+
+[dev-dependencies]
+assert_matches = "1.5.0"

@@ -4,3 +4,4 @@ pub mod hyp_run;
 pub mod hyp_run_events;
 pub mod hyp_run_trigger;
 pub mod hyp_run_state;
+pub mod hyp_session;
