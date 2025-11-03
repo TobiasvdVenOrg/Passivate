@@ -5,8 +5,8 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_run_events::HypRunEvent;
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::hyp_runner::HypRunner;
@@ -29,7 +29,7 @@ pub struct HypRunHandler
     runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
     hyp_run_tx: Tx<HypRunEvent>,
-    coverage_status_sender: Tx<CoverageStatus>,
+    coverage_tx: Tx<CoverageStatus>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>
 }
@@ -68,7 +68,7 @@ impl HypRunHandler
 
         if coverage_enabled
         {
-            self.coverage_status_sender.send(CoverageStatus::Preparing);
+            self.coverage_tx.send(CoverageStatus::Preparing);
         }
 
         if let Err(clean_error) = self.coverage.clean_coverage_output()
@@ -81,12 +81,9 @@ impl HypRunHandler
             return;
         }
 
-        let test_output = self.runner.run_hyps(
-            coverage_enabled,
-            cancellation.clone(),
-            &mut self.hyp_run_tx,
-            Vec::new()
-        );
+        let test_output = self
+            .runner
+            .run_hyps(coverage_enabled, cancellation.clone(), &mut self.hyp_run_tx, Vec::new());
 
         if cancellation.is_cancelled()
         {
@@ -116,7 +113,7 @@ impl HypRunHandler
 
     fn compute_coverage(&mut self, cancellation: Cancellation)
     {
-        self.coverage_status_sender.send(CoverageStatus::Running);
+        self.coverage_tx.send(CoverageStatus::Running);
 
         let coverage_status = self.coverage.compute_coverage(cancellation.clone());
 
@@ -124,20 +121,14 @@ impl HypRunHandler
 
         match coverage_status
         {
-            Ok(coverage_status) => self.coverage_status_sender.send(coverage_status),
-            Err(coverage_error) =>
-            {
-                self.coverage_status_sender
-                    .send(CoverageStatus::Error(coverage_error.to_string()))
-            }
+            Ok(coverage_status) => self.coverage_tx.send(coverage_status),
+            Err(coverage_error) => self.coverage_tx.send(CoverageStatus::Error(coverage_error.to_string()))
         }
     }
 
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let result = self
-            .runner
-            .run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx);
+        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx);
 
         if let Err(error) = result
         {

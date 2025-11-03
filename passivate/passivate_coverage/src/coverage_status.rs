@@ -1,6 +1,6 @@
 use crate::grcov::covdir_json::CovdirJson;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CoverageStatus
 {
     Disabled,

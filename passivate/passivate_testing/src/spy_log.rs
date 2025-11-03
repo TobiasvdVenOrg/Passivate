@@ -37,7 +37,11 @@ impl log::Log for SpyLogImpl
     {
         let logs = LOGS.lock().expect("failed to lock spy log");
 
-        logs.borrow_mut().push(format!("{} - {}", record.level(), record.args()));
+        let message = format!("{} - {}", record.level(), record.args());
+
+        eprintln!("{}", &message);
+        
+        logs.borrow_mut().push(message);
     }
 
     fn flush(&self) {}

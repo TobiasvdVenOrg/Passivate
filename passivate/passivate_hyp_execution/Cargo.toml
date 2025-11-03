@@ -9,7 +9,6 @@ passivate_hyp_model = { path = "../passivate_hyp_model" }
 passivate_configuration = { path = "../passivate_configuration" }
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_coverage = { path = "../passivate_coverage" }
-passivate_testing = { path = "../passivate_testing" }
 
 #nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
 #nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
@@ -27,5 +26,8 @@ itertools.workspace = true
 stdext.workspace = true
 
 [dev-dependencies]
+passivate_testing = { path = "../passivate_testing" }
+
+assert_matches.workspace = true
 pretty_assertions.workspace = true
 galvanic-assert.workspace = true

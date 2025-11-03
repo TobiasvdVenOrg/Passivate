@@ -126,7 +126,7 @@ mod tests
         let test_run_handler = HypRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
-            .coverage_status_sender(Tx::stub())
+            .coverage_tx(Tx::stub())
             .runner(HypRunner::faux())
             .hyp_run_tx(Tx::stub())
             .build();

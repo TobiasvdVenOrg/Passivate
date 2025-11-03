@@ -1,39 +1,39 @@
+mod helpers;
+
+#[macro_use]
+extern crate assert_matches;
+
 use std::fs;
 use std::io::Error as IoError;
 
+use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
-use galvanic_assert::matchers::*;
-use galvanic_assert::{assert_that, is_variant};
 use itertools::Itertools;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::compute_coverage;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
-use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_execution::test_helpers::test_run_setup::TestRunSetup;
-use passivate_hyp_execution::test_helpers::test_snapshot_path::TestSnapshotPath;
 use passivate_hyp_execution::hyp_run_errors::TestRunError;
 use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
+use passivate_hyp_execution::hyp_runner::HypRunner;
+use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
+use passivate_testing::test_data_setup::TestDataSetup;
 use pretty_assertions::assert_eq;
+use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
 #[test]
 #[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
-    use passivate_hyp_model::hyp_run_state::HypRunState;
-
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .hyp_run_tx(hyp_run_tx)
-        .build()
-        .clean_output()
-        .build_test_run_handler();
+    let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     let hyp_to_run = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
 
@@ -47,13 +47,8 @@ pub fn handle_single_test_run()
 
     let test_run = HypRun::from_events(hyp_run_rx);
 
-    assert_that!(&test_run.state, is_variant!(HypRunState::Idle));
-    assert!(
-        test_run
-            .hyps
-            .values()
-            .all(|test| { test.status == SingleHypStatus::Passed })
-    );
+    assert_matches!(test_run.state, HypRunState::Idle);
+    assert!(test_run.hyps.values().all(|test| { test.status == SingleHypStatus::Passed }));
 }
 
 #[test]
@@ -61,11 +56,9 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .hyp_run_tx(hyp_run_tx)
-        .build()
-        .clean_output()
-        .build_test_run_handler();
+    let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     let hyp_to_run = HypId::new("add_tests", "add_2_and_2_is_4").unwrap();
 
@@ -79,8 +72,8 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let test_run = HypRun::from_events(hyp_run_rx);
 
-    let single_hyp = test_run.hyps.values().exactly_one().expect("expected exactly one test");
-    assert_that!(&single_hyp.id, eq(hyp_to_run));
+    let single_hyp = test_run.hyps.values().exactly_one().expect("expected exactly one hyp");
+    assert_eq!(single_hyp.id, hyp_to_run);
 }
 
 #[test]
@@ -89,11 +82,9 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .hyp_run_tx(hyp_run_tx)
-        .build()
-        .clean_output()
-        .build_test_run_handler();
+    let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -123,11 +114,13 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project")
-        .hyp_run_tx(hyp_run_tx)
+    let setup = TestDataSetup::builder(test_name!(), "simple_project")
         .build()
-        .clean_output()
-        .build_test_run_handler();
+        .clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup)
+        .hyp_run_tx(hyp_run_tx)
+        .call();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -143,24 +136,19 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     let test_run = HypRun::from_events(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(
-        test_run
-            .hyps
-            .values()
-            .all(|test| { test.status == SingleHypStatus::Passed })
-    );
+    assert!(test_run.hyps.values().all(|test| { test.status == SingleHypStatus::Passed }));
 }
 
 #[test]
 #[cfg(target_os = "windows")]
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
+    let setup = TestDataSetup::builder(test_name!(), "project_snapshot_tests")
         .override_snapshot_directories(vec![TestSnapshotPath::relative_to_output("snapshots")])
         .build()
         .clean_snapshots();
 
-    let snapshots_dir = setup.get_snapshot_directories().into_iter().exactly_one().unwrap();
+    let snapshots_dir = setup.snapshot_directories().into_iter().exactly_one().unwrap();
 
     // The sample project uses this envvar to determine where to output snapshots
     // The purpose is so that multiple tests can re-use the same sample project
@@ -170,7 +158,7 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     }
 
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
-    let mut handler = setup.build_test_run_handler();
+    let mut handler = helpers::test_hyp_run_handler(&setup).call();
 
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -185,7 +173,7 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
         Cancellation::default()
     );
 
-    assert_that!(fs::exists(expected_approved_snapshot)?);
+    assert!(fs::exists(expected_approved_snapshot)?);
 
     Ok(())
 }
@@ -194,12 +182,12 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoError>
 {
-    let setup = TestRunSetup::builder(test_name!(), "project_snapshot_tests")
+    let setup = TestDataSetup::builder(test_name!(), "project_snapshot_tests")
         .override_snapshot_directories(vec![TestSnapshotPath::relative_to_output("snapshots")])
         .build()
         .clean_snapshots();
 
-    let snapshots_dir = setup.get_snapshot_directories().into_iter().exactly_one().unwrap();
+    let snapshots_dir = setup.snapshot_directories().into_iter().exactly_one().unwrap();
 
     // The sample project uses this envvar to determine where to output snapshots
     // The purpose is so that multiple tests can re-use the same sample project
@@ -211,7 +199,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let expected_unapproved_snapshot = snapshots_dir.join("different_example_snapshot.new.png");
 
-    let mut handler = setup.build_test_run_handler();
+    let mut handler = helpers::test_hyp_run_handler(&setup).call();
 
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -229,8 +217,8 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     // Run all tests again, which should no approve snapshots
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    assert_that!(fs::exists(expected_approved_snapshot)?);
-    assert_that!(fs::exists(expected_unapproved_snapshot)?);
+    assert!(fs::exists(expected_approved_snapshot)?);
+    assert!(fs::exists(expected_unapproved_snapshot)?);
 
     Ok(())
 }
@@ -241,11 +229,13 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
-        .hyp_run_tx(hyp_run_tx)
+    let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
-        .clean_output()
-        .build_test_run_handler();
+        .clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup)
+        .hyp_run_tx(hyp_run_tx)
+        .call();
 
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -276,11 +266,13 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
 
-    let mut handler = TestRunSetup::builder(test_name!(), "simple_project_failing_tests")
-        .hyp_run_tx(hyp_run_tx)
+    let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
-        .clean_output()
-        .build_test_run_handler();
+        .clean_output();
+
+    let mut handler = helpers::test_hyp_run_handler(&setup)
+        .hyp_run_tx(hyp_run_tx)
+        .call();
 
     // Run tests twice
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -319,7 +311,7 @@ pub fn when_test_run_fails_error_is_reported()
         .runner(test_runner)
         .coverage(Box::new(compute_coverage::stub()))
         .hyp_run_tx(hyp_run_tx)
-        .coverage_status_sender(Tx::stub())
+        .coverage_tx(Tx::stub())
         .configuration(ConfigurationManager::default_config(Tx::stub()))
         .build();
 
@@ -327,8 +319,5 @@ pub fn when_test_run_fails_error_is_reported()
 
     let state = HypRun::from_events(hyp_run_rx).state;
 
-    assert_eq!(
-        state,
-        HypRunState::Failed("test run cancelled".to_string())
-    );
+    assert_eq!(state, HypRunState::Failed("test run cancelled".to_string()));
 }

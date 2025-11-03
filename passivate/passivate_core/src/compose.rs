@@ -86,7 +86,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
         .configuration(configuration.clone())
         .coverage(Box::new(coverage))
         .hyp_run_tx(hyp_run_tx)
-        .coverage_status_sender(coverage_tx)
+        .coverage_tx(coverage_tx)
         .runner(test_runner)
         .build();
 
