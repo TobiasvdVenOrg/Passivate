@@ -13,7 +13,7 @@ passivate_hyp_names = { path = "../passivate_hyp_names" }
 passivate_testing = { path = "../passivate_testing" }
 
 clap.workspace = true
-egui.workspace = true
+egui = { workspace = true, features = [ "persistence" ] }
 egui_dock.workspace = true
 futures.workspace = true
 chrono.workspace = true

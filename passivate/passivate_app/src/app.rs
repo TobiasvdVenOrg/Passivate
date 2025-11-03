@@ -12,15 +12,9 @@ pub struct App<'a>
 
 impl<'a> App<'a>
 {
-    pub fn new(
-        layout: LayoutManagement,
-        state: &'a mut AppState
-    ) -> Self
+    pub fn new(layout: LayoutManagement, state: &'a mut AppState) -> Self
     {
-        Self {
-            layout,
-            state
-        }
+        Self { layout, state }
     }
 
     fn main_update(&mut self, ctx: &Context)

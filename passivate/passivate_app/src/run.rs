@@ -42,7 +42,7 @@ pub fn run_app_and_get_context(
 
     let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
-    let layout = passivate_layout::load(&passivate_path.join("default_layout.toml"), &views)?;
+    let layout = passivate_layout::load(&passivate_path.join("default_docking_layout.toml"), &views)?;
 
     let dock_views = DockViews::new(views.into());
 
@@ -54,6 +54,8 @@ pub fn run_app_and_get_context(
             .with_position([1920.0, 0.0])
             .with_inner_size([1024.0, 512.0])
             .with_min_inner_size([300.0, 220.0]),
+        persist_window: true,
+        persistence_path: Some(passivate_path.join("default_window_state.json").into_std_path_buf()),
         ..Default::default()
     };
 
@@ -65,7 +67,7 @@ pub fn run_app_and_get_context(
         eframe_options,
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
-
+            
             Ok(Box::new(App::new(layout, &mut app_state)))
         })
     )
