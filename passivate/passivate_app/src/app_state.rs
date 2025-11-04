@@ -2,8 +2,8 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_egui::docking::dock_views::DockViews;
 use passivate_egui::docking::docking_layout::DockingLayout;
-use passivate_egui::passivate_views::PassivateView;
 use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_egui::passivate_views::PassivateView;
 
 pub struct AppState
 {
@@ -15,7 +15,12 @@ pub struct AppState
 
 impl AppState
 {
-    pub fn new(state: PassivateState, view_state: PassivateViewState, dock_views: DockViews<PassivateView>, configuration: ConfigurationManager) -> Self
+    pub fn new(
+        state: PassivateState,
+        view_state: PassivateViewState,
+        dock_views: DockViews<PassivateView>,
+        configuration: ConfigurationManager
+    ) -> Self
     {
         Self {
             state,
@@ -61,10 +66,11 @@ pub mod tests
     use passivate_egui::docking::dock_views::DockViews;
     use passivate_egui::docking::docking_layout::DockingLayout;
     use passivate_egui::passivate_layout;
-    use passivate_egui::passivate_views::PassivateViews;
     use passivate_egui::passivate_view_state::PassivateViewState;
+    use passivate_egui::passivate_views::PassivateViews;
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
+    use passivate_hyp_model::hyp_session::HypSession;
     use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_hyp_status::SingleHypStatus;
     use passivate_hyp_names::hyp_id::HypId;
@@ -122,7 +128,8 @@ pub mod tests
         let example_hyp = example_hyp();
         hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
 
-        let passivate_state = PassivateState::with_initial_run_state(hyp_run, hyp_run_rx);
+        let session = HypSession::new(HypRun::default(), hyp_run);
+        let passivate_state = PassivateState::with_initial_session_state(session, hyp_run_rx);
         let view_state = PassivateViewState::default();
         let configuration = ConfigurationManager::new(
             PassivateConfiguration {
@@ -132,7 +139,7 @@ pub mod tests
             Tx::stub()
         );
 
-        let views= PassivateViews::stub();
+        let views = PassivateViews::stub();
 
         let layout = passivate_layout::default(&views);
         let dock_views = DockViews::new(views.into());

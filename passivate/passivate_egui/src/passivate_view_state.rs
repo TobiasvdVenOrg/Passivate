@@ -49,7 +49,7 @@ impl PassivateViewState
                 Self::check_for_snapshots(&mut hyp_details, configuration, egui_context);
 
                 self.hyp_details = Some(hyp_details);
-            },
+            }
             PassivateStateChange::HypDetailsChanged(hyp) =>
             {
                 if let Some(details) = &mut self.hyp_details
@@ -136,7 +136,7 @@ impl PassivateViewState
                 PassivateView::HypRun(test_run_view) =>
                 {
                     test_run_view
-                        .ui(ui, &state.hyp_run)
+                        .ui(ui, state.hyp_session.current_run())
                         .map(PassivateStateChange::HypSelected)
                 }
             }

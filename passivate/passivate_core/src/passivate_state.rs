@@ -1,13 +1,13 @@
 use passivate_delegation::Rx;
 use passivate_hyp_model::hyp_run_events::{HypRunChange, HypRunEvent};
-use passivate_hyp_model::hyp_run::HypRun;
+use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::passivate_state_change::PassivateStateChange;
 
 pub struct PassivateState
 {
-    pub hyp_run: HypRun,
+    pub hyp_session: HypSession,
     pub selected_hyp: Option<HypId>,
     hyp_run_rx: Rx<HypRunEvent>
 }
@@ -16,13 +16,13 @@ impl PassivateState
 {
     pub fn new(hyp_run_rx: Rx<HypRunEvent>) -> Self
     {
-        Self::with_initial_run_state(HypRun::default(), hyp_run_rx)
+        Self::with_initial_session_state(HypSession::default(), hyp_run_rx)
     }
 
-    pub fn with_initial_run_state(hyp_run: HypRun, hyp_run_rx: Rx<HypRunEvent>) -> Self
+    pub fn with_initial_session_state(hyp_session: HypSession, hyp_run_rx: Rx<HypRunEvent>) -> Self
     {
         Self {
-            hyp_run,
+            hyp_session,
             selected_hyp: None,
             hyp_run_rx
         }
@@ -37,7 +37,7 @@ impl PassivateState
     {
         match change
         {
-            HypRunChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp),
+            HypRunChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp)
         }
     }
 
@@ -47,7 +47,7 @@ impl PassivateState
         {
             self.process_hyp_run_event(hyp_run_event)
         }
-        else 
+        else
         {
             None
         }
@@ -55,6 +55,6 @@ impl PassivateState
 
     fn process_hyp_run_event(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
     {
-        self.hyp_run.update(event)
+        self.hyp_session.update(event)
     }
 }
