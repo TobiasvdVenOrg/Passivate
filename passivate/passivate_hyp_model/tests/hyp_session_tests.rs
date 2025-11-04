@@ -18,7 +18,5 @@ pub fn default_hyp_session_is_idle()
 {
     let session = HypSession::default();
 
-    let state = &session.current_run().state;
-
-    assert_matches!(state, HypRunState::Idle);
+    assert_matches!(session.state, HypRunState::Idle);
 }

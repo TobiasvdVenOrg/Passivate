@@ -1,7 +1,12 @@
 use egui::{Color32, RichText};
-use passivate_hyp_model::{hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, hyp_run::HypRun};
+use passivate_hyp_model::hyp_run::HypRun;
+use passivate_hyp_model::hyp_run_state::HypRunState;
+use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::single_hyp::SingleHyp;
+use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 
-use crate::docking::{docking_layout::DockId, view::View};
+use crate::docking::docking_layout::DockId;
+use crate::docking::view::View;
 
 pub struct TestRunView;
 
@@ -20,9 +25,9 @@ impl View for TestRunView
 
 impl TestRunView
 {
-    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, test_run: &'a HypRun) -> Option<&'a SingleHyp>
+    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, session: &'a HypSession) -> Option<&'a SingleHyp>
     {
-        match &test_run.state
+        match &session.state
         {
             HypRunState::FirstRun =>
             {
@@ -30,7 +35,7 @@ impl TestRunView
             }
             HypRunState::Idle =>
             {
-                if test_run.hyps.is_empty()
+                if session.no_tests()
                 {
                     ui.heading("No tests found.");
                 }
@@ -62,7 +67,9 @@ impl TestRunView
 
         let mut selected_hyp = None;
 
-        for hyp in test_run.hyps.values()
+        let hyp_run = session.current_run();
+
+        for hyp in hyp_run.hyps()
         {
             if let Some(new_selection) = self.show_hyp(ui, hyp)
             {
@@ -111,27 +118,33 @@ impl TestRunView
 mod tests
 {
     use egui_kittest::Harness;
-    use passivate_hyp_names::{hyp_id::HypId, test_name};
-    use passivate_hyp_model::{hyp_run_events::HypRunEvent, hyp_run_state::HypRunState, single_hyp::SingleHyp, single_hyp_status::SingleHypStatus, hyp_run::HypRun};
+    use passivate_hyp_model::hyp_run::HypRun;
+    use passivate_hyp_model::hyp_run_events::HypRunEvent;
+    use passivate_hyp_model::hyp_run_state::HypRunState;
+    use passivate_hyp_model::hyp_session::HypSession;
+    use passivate_hyp_model::single_hyp::SingleHyp;
+    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+    use passivate_hyp_names::hyp_id::HypId;
+    use passivate_hyp_names::test_name;
 
     use crate::test_run_view::TestRunView;
 
     #[test]
     pub fn show_when_first_test_run_is_starting()
     {
-        run_and_snapshot(HypRun::from_state(HypRunState::FirstRun), &test_name!());
+        run_and_snapshot(session_from_state(HypRunState::FirstRun), &test_name!());
     }
 
     #[test]
     pub fn show_when_no_tests_were_found()
     {
-        run_and_snapshot(HypRun::from_state(HypRunState::Idle), &test_name!());
+        run_and_snapshot(session_from_state(HypRunState::Idle), &test_name!());
     }
 
     #[test]
     pub fn show_when_build_failed()
     {
-        let build_failed = HypRun::from_state(HypRunState::BuildFailed("Something didn't compile!".to_string()));
+        let build_failed = session_from_state(HypRunState::BuildFailed("Something didn't compile!".to_string()));
 
         run_and_snapshot(build_failed, &test_name!());
     }
@@ -139,28 +152,41 @@ mod tests
     #[test]
     pub fn show_tests_with_unknown_status_greyed_out()
     {
-        let mut active = HypRun::default();
-        active.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
+        let mut hyp_run = HypRun::default();
+        hyp_run.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
 
-        run_and_snapshot(active, &test_name!());
+        let session = HypSession::new(HypRun::default(), hyp_run);
+        run_and_snapshot(session, &test_name!());
     }
 
     #[test]
     pub fn show_build_status_above_tests_while_compiling()
     {
-        let mut active = HypRun::default();
-        active.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
-        active.update(HypRunEvent::Compiling("The build is working on something right now!".to_string()));
+        let mut hyp_run = HypRun::default();
+        hyp_run.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
 
-        run_and_snapshot(active, &test_name!());
+        let mut session = HypSession::new(HypRun::default(), hyp_run);
+        session.update(HypRunEvent::Compiling(
+            "The build is working on something right now!".to_string()
+        ));
+
+        run_and_snapshot(session, &test_name!());
     }
 
-    fn run_and_snapshot(hyp_run: HypRun, snapshot_name: &str)
+    fn session_from_state(state: HypRunState) -> HypSession
+    {
+        let mut session = HypSession::default();
+        session.state = state;
+
+        session
+    }
+
+    fn run_and_snapshot(session: HypSession, snapshot_name: &str)
     {
         let mut test_run_view = TestRunView;
 
         let ui = move |ui: &mut egui::Ui| {
-            _ = test_run_view.ui(ui, &hyp_run);
+            _ = test_run_view.ui(ui, &session);
         };
 
         let mut harness = Harness::new_ui(ui);

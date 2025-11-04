@@ -18,12 +18,13 @@ use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
+use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_testing::test_data_setup::TestDataSetup;
-use pretty_assertions::assert_eq;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
+use pretty_assertions::assert_eq;
 
 #[test]
 #[cfg(target_os = "windows")]
@@ -45,10 +46,14 @@ pub fn handle_single_test_run()
         Cancellation::default()
     );
 
-    let test_run = HypRun::from_events(hyp_run_rx);
+    let session = HypSession::from_events(hyp_run_rx);
 
-    assert_matches!(test_run.state, HypRunState::Idle);
-    assert!(test_run.hyps.values().all(|test| { test.status == SingleHypStatus::Passed }));
+    assert!(
+        session
+            .current_run()
+            .hyps()
+            .all(|test| { test.status == SingleHypStatus::Passed })
+    );
 }
 
 #[test]
@@ -70,9 +75,10 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
         Cancellation::default()
     );
 
-    let test_run = HypRun::from_events(hyp_run_rx);
+    let session = HypSession::from_events(hyp_run_rx);
 
-    let single_hyp = test_run.hyps.values().exactly_one().expect("expected exactly one hyp");
+    let single_hyp = session.current_run().hyps().exactly_one().expect("expected exactly one hyp");
+
     assert_eq!(single_hyp.id, hyp_to_run);
 }
 
@@ -89,23 +95,23 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let test_run = HypRun::from_events(hyp_run_rx.drain());
+    let mut session = HypSession::from_events(hyp_run_rx.drain());
 
-    let pinned_hyp = test_run.hyps.values().next().unwrap();
+    let pinned_hyp_id = session.current_run().hyps().next().unwrap().id.clone();
 
     handler.handle(
         HypRunTrigger::PinHyp {
-            id: pinned_hyp.id.clone()
+            id: pinned_hyp_id.clone()
         },
         Cancellation::default()
     );
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let pinned_run = HypRun::from_events(hyp_run_rx.drain());
+    session.update_all(hyp_run_rx);
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(pinned_run.hyps.values().all(|test| {
-        (test.id == pinned_hyp.id && test.status == SingleHypStatus::Passed) || test.status == SingleHypStatus::Unknown
+    assert!(session.current_run().hyps().all(|hyp| {
+        (hyp.id == pinned_hyp_id && hyp.status == SingleHypStatus::Passed) || hyp.status == SingleHypStatus::Unknown
     }));
 }
 
@@ -114,29 +120,30 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
 pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
 {
     let (hyp_run_tx, hyp_run_rx) = Tx::new();
-    let setup = TestDataSetup::builder(test_name!(), "simple_project")
-        .build()
-        .clean_output();
+    let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup)
-        .hyp_run_tx(hyp_run_tx)
-        .call();
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     // Run all tests first, single test running currently relies on knowing the test id of an existing test
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let all_hyps = HypRun::from_events(hyp_run_rx.drain());
+    let mut session = HypSession::from_events(hyp_run_rx.drain());
 
-    let pinned_hyp = all_hyps.hyps.values().next().unwrap().to_owned();
+    let pinned_hyp = session.current_run().hyps().next().unwrap().to_owned();
 
     handler.handle(HypRunTrigger::PinHyp { id: pinned_hyp.id }, Cancellation::default());
     handler.handle(HypRunTrigger::ClearPinnedHyps, Cancellation::default());
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let test_run = HypRun::from_events(hyp_run_rx.drain());
+    session.update_all(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(test_run.hyps.values().all(|test| { test.status == SingleHypStatus::Passed }));
+    assert!(
+        session
+            .current_run()
+            .hyps()
+            .all(|test| { test.status == SingleHypStatus::Passed })
+    );
 }
 
 #[test]
@@ -233,18 +240,16 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
         .build()
         .clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup)
-        .hyp_run_tx(hyp_run_tx)
-        .call();
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
     let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let hyp_run = HypRun::from_events(hyp_run_rx);
+    let session = HypSession::from_events(hyp_run_rx);
 
-    let failed_test = hyp_run.hyps.get(&failed_test).unwrap();
+    let failed_test = session.current_run().find_hyp(&failed_test).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -270,9 +275,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
         .build()
         .clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup)
-        .hyp_run_tx(hyp_run_tx)
-        .call();
+    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
     // Run tests twice
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
@@ -280,9 +283,9 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
 
-    let hyp_run = HypRun::from_events(hyp_run_rx);
+    let session = HypSession::from_events(hyp_run_rx);
 
-    let failed_test = hyp_run.hyps.get(&failed_hyp).unwrap();
+    let failed_test = session.current_run().find_hyp(&failed_hyp).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -317,7 +320,7 @@ pub fn when_test_run_fails_error_is_reported()
 
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let state = HypRun::from_events(hyp_run_rx).state;
+    let session = HypSession::from_events(hyp_run_rx);
 
-    assert_eq!(state, HypRunState::Failed("test run cancelled".to_string()));
+    assert_eq!(session.state, HypRunState::Failed("test run cancelled".to_string()));
 }

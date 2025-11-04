@@ -136,7 +136,7 @@ impl PassivateViewState
                 PassivateView::HypRun(test_run_view) =>
                 {
                     test_run_view
-                        .ui(ui, state.hyp_session.current_run())
+                        .ui(ui, &state.hyp_session)
                         .map(PassivateStateChange::HypSelected)
                 }
             }

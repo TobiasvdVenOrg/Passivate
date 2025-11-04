@@ -1,8 +1,8 @@
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub enum HypRunState
 {
     FirstRun,
+    #[default]
     Idle,
     Building(String),
     Running,
