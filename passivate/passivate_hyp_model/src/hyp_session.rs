@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 
 use crate::hyp_run::HypRun;
 use crate::hyp_run_events::{HypRunChange, HypRunEvent};
-use crate::hyp_run_state::HypRunState;
+use crate::hyp_session_state::HypSessionState;
 use crate::single_hyp_status::SingleHypStatus;
 
 #[derive(Debug, Clone, Default)]
@@ -10,7 +10,7 @@ pub struct HypSession
 {
     last_run: HypRun,
     current_run: HypRun,
-    pub state: HypRunState
+    pub state: HypSessionState
 }
 
 impl HypSession
@@ -20,7 +20,7 @@ impl HypSession
         Self {
             last_run,
             current_run,
-            state: HypRunState::default()
+            state: HypSessionState::default()
         }
     }
 
@@ -71,7 +71,7 @@ impl HypSession
         {
             HypRunEvent::Start =>
             {
-                self.state = HypRunState::Running;
+                self.state = HypSessionState::Running;
                 for test in &mut self.current_run.hyps.values_mut()
                 {
                     test.status = SingleHypStatus::Unknown;
@@ -89,14 +89,14 @@ impl HypSession
                     self.current_run.hyps.get_mut(&hyp)
                 }
                 {
-                    self.state = HypRunState::Running;
+                    self.state = HypSessionState::Running;
                     hyp.status = SingleHypStatus::Unknown;
                     hyp.output.clear();
                 }
             }
             HypRunEvent::TestFinished(hyp) =>
             {
-                self.state = HypRunState::Running;
+                self.state = HypSessionState::Running;
 
                 let inserted = match self.current_run.hyps.entry(hyp.id.clone())
                 {
@@ -112,19 +112,19 @@ impl HypSession
             }
             HypRunEvent::NoTests =>
             {
-                self.state = HypRunState::Idle;
+                self.state = HypSessionState::Idle;
             }
             HypRunEvent::Compiling(message) =>
             {
-                self.state = HypRunState::Building(message.clone());
+                self.state = HypSessionState::Building(message.clone());
             }
             HypRunEvent::TestsCompleted =>
             {
-                self.state = HypRunState::Idle;
+                self.state = HypSessionState::Idle;
             }
             HypRunEvent::BuildError(message) =>
             {
-                self.state = HypRunState::BuildFailed(message);
+                self.state = HypSessionState::BuildFailed(message);
             }
             HypRunEvent::ErrorOutput { hyp, message } =>
             {
@@ -132,7 +132,7 @@ impl HypSession
             }
             HypRunEvent::HypRunError(message) =>
             {
-                self.state = HypRunState::Failed(message);
+                self.state = HypSessionState::Failed(message);
             }
         }
 

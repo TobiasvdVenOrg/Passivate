@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum HypRunState
+pub enum HypSessionState
 {
     FirstRun,
     #[default]

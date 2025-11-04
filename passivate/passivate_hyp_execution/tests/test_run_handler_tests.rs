@@ -16,9 +16,9 @@ use passivate_hyp_execution::hyp_run_errors::TestRunError;
 use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::hyp_run::HypRun;
-use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::hyp_session_state::HypSessionState;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
@@ -322,5 +322,5 @@ pub fn when_test_run_fails_error_is_reported()
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    assert_eq!(session.state, HypRunState::Failed("test run cancelled".to_string()));
+    assert_eq!(session.state, HypSessionState::Failed("test run cancelled".to_string()));
 }

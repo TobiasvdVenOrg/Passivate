@@ -1,7 +1,7 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::hyp_run::HypRun;
-use passivate_hyp_model::hyp_run_state::HypRunState;
 use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::hyp_session_state::HypSessionState;
 use passivate_hyp_model::single_hyp::SingleHyp;
 use passivate_hyp_model::single_hyp_status::SingleHypStatus;
 
@@ -29,34 +29,34 @@ impl TestRunView
     {
         match &session.state
         {
-            HypRunState::FirstRun =>
+            HypSessionState::FirstRun =>
             {
                 ui.heading("Starting first test run...");
             }
-            HypRunState::Idle =>
+            HypSessionState::Idle =>
             {
                 if session.no_tests()
                 {
                     ui.heading("No tests found.");
                 }
             }
-            HypRunState::Building(message) =>
+            HypSessionState::Building(message) =>
             {
                 ui.heading("Building");
 
                 let text = RichText::new(message).size(12.0).color(Color32::YELLOW);
                 ui.label(text);
             }
-            HypRunState::Running =>
+            HypSessionState::Running =>
             {}
-            HypRunState::BuildFailed(build_failure) =>
+            HypSessionState::BuildFailed(build_failure) =>
             {
                 ui.heading("Build failed.");
 
                 let text = RichText::new(build_failure).size(16.0).color(Color32::RED);
                 ui.label(text);
             }
-            HypRunState::Failed(run_tests_error_status) =>
+            HypSessionState::Failed(run_tests_error_status) =>
             {
                 ui.heading("Failed to run tests.");
 
@@ -120,8 +120,8 @@ mod tests
     use egui_kittest::Harness;
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_run_events::HypRunEvent;
-    use passivate_hyp_model::hyp_run_state::HypRunState;
     use passivate_hyp_model::hyp_session::HypSession;
+    use passivate_hyp_model::hyp_session_state::HypSessionState;
     use passivate_hyp_model::single_hyp::SingleHyp;
     use passivate_hyp_model::single_hyp_status::SingleHypStatus;
     use passivate_hyp_names::hyp_id::HypId;
@@ -132,19 +132,19 @@ mod tests
     #[test]
     pub fn show_when_first_test_run_is_starting()
     {
-        run_and_snapshot(session_from_state(HypRunState::FirstRun), &test_name!());
+        run_and_snapshot(session_from_state(HypSessionState::FirstRun), &test_name!());
     }
 
     #[test]
     pub fn show_when_no_tests_were_found()
     {
-        run_and_snapshot(session_from_state(HypRunState::Idle), &test_name!());
+        run_and_snapshot(session_from_state(HypSessionState::Idle), &test_name!());
     }
 
     #[test]
     pub fn show_when_build_failed()
     {
-        let build_failed = session_from_state(HypRunState::BuildFailed("Something didn't compile!".to_string()));
+        let build_failed = session_from_state(HypSessionState::BuildFailed("Something didn't compile!".to_string()));
 
         run_and_snapshot(build_failed, &test_name!());
     }
@@ -173,7 +173,7 @@ mod tests
         run_and_snapshot(session, &test_name!());
     }
 
-    fn session_from_state(state: HypRunState) -> HypSession
+    fn session_from_state(state: HypSessionState) -> HypSession
     {
         let mut session = HypSession::default();
         session.state = state;
