@@ -29,12 +29,7 @@ impl HypSession
         TEvents: IntoIterator<Item = HypRunEvent>
     {
         let mut session = Self::default();
-
-        for event in events
-        {
-            session.update(event);
-        }
-
+        session.update_all(events);
         session
     }
 
