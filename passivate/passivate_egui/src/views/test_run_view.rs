@@ -1,9 +1,9 @@
 use egui::{Color32, RichText};
+use passivate_hyp_model::hyp::Hyp;
 use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::hyp_session_state::HypSessionState;
-use passivate_hyp_model::single_hyp::SingleHyp;
-use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+use passivate_hyp_model::hyp_state::HypState;
 
 use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
@@ -25,7 +25,7 @@ impl View for TestRunView
 
 impl TestRunView
 {
-    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, session: &'a HypSession) -> Option<&'a SingleHyp>
+    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, session: &'a HypSession) -> Option<&'a Hyp>
     {
         match &session.state
         {
@@ -80,7 +80,7 @@ impl TestRunView
         selected_hyp
     }
 
-    fn hyp_button<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a SingleHyp, color: Color32) -> Option<&'a SingleHyp>
+    fn hyp_button<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp, color: Color32) -> Option<&'a Hyp>
     {
         let text = RichText::new(&hyp.name).size(16.0).color(color);
 
@@ -92,20 +92,20 @@ impl TestRunView
         None
     }
 
-    fn hyp_label(&self, ui: &mut egui_dock::egui::Ui, hyp: &SingleHyp)
+    fn hyp_label(&self, ui: &mut egui_dock::egui::Ui, hyp: &Hyp)
     {
         let text = RichText::new(&hyp.name).size(16.0).color(Color32::GRAY);
 
         ui.label(text);
     }
 
-    fn show_hyp<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a SingleHyp) -> Option<&'a SingleHyp>
+    fn show_hyp<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp) -> Option<&'a Hyp>
     {
         match hyp.status
         {
-            SingleHypStatus::Failed => self.hyp_button(ui, hyp, Color32::RED),
-            SingleHypStatus::Passed => self.hyp_button(ui, hyp, Color32::GREEN),
-            SingleHypStatus::Unknown =>
+            HypState::Failed => self.hyp_button(ui, hyp, Color32::RED),
+            HypState::Passed => self.hyp_button(ui, hyp, Color32::GREEN),
+            HypState::Unknown =>
             {
                 self.hyp_label(ui, hyp);
                 None
@@ -118,12 +118,12 @@ impl TestRunView
 mod tests
 {
     use egui_kittest::Harness;
+    use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run::HypRun;
-    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::hyp_session::HypSession;
+    use passivate_hyp_model::hyp_session_change::HypRunEvent;
     use passivate_hyp_model::hyp_session_state::HypSessionState;
-    use passivate_hyp_model::single_hyp::SingleHyp;
-    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+    use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
 
@@ -153,7 +153,7 @@ mod tests
     pub fn show_tests_with_unknown_status_greyed_out()
     {
         let mut hyp_run = HypRun::default();
-        hyp_run.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
+        hyp_run.add_hyp(example_hyp("example_test", HypState::Unknown));
 
         let session = HypSession::new(HypRun::default(), hyp_run);
         run_and_snapshot(session, &test_name!());
@@ -163,7 +163,7 @@ mod tests
     pub fn show_build_status_above_tests_while_compiling()
     {
         let mut hyp_run = HypRun::default();
-        hyp_run.add_hyp(example_hyp("example_test", SingleHypStatus::Unknown));
+        hyp_run.add_hyp(example_hyp("example_test", HypState::Unknown));
 
         let mut session = HypSession::new(HypRun::default(), hyp_run);
         session.update(HypRunEvent::Compiling(
@@ -196,9 +196,9 @@ mod tests
         harness.snapshot(snapshot_name);
     }
 
-    fn example_hyp(name: &str, status: SingleHypStatus) -> SingleHyp
+    fn example_hyp(name: &str, status: HypState) -> Hyp
     {
         let id = HypId::new("example_crate", name).unwrap();
-        SingleHyp::new(id, status, vec![])
+        Hyp::new(id, status, vec![])
     }
 }

@@ -1,6 +1,5 @@
-
 #[derive(Clone, Debug, PartialEq)]
-pub enum SingleHypStatus
+pub enum HypState
 {
     Passed,
     Failed,

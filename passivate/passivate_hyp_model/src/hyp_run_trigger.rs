@@ -4,7 +4,7 @@ use passivate_hyp_names::hyp_id::HypId;
 pub enum HypRunTrigger
 {
     DefaultRun,
-    SingleHyp
+    Hyp
     {
         id: HypId,
         update_snapshots: bool

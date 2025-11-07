@@ -1,8 +1,7 @@
-use passivate_hyp_model::single_hyp::SingleHyp;
-
+use passivate_hyp_model::hyp::Hyp;
 
 pub enum PassivateStateChange<'a>
 {
-    HypSelected(&'a SingleHyp),
-    HypDetailsChanged(&'a SingleHyp)    
+    HypSelected(&'a Hyp),
+    HypDetailsChanged(&'a Hyp)
 }

@@ -1,4 +1,4 @@
-use crate::hyp_run_events::HypRunChange;
+use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state::{HypSessionState, HypSessionStateError};
 
@@ -62,7 +62,7 @@ impl HypSession
         }
     }
 
-    pub fn update(&mut self, event: HypSessionEvent) -> Option<HypRunChange<'_>>
+    pub fn update(&mut self, event: HypSessionEvent) -> Option<HypSessionChange<'_>>
     {
         let mut change = None;
 

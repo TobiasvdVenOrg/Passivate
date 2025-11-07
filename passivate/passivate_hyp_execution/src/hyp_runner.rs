@@ -23,9 +23,9 @@ use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
-use passivate_hyp_model::single_hyp::SingleHyp;
-use passivate_hyp_model::single_hyp_status::SingleHypStatus;
-use passivate_hyp_model::hyp_run_events::HypRunEvent;
+use passivate_hyp_model::hyp::Hyp;
+use passivate_hyp_model::hyp_session_change::HypRunEvent;
+use passivate_hyp_model::hyp_state::HypState;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
 use crate::hyp_run_errors::TestRunError;
@@ -44,12 +44,7 @@ pub struct HypRunner
 #[faux::methods]
 impl HypRunner
 {
-    pub fn new(
-        target: OsString,
-        working_dir: Utf8PathBuf,
-        target_dir: Utf8PathBuf,
-        coverage_output_dir: Utf8PathBuf
-    ) -> Self
+    pub fn new(target: OsString, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
     {
         Self {
             target,
@@ -69,15 +64,11 @@ impl HypRunner
     {
         tx.send(HypRunEvent::Start);
 
-        let cargo_options = nextest_cargo_options::cargo_options().target_dir(self.target_dir.clone()).call();
+        let cargo_options = nextest_cargo_options::cargo_options()
+            .target_dir(self.target_dir.clone())
+            .call();
 
-        self.run_hyps_with_options(
-            cargo_options,
-            instrument_coverage,
-            cancellation,
-            tx,
-            filter
-        )
+        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter)
     }
 
     fn run_hyps_with_options(
@@ -322,16 +313,16 @@ impl HypRunner
 
                         let status = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
                         {
-                            SingleHypStatus::Passed
+                            HypState::Passed
                         }
                         else
                         {
-                            SingleHypStatus::Failed
+                            HypState::Failed
                         };
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
                             .expect("todo: error handling");
-                        Some(HypRunEvent::TestFinished(SingleHyp::new(hyp_id, status, test_output)))
+                        Some(HypRunEvent::TestFinished(Hyp::new(hyp_id, status, test_output)))
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
@@ -381,15 +372,12 @@ impl HypRunner
             }
         }
 
-        let cargo_options = nextest_cargo_options::cargo_options().all_features(true).target_dir(self.target_dir.clone()).call();
+        let cargo_options = nextest_cargo_options::cargo_options()
+            .all_features(true)
+            .target_dir(self.target_dir.clone())
+            .call();
 
-        let result = self.run_hyps_with_options(
-            cargo_options,
-            instrument_coverage,
-            cancellation,
-            tx,
-            filter
-        );
+        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter);
 
         unsafe {
             std::env::set_var("UPDATE_SNAPSHOTS", "0");

@@ -68,11 +68,11 @@ pub mod tests
     use passivate_egui::passivate_layout;
     use passivate_egui::passivate_view_state::PassivateViewState;
     use passivate_egui::passivate_views::PassivateViews;
+    use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run::HypRun;
-    use passivate_hyp_model::hyp_run_events::HypRunEvent;
     use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::single_hyp::SingleHyp;
-    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+    use passivate_hyp_model::hyp_session_change::HypRunEvent;
+    use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
@@ -115,7 +115,7 @@ pub mod tests
         ui.step();
 
         let mut example_hyp = example_hyp();
-        example_hyp.status = SingleHypStatus::Passed;
+        example_hyp.status = HypState::Passed;
         hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
 
         ui.step();
@@ -153,9 +153,9 @@ pub mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp() -> SingleHyp
+    fn example_hyp() -> Hyp
     {
         let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        SingleHyp::new(hyp_id, SingleHypStatus::Failed, vec![])
+        Hyp::new(hyp_id, HypState::Failed, vec![])
     }
 }

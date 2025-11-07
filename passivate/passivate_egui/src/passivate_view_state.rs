@@ -2,7 +2,7 @@ use egui_dock::{DockArea, Style};
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_hyp_model::single_hyp::SingleHyp;
+use passivate_hyp_model::hyp::Hyp;
 
 use crate::docking::dock_views::{DockViewer, DockViews};
 use crate::docking::docking_layout::DockingLayout;
@@ -151,13 +151,13 @@ impl PassivateViewState
 
 pub struct HypDetails
 {
-    pub hyp: SingleHyp,
+    pub hyp: Hyp,
     pub snapshot_handles: Option<SnapshotHandles>
 }
 
 impl HypDetails
 {
-    pub fn new(hyp: SingleHyp, snapshot_handles: Option<SnapshotHandles>) -> Self
+    pub fn new(hyp: Hyp, snapshot_handles: Option<SnapshotHandles>) -> Self
     {
         Self { hyp, snapshot_handles }
     }

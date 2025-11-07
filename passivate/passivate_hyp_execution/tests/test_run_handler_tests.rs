@@ -19,7 +19,7 @@ use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::hyp_session_state::HypSessionState;
-use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+use passivate_hyp_model::hyp_state::HypState;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_testing::test_data_setup::TestDataSetup;
@@ -39,7 +39,7 @@ pub fn handle_single_test_run()
     let hyp_to_run = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
 
     handler.handle(
-        HypRunTrigger::SingleHyp {
+        HypRunTrigger::Hyp {
             id: hyp_to_run,
             update_snapshots: false
         },
@@ -48,12 +48,7 @@ pub fn handle_single_test_run()
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    assert!(
-        session
-            .current_run()
-            .hyps()
-            .all(|test| { test.status == SingleHypStatus::Passed })
-    );
+    assert!(session.current_run().hyps().all(|test| { test.status == HypState::Passed }));
 }
 
 #[test]
@@ -68,7 +63,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
     let hyp_to_run = HypId::new("add_tests", "add_2_and_2_is_4").unwrap();
 
     handler.handle(
-        HypRunTrigger::SingleHyp {
+        HypRunTrigger::Hyp {
             id: hyp_to_run.clone(),
             update_snapshots: false
         },
@@ -110,9 +105,12 @@ pub fn when_test_is_pinned_only_that_test_is_run_when_changes_are_handled()
     session.update_all(hyp_run_rx);
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(session.current_run().hyps().all(|hyp| {
-        (hyp.id == pinned_hyp_id && hyp.status == SingleHypStatus::Passed) || hyp.status == SingleHypStatus::Unknown
-    }));
+    assert!(
+        session
+            .current_run()
+            .hyps()
+            .all(|hyp| { (hyp.id == pinned_hyp_id && hyp.status == HypState::Passed) || hyp.status == HypState::Unknown })
+    );
 }
 
 #[test]
@@ -138,12 +136,7 @@ pub fn when_test_is_unpinned_all_tests_are_run_when_changes_are_handled()
     session.update_all(hyp_run_rx.drain());
 
     // Assert that all tests are unknown, except the pinned test, which is passing
-    assert!(
-        session
-            .current_run()
-            .hyps()
-            .all(|test| { test.status == SingleHypStatus::Passed })
-    );
+    assert!(session.current_run().hyps().all(|test| { test.status == HypState::Passed }));
 }
 
 #[test]
@@ -173,7 +166,7 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
 
     handler.handle(
-        HypRunTrigger::SingleHyp {
+        HypRunTrigger::Hyp {
             id: snapshot_hyp_id,
             update_snapshots: true
         },
@@ -214,7 +207,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
 
     handler.handle(
-        HypRunTrigger::SingleHyp {
+        HypRunTrigger::Hyp {
             id: snapshot_hyp_id,
             update_snapshots: true
         },

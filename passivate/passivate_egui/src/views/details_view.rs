@@ -1,13 +1,13 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+use passivate_hyp_model::hyp_state::HypState;
 
 use crate::docking::docking_layout::DockId;
 use crate::docking::view::View;
 use crate::passivate_view_state::HypDetails;
-use crate::snapshots::snapshot_handles::SnapshotHandles;
 use crate::snapshots::SnapshotError;
+use crate::snapshots::snapshot_handles::SnapshotHandles;
 
 pub struct DetailsView
 {
@@ -29,13 +29,9 @@ impl View for DetailsView
 
 impl DetailsView
 {
-    pub fn new(
-        change_events: Tx<HypRunTrigger>
-    ) -> Self
+    pub fn new(change_events: Tx<HypRunTrigger>) -> Self
     {
-        Self {
-            change_events
-        }
+        Self { change_events }
     }
 
     pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: Option<&HypDetails>)
@@ -44,9 +40,9 @@ impl DetailsView
         {
             let color = match details.hyp.status
             {
-                SingleHypStatus::Passed => Color32::GREEN,
-                SingleHypStatus::Failed => Color32::RED,
-                SingleHypStatus::Unknown => Color32::GRAY
+                HypState::Passed => Color32::GREEN,
+                HypState::Failed => Color32::RED,
+                HypState::Unknown => Color32::GRAY
             };
 
             ui.horizontal(|ui| {
@@ -82,7 +78,7 @@ impl DetailsView
                 self.draw_snapshots(ui, snapshot_handles);
             }
         }
-        else 
+        else
         {
             ui.heading("No test selected");
         }
@@ -114,7 +110,7 @@ impl DetailsView
                 let approve = RichText::new("Approve").size(12.0).color(Color32::GREEN);
                 if ui.button(approve).clicked()
                 {
-                    self.change_events.send(HypRunTrigger::SingleHyp {
+                    self.change_events.send(HypRunTrigger::Hyp {
                         id: snapshot_handles.hyp_id.clone(),
                         update_snapshots: true
                     });
@@ -151,20 +147,22 @@ mod tests
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
     use passivate_delegation::Tx;
+    use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-    use passivate_hyp_model::single_hyp::SingleHyp;
-    use passivate_hyp_model::single_hyp_status::SingleHypStatus;
+    use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
-    use crate::{details_view::{DetailsView, HypDetails}, snapshots::{snapshot_handles::SnapshotHandles, Snapshots}};
+    use crate::details_view::{DetailsView, HypDetails};
+    use crate::snapshots::Snapshots;
+    use crate::snapshots::snapshot_handles::SnapshotHandles;
 
     #[test]
     pub fn show_a_passing_test()
     {
-        let failing_test = example_hyp("example_crate::example_test", SingleHypStatus::Passed);
+        let failing_test = example_hyp("example_crate::example_test", HypState::Passed);
 
         show_test(&test_name!(), failing_test);
     }
@@ -172,7 +170,7 @@ mod tests
     #[test]
     pub fn show_a_failing_test()
     {
-        let failing_test = example_hyp("example_crate::example_test", SingleHypStatus::Failed);
+        let failing_test = example_hyp("example_crate::example_test", HypState::Failed);
 
         show_test(&test_name!(), failing_test);
     }
@@ -180,9 +178,9 @@ mod tests
     #[test]
     pub fn show_a_failing_test_with_output()
     {
-        let failing_test = SingleHyp::new(
+        let failing_test = Hyp::new(
             HypId::new("example_crate", "example_test").unwrap(),
-            SingleHypStatus::Failed,
+            HypState::Failed,
             vec!["this is some error output".to_string(), "you messed up".to_string()]
         );
 
@@ -192,7 +190,7 @@ mod tests
     #[test]
     pub fn show_snapshot_associated_with_test_rgb()
     {
-        let test_with_snapshot = example_hyp("tests::example_snapshot_rgb", SingleHypStatus::Failed);
+        let test_with_snapshot = example_hyp("tests::example_snapshot_rgb", HypState::Failed);
 
         show_test(&test_name!(), test_with_snapshot);
     }
@@ -200,7 +198,7 @@ mod tests
     #[test]
     pub fn show_snapshot_associated_with_test_rgba()
     {
-        let test_with_snapshot = example_hyp("tests::example_snapshot_rgba", SingleHypStatus::Failed);
+        let test_with_snapshot = example_hyp("tests::example_snapshot_rgba", HypState::Failed);
 
         show_test(&test_name!(), test_with_snapshot);
     }
@@ -208,7 +206,7 @@ mod tests
     #[test]
     pub fn show_current_and_new_snapshots_associated_with_test()
     {
-        let test_with_changed_snapshot = example_hyp("tests::example_snapshot_changed", SingleHypStatus::Failed);
+        let test_with_changed_snapshot = example_hyp("tests::example_snapshot_changed", HypState::Failed);
 
         show_test(&test_name!(), test_with_changed_snapshot);
     }
@@ -216,7 +214,7 @@ mod tests
     #[test]
     pub fn show_only_new_snapshot_associated_with_test_when_there_is_no_current_snapshot()
     {
-        let test_first_run = example_hyp("tests::example_snapshot_only_new", SingleHypStatus::Failed);
+        let test_first_run = example_hyp("tests::example_snapshot_only_new", HypState::Failed);
 
         show_test(&test_name!(), test_first_run);
     }
@@ -224,7 +222,7 @@ mod tests
     #[test]
     pub fn show_only_one_snapshot_when_both_current_and_new_are_present_but_identical()
     {
-        let test_run_identical_snapshot = example_hyp("tests::example_snapshot_identical", SingleHypStatus::Failed);
+        let test_run_identical_snapshot = example_hyp("tests::example_snapshot_identical", HypState::Failed);
 
         show_test(&test_name!(), test_run_identical_snapshot);
     }
@@ -234,16 +232,17 @@ mod tests
     #[case::only_new("tests::example_snapshot_only_new")]
     pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] hyp: &str)
     {
-        use crate::snapshots::{snapshot_handles::SnapshotHandles, Snapshots};
+        use crate::snapshots::Snapshots;
+        use crate::snapshots::snapshot_handles::SnapshotHandles;
 
-        let snapshot_test = example_hyp(hyp, SingleHypStatus::Failed);
+        let snapshot_test = example_hyp(hyp, HypState::Failed);
 
         let (test_run_tx, test_run_rx) = Tx::new();
 
         let mut details_view = DetailsView::new(test_run_tx);
-        
+
         let mut details = None;
-        
+
         let ui = |ui: &mut egui::Ui| {
             if details.is_none()
             {
@@ -254,9 +253,9 @@ mod tests
 
             details_view.ui(ui, details.as_ref());
         };
-        
+
         let mut harness = Harness::new_ui(ui);
-        
+
         harness.run();
 
         let approve = harness.get_by_label("Approve");
@@ -267,14 +266,14 @@ mod tests
 
         assert_that!(
             &approval_run,
-            has_structure!(HypRunTrigger::SingleHyp {
+            has_structure!(HypRunTrigger::Hyp {
                 id: eq(HypId::new("example_crate", hyp).unwrap()),
                 update_snapshots: eq(true)
             })
         );
     }
 
-    fn show_test(test_name: &str, single_test: SingleHyp)
+    fn show_test(test_name: &str, single_test: Hyp)
     {
         let mut details_view = DetailsView::new(Tx::stub());
 
@@ -298,9 +297,9 @@ mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp(name: &str, status: SingleHypStatus) -> SingleHyp
+    fn example_hyp(name: &str, status: HypState) -> Hyp
     {
         let id = HypId::new("example_crate", name).unwrap();
-        SingleHyp::new(id, status, vec![])
+        Hyp::new(id, status, vec![])
     }
 }

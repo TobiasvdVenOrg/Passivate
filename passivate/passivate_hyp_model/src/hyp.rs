@@ -2,20 +2,20 @@ use std::fmt::Display;
 
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
-use crate::single_hyp_status::SingleHypStatus;
+use crate::hyp_state::HypState;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct SingleHyp
+pub struct Hyp
 {
     pub id: HypId,
     pub name: String,
-    pub status: SingleHypStatus,
+    pub status: HypState,
     pub output: Vec<String>
 }
 
-impl SingleHyp
+impl Hyp
 {
-    pub fn new(id: HypId, status: SingleHypStatus, output: Vec<String>) -> Self
+    pub fn new(id: HypId, status: HypState, output: Vec<String>) -> Self
     {
         let name = id.get_name(&HypNameStrategy::Default).to_string();
 
@@ -28,7 +28,7 @@ impl SingleHyp
     }
 }
 
-impl Display for SingleHyp
+impl Display for Hyp
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {

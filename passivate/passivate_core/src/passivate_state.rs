@@ -1,6 +1,6 @@
 use passivate_delegation::Rx;
-use passivate_hyp_model::hyp_run_events::{HypRunChange, HypRunEvent};
 use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::hyp_session_change::{HypRunEvent, HypSessionChange};
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::passivate_state_change::PassivateStateChange;
@@ -33,15 +33,15 @@ impl PassivateState
         self.try_process_hyp_run_event().map(Self::map_hyp_run_change)
     }
 
-    fn map_hyp_run_change(change: HypRunChange<'_>) -> PassivateStateChange<'_>
+    fn map_hyp_run_change(change: HypSessionChange<'_>) -> PassivateStateChange<'_>
     {
         match change
         {
-            HypRunChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp)
+            HypSessionChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp)
         }
     }
 
-    fn try_process_hyp_run_event(&mut self) -> Option<HypRunChange<'_>>
+    fn try_process_hyp_run_event(&mut self) -> Option<HypSessionChange<'_>>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
@@ -53,7 +53,7 @@ impl PassivateState
         }
     }
 
-    fn process_hyp_run_event(&mut self, event: HypRunEvent) -> Option<HypRunChange<'_>>
+    fn process_hyp_run_event(&mut self, event: HypRunEvent) -> Option<HypSessionChange<'_>>
     {
         self.hyp_session.update(event)
     }
