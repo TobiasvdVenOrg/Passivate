@@ -24,9 +24,7 @@ pub fn default_session_is_idle()
 #[test]
 pub fn started_session_is_running()
 {
-    let mut session = HypSession::new();
-
-    session.update(HypSessionEvent::RunStarted);
+    let session = new_started_session();
 
     assert_matches!(session.state(), Ok(HypSessionState::Running));
 }
@@ -34,9 +32,8 @@ pub fn started_session_is_running()
 #[test]
 pub fn completed_session_is_idle()
 {
-    let mut session = HypSession::new();
+    let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunStarted);
     session.update(HypSessionEvent::RunCompleted);
 
     assert_matches!(session.state(), Ok(HypSessionState::Idle));
@@ -61,9 +58,8 @@ pub fn completing_an_idle_session_is_error_state()
 #[test]
 pub fn starting_a_running_session_is_error_state()
 {
-    let mut session = HypSession::new();
+    let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunStarted);
     session.update(HypSessionEvent::RunStarted);
 
     assert_matches!(session.state(), Err(error) =>
@@ -78,9 +74,8 @@ pub fn starting_a_running_session_is_error_state()
 #[test]
 pub fn new_errors_do_not_replace_original_error_state()
 {
-    let mut session = HypSession::new();
+    let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunStarted);
     session.update(HypSessionEvent::RunStarted);
     session.update(HypSessionEvent::RunCompleted);
 
@@ -91,4 +86,13 @@ pub fn new_errors_do_not_replace_original_error_state()
             to: HypSessionState::Running
         });
     });
+}
+
+fn new_started_session() -> HypSession
+{
+    let mut session = HypSession::new();
+
+    session.update(HypSessionEvent::RunStarted);
+
+    session
 }
