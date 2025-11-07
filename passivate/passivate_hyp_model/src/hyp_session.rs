@@ -67,20 +67,29 @@ impl HypSession
 
     fn start_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
     {
-        Ok(HypSessionState::Running)
+        Self::try_transition(current_state, HypSessionState::Idle, HypSessionState::Running)
     }
 
     fn complete_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
     {
-        if *current_state == HypSessionState::Running
+        Self::try_transition(current_state, HypSessionState::Running, HypSessionState::Idle)
+    }
+
+    fn try_transition(
+        current_state: &HypSessionState,
+        expected_state: HypSessionState,
+        new_state: HypSessionState
+    ) -> Result<HypSessionState, HypSessionStateError>
+    {
+        if *current_state == expected_state
         {
-            Ok(HypSessionState::Idle)
+            Ok(new_state)
         }
         else
         {
             Err(HypSessionStateError::UnexpectedStateChange {
                 from: current_state.clone(),
-                to: HypSessionState::Idle
+                to: new_state
             })
         }
     }
