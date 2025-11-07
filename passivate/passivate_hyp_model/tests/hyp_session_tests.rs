@@ -48,10 +48,7 @@ pub fn completing_an_idle_session_is_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedStateChange {
-            from: HypSessionState::Idle,
-            to: HypSessionState::Idle
-        });
+        assert_matches!(error, HypSessionStateError::UnexpectedCompletion);
     });
 }
 
@@ -64,10 +61,7 @@ pub fn starting_a_running_session_is_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedStateChange {
-            from: HypSessionState::Running,
-            to: HypSessionState::Running
-        });
+        assert_matches!(error, HypSessionStateError::UnexpectedStart);
     });
 }
 
@@ -81,10 +75,7 @@ pub fn new_errors_do_not_replace_original_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedStateChange {
-            from: HypSessionState::Running,
-            to: HypSessionState::Running
-        });
+        assert_matches!(error, HypSessionStateError::UnexpectedStart);
     });
 }
 

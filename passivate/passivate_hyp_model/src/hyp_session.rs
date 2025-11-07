@@ -2,10 +2,17 @@ use crate::hyp_run_events::HypRunChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state::{HypSessionState, HypSessionStateError};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Activity
+{
+    Idle,
+    Running
+}
+
 #[derive(Debug, Clone)]
 pub struct HypSession
 {
-    state: Result<HypSessionState, HypSessionStateError>
+    activity: Result<Activity, HypSessionStateError>
 }
 
 impl HypSession
@@ -13,7 +20,7 @@ impl HypSession
     pub fn new() -> Self
     {
         Self {
-            state: Ok(HypSessionState::Idle)
+            activity: Ok(Activity::Idle)
         }
     }
 
@@ -24,9 +31,22 @@ impl HypSession
         session
     }
 
-    pub fn state(&self) -> Result<&HypSessionState, &HypSessionStateError>
+    pub fn state(&self) -> Result<HypSessionState, &HypSessionStateError>
     {
-        self.state.as_ref()
+        match &self.activity
+        {
+            Ok(activity) => Ok(Self::evaluate_state(activity)),
+            Err(error) => Err(error)
+        }
+    }
+
+    fn evaluate_state(activity: &Activity) -> HypSessionState
+    {
+        match activity
+        {
+            Activity::Idle => HypSessionState::Idle,
+            Activity::Running => HypSessionState::Running
+        }
     }
 
     pub fn no_hyps(&self) -> bool
@@ -46,51 +66,53 @@ impl HypSession
     {
         let mut change = None;
 
-        self.state = match &self.state
+        self.activity = match (&self.activity, event)
         {
-            Ok(current_state) => Self::process_state(event, current_state),
-            Err(error_state) => Err(error_state.clone())
+            (Err(error), _) => Err(error.clone()),
+            (Ok(activity), event) => Self::process_event(activity, event)
         };
 
         change
     }
 
-    fn process_state(event: HypSessionEvent, current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
+    fn process_event(activity: &Activity, event: HypSessionEvent) -> Result<Activity, HypSessionStateError>
     {
         match event
         {
-            HypSessionEvent::RunStarted => Self::start_run(current_state),
-            HypSessionEvent::RunCompleted => Self::complete_run(current_state),
-            _ => todo!()
+            HypSessionEvent::RunStarted => Self::start_run(activity),
+            HypSessionEvent::WorkspaceCompilation(workspace_compilation_event) => todo!(),
+            HypSessionEvent::CrateExists => todo!(),
+            HypSessionEvent::CrateCompilation(crate_compilation_event) => todo!(),
+            HypSessionEvent::HypExists(hyp_id) => todo!(),
+            HypSessionEvent::HypRunning(hyp_id) => todo!(),
+            HypSessionEvent::HypStdOut { id, lines } => todo!(),
+            HypSessionEvent::HypStdErr { id, lines } => todo!(),
+            HypSessionEvent::HypCompleted(hyp_id) => todo!(),
+            HypSessionEvent::RunCompleted => Self::complete_run(activity)
         }
     }
 
-    fn start_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
+    fn start_run(current_activity: &Activity) -> Result<Activity, HypSessionStateError>
     {
-        Self::try_transition(current_state, HypSessionState::Idle, HypSessionState::Running)
-    }
-
-    fn complete_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
-    {
-        Self::try_transition(current_state, HypSessionState::Running, HypSessionState::Idle)
-    }
-
-    fn try_transition(
-        current_state: &HypSessionState,
-        expected_state: HypSessionState,
-        new_state: HypSessionState
-    ) -> Result<HypSessionState, HypSessionStateError>
-    {
-        if *current_state == expected_state
+        if *current_activity == Activity::Idle
         {
-            Ok(new_state)
+            Ok(Activity::Running)
         }
         else
         {
-            Err(HypSessionStateError::UnexpectedStateChange {
-                from: current_state.clone(),
-                to: new_state
-            })
+            Err(HypSessionStateError::UnexpectedStart)
+        }
+    }
+
+    fn complete_run(current_activity: &Activity) -> Result<Activity, HypSessionStateError>
+    {
+        if *current_activity == Activity::Running
+        {
+            Ok(Activity::Idle)
+        }
+        else
+        {
+            Err(HypSessionStateError::UnexpectedCompletion)
         }
     }
 }

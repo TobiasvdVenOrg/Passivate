@@ -21,9 +21,9 @@ impl Display for HypSessionState
 #[derive(Error, Debug, Clone)]
 pub enum HypSessionStateError
 {
-    #[error("hyp session received an unexpected transition from {from} to {to}")]
-    UnexpectedStateChange
-    {
-        from: HypSessionState, to: HypSessionState
-    }
+    #[error("session was started unexpectedly, it was already running")]
+    UnexpectedStart,
+
+    #[error("session was completed unexpectedly, it was already idle")]
+    UnexpectedCompletion
 }
