@@ -30,3 +30,14 @@ pub fn started_session_is_running()
 
     assert_matches!(session.state(), HypSessionState::Running);
 }
+
+#[test]
+pub fn completed_session_is_idle()
+{
+    let mut session = HypSession::default();
+
+    session.update(HypSessionEvent::RunStarted);
+    session.update(HypSessionEvent::RunCompleted);
+
+    assert_matches!(session.state(), HypSessionState::Idle);
+}

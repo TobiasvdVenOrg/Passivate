@@ -42,6 +42,7 @@ impl HypSession
         match event
         {
             HypSessionEvent::RunStarted => self.start_run(),
+            HypSessionEvent::RunCompleted => self.complete_run(),
             _ => todo!()
         }
 
@@ -51,5 +52,10 @@ impl HypSession
     fn start_run(&mut self)
     {
         self.state = HypSessionState::Running;
+    }
+
+    fn complete_run(&mut self)
+    {
+        self.state = HypSessionState::Idle;
     }
 }
