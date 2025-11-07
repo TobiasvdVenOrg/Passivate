@@ -35,7 +35,7 @@ impl TestRunView
             }
             HypSessionState::Idle =>
             {
-                if session.no_tests()
+                if session.no_hyps()
                 {
                     ui.heading("No tests found.");
                 }

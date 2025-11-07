@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_hyp_names = { path = "../passivate_hyp_names" }
 
+camino.workspace = true
 itertools.workspace = true
 
 [dev-dependencies]
