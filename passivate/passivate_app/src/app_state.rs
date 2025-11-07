@@ -71,7 +71,7 @@ pub mod tests
     use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::hyp_session_change::HypRunEvent;
+    use passivate_hyp_model::hyp_session_change::HypSessionEvent;
     use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
@@ -116,13 +116,13 @@ pub mod tests
 
         let mut example_hyp = example_hyp();
         example_hyp.status = HypState::Passed;
-        hyp_run_tx.send(HypRunEvent::TestFinished(example_hyp));
+        hyp_run_tx.send(HypSessionEvent::TestFinished(example_hyp));
 
         ui.step();
         ui.snapshot(&test_name!());
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypRunEvent>) -> (AppState, DockingLayout)
+    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent>) -> (AppState, DockingLayout)
     {
         let mut hyp_run = HypRun::default();
         let example_hyp = example_hyp();

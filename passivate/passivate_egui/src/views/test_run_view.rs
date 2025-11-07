@@ -121,7 +121,7 @@ mod tests
     use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::hyp_session_change::HypRunEvent;
+    use passivate_hyp_model::hyp_session_change::HypSessionEvent;
     use passivate_hyp_model::hyp_session_state::HypSessionState;
     use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
@@ -166,7 +166,7 @@ mod tests
         hyp_run.add_hyp(example_hyp("example_test", HypState::Unknown));
 
         let mut session = HypSession::new(HypRun::default(), hyp_run);
-        session.update(HypRunEvent::Compiling(
+        session.update(HypSessionEvent::Compiling(
             "The build is working on something right now!".to_string()
         ));
 

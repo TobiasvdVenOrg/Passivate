@@ -6,7 +6,7 @@ use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-use passivate_hyp_model::hyp_session_change::HypRunEvent;
+use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::hyp_runner::HypRunner;
@@ -28,7 +28,7 @@ pub struct HypRunHandler
 {
     runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
-    hyp_run_tx: Tx<HypRunEvent>,
+    hyp_run_tx: Tx<HypSessionEvent>,
     coverage_tx: Tx<CoverageStatus>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>
@@ -106,7 +106,7 @@ impl HypRunHandler
             }
             Err(test_error) =>
             {
-                self.hyp_run_tx.send(HypRunEvent::HypRunError(test_error.to_string()));
+                todo!()
             }
         };
     }
@@ -132,7 +132,7 @@ impl HypRunHandler
 
         if let Err(error) = result
         {
-            self.hyp_run_tx.send(HypRunEvent::HypRunError(error.to_string()));
+            todo!()
         }
     }
 

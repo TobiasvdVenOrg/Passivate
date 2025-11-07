@@ -8,7 +8,7 @@ use passivate_coverage::grcov::Grcov;
 use passivate_delegation::Tx;
 use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_model::hyp_run_events::HypRunEvent;
+use passivate_hyp_model::hyp_run_events::HypSessionEvent;
 use passivate_testing::test_data_setup::TestDataSetup;
 
 #[bon::builder]
@@ -42,7 +42,7 @@ pub fn test_hyp_runner(#[builder(start_fn)] setup: &TestDataSetup) -> HypRunner
 pub fn test_hyp_run_handler(
     #[builder(start_fn)] setup: &TestDataSetup,
     #[builder(default = false)] coverage_enabled: bool,
-    #[builder(default = Tx::stub())] hyp_run_tx: Tx<HypRunEvent>,
+    #[builder(default = Tx::stub())] hyp_run_tx: Tx<HypSessionEvent>,
     #[builder(default = Tx::stub())] coverage_tx: Tx<CoverageStatus>,
     #[builder(default = Tx::stub())] configuration_tx: Tx<ConfigurationEvent>
 ) -> HypRunHandler

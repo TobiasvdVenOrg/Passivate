@@ -24,7 +24,7 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_model::hyp::Hyp;
-use passivate_hyp_model::hyp_session_change::HypRunEvent;
+use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_model::hyp_state::HypState;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 
@@ -58,11 +58,11 @@ impl HypRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypRunEvent>,
+        tx: &mut Tx<HypSessionEvent>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
-        tx.send(HypRunEvent::Start);
+        tx.send(HypSessionEvent::RunStarted);
 
         let cargo_options = nextest_cargo_options::cargo_options()
             .target_dir(self.target_dir.clone())
@@ -76,7 +76,7 @@ impl HypRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypRunEvent>,
+        tx: &mut Tx<HypSessionEvent>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -105,7 +105,7 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &mut Tx<HypRunEvent>,
+        tx: &mut Tx<HypSessionEvent>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -322,14 +322,14 @@ impl HypRunner
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
                             .expect("todo: error handling");
-                        Some(HypRunEvent::TestFinished(Hyp::new(hyp_id, status, test_output)))
+                        todo!()
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
                         start_time: _,
                         elapsed: _,
                         run_stats: _
-                    } => Some(HypRunEvent::TestsCompleted),
+                    } => Some(HypSessionEvent::RunCompleted),
                     _ => None
                 };
 
@@ -350,7 +350,7 @@ impl HypRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypRunEvent>
+        tx: &mut Tx<HypSessionEvent>
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
@@ -360,10 +360,7 @@ impl HypRunner
 
         let filter = vec![hyp_id.get_name(&strategy).to_string()];
 
-        tx.send(HypRunEvent::StartSingle {
-            hyp: hyp_id.clone(),
-            clear_tests: true
-        });
+        tx.send(HypSessionEvent::RunStarted);
 
         if update_snapshots
         {
