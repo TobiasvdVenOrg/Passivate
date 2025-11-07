@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::io::Error as IoError;
-use camino::Utf8PathBuf;
 
+use camino::Utf8PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

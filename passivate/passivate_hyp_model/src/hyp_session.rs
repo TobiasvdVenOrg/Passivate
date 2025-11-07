@@ -1,25 +1,32 @@
 use crate::hyp_run_events::HypRunChange;
 use crate::hyp_session_event::HypSessionEvent;
-use crate::hyp_session_state::HypSessionState;
+use crate::hyp_session_state::{HypSessionState, HypSessionStateError};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct HypSession
 {
-    state: HypSessionState
+    state: Result<HypSessionState, HypSessionStateError>
 }
 
 impl HypSession
 {
+    pub fn new() -> Self
+    {
+        Self {
+            state: Ok(HypSessionState::Idle)
+        }
+    }
+
     pub fn from_events(events: impl IntoIterator<Item = HypSessionEvent>) -> Self
     {
-        let mut session = Self::default();
+        let mut session = Self::new();
         session.update_all(events);
         session
     }
 
-    pub fn state(&self) -> &HypSessionState
+    pub fn state(&self) -> Result<&HypSessionState, &HypSessionStateError>
     {
-        &self.state
+        self.state.as_ref()
     }
 
     pub fn no_hyps(&self) -> bool
@@ -39,23 +46,42 @@ impl HypSession
     {
         let mut change = None;
 
-        match event
+        self.state = match &self.state
         {
-            HypSessionEvent::RunStarted => self.start_run(),
-            HypSessionEvent::RunCompleted => self.complete_run(),
-            _ => todo!()
-        }
+            Ok(current_state) => Self::process_state(event, current_state),
+            Err(error_state) => todo!()
+        };
 
         change
     }
 
-    fn start_run(&mut self)
+    fn process_state(event: HypSessionEvent, current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
     {
-        self.state = HypSessionState::Running;
+        match event
+        {
+            HypSessionEvent::RunStarted => Self::start_run(current_state),
+            HypSessionEvent::RunCompleted => Self::complete_run(current_state),
+            _ => todo!()
+        }
     }
 
-    fn complete_run(&mut self)
+    fn start_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
     {
-        self.state = HypSessionState::Idle;
+        Ok(HypSessionState::Running)
+    }
+
+    fn complete_run(current_state: &HypSessionState) -> Result<HypSessionState, HypSessionStateError>
+    {
+        if *current_state == HypSessionState::Running
+        {
+            Ok(HypSessionState::Idle)
+        }
+        else
+        {
+            Err(HypSessionStateError::UnexpectedStateChange {
+                from: current_state.clone(),
+                to: HypSessionState::Idle
+            })
+        }
     }
 }
