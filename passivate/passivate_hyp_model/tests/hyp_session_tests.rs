@@ -74,3 +74,21 @@ pub fn starting_a_running_session_is_error_state()
         });
     });
 }
+
+#[test]
+pub fn new_errors_do_not_replace_original_error_state()
+{
+    let mut session = HypSession::new();
+
+    session.update(HypSessionEvent::RunStarted);
+    session.update(HypSessionEvent::RunStarted);
+    session.update(HypSessionEvent::RunCompleted);
+
+    assert_matches!(session.state(), Err(error) =>
+    {
+        assert_matches!(error, HypSessionStateError::UnexpectedStateChange {
+            from: HypSessionState::Running,
+            to: HypSessionState::Running
+        });
+    });
+}

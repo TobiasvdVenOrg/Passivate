@@ -49,7 +49,7 @@ impl HypSession
         self.state = match &self.state
         {
             Ok(current_state) => Self::process_state(event, current_state),
-            Err(error_state) => todo!()
+            Err(error_state) => Err(error_state.clone())
         };
 
         change
