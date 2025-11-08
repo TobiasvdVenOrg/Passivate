@@ -124,7 +124,7 @@ pub mod tests
 
     fn example_app_state(hyp_run_rx: Rx<HypSessionEvent>) -> (AppState, DockingLayout)
     {
-        let mut hyp_run = HypRun::default();
+        let mut hyp_run = HypRun::new();
         let example_hyp = example_hyp();
         hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
 
@@ -156,6 +156,6 @@ pub mod tests
     fn example_hyp() -> Hyp
     {
         let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        Hyp::new(hyp_id, HypState::Failed, vec![])
+        Hyp::new(hyp_id, HypState::Failed)
     }
 }

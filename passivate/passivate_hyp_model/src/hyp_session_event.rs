@@ -34,6 +34,8 @@ pub enum WorkspaceCompilationEvent
     Message(CompilationMessage)
 }
 
+pub struct HypCrate {}
+
 #[derive(Debug, Clone)]
 pub enum HypSessionEvent
 {

@@ -33,7 +33,7 @@ impl TestRunView
 
         let mut selected_hyp = None;
 
-        for hyp in session.all_hyps().iter()
+        for hyp in session.all_hyps()
         {
             if let Some(new_selection) = self.show_hyp(ui, hyp)
             {

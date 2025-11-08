@@ -1,11 +1,12 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::iter::{self, Empty};
 
 use crate::hyp::Hyp;
+use crate::hyp_iter_ext::HypIterator;
 use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state::{HypSessionState, HypSessionStateError};
-use crate::hyp_set::HypSet;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Activity
@@ -54,9 +55,9 @@ impl HypSession
         }
     }
 
-    pub fn all_hyps(&self) -> HypSet<'_>
+    pub fn all_hyps(&self) -> impl HypIterator<'_> + Debug
     {
-        HypSet::new(HashSet::new())
+        iter::empty::<&&Hyp>()
     }
 
     pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent>)

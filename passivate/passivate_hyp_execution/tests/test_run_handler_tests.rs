@@ -15,6 +15,7 @@ use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_execution::hyp_run_errors::TestRunError;
 use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
+use passivate_hyp_model::hyp_iter_ext::HypIterator;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::hyp_state::HypState;
@@ -69,7 +70,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    assert_matches!(session.all_hyps().iter().exactly_one(), Ok(hyp_to_run));
+    assert_matches!(session.all_hyps().exactly_one(), Ok(hyp_to_run));
 }
 
 #[test]

@@ -10,7 +10,7 @@ pub fn default_session_has_no_hyps()
 {
     let session = HypSession::new();
 
-    assert_matches!(session.all_hyps().iter().next(), None);
+    assert_matches!(session.all_hyps().next(), None);
 }
 
 #[test]
@@ -77,6 +77,14 @@ pub fn new_errors_do_not_replace_original_error_state()
     {
         assert_matches!(error, HypSessionStateError::UnexpectedStart);
     });
+}
+
+#[test]
+pub fn when_crate_starts_compiling_it_is_part_of_session()
+{
+    let mut session = new_started_session();
+
+    // session.update(HypSessionEvent::CrateExists {})
 }
 
 fn new_started_session() -> HypSession
