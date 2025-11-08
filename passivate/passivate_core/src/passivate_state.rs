@@ -1,6 +1,7 @@
 use passivate_delegation::Rx;
 use passivate_hyp_model::hyp_session::HypSession;
-use passivate_hyp_model::hyp_session_change::{HypSessionChange, HypSessionEvent};
+use passivate_hyp_model::hyp_session_change::HypSessionChange;
+use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_names::hyp_id::HypId;
 
 use crate::passivate_state_change::PassivateStateChange;
@@ -16,7 +17,7 @@ impl PassivateState
 {
     pub fn new(hyp_run_rx: Rx<HypSessionEvent>) -> Self
     {
-        Self::with_initial_session_state(HypSession::default(), hyp_run_rx)
+        Self::with_initial_session_state(HypSession::new(), hyp_run_rx)
     }
 
     pub fn with_initial_session_state(hyp_session: HypSession, hyp_run_rx: Rx<HypSessionEvent>) -> Self

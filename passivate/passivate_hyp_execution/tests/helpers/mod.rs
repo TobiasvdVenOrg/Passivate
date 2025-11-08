@@ -8,7 +8,7 @@ use passivate_coverage::grcov::Grcov;
 use passivate_delegation::Tx;
 use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
 use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_model::hyp_run_events::HypSessionEvent;
+use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_testing::test_data_setup::TestDataSetup;
 
 #[bon::builder]

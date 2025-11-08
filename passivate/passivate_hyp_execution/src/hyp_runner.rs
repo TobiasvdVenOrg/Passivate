@@ -322,7 +322,7 @@ impl HypRunner
 
                         let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
                             .expect("todo: error handling");
-                        todo!()
+                        None
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,

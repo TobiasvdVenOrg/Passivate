@@ -1,8 +1,6 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::hyp::Hyp;
-use passivate_hyp_model::hyp_run::HypRun;
 use passivate_hyp_model::hyp_session::HypSession;
-use passivate_hyp_model::hyp_session_state::HypSessionState;
 use passivate_hyp_model::hyp_state::HypState;
 
 use crate::docking::docking_layout::DockId;
@@ -27,49 +25,15 @@ impl TestRunView
 {
     pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, session: &'a HypSession) -> Option<&'a Hyp>
     {
-        match &session.state
+        match &session.state()
         {
-            HypSessionState::FirstRun =>
-            {
-                ui.heading("Starting first test run...");
-            }
-            HypSessionState::Idle =>
-            {
-                if session.no_hyps()
-                {
-                    ui.heading("No tests found.");
-                }
-            }
-            HypSessionState::Building(message) =>
-            {
-                ui.heading("Building");
-
-                let text = RichText::new(message).size(12.0).color(Color32::YELLOW);
-                ui.label(text);
-            }
-            HypSessionState::Running =>
-            {}
-            HypSessionState::BuildFailed(build_failure) =>
-            {
-                ui.heading("Build failed.");
-
-                let text = RichText::new(build_failure).size(16.0).color(Color32::RED);
-                ui.label(text);
-            }
-            HypSessionState::Failed(run_tests_error_status) =>
-            {
-                ui.heading("Failed to run tests.");
-
-                let text = RichText::new(run_tests_error_status).size(16.0).color(Color32::RED);
-                ui.label(text);
-            }
+            Ok(_) => todo!(),
+            Err(_) => todo!()
         }
 
         let mut selected_hyp = None;
 
-        let hyp_run = session.current_run();
-
-        for hyp in hyp_run.hyps()
+        for hyp in session.all_hyps().iter()
         {
             if let Some(new_selection) = self.show_hyp(ui, hyp)
             {
@@ -101,7 +65,7 @@ impl TestRunView
 
     fn show_hyp<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp) -> Option<&'a Hyp>
     {
-        match hyp.status
+        match hyp.current_state()
         {
             HypState::Failed => self.hyp_button(ui, hyp, Color32::RED),
             HypState::Passed => self.hyp_button(ui, hyp, Color32::GREEN),

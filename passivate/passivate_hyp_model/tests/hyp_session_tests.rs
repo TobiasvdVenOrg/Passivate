@@ -10,7 +10,7 @@ pub fn default_session_has_no_hyps()
 {
     let session = HypSession::new();
 
-    assert!(session.no_hyps());
+    assert_matches!(session.all_hyps().iter().next(), None);
 }
 
 #[test]

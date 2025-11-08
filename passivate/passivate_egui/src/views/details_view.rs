@@ -38,7 +38,7 @@ impl DetailsView
     {
         if let Some(details) = &details
         {
-            let color = match details.hyp.status
+            let color = match details.hyp.current_state()
             {
                 HypState::Passed => Color32::GREEN,
                 HypState::Failed => Color32::RED,
@@ -178,11 +178,10 @@ mod tests
     #[test]
     pub fn show_a_failing_test_with_output()
     {
-        let failing_test = Hyp::new(
-            HypId::new("example_crate", "example_test").unwrap(),
-            HypState::Failed,
-            vec!["this is some error output".to_string(), "you messed up".to_string()]
-        );
+        let mut failing_test = Hyp::new(HypId::new("example_crate", "example_test").unwrap(), HypState::Failed);
+
+        failing_test.add_output(String::from("this is some error output"));
+        failing_test.add_output(String::from("you messed up"));
 
         show_test(&test_name!(), failing_test);
     }
@@ -300,6 +299,6 @@ mod tests
     fn example_hyp(name: &str, status: HypState) -> Hyp
     {
         let id = HypId::new("example_crate", name).unwrap();
-        Hyp::new(id, status, vec![])
+        Hyp::new(id, status)
     }
 }
