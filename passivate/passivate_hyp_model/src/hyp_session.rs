@@ -73,7 +73,7 @@ impl HypSession
 
         self.activity = match (&self.activity, event)
         {
-            (Err(error), _) => Err(error.clone()),
+            (Err(_), _) => return None,
             (Ok(activity), event) => Self::process_event(activity, event)
         };
 
