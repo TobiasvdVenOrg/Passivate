@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use thiserror::Error;
-
 pub enum HypNameStrategy
 {
     Default,
@@ -10,9 +8,17 @@ pub enum HypNameStrategy
     {
         separator: String
     },
-    FullyQualified 
+    FullyQualified
     {
         separator: String
+    }
+}
+
+impl AsRef<HypNameStrategy> for HypNameStrategy
+{
+    fn as_ref(&self) -> &HypNameStrategy
+    {
+        self
     }
 }
 
@@ -24,7 +30,17 @@ impl HypNameStrategy
         {
             HypNameStrategy::Default | HypNameStrategy::NameOnly => Cow::Borrowed(id.parts.last().unwrap()),
             HypNameStrategy::QualifiedWithoutCrate { separator } => Cow::Owned(id.parts.join(separator)),
-            HypNameStrategy::FullyQualified { separator } => Cow::Owned(format!("{}{}{}", id.get_crate_name(separator), separator, id.parts.join(separator)))
+            HypNameStrategy::FullyQualified { separator } =>
+            {
+                Cow::Owned(format!(
+                    "{}{}{}{}{}",
+                    id.package_name(),
+                    separator,
+                    id.crate_name(),
+                    separator,
+                    id.parts.join(separator)
+                ))
+            }
         }
     }
 }
@@ -32,46 +48,52 @@ impl HypNameStrategy
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct HypId
 {
-    crate_parts: Vec<String>,
+    package_name: String,
+    crate_name: String,
     parts: Vec<String>
 }
 
 impl HypId
 {
-    pub fn new<TCrateName, TValue>(crate_name: TCrateName, value: TValue) -> Result<Self, HypIdError>
-        where 
-            TCrateName: AsRef<str>,
-            TValue: AsRef<str>
+    pub fn new(package_name: impl Into<String>, crate_name: impl Into<String>, hyp_name: impl Into<String>) -> Self
     {
-        let crate_parts = crate_name.as_ref().split_terminator("::").map(String::from).collect();
-        let parts: Vec<String> = value.as_ref().split_terminator("::").map(String::from).collect();
+        let parts: Vec<String> = hyp_name.into().split_terminator("::").map(String::from).collect();
 
-        Ok(Self { crate_parts, parts })
+        Self {
+            package_name: package_name.into(),
+            crate_name: crate_name.into(),
+            parts
+        }
     }
 
-    pub fn get_crate_name<TSeparator: AsRef<str>>(&self, separator: TSeparator) -> String
+    pub fn package_name(&self) -> &str
     {
-        self.crate_parts.join(separator.as_ref()).to_string()
+        &self.package_name
     }
 
-    pub fn get_name<'a>(&'a self, name_only: &'a HypNameStrategy) -> Cow<'a, str>
+    pub fn crate_name(&self) -> &str
     {
-        name_only.convert(self)
+        &self.crate_name
     }
 
-    pub fn get_fully_qualified<TSeparator: AsRef<str>>(&self, separator: TSeparator) -> String
+    pub fn package_crate_name(&self, separator: impl AsRef<str>) -> String
     {
-        let strategy = HypNameStrategy::FullyQualified { separator: separator.as_ref().to_string() };
+        format!("{}{}{}", self.package_name(), separator.as_ref(), self.crate_name())
+    }
+
+    pub fn name<'a>(&'a self, name_only: impl AsRef<HypNameStrategy>) -> Cow<'a, str>
+    {
+        name_only.as_ref().convert(self)
+    }
+
+    pub fn fully_qualified(&self, separator: impl AsRef<str>) -> String
+    {
+        let strategy = HypNameStrategy::FullyQualified {
+            separator: separator.as_ref().to_string()
+        };
 
         strategy.convert(self).to_string()
     }
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum HypIdError
-{
-    #[error("hyp id was not in a valid format: {0}")]
-    InvalidFormat(String)
 }
 
 #[cfg(test)]
@@ -83,9 +105,12 @@ mod tests
     #[test]
     pub fn example_unit_test_id()
     {
-        let id = test_id!().get_fully_qualified("::");
+        let id = test_id!().fully_qualified("::");
 
-        assert_eq!("passivate_hyp_names::hyp_id::tests::example_unit_test_id", id);
+        assert_eq!(
+            "passivate_hyp_names::passivate_hyp_names::hyp_id::tests::example_unit_test_id",
+            id
+        );
     }
 
     #[test]
@@ -93,7 +118,7 @@ mod tests
     {
         let id = test_id!();
 
-        let name = id.get_name(&HypNameStrategy::NameOnly);
+        let name = id.name(&HypNameStrategy::NameOnly);
 
         assert_eq!("id_as_name_only_from_unit_test", name);
     }
@@ -102,20 +127,27 @@ mod tests
     pub fn id_as_fully_qualified_from_unit_test()
     {
         let id = test_id!();
-        let strategy = HypNameStrategy::FullyQualified { separator: "+".to_string() };
+        let strategy = HypNameStrategy::FullyQualified {
+            separator: "+".to_string()
+        };
 
-        let name = id.get_name(&strategy);
+        let name = id.name(&strategy);
 
-        assert_eq!("passivate_hyp_names+hyp_id+tests+id_as_fully_qualified_from_unit_test", name);
+        assert_eq!(
+            "passivate_hyp_names+passivate_hyp_names+hyp_id+tests+id_as_fully_qualified_from_unit_test",
+            name
+        );
     }
 
     #[test]
     pub fn id_as_qualified_without_crate_from_unit_test()
     {
         let id = test_id!();
-        let strategy = HypNameStrategy::QualifiedWithoutCrate { separator: "+".to_string() };
+        let strategy = HypNameStrategy::QualifiedWithoutCrate {
+            separator: "+".to_string()
+        };
 
-        let name = id.get_name(&strategy);
+        let name = id.name(&strategy);
 
         assert_eq!("hyp_id+tests+id_as_qualified_without_crate_from_unit_test", name);
     }

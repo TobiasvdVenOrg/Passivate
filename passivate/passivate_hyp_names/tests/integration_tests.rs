@@ -1,4 +1,4 @@
-
+use passivate_hyp_names::hyp_id::HypNameStrategy;
 use passivate_hyp_names::test_id;
 
 mod sub_dir
@@ -9,9 +9,28 @@ mod sub_dir
 #[test]
 pub fn example_integration_test_id()
 {
-    let id = test_id!().get_fully_qualified("::");
+    let id = test_id!().fully_qualified("::");
 
     assert_eq!("passivate_hyp_names::integration_tests::example_integration_test_id", id);
+}
+
+#[test]
+pub fn example_integration_test_id_qualified_without_crate()
+{
+    let id = test_id!();
+    let name = id.name(HypNameStrategy::QualifiedWithoutCrate {
+        separator: String::from("::")
+    });
+
+    assert_eq!("example_integration_test_id_qualified_without_crate", name);
+}
+
+#[test]
+pub fn get_crate_name_from_test_id()
+{
+    let id = test_id!();
+
+    assert_eq!("passivate_hyp_names::integration_tests", id.package_crate_name("::").as_str());
 }
 
 mod sub_mod
@@ -21,8 +40,11 @@ mod sub_mod
     #[test]
     pub fn example_integration_test_in_sub_mod_id()
     {
-        let id = test_id!().get_fully_qualified("::");
+        let id = test_id!().fully_qualified("::");
 
-        assert_eq!("passivate_hyp_names::integration_tests::sub_mod::example_integration_test_in_sub_mod_id", id);
+        assert_eq!(
+            "passivate_hyp_names::integration_tests::sub_mod::example_integration_test_in_sub_mod_id",
+            id
+        );
     }
 }
