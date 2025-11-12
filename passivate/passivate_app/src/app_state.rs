@@ -71,7 +71,7 @@ pub mod tests
     use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::hyp_session_change::HypSessionEvent;
+    use passivate_hyp_model::hyp_session_event::HypSessionEvent;
     use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
@@ -114,9 +114,8 @@ pub mod tests
         test_entry.click();
         ui.step();
 
-        let mut example_hyp = example_hyp();
-        example_hyp.status = HypState::Passed;
-        hyp_run_tx.send(HypSessionEvent::TestFinished(example_hyp));
+        let example_hyp = example_hyp(HypState::Passed);
+        hyp_run_tx.send(HypSessionEvent::HypCompleted(example_hyp.id));
 
         ui.step();
         ui.snapshot(&test_name!());
@@ -124,11 +123,11 @@ pub mod tests
 
     fn example_app_state(hyp_run_rx: Rx<HypSessionEvent>) -> (AppState, DockingLayout)
     {
-        let mut hyp_run = HypRun::new();
-        let example_hyp = example_hyp();
-        hyp_run.hyps.insert(example_hyp.id.clone(), example_hyp);
+        let example_hyp = example_hyp(HypState::Failed);
 
-        let session = HypSession::new(HypRun::default(), hyp_run);
+        todo!("Add the hyp to the state");
+
+        let mut session = HypSession::new();
         let passivate_state = PassivateState::with_initial_session_state(session, hyp_run_rx);
         let view_state = PassivateViewState::default();
         let configuration = ConfigurationManager::new(
@@ -153,9 +152,9 @@ pub mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp() -> Hyp
+    fn example_hyp(state: HypState) -> Hyp
     {
-        let hyp_id = HypId::new("example_crate", "example_test").unwrap();
-        Hyp::new(hyp_id, HypState::Failed)
+        let hyp_id = HypId::new("example_package", "example_crate", "example_test");
+        Hyp::new(hyp_id, state)
     }
 }
