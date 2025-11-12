@@ -320,8 +320,8 @@ impl HypRunner
                             HypState::Failed
                         };
 
-                        let hyp_id = HypId::new(test_instance.suite_info.binary_name.clone(), test_instance.name)
-                            .expect("todo: error handling");
+                        let hyp_id = HypId::new(&test_instance.suite_info.binary_name, "todo_crate", test_instance.name);
+
                         None
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
@@ -358,7 +358,7 @@ impl HypRunner
             separator: "::".to_string()
         };
 
-        let filter = vec![hyp_id.get_name(&strategy).to_string()];
+        let filter = vec![hyp_id.name(&strategy).to_string()];
 
         tx.send(HypSessionEvent::RunStarted);
 

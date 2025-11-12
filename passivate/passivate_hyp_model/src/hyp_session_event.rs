@@ -1,17 +1,17 @@
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use passivate_hyp_names::hyp_id::HypId;
 
+use crate::rust::RustHypProject;
+
 #[derive(Debug, Clone)]
-pub enum CrateCompilationEvent
+pub enum ProjectCompilationEventKind
 {
-    StartCompilation
-    {
-        crate_name: String,
-        version: String,
-        path: Utf8PathBuf
-    },
+    StartCompilation,
     Message(CompilationMessage)
 }
+
+#[derive(Debug, Clone)]
+pub struct ProjectCompilationEvent {}
 
 #[derive(Debug, Clone)]
 pub enum CompilationMessageKind
@@ -34,15 +34,62 @@ pub enum WorkspaceCompilationEvent
     Message(CompilationMessage)
 }
 
-pub struct HypCrate {}
+#[derive(Debug, Clone)]
+pub struct HypProject
+{
+    kind: HypProjectKind
+}
+
+impl HypProject
+{
+    pub fn new(kind: HypProjectKind) -> Self
+    {
+        Self { kind }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum HypProjectKind
+{
+    Rust(RustHypProject)
+}
+
+impl HypProject
+{
+    pub fn name(&self) -> &str
+    {
+        match &self.kind
+        {
+            HypProjectKind::Rust(project) => &project.package_name
+        }
+    }
+
+    pub fn path(&self) -> &Utf8Path
+    {
+        match &self.kind
+        {
+            HypProjectKind::Rust(project) => &project.manifest_path
+        }
+    }
+}
+
+impl<T> From<T> for HypSessionEvent
+where
+    T: Into<HypProject>
+{
+    fn from(value: T) -> Self
+    {
+        HypSessionEvent::ProjectExists(value.into())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum HypSessionEvent
 {
     RunStarted,
+    ProjectExists(HypProject),
     WorkspaceCompilation(WorkspaceCompilationEvent),
-    CrateExists,
-    CrateCompilation(CrateCompilationEvent),
+    ProjectCompilation(ProjectCompilationEvent),
     HypExists(HypId),
     HypRunning(HypId),
     HypStdOut

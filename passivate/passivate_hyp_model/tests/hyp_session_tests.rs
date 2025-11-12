@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate assert_matches;
 
+use camino::Utf8PathBuf;
 use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_model::hyp_session_state::{HypSessionState, HypSessionStateError};
+use passivate_hyp_model::rust::RustHypProject;
 
 #[test]
 pub fn default_session_has_no_hyps()
@@ -80,7 +82,16 @@ pub fn new_errors_do_not_replace_original_error_state()
 }
 
 #[test]
-pub fn when_crate_starts_compiling_it_is_part_of_session()
+pub fn project_existence_updates_session_while_idle()
+{
+    let mut session = HypSession::new();
+
+    session.update(HypSessionEvent::from(example_crate("name")));
+    // session.update(HypSessionEvent::CrateExists {})
+}
+
+#[test]
+pub fn crate_existence_updates_while_running_is_an_error()
 {
     let mut session = new_started_session();
 
@@ -94,4 +105,15 @@ fn new_started_session() -> HypSession
     session.update(HypSessionEvent::RunStarted);
 
     session
+}
+
+fn example_crate<TStr: ToString>(name: TStr) -> RustHypProject
+{
+    let package_name = name.to_string();
+    let manifest_path = Utf8PathBuf::new().join("example/path/").join(&package_name);
+
+    RustHypProject {
+        package_name,
+        manifest_path
+    }
 }

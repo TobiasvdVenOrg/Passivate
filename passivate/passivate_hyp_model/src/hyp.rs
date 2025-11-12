@@ -17,7 +17,7 @@ impl Hyp
 {
     pub fn new(id: HypId, state: HypState) -> Self
     {
-        let name = id.get_name(&HypNameStrategy::Default).to_string();
+        let name = id.name(HypNameStrategy::Default).to_string();
 
         Self {
             id,

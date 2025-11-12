@@ -7,3 +7,4 @@ pub mod hyp_session_change;
 pub mod hyp_session_event;
 pub mod hyp_session_state;
 pub mod hyp_state;
+pub mod rust;

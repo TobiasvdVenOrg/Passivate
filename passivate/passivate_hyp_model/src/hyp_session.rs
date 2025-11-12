@@ -86,9 +86,9 @@ impl HypSession
         match event
         {
             HypSessionEvent::RunStarted => Self::start_run(activity),
+            HypSessionEvent::ProjectExists(hyp_crate) => todo!(),
             HypSessionEvent::WorkspaceCompilation(workspace_compilation_event) => todo!(),
-            HypSessionEvent::CrateExists => todo!(),
-            HypSessionEvent::CrateCompilation(crate_compilation_event) => todo!(),
+            HypSessionEvent::ProjectCompilation(crate_compilation_event) => todo!(),
             HypSessionEvent::HypExists(hyp_id) => todo!(),
             HypSessionEvent::HypRunning(hyp_id) => todo!(),
             HypSessionEvent::HypStdOut { id, lines } => todo!(),

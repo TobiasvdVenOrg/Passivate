@@ -40,10 +40,10 @@ pub mod tests
     #[test]
     pub fn find_hyp_by_id()
     {
-        let hyp1_id = HypId::new("crate", "hyp1").unwrap();
+        let hyp1_id = example_hyp_id("hyp1");
 
         let hyp1 = Hyp::new(hyp1_id.clone(), HypState::Passed);
-        let hyp2 = Hyp::new(HypId::new("crate", "hyp2").unwrap(), HypState::Passed);
+        let hyp2 = Hyp::new(example_hyp_id("hyp2"), HypState::Passed);
 
         let hyps = vec![&hyp1, &hyp2];
         let found = hyps.iter().by_id(&hyp1_id);
@@ -54,13 +54,18 @@ pub mod tests
     #[test]
     pub fn collection_state_is_passed_when_all_hyps_passed()
     {
-        let hyp1_id = HypId::new("crate", "hyp1").unwrap();
+        let hyp1_id = example_hyp_id("hyp1");
 
         let hyp1 = Hyp::new(hyp1_id.clone(), HypState::Passed);
-        let hyp2 = Hyp::new(HypId::new("crate", "hyp2").unwrap(), HypState::Passed);
+        let hyp2 = Hyp::new(example_hyp_id("hyp2"), HypState::Passed);
 
         let hyps = vec![&hyp1, &hyp2];
 
         assert_matches!(hyps.iter().current_state(), HypState::Passed);
+    }
+
+    fn example_hyp_id(hyp_name: impl Into<String>) -> HypId
+    {
+        HypId::new("package", "crate", hyp_name)
     }
 }
