@@ -34,7 +34,7 @@ pub fn handle_single_test_run()
 
     let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
-    let hyp_to_run = HypId::new("simple_project", "add_8_and_8_is_16").unwrap();
+    let hyp_to_run = HypId::new("simple_project", "simple_project", "add_8_and_8_is_16");
 
     handler.handle(
         HypRunTrigger::Hyp {
@@ -58,7 +58,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
-    let hyp_to_run = HypId::new("add_tests", "add_2_and_2_is_4").unwrap();
+    let hyp_to_run = HypId::new("simple_project", "add_tests", "add_2_and_2_is_4");
 
     handler.handle(
         HypRunTrigger::Hyp {
@@ -97,7 +97,7 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
+    let snapshot_hyp_id = HypId::new("simple_project", "snapshot_tests", "snapshot_test");
 
     handler.handle(
         HypRunTrigger::Hyp {
@@ -138,7 +138,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let snapshot_hyp_id = HypId::new("snapshot_tests", "snapshot_test").unwrap();
+    let snapshot_hyp_id = HypId::new("simple_project", "snapshot_tests", "snapshot_test");
 
     handler.handle(
         HypRunTrigger::Hyp {
@@ -172,7 +172,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
     // Run all tests first to generate a new snapshot
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let failed_test = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
+    let failed_test = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
 
     let session = HypSession::from_events(hyp_run_rx);
 
@@ -208,7 +208,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
     handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
 
-    let failed_hyp = HypId::new("multiply_tests", "multiply_2_and_2_is_4").unwrap();
+    let failed_hyp = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
 
     let session = HypSession::from_events(hyp_run_rx);
 
