@@ -83,66 +83,40 @@ mod tests
 {
     use egui_kittest::Harness;
     use passivate_hyp_model::hyp::Hyp;
-    use passivate_hyp_model::hyp_run::HypRun;
     use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::hyp_session_change::HypSessionEvent;
-    use passivate_hyp_model::hyp_session_state::HypSessionState;
     use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
-    use passivate_hyp_names::test_name;
 
     use crate::test_run_view::TestRunView;
 
     #[test]
     pub fn show_when_first_test_run_is_starting()
     {
-        run_and_snapshot(session_from_state(HypSessionState::FirstRun), &test_name!());
+        todo!();
     }
 
     #[test]
     pub fn show_when_no_tests_were_found()
     {
-        run_and_snapshot(session_from_state(HypSessionState::Idle), &test_name!());
+        todo!();
     }
 
     #[test]
     pub fn show_when_build_failed()
     {
-        let build_failed = session_from_state(HypSessionState::BuildFailed("Something didn't compile!".to_string()));
-
-        run_and_snapshot(build_failed, &test_name!());
+        todo!();
     }
 
     #[test]
     pub fn show_tests_with_unknown_status_greyed_out()
     {
-        let mut hyp_run = HypRun::default();
-        hyp_run.add_hyp(example_hyp("example_test", HypState::Unknown));
-
-        let session = HypSession::new(HypRun::default(), hyp_run);
-        run_and_snapshot(session, &test_name!());
+        todo!();
     }
 
     #[test]
     pub fn show_build_status_above_tests_while_compiling()
     {
-        let mut hyp_run = HypRun::default();
-        hyp_run.add_hyp(example_hyp("example_test", HypState::Unknown));
-
-        let mut session = HypSession::new(HypRun::default(), hyp_run);
-        session.update(HypSessionEvent::Compiling(
-            "The build is working on something right now!".to_string()
-        ));
-
-        run_and_snapshot(session, &test_name!());
-    }
-
-    fn session_from_state(state: HypSessionState) -> HypSession
-    {
-        let mut session = HypSession::default();
-        session.state = state;
-
-        session
+        todo!();
     }
 
     fn run_and_snapshot(session: HypSession, snapshot_name: &str)
@@ -162,7 +136,7 @@ mod tests
 
     fn example_hyp(name: &str, status: HypState) -> Hyp
     {
-        let id = HypId::new("example_crate", name).unwrap();
-        Hyp::new(id, status, vec![])
+        let id = HypId::new("example_package", "example_crate", name);
+        Hyp::new(id, status)
     }
 }
