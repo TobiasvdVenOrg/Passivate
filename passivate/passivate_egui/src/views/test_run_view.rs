@@ -1,7 +1,7 @@
-use egui::{Color32, RichText};
+use egui::{Color32, RichText, Ui};
 use passivate_hyp_model::hyp::Hyp;
 use passivate_hyp_model::hyp_session::HypSession;
-use passivate_hyp_model::hyp_session_state::HypSessionStateError;
+use passivate_hyp_model::hyp_session_state::{HypSessionState, HypSessionStateError};
 use passivate_hyp_model::hyp_state::HypState;
 
 use crate::docking::docking_layout::DockId;
@@ -24,11 +24,11 @@ impl View for TestRunView
 
 impl TestRunView
 {
-    pub fn ui<'a>(&mut self, ui: &mut egui_dock::egui::Ui, session: &'a HypSession) -> Option<&'a Hyp>
+    pub fn ui<'a>(&mut self, ui: &mut Ui, session: &'a HypSession) -> Option<&'a Hyp>
     {
         match &session.state()
         {
-            Ok(_) => todo!(),
+            Ok(state) => self.show_session_state(ui, state),
             Err(error) => self.show_error_state(ui, *error)
         }
 
@@ -45,14 +45,25 @@ impl TestRunView
         selected_hyp
     }
 
-    fn show_error_state(&mut self, ui: &mut egui_dock::egui::Ui, error: &HypSessionStateError)
+    fn show_session_state(&mut self, ui: &mut Ui, state: &HypSessionState)
+    {
+        let text = match state
+        {
+            HypSessionState::Idle => RichText::new("Idle").size(16.0).color(Color32::GREEN),
+            HypSessionState::Running => RichText::new("Running").size(16.0).color(Color32::GREEN)
+        };
+
+        ui.label(text);
+    }
+
+    fn show_error_state(&mut self, ui: &mut Ui, error: &HypSessionStateError)
     {
         let text = RichText::new(error.to_string()).size(32.0).color(Color32::RED);
 
         ui.label(text);
     }
 
-    fn hyp_button<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp, color: Color32) -> Option<&'a Hyp>
+    fn hyp_button<'a>(&self, ui: &mut Ui, hyp: &'a Hyp, color: Color32) -> Option<&'a Hyp>
     {
         let text = RichText::new(&hyp.name).size(16.0).color(color);
 
@@ -111,9 +122,13 @@ mod tests
     }
 
     #[test]
-    pub fn show_when_first_test_run_is_starting()
+    pub fn show_when_hyp_run_has_started()
     {
-        todo!();
+        let mut session = HypSession::new();
+
+        session.update(HypSessionEvent::RunStarted);
+
+        run_and_snapshot(session, test_name!());
     }
 
     #[test]
