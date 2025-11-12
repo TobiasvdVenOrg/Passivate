@@ -1,6 +1,7 @@
 use egui::{Color32, RichText};
 use passivate_hyp_model::hyp::Hyp;
 use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::hyp_session_state::HypSessionStateError;
 use passivate_hyp_model::hyp_state::HypState;
 
 use crate::docking::docking_layout::DockId;
@@ -28,7 +29,7 @@ impl TestRunView
         match &session.state()
         {
             Ok(_) => todo!(),
-            Err(_) => todo!()
+            Err(error) => self.show_error_state(ui, *error)
         }
 
         let mut selected_hyp = None;
@@ -42,6 +43,13 @@ impl TestRunView
         }
 
         selected_hyp
+    }
+
+    fn show_error_state(&mut self, ui: &mut egui_dock::egui::Ui, error: &HypSessionStateError)
+    {
+        let text = RichText::new(error.to_string()).size(32.0).color(Color32::RED);
+
+        ui.label(text);
     }
 
     fn hyp_button<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp, color: Color32) -> Option<&'a Hyp>
@@ -84,10 +92,23 @@ mod tests
     use egui_kittest::Harness;
     use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_session::HypSession;
+    use passivate_hyp_model::hyp_session_event::HypSessionEvent;
     use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
+    use passivate_hyp_names::test_name;
 
     use crate::test_run_view::TestRunView;
+
+    #[test]
+    pub fn show_when_session_is_in_error_state()
+    {
+        let mut session = HypSession::new();
+
+        // Start the session twice to trigger an error
+        session.update_all([HypSessionEvent::RunStarted, HypSessionEvent::RunStarted]);
+
+        run_and_snapshot(session, test_name!());
+    }
 
     #[test]
     pub fn show_when_first_test_run_is_starting()
@@ -119,7 +140,7 @@ mod tests
         todo!();
     }
 
-    fn run_and_snapshot(session: HypSession, snapshot_name: &str)
+    fn run_and_snapshot(session: HypSession, snapshot_name: impl Into<String>)
     {
         let mut test_run_view = TestRunView;
 
@@ -131,7 +152,7 @@ mod tests
 
         harness.run();
         harness.fit_contents();
-        harness.snapshot(snapshot_name);
+        harness.snapshot(&snapshot_name.into());
     }
 
     fn example_hyp(name: &str, status: HypState) -> Hyp
