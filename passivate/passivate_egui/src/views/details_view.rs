@@ -178,7 +178,10 @@ mod tests
     #[test]
     pub fn show_a_failing_test_with_output()
     {
-        let mut failing_test = Hyp::new(HypId::new("example_crate", "example_test").unwrap(), HypState::Failed);
+        let mut failing_test = Hyp::new(
+            HypId::new("example_package", "example_crate", "example_test"),
+            HypState::Failed
+        );
 
         failing_test.add_output(String::from("this is some error output"));
         failing_test.add_output(String::from("you messed up"));
@@ -266,7 +269,7 @@ mod tests
         assert_that!(
             &approval_run,
             has_structure!(HypRunTrigger::Hyp {
-                id: eq(HypId::new("example_crate", hyp).unwrap()),
+                id: eq(HypId::new("example_package", "example_crate", hyp)),
                 update_snapshots: eq(true)
             })
         );
@@ -298,7 +301,7 @@ mod tests
 
     fn example_hyp(name: &str, status: HypState) -> Hyp
     {
-        let id = HypId::new("example_crate", name).unwrap();
+        let id = HypId::new("example_package", "example_crate", name);
         Hyp::new(id, status)
     }
 }
