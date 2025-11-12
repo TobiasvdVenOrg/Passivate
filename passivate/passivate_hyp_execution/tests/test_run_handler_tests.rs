@@ -18,6 +18,7 @@ use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::hyp_iter_ext::HypIterator;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_session::HypSession;
+use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_model::hyp_state::HypState;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
@@ -44,7 +45,12 @@ pub fn handle_single_test_run()
         Cancellation::default()
     );
 
-    let session = HypSession::from_events(hyp_run_rx);
+    let events = hyp_run_rx.into_iter().collect::<Vec<_>>();
+
+    assert_matches!(events.first(), Some(HypSessionEvent::RunStarted));
+    assert_matches!(events.last(), Some(HypSessionEvent::RunCompleted));
+
+    let session = HypSession::from_events(events);
 
     assert!(session.all_hyps().current_state() == HypState::Passed);
 }
