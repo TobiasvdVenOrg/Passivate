@@ -81,9 +81,9 @@ impl HypId
         format!("{}{}{}", self.package_name(), separator.as_ref(), self.crate_name())
     }
 
-    pub fn name<'a>(&'a self, name_only: impl AsRef<HypNameStrategy>) -> Cow<'a, str>
+    pub fn name<'a>(&'a self, strategy: impl AsRef<HypNameStrategy>) -> Cow<'a, str>
     {
-        name_only.as_ref().convert(self)
+        strategy.as_ref().convert(self)
     }
 
     pub fn fully_qualified(&self, separator: impl AsRef<str>) -> String

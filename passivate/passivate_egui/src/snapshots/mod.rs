@@ -27,8 +27,7 @@ pub enum SnapshotError
     #[error("snapshot format '{color_type:?}' is not supported: {path}")]
     Unsupported
     {
-        color_type: png::ColorType,
-        path: Utf8PathBuf
+        color_type: png::ColorType, path: Utf8PathBuf
     },
 
     #[error("snapshot data did not match expected size: {path}")]
@@ -46,8 +45,7 @@ pub enum SnapshotError
     #[error("decoding error {error} in snapshot: {path}")]
     Decoding
     {
-        error: DecodingError,
-        path: Utf8PathBuf
+        error: DecodingError, path: Utf8PathBuf
     }
 }
 
@@ -60,7 +58,7 @@ impl Snapshots
 
     pub fn from_hyp(&self, hyp_id: &HypId) -> Snapshot
     {
-        let file_name = hyp_id.get_name(&HypNameStrategy::Default);
+        let file_name = hyp_id.name(HypNameStrategy::Default);
         let current = self.from_file(Utf8PathBuf::from(&file_name).with_extension("png"));
         let new = self.from_file(Utf8PathBuf::from(&file_name).with_extension("new.png"));
 
@@ -82,14 +80,19 @@ impl Snapshots
                 };
             }
         }
-        
+
         None
     }
 
     fn decode_image(file: File, path: Utf8PathBuf) -> Result<ColorImage, SnapshotError>
     {
         let decoder = png::Decoder::new(file);
-        let mut reader = decoder.read_info().map_err(|e| SnapshotError::Decoding { error: e, path: path.clone() })?;
+        let mut reader = decoder.read_info().map_err(|e| {
+            SnapshotError::Decoding {
+                error: e,
+                path: path.clone()
+            }
+        })?;
         let mut buffer = vec![0; reader.output_buffer_size()];
         let info = reader.next_frame(&mut buffer).unwrap();
 
@@ -148,7 +151,10 @@ impl Snapshots
                     return None;
                 }
 
-                Some(Err(SnapshotError::Io { error, path: path.to_path_buf() }))
+                Some(Err(SnapshotError::Io {
+                    error,
+                    path: path.to_path_buf()
+                }))
             }
         }
     }
