@@ -4,7 +4,7 @@ use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_egui_docking::dock_views::{DockViewer, DockViews};
 use passivate_egui_docking::docking_layout::DockingLayout;
-use passivate_hyp_model::hyp::Hyp;
+use passivate_model_session::hyp::Hyp;
 
 use crate::passivate_views::PassivateView;
 use crate::snapshots::Snapshots;

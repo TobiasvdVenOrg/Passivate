@@ -13,7 +13,7 @@ use passivate_coverage::coverage_errors::{CoverageError, NoProfrawFilesKind};
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::get_profraw_count;
 use passivate_delegation::{Cancellation, Tx};
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
+use passivate_model_session::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::test_output_path;
 use passivate_testing::spy_log::SpyLog;
@@ -180,7 +180,7 @@ pub fn error_when_coverage_is_computed_and_profraw_output_directory_does_not_exi
         assert_eq!(details.expected_path, setup.coverage_path());
         assert_matches!(details.kind, NoProfrawFilesKind::Io(io_error) =>
         {
-           assert_matches!(io_error, std::io::ErrorKind::NotFound); 
+           assert_matches!(io_error, std::io::ErrorKind::NotFound);
         });
     });
 

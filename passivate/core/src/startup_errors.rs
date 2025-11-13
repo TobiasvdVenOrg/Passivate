@@ -4,7 +4,7 @@ use std::io::Error as IoError;
 use std::sync::mpsc::SendError;
 
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
+use passivate_model_session::hyp_run_trigger::HypRunTrigger;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 
 #[derive(Debug)]

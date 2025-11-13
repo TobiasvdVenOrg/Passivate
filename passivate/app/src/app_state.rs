@@ -68,12 +68,12 @@ pub mod tests
     use passivate_egui_views::passivate_layout;
     use passivate_egui_views::passivate_view_state::PassivateViewState;
     use passivate_egui_views::passivate_views::PassivateViews;
-    use passivate_hyp_model::hyp::Hyp;
-    use passivate_hyp_model::hyp_session::HypSession;
-    use passivate_hyp_model::hyp_session_event::HypSessionEvent;
-    use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_session::hyp::Hyp;
+    use passivate_model_session::hyp_session::HypSession;
+    use passivate_model_session::hyp_session_event::HypSessionEvent;
+    use passivate_model_session::hyp_state::HypState;
     use passivate_testing::path_resolution::test_data_path;
 
     use crate::app_state::AppState;

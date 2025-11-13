@@ -1,8 +1,8 @@
 use passivate_delegation::Rx;
-use passivate_hyp_model::hyp_session::HypSession;
-use passivate_hyp_model::hyp_session_change::HypSessionChange;
-use passivate_hyp_model::hyp_session_event::HypSessionEvent;
 use passivate_hyp_names::hyp_id::HypId;
+use passivate_model_session::hyp_session::HypSession;
+use passivate_model_session::hyp_session_change::HypSessionChange;
+use passivate_model_session::hyp_session_event::HypSessionEvent;
 
 use crate::passivate_state_change::PassivateStateChange;
 

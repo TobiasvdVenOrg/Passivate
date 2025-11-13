@@ -6,7 +6,7 @@ members = [
     "hyp_names",
     "egui/views",
     "egui/docking",
-    "passivate_hyp_model",
+    "model/session",
     "coverage",
     "cargo",
     "run/rust"]

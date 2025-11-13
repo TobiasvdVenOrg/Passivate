@@ -23,10 +23,10 @@ use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
-use passivate_hyp_model::hyp::Hyp;
-use passivate_hyp_model::hyp_session_event::HypSessionEvent;
-use passivate_hyp_model::hyp_state::HypState;
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+use passivate_model_session::hyp::Hyp;
+use passivate_model_session::hyp_session_event::HypSessionEvent;
+use passivate_model_session::hyp_state::HypState;
 
 use crate::hyp_run_errors::TestRunError;
 use crate::nextest_cargo_options;

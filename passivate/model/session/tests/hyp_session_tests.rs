@@ -2,10 +2,10 @@
 extern crate assert_matches;
 
 use camino::Utf8PathBuf;
-use passivate_hyp_model::hyp_session::HypSession;
-use passivate_hyp_model::hyp_session_event::HypSessionEvent;
-use passivate_hyp_model::hyp_session_state::{HypSessionState, HypSessionStateError};
-use passivate_hyp_model::rust::RustHypProject;
+use passivate_model_session::hyp_session::HypSession;
+use passivate_model_session::hyp_session_event::HypSessionEvent;
+use passivate_model_session::hyp_session_state::{HypSessionState, HypSessionStateError};
+use passivate_model_session::rust::RustHypProject;
 
 #[test]
 pub fn default_session_has_no_hyps()

@@ -1,11 +1,19 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use camino::{Utf8Path, Utf8PathBuf};
-use notify::{Config as NotifyConfig, Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
+use notify::{
+    Config as NotifyConfig,
+    Event as NotifyEvent,
+    RecommendedWatcher,
+    RecursiveMode,
+    Result as NotifyResult,
+    Watcher
+};
 use passivate_delegation::Tx;
+use passivate_model_session::hyp_run_trigger::HypRunTrigger;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;
 
@@ -78,10 +86,7 @@ impl NotifyChangeEvents
                     path: path.to_path_buf()
                 })
             }
-            Err(notify_error) => 
-            {
-                Err(NotifyChangeEventsError::invalid_path(path, notify_error))
-            }
+            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(path, notify_error))
         }
     }
 

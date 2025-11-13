@@ -1,4 +1,4 @@
-use passivate_hyp_model::hyp::Hyp;
+use passivate_model_session::hyp::Hyp;
 
 pub enum PassivateStateChange<'a>
 {

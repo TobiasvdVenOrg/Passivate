@@ -1,10 +1,10 @@
 [package]
-name = "passivate_hyp_model"
+name = "passivate_model_session"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_hyp_names = { path = "../hyp_names" }
+passivate_hyp_names = { path = "../../hyp_names" }
 
 camino.workspace = true
 itertools.workspace = true

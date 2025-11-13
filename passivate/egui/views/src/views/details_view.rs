@@ -1,7 +1,7 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-use passivate_hyp_model::hyp_state::HypState;
+use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_session::hyp_state::HypState;
 
 use crate::passivate_view_state::HypDetails;
 use crate::snapshots::SnapshotError;
@@ -132,11 +132,11 @@ mod tests
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
     use passivate_delegation::Tx;
-    use passivate_hyp_model::hyp::Hyp;
-    use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-    use passivate_hyp_model::hyp_state::HypState;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_session::hyp::Hyp;
+    use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+    use passivate_model_session::hyp_state::HypState;
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
