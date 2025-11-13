@@ -4,14 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_core = { path = "../passivate_core" }
+passivate_core = { path = "../core" }
 passivate_egui_views = { path = "../egui/views" }
 passivate_egui_docking = { path = "../egui/docking" }
-passivate_delegation = { path = "../passivate_delegation" }
+passivate_delegation = { path = "../delegation" }
 passivate_hyp_model = { path = "../passivate_hyp_model" }
-passivate_configuration = { path = "../passivate_configuration" }
-passivate_hyp_names = { path = "../passivate_hyp_names" }
-passivate_testing = { path = "../passivate_testing" }
+passivate_configuration = { path = "../configuration" }
+passivate_hyp_names = { path = "../hyp_names" }
 
 clap.workspace = true
 egui = { workspace = true, features = [ "persistence" ] }
@@ -29,6 +28,8 @@ log.workspace = true
 itertools.workspace = true
 
 [dev-dependencies]
+passivate_testing = { path = "../testing" }
+
 mockall.workspace = true
 libtest-mimic.workspace = true
 egui_kittest.workspace = true

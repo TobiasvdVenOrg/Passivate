@@ -4,15 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_delegation = { path = "../../passivate_delegation" }
-passivate_hyp_names = { path = "../../passivate_hyp_names" }
+passivate_delegation = { path = "../../delegation" }
+passivate_hyp_names = { path = "../../hyp_names" }
 passivate_hyp_model = { path = "../../passivate_hyp_model" }
 passivate_hyp_execution = { path = "../../passivate_hyp_execution" }
-passivate_configuration = { path = "../../passivate_configuration" }
-passivate_testing = { path = "../../passivate_testing" }
-passivate_log = { path = "../../passivate_log" }
-passivate_coverage = { path = "../../passivate_coverage" }
-passivate_core = { path = "../../passivate_core" }
+passivate_configuration = { path = "../../configuration" }
+passivate_log = { path = "../../log" }
+passivate_coverage = { path = "../../coverage" }
+passivate_core = { path = "../../core" }
 passivate_egui_docking = { path = "../docking" }
 
 camino.workspace = true
@@ -26,6 +25,8 @@ png.workspace = true
 epaint.workspace = true
 
 [dev-dependencies]
+passivate_testing = { path = "../../testing" }
+
 egui_kittest.workspace = true
 galvanic-assert.workspace = true
 stdext.workspace = true

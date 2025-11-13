@@ -10,7 +10,7 @@ cargo_metadata.workspace = true
 dunce.workspace = true
 
 [dev-dependencies]
-passivate_testing = { path = "../passivate_testing" }
+passivate_testing = { path = "../testing" }
 
 stdext.workspace = true
 pretty_assertions.workspace = true

@@ -4,9 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_delegation = { path = "../passivate_delegation" }
-passivate_testing = { path = "../passivate_testing" }
-passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_delegation = { path = "../delegation" }
+passivate_hyp_names = { path = "../hyp_names" }
 
 camino.workspace = true
 faux.workspace = true
@@ -18,5 +17,7 @@ serde_json.workspace = true
 stdext.workspace = true
 
 [dev-dependencies]
+passivate_testing = { path = "../testing" }
+
 galvanic-assert.workspace = true
 itertools.workspace = true

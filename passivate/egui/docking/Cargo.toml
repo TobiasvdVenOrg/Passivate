@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_configuration = { path = "../../passivate_configuration" }
+passivate_configuration = { path = "../../configuration" }
 
 camino.workspace = true
 egui.workspace = true

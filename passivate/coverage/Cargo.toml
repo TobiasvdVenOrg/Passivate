@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_delegation = { path = "../passivate_delegation", features = ["testing"]}
-passivate_hyp_names = { path = "../passivate_hyp_names" }
+passivate_delegation = { path = "../delegation", features = ["testing"]}
+passivate_hyp_names = { path = "../hyp_names" }
 passivate_hyp_model = { path = "../passivate_hyp_model" }
-passivate_cargo = { path = "../passivate_cargo" }
+passivate_cargo = { path = "../cargo" }
 
 bon.workspace = true
 camino.workspace = true
