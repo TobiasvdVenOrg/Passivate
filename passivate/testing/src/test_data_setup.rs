@@ -2,8 +2,8 @@ use std::fs;
 
 use bon::bon;
 use camino::Utf8PathBuf;
-use crate::path_resolution::{clean_directory, test_data_path, test_output_path};
 
+use crate::path_resolution::{clean_directory, test_data_path, test_output_path};
 use crate::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind};
 
 pub struct TestDataSetup
@@ -36,7 +36,7 @@ impl TestDataSetup
         }
     }
 
-    pub fn clean_output(mut self) -> Self
+    pub fn clean_output(self) -> Self
     {
         let output_path = self.output_path();
         clean_directory(output_path);
@@ -44,7 +44,7 @@ impl TestDataSetup
         self
     }
 
-    pub fn clean_snapshots(mut self) -> Self
+    pub fn clean_snapshots(self) -> Self
     {
         let snapshot_directories = self.snapshot_directories();
 
@@ -88,13 +88,25 @@ impl TestDataSetup
 
     pub fn snapshot_directories(&self) -> Vec<Utf8PathBuf>
     {
-        self.override_snapshot_directories.iter().map(|p| {
-            match &p
-            {
-                TestSnapshotPath { kind: TestSnapshotPathKind::Normal, path } => path.clone(),
-                TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToOutput, path } => self.output_path().join(path),
-                TestSnapshotPath { kind: TestSnapshotPathKind::RelativeToWorkspace, path }=> self.workspace_path().join(path),
-            }
-        }).collect()
+        self.override_snapshot_directories
+            .iter()
+            .map(|p| {
+                match &p
+                {
+                    TestSnapshotPath {
+                        kind: TestSnapshotPathKind::Normal,
+                        path
+                    } => path.clone(),
+                    TestSnapshotPath {
+                        kind: TestSnapshotPathKind::RelativeToOutput,
+                        path
+                    } => self.output_path().join(path),
+                    TestSnapshotPath {
+                        kind: TestSnapshotPathKind::RelativeToWorkspace,
+                        path
+                    } => self.workspace_path().join(path)
+                }
+            })
+            .collect()
     }
 }
