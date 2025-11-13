@@ -1,10 +1,12 @@
 use clap::Parser;
-use passivate_core::{passivate_args::PassivateArgs, compose::compose, startup_errors::StartupError};
-use passivate::run::run_app;
+use passivate::start;
+use passivate_core::compose::compose;
+use passivate_core::passivate_args::PassivateArgs;
+use passivate_core::startup_errors::StartupError;
 
 fn main() -> Result<(), StartupError>
 {
     let args = PassivateArgs::parse();
     let passivate = compose(args)?;
-    run_app(passivate)
+    start::run_app(passivate)
 }
