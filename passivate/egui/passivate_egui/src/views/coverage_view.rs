@@ -5,27 +5,11 @@ use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::covdir_json::CovdirJson;
 use passivate_delegation::Rx;
 
-use passivate_egui_docking::docking_layout::DockId;
-use passivate_egui_docking::view::View;
-
 pub struct CoverageView
 {
     receiver: Rx<CoverageStatus>,
     configuration: ConfigurationManager,
     status: CoverageStatus
-}
-
-impl View for CoverageView
-{
-    fn id(&self) -> DockId
-    {
-        DockId::from("coverage_view")
-    }
-
-    fn title(&self) -> String
-    {
-        String::from("Coverage")
-    }
 }
 
 impl CoverageView

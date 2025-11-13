@@ -16,19 +16,6 @@ struct LogEntry
     message: String
 }
 
-impl View for LogView
-{
-    fn id(&self) -> DockId
-    {
-        DockId::from("log_view")
-    }
-
-    fn title(&self) -> String
-    {
-        String::from("Log")
-    }
-}
-
 impl LogView
 {
     pub fn new(receiver: Rx<LogMessage>) -> Self

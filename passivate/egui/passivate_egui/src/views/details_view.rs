@@ -1,7 +1,5 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
-use passivate_egui_docking::docking_layout::DockId;
-use passivate_egui_docking::view::View;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_state::HypState;
 
@@ -12,19 +10,6 @@ use crate::snapshots::snapshot_handles::SnapshotHandles;
 pub struct DetailsView
 {
     change_events: Tx<HypRunTrigger>
-}
-
-impl View for DetailsView
-{
-    fn id(&self) -> DockId
-    {
-        DockId::from("details_view")
-    }
-
-    fn title(&self) -> String
-    {
-        String::from("Details")
-    }
 }
 
 impl DetailsView

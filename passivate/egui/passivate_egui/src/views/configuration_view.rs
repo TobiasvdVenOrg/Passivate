@@ -1,8 +1,6 @@
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
-use passivate_egui_docking::docking_layout::DockId;
-use passivate_egui_docking::view::View;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 
 pub struct ConfigurationView
@@ -10,19 +8,6 @@ pub struct ConfigurationView
     configuration_manager: ConfigurationManager,
     snapshots_path_field: String,
     change_event_tx: Tx<HypRunTrigger>
-}
-
-impl View for ConfigurationView
-{
-    fn id(&self) -> DockId
-    {
-        DockId::from("configuration_view")
-    }
-
-    fn title(&self) -> String
-    {
-        String::from("Configuration")
-    }
 }
 
 impl ConfigurationView

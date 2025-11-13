@@ -1,25 +1,10 @@
 use egui::{Color32, RichText, Ui};
-use passivate_egui_docking::docking_layout::DockId;
-use passivate_egui_docking::view::View;
 use passivate_hyp_model::hyp::Hyp;
 use passivate_hyp_model::hyp_session::HypSession;
 use passivate_hyp_model::hyp_session_state::{HypSessionState, HypSessionStateError};
 use passivate_hyp_model::hyp_state::HypState;
 
 pub struct TestRunView;
-
-impl View for TestRunView
-{
-    fn id(&self) -> DockId
-    {
-        DockId::from("hyp_run_view")
-    }
-
-    fn title(&self) -> String
-    {
-        String::from("Tests")
-    }
-}
 
 impl TestRunView
 {
