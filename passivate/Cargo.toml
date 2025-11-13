@@ -4,10 +4,10 @@ members = [
     "passivate_app",
     "passivate_delegation",
     "passivate_hyp_names",
-    "passivate_egui", 
-    "passivate_hyp_model", 
-    "passivate_coverage", 
-    "passivate_cargo", 
+    "egui/passivate_egui",
+    "passivate_hyp_model",
+    "passivate_coverage",
+    "passivate_cargo",
     "passivate_hyp_execution"]
 
 resolver = "2"
