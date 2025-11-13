@@ -7,17 +7,17 @@ use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
-use passivate_hyp_execution::change_event_handler::change_event_thread;
-use passivate_hyp_execution::hyp_run_handler::{test_run_thread, HypRunHandler};
-use passivate_hyp_execution::hyp_runner::HypRunner;
-use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-use crate::passivate_args::PassivateArgs;
-use crate::passivate_state::PassivateState;
 use passivate_delegation::{Rx, Tx};
+use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
+use passivate_run_rust::change_event_handler::change_event_thread;
+use passivate_run_rust::hyp_run_handler::{HypRunHandler, test_run_thread};
+use passivate_run_rust::hyp_runner::HypRunner;
 
+use crate::passivate_args::PassivateArgs;
+use crate::passivate_state::PassivateState;
 use crate::startup_errors::*;
 
 static LOGGER: OnceLock<TxLog> = OnceLock::new();
@@ -57,7 +57,8 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     let (change_event_tx, change_event_rx) = Tx::new();
 
     // Paths
-    let working_dir = Utf8PathBuf::from_path_buf(env::current_dir()?).map_err(|error| StartupError::Utf8(format!("working directory was not utf8: {error:?}")))?;
+    let working_dir = Utf8PathBuf::from_path_buf(env::current_dir()?)
+        .map_err(|error| StartupError::Utf8(format!("working directory was not utf8: {error:?}")))?;
     let workspace_path = args.manifest_directory.unwrap_or(working_dir);
     let passivate_path = workspace_path.join("..").join(".passivate");
     let coverage_path = passivate_path.join("coverage");
@@ -67,12 +68,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     // Model
     let target = OsString::from("x86_64-pc-windows-msvc");
 
-    let test_runner = HypRunner::new(
-        target,
-        workspace_path.clone(),
-        target_path.clone(),
-        coverage_path.clone()
-    );
+    let test_runner = HypRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone());
 
     let coverage = Grcov::builder()
         .workspace_path(workspace_path.clone())

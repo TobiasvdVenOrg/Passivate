@@ -1,14 +1,14 @@
 [package]
-name = "passivate_hyp_execution"
+name = "passivate_run_rust"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-passivate_delegation = { path = "../delegation" }
-passivate_hyp_model = { path = "../passivate_hyp_model" }
-passivate_configuration = { path = "../configuration" }
-passivate_hyp_names = { path = "../hyp_names" }
-passivate_coverage = { path = "../coverage" }
+passivate_delegation = { path = "../../delegation" }
+passivate_hyp_model = { path = "../../passivate_hyp_model" }
+passivate_configuration = { path = "../../configuration" }
+passivate_hyp_names = { path = "../../hyp_names" }
+passivate_coverage = { path = "../../coverage" }
 
 #nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
 #nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
@@ -26,7 +26,7 @@ itertools.workspace = true
 stdext.workspace = true
 
 [dev-dependencies]
-passivate_testing = { path = "../testing" }
+passivate_testing = { path = "../../testing" }
 
 assert_matches.workspace = true
 pretty_assertions.workspace = true

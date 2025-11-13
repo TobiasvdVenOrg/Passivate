@@ -6,9 +6,9 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
 use passivate_delegation::Tx;
-use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
-use passivate_hyp_execution::hyp_runner::HypRunner;
 use passivate_hyp_model::hyp_session_event::HypSessionEvent;
+use passivate_run_rust::hyp_run_handler::HypRunHandler;
+use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;
 
 #[bon::builder]

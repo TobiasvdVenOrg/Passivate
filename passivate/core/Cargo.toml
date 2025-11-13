@@ -7,7 +7,7 @@ edition = "2024"
 passivate_delegation = { path = "../delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../hyp_names" }
 passivate_hyp_model = { path = "../passivate_hyp_model" }
-passivate_hyp_execution = { path = "../passivate_hyp_execution" }
+passivate_run_rust = { path = "../run/rust" }
 passivate_configuration = { path = "../configuration" }
 passivate_log = { path = "../log" }
 passivate_notify = { path = "../notify" }

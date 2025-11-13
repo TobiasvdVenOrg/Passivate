@@ -9,7 +9,7 @@ members = [
     "passivate_hyp_model",
     "coverage",
     "cargo",
-    "passivate_hyp_execution"]
+    "run/rust"]
 
 resolver = "2"
 

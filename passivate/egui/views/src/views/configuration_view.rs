@@ -73,10 +73,10 @@ mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
-    use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
-    use passivate_hyp_execution::hyp_runner::HypRunner;
     use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_names::test_name;
+    use passivate_run_rust::hyp_run_handler::HypRunHandler;
+    use passivate_run_rust::hyp_runner::HypRunner;
 
     use crate::configuration_view::ConfigurationView;
 
