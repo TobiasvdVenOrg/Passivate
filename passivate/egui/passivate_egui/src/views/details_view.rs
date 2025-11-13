@@ -1,10 +1,10 @@
 use egui::{Color32, RichText, TextureHandle};
 use passivate_delegation::Tx;
+use passivate_egui_docking::docking_layout::DockId;
+use passivate_egui_docking::view::View;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_model::hyp_state::HypState;
 
-use crate::docking::docking_layout::DockId;
-use crate::docking::view::View;
 use crate::passivate_view_state::HypDetails;
 use crate::snapshots::SnapshotError;
 use crate::snapshots::snapshot_handles::SnapshotHandles;

@@ -3,12 +3,12 @@ use passivate_core::startup_errors::StartupError;
 use passivate_egui::configuration_view::ConfigurationView;
 use passivate_egui::coverage_view::CoverageView;
 use passivate_egui::details_view::DetailsView;
-use passivate_egui::docking::dock_views::DockViews;
 use passivate_egui::log_view::LogView;
 use passivate_egui::passivate_layout;
 use passivate_egui::passivate_view_state::PassivateViewState;
 use passivate_egui::passivate_views::PassivateViews;
 use passivate_egui::test_run_view::TestRunView;
+use passivate_egui_docking::dock_views::DockViews;
 
 use crate::app::App;
 use crate::app_state::AppState;
@@ -67,7 +67,7 @@ pub fn run_app_and_get_context(
         eframe_options,
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
-            
+
             Ok(Box::new(App::new(layout, &mut app_state)))
         })
     )

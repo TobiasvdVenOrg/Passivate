@@ -13,13 +13,12 @@ passivate_testing = { path = "../../passivate_testing" }
 passivate_log = { path = "../../passivate_log" }
 passivate_coverage = { path = "../../passivate_coverage" }
 passivate_core = { path = "../../passivate_core" }
+passivate_egui_docking = { path = "../passivate_egui_docking" }
 
 camino.workspace = true
 chrono.workspace = true
 egui.workspace = true
 egui_dock = { workspace = true, features = [ "serde" ] }
-serde.workspace = true
-serde_json.workspace = true
 indexmap = { workspace = true, features = [ "serde" ] }
 log.workspace = true
 thiserror.workspace = true

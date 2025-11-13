@@ -2,7 +2,7 @@ use camino::Utf8Path;
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
 use passivate_configuration::configuration_source::ConfigurationSource;
 
-use crate::docking::docking_layout::DockingLayout;
+use crate::docking_layout::DockingLayout;
 
 #[derive(Debug)]
 pub struct LayoutManagement

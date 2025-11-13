@@ -1,8 +1,8 @@
 use egui::ScrollArea;
 use passivate_delegation::Rx;
+use passivate_egui_docking::docking_layout::DockId;
+use passivate_egui_docking::view::View;
 use passivate_log::log_message::LogMessage;
-
-use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct LogView
 {
@@ -87,7 +87,10 @@ mod tests
 
         let mut harness = Harness::new_ui(ui);
 
-        let example_log = LogMessage::new_with_timestamp("Hey, this is a log message!".to_string(), DateTime::from_timestamp_nanos(1_662_921_288_000_000_000));
+        let example_log = LogMessage::new_with_timestamp(
+            "Hey, this is a log message!".to_string(),
+            DateTime::from_timestamp_nanos(1_662_921_288_000_000_000)
+        );
         tx.send(example_log);
 
         harness.run();

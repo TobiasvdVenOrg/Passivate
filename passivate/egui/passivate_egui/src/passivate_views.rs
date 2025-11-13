@@ -1,8 +1,8 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{Rx, Tx};
+use passivate_egui_docking::docking_layout::DockId;
+use passivate_egui_docking::view::View;
 
-use crate::docking::docking_layout::DockId;
-use crate::docking::view::View;
 use crate::views::*;
 
 pub enum PassivateView
@@ -47,11 +47,12 @@ impl PassivateViews
         let configuration = ConfigurationManager::default_config(Tx::stub());
 
         PassivateViews::new(
-            TestRunView, 
-            DetailsView::new(Tx::stub()), 
-            CoverageView::new(Rx::stub(), configuration.clone()), 
+            TestRunView,
+            DetailsView::new(Tx::stub()),
+            CoverageView::new(Rx::stub(), configuration.clone()),
             ConfigurationView::new(configuration, Tx::stub()),
-            LogView::new(Rx::stub()))
+            LogView::new(Rx::stub())
+        )
     }
 
     pub fn get(&self) -> [&PassivateView; 5]
@@ -74,7 +75,8 @@ impl PassivateViews
             self.configuration_view,
             self.log_view
         ]
-        .into_iter().collect()
+        .into_iter()
+        .collect()
     }
 
     pub fn ids(&self) -> [DockId; 5]
@@ -150,12 +152,7 @@ impl PassivateViews
 
     pub fn except_configuration_view(&self) -> [&PassivateView; 4]
     {
-        [
-            &self.hyp_run_view,
-            &self.details_view,
-            &self.coverage_view,
-            &self.log_view
-        ]
+        [&self.hyp_run_view, &self.details_view, &self.coverage_view, &self.log_view]
     }
 
     pub fn log_view(&self) -> &LogView

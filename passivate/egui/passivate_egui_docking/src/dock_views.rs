@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use egui_dock::TabViewer;
 
-use crate::docking::{docking_layout::DockId, view::View};
+use crate::docking_layout::DockId;
+use crate::view::View;
 
 pub enum DockView<TView: View>
 {
@@ -18,8 +19,8 @@ pub struct DockViews<TView: View>
 impl<TView: View> DockViews<TView>
 {
     pub fn new<TViews>(views: TViews) -> Self
-    where 
-        TViews : IntoIterator<Item = TView>
+    where
+        TViews: IntoIterator<Item = TView>
     {
         let views = views.into_iter().map(|view| (view.id(), DockView::View(view))).collect();
 
@@ -28,10 +29,9 @@ impl<TView: View> DockViews<TView>
 
     pub fn get_view(&mut self, id: &DockId) -> &mut DockView<TView>
     {
-        self.views.entry(id.clone()).or_insert_with(||
-        {
-            DockView::Placeholder(PlaceholderView { missing_id: id.clone() })
-        })
+        self.views
+            .entry(id.clone())
+            .or_insert_with(|| DockView::Placeholder(PlaceholderView { missing_id: id.clone() }))
     }
 }
 
@@ -62,9 +62,9 @@ impl View for PlaceholderView
 }
 
 pub struct DockViewer<'a, TView, TContext, TCustomUi>
-    where 
-        TView : View,
-        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &'a mut TContext)
+where
+    TView: View,
+    TCustomUi: FnMut(&mut egui::Ui, &mut TView, &'a mut TContext)
 {
     pub dock_views: &'a mut DockViews<TView>,
     pub context: &'a mut TContext,
@@ -72,9 +72,9 @@ pub struct DockViewer<'a, TView, TContext, TCustomUi>
 }
 
 impl<TView, TContext, TCustomUi> TabViewer for DockViewer<'_, TView, TContext, TCustomUi>
-    where 
-        TView : View,
-        TCustomUi: FnMut(&mut egui::Ui, &mut TView, &mut TContext)
+where
+    TView: View,
+    TCustomUi: FnMut(&mut egui::Ui, &mut TView, &mut TContext)
 {
     type Tab = DockId;
 
@@ -98,7 +98,7 @@ impl<TView, TContext, TCustomUi> TabViewer for DockViewer<'_, TView, TContext, T
         match dock_view
         {
             DockView::View(view) => (self.custom_ui)(ui, view, self.context),
-            DockView::Placeholder(placeholder_view) => placeholder_view.ui(ui),
+            DockView::Placeholder(placeholder_view) => placeholder_view.ui(ui)
         }
     }
 }

@@ -1,9 +1,9 @@
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
+use passivate_egui_docking::docking_layout::DockId;
+use passivate_egui_docking::view::View;
 use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
-
-use crate::docking::{docking_layout::DockId, view::View};
 
 pub struct ConfigurationView
 {
@@ -88,8 +88,8 @@ mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
-    use passivate_hyp_execution::hyp_runner::HypRunner;
     use passivate_hyp_execution::hyp_run_handler::HypRunHandler;
+    use passivate_hyp_execution::hyp_runner::HypRunner;
     use passivate_hyp_model::hyp_run_trigger::HypRunTrigger;
     use passivate_hyp_names::test_name;
 

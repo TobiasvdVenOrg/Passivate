@@ -1,9 +1,11 @@
 use egui_kittest::Harness;
 use passivate_core::passivate_state::PassivateState;
 use passivate_delegation::Rx;
-use passivate_egui::{docking::dock_views::DockViews, passivate_layout, passivate_view_state::PassivateViewState, passivate_views::PassivateViews};
+use passivate_egui::passivate_layout;
+use passivate_egui::passivate_view_state::PassivateViewState;
+use passivate_egui::passivate_views::PassivateViews;
+use passivate_egui_docking::dock_views::DockViews;
 use passivate_hyp_names::test_name;
-
 
 #[test]
 pub fn the_default_layout_looks_like_this()
@@ -13,7 +15,7 @@ pub fn the_default_layout_looks_like_this()
     let views = PassivateViews::stub();
     let mut layout = passivate_layout::default(&views);
     let mut dock_views = DockViews::new(views.into());
-    
+
     let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
         view_state.ui(&passivate_state, ui.ctx(), &mut dock_views, &mut layout);
     });
