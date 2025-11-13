@@ -1,10 +1,10 @@
 use egui_kittest::Harness;
 use passivate_core::passivate_state::PassivateState;
 use passivate_delegation::Rx;
-use passivate_egui::passivate_layout;
-use passivate_egui::passivate_view_state::PassivateViewState;
-use passivate_egui::passivate_views::PassivateViews;
 use passivate_egui_docking::dock_views::DockViews;
+use passivate_egui_views::passivate_layout;
+use passivate_egui_views::passivate_view_state::PassivateViewState;
+use passivate_egui_views::passivate_views::PassivateViews;
 use passivate_hyp_names::test_name;
 
 #[test]

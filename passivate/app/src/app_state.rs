@@ -1,9 +1,9 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
-use passivate_egui::passivate_view_state::PassivateViewState;
-use passivate_egui::passivate_views::PassivateView;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
+use passivate_egui_views::passivate_view_state::PassivateViewState;
+use passivate_egui_views::passivate_views::PassivateView;
 
 pub struct AppState
 {
@@ -63,11 +63,11 @@ pub mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
     use passivate_delegation::{Rx, Tx};
-    use passivate_egui::passivate_layout;
-    use passivate_egui::passivate_view_state::PassivateViewState;
-    use passivate_egui::passivate_views::PassivateViews;
     use passivate_egui_docking::dock_views::DockViews;
     use passivate_egui_docking::docking_layout::DockingLayout;
+    use passivate_egui_views::passivate_layout;
+    use passivate_egui_views::passivate_view_state::PassivateViewState;
+    use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_model::hyp::Hyp;
     use passivate_hyp_model::hyp_session::HypSession;
     use passivate_hyp_model::hyp_session_event::HypSessionEvent;

@@ -1,10 +1,11 @@
 [workspace]
 members = [
     "passivate_core",
-    "passivate_app",
+    "app",
     "passivate_delegation",
     "passivate_hyp_names",
-    "egui/passivate_egui",
+    "egui/views",
+    "egui/docking",
     "passivate_hyp_model",
     "passivate_coverage",
     "passivate_cargo",
