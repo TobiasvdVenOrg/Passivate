@@ -1,4 +1,5 @@
 use camino::Utf8PathBuf;
+use egui::Ui;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
 use passivate_model_session::hyp_run_trigger::HypRunTrigger;
@@ -21,7 +22,7 @@ impl ConfigurationView
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    pub fn ui(&mut self, ui: &mut Ui)
     {
         let mut configuration = self.configuration_manager.get_copy();
 
@@ -78,7 +79,7 @@ mod tests
     use passivate_run_rust::hyp_run_handler::HypRunHandler;
     use passivate_run_rust::hyp_runner::HypRunner;
 
-    use crate::configuration_view::ConfigurationView;
+    use crate::ConfigurationView;
 
     #[test]
     pub fn show_configuration()

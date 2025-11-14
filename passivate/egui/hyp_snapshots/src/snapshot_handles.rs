@@ -1,7 +1,8 @@
-use epaint::{textures::TextureOptions, TextureHandle};
+use epaint::TextureHandle;
+use epaint::textures::TextureOptions;
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::snapshots::{Snapshot, SnapshotError};
+use crate::{Snapshot, SnapshotError};
 
 pub struct SnapshotHandles
 {
@@ -25,7 +26,7 @@ impl SnapshotHandles
         let current = snapshot
             .current
             .map(|current| current.map(|s| egui_context.load_texture("current_snapshot", s, TextureOptions::LINEAR)));
-        
+
         let new = snapshot
             .new
             .map(|new| new.map(|s| egui_context.load_texture("new_snapshot", s, TextureOptions::LINEAR)));
@@ -40,11 +41,11 @@ impl SnapshotHandles
 
     pub fn empty(hyp_id: HypId) -> Self
     {
-        SnapshotHandles { 
-            current: None, 
-            new: None, 
-            are_identical: true, 
-            hyp_id 
+        SnapshotHandles {
+            current: None,
+            new: None,
+            are_identical: true,
+            hyp_id
         }
     }
 }

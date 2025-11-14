@@ -1,0 +1,16 @@
+[package]
+name = "passivate_egui_view_log"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_log = { path = "../../../log" }
+passivate_delegation = { path = "../../../delegation" }
+
+egui.workspace = true
+
+[dev-dependencies]
+passivate_hyp_names = { path = "../../../hyp_names" }
+
+chrono.workspace = true
+egui_kittest.workspace = true

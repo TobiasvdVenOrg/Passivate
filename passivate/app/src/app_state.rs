@@ -1,8 +1,9 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
+use passivate_egui_core::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
-use passivate_egui_views::passivate_view_state::PassivateViewState;
+use passivate_egui_views::passivate_ui;
 use passivate_egui_views::passivate_views::PassivateView;
 
 pub struct AppState
@@ -44,7 +45,7 @@ impl AppState
     {
         self.update(egui_context);
 
-        let changes = self.view_state.ui(&self.state, egui_context, &mut self.dock_views, layout);
+        let changes = passivate_ui::ui(&self.view_state, &self.state, egui_context, &mut self.dock_views, layout);
 
         for change in &changes
         {
@@ -63,10 +64,10 @@ pub mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
     use passivate_delegation::{Rx, Tx};
+    use passivate_egui_core::PassivateViewState;
     use passivate_egui_docking::dock_views::DockViews;
     use passivate_egui_docking::docking_layout::DockingLayout;
     use passivate_egui_views::passivate_layout;
-    use passivate_egui_views::passivate_view_state::PassivateViewState;
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;

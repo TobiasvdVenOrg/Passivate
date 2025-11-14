@@ -5,6 +5,7 @@ members = [
     "delegation",
     "hyp_names",
     "egui/views",
+    "egui/view/*",
     "egui/docking",
     "model/session",
     "coverage",

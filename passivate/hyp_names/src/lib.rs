@@ -1,11 +1,12 @@
 pub mod hyp_id;
+pub use stdext;
 
 #[macro_export]
 macro_rules! test_id {
     () => {{
         let package_name = env!("CARGO_PKG_NAME");
         let crate_name = env!("CARGO_CRATE_NAME");
-        let function_name = stdext::function_name!();
+        let function_name = $crate::stdext::function_name!();
 
         let first = function_name
             .split("::")

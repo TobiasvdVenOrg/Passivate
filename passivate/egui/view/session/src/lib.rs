@@ -4,9 +4,9 @@ use passivate_model_session::hyp_session::HypSession;
 use passivate_model_session::hyp_session_state::{HypSessionState, HypSessionStateError};
 use passivate_model_session::hyp_state::HypState;
 
-pub struct TestRunView;
+pub struct SessionView;
 
-impl TestRunView
+impl SessionView
 {
     pub fn ui<'a>(&mut self, ui: &mut Ui, session: &'a HypSession) -> Option<&'a Hyp>
     {
@@ -59,14 +59,14 @@ impl TestRunView
         None
     }
 
-    fn hyp_label(&self, ui: &mut egui_dock::egui::Ui, hyp: &Hyp)
+    fn hyp_label(&self, ui: &mut Ui, hyp: &Hyp)
     {
         let text = RichText::new(&hyp.name).size(16.0).color(Color32::GRAY);
 
         ui.label(text);
     }
 
-    fn show_hyp<'a>(&self, ui: &mut egui_dock::egui::Ui, hyp: &'a Hyp) -> Option<&'a Hyp>
+    fn show_hyp<'a>(&self, ui: &mut Ui, hyp: &'a Hyp) -> Option<&'a Hyp>
     {
         match hyp.current_state()
         {
@@ -92,7 +92,7 @@ mod tests
     use passivate_model_session::hyp_session_event::HypSessionEvent;
     use passivate_model_session::hyp_state::HypState;
 
-    use crate::test_run_view::TestRunView;
+    use crate::SessionView;
 
     #[test]
     pub fn show_when_session_is_in_error_state()
@@ -141,7 +141,7 @@ mod tests
 
     fn run_and_snapshot(session: HypSession, snapshot_name: impl Into<String>)
     {
-        let mut test_run_view = TestRunView;
+        let mut test_run_view = SessionView;
 
         let ui = move |ui: &mut egui::Ui| {
             _ = test_run_view.ui(ui, &session);

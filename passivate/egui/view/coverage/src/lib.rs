@@ -1,5 +1,5 @@
 use egui::collapsing_header::CollapsingState;
-use egui::{Color32, RichText};
+use egui::{Color32, RichText, Ui};
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::covdir_json::CovdirJson;
@@ -23,7 +23,7 @@ impl CoverageView
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui)
+    pub fn ui(&mut self, ui: &mut Ui)
     {
         if let Ok(status) = self.receiver.try_recv()
         {
@@ -50,7 +50,7 @@ impl CoverageView
         };
     }
 
-    fn draw_coverage(ui: &mut egui_dock::egui::Ui, coverage: &CovdirJson, id: egui::Id)
+    fn draw_coverage(ui: &mut Ui, coverage: &CovdirJson, id: egui::Id)
     {
         if coverage.children.as_ref().is_none_or(|children| children.is_empty())
         {
@@ -84,7 +84,7 @@ impl CoverageView
         }
     }
 
-    fn draw_disabled(&mut self, ui: &mut egui_dock::egui::Ui)
+    fn draw_disabled(&mut self, ui: &mut Ui)
     {
         ui.heading("Code coverage is disabled");
 
@@ -109,7 +109,7 @@ mod tests
     use passivate_run_rust::{hyp_run_handler::HypRunHandler, hyp_runner::HypRunner};
     use passivate_hyp_names::test_name;
 
-    use crate::coverage_view::CoverageView;
+    use crate::CoverageView;
 
     #[test]
     pub fn show_coverage_hierarchy_fully_collapsed()

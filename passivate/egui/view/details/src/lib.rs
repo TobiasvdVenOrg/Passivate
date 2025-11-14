@@ -1,11 +1,10 @@
-use egui::{Color32, RichText, TextureHandle};
+use egui::{Color32, RichText, TextureHandle, Ui};
 use passivate_delegation::Tx;
+use passivate_egui_core::HypDetails;
+use passivate_egui_hyp_snapshots::SnapshotError;
+use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
 use passivate_model_session::hyp_run_trigger::HypRunTrigger;
 use passivate_model_session::hyp_state::HypState;
-
-use crate::passivate_view_state::HypDetails;
-use crate::snapshots::SnapshotError;
-use crate::snapshots::snapshot_handles::SnapshotHandles;
 
 pub struct DetailsView
 {
@@ -19,7 +18,7 @@ impl DetailsView
         Self { change_events }
     }
 
-    pub fn ui(&mut self, ui: &mut egui_dock::egui::Ui, details: Option<&HypDetails>)
+    pub fn ui(&mut self, ui: &mut Ui, details: Option<&HypDetails>)
     {
         if let Some(details) = &details
         {
@@ -69,7 +68,7 @@ impl DetailsView
         }
     }
 
-    fn draw_snapshots(&self, ui: &mut egui_dock::egui::Ui, snapshot_handles: &SnapshotHandles)
+    fn draw_snapshots(&self, ui: &mut Ui, snapshot_handles: &SnapshotHandles)
     {
         if let Some(current) = &snapshot_handles.current
         {
@@ -106,7 +105,7 @@ impl DetailsView
         }
     }
 
-    fn draw_snapshot(ui: &mut egui_dock::egui::Ui, snapshot: &Result<TextureHandle, SnapshotError>)
+    fn draw_snapshot(ui: &mut Ui, snapshot: &Result<TextureHandle, SnapshotError>)
     {
         match &snapshot
         {
@@ -132,6 +131,8 @@ mod tests
     use galvanic_assert::matchers::*;
     use galvanic_assert::*;
     use passivate_delegation::Tx;
+    use passivate_egui_hyp_snapshots::Snapshots;
+    use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
     use passivate_model_session::hyp::Hyp;
@@ -140,9 +141,7 @@ mod tests
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
-    use crate::details_view::{DetailsView, HypDetails};
-    use crate::snapshots::Snapshots;
-    use crate::snapshots::snapshot_handles::SnapshotHandles;
+    use crate::{DetailsView, HypDetails};
 
     #[test]
     pub fn show_a_passing_test()
@@ -219,9 +218,6 @@ mod tests
     #[case::only_new("tests::example_snapshot_only_new")]
     pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] hyp: &str)
     {
-        use crate::snapshots::Snapshots;
-        use crate::snapshots::snapshot_handles::SnapshotHandles;
-
         let snapshot_test = example_hyp(hyp, HypState::Failed);
 
         let (test_run_tx, test_run_rx) = Tx::new();

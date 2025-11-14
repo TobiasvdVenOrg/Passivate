@@ -14,7 +14,7 @@ pub fn load(path: &Utf8Path, views: &PassivateViews) -> Result<LayoutManagement,
 
 pub fn default(views: &PassivateViews) -> DockingLayout
 {
-    let mut layout = DockingLayout::new(vec![views.hyp_run_view().id()]);
+    let mut layout = DockingLayout::new(vec![views.session_dock().id()]);
 
     let state = layout.dock_state();
 
@@ -24,13 +24,13 @@ pub fn default(views: &PassivateViews) -> DockingLayout
         NodeIndex::root(),
         0.4,
         vec![
-            views.details_view().id(),
-            views.coverage_view().id(),
-            views.configuration_view().id(),
+            views.details_dock().id(),
+            views.coverage_dock().id(),
+            views.configuration_dock().id(),
         ]
     );
 
-    _ = surface.split_below(right_half, 0.8, vec![views.log_view().id()]);
+    _ = surface.split_below(right_half, 0.8, vec![views.log_dock().id()]);
 
     layout
 }

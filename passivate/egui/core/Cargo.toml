@@ -1,0 +1,18 @@
+[package]
+name = "passivate_egui_core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_core = { path = "../../core" }
+passivate_configuration = { path = "../../configuration" }
+passivate_model_session = { path = "../../model/session" }
+passivate_egui_hyp_snapshots = { path = "../hyp_snapshots" }
+
+camino.workspace = true
+egui.workspace = true
+epaint.workspace = true
+png.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]

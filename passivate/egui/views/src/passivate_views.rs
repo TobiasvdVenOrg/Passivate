@@ -1,22 +1,27 @@
+use std::ops::{Deref, DerefMut};
+
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::{Rx, Tx};
 use passivate_egui_docking::docking_layout::DockId;
 use passivate_egui_docking::view::View;
-
-use crate::views::*;
+use passivate_egui_view_configuration::ConfigurationView;
+use passivate_egui_view_coverage::CoverageView;
+use passivate_egui_view_details::DetailsView;
+use passivate_egui_view_log::LogView;
+use passivate_egui_view_session::SessionView;
 
 pub enum PassivateView
 {
-    Configuration(ConfigurationView),
-    Coverage(CoverageView),
-    Details(DetailsView),
-    Log(LogView),
-    HypRun(TestRunView)
+    Configuration(ConfigurationDock),
+    Coverage(CoverageDock),
+    Details(DetailsDock),
+    Log(LogDock),
+    HypRun(SessionDock)
 }
 
 pub struct PassivateViews
 {
-    hyp_run_view: PassivateView,
+    session_view: PassivateView,
     details_view: PassivateView,
     coverage_view: PassivateView,
     configuration_view: PassivateView,
@@ -26,7 +31,7 @@ pub struct PassivateViews
 impl PassivateViews
 {
     pub fn new(
-        hyp_run_view: TestRunView,
+        session_view: SessionView,
         details_view: DetailsView,
         coverage_view: CoverageView,
         configuration_view: ConfigurationView,
@@ -34,11 +39,11 @@ impl PassivateViews
     ) -> Self
     {
         Self {
-            hyp_run_view: PassivateView::HypRun(hyp_run_view),
-            details_view: PassivateView::Details(details_view),
-            coverage_view: PassivateView::Coverage(coverage_view),
-            configuration_view: PassivateView::Configuration(configuration_view),
-            log_view: PassivateView::Log(log_view)
+            session_view: PassivateView::HypRun(SessionDock(session_view)),
+            details_view: PassivateView::Details(DetailsDock(details_view)),
+            coverage_view: PassivateView::Coverage(CoverageDock(coverage_view)),
+            configuration_view: PassivateView::Configuration(ConfigurationDock(configuration_view)),
+            log_view: PassivateView::Log(LogDock(log_view))
         }
     }
 
@@ -47,7 +52,7 @@ impl PassivateViews
         let configuration = ConfigurationManager::default_config(Tx::stub());
 
         PassivateViews::new(
-            TestRunView,
+            SessionView,
             DetailsView::new(Tx::stub()),
             CoverageView::new(Rx::stub(), configuration.clone()),
             ConfigurationView::new(configuration, Tx::stub()),
@@ -58,7 +63,7 @@ impl PassivateViews
     pub fn get(&self) -> [&PassivateView; 5]
     {
         [
-            &self.hyp_run_view,
+            &self.session_view,
             &self.details_view,
             &self.coverage_view,
             &self.configuration_view,
@@ -69,7 +74,7 @@ impl PassivateViews
     pub fn into(self) -> Vec<PassivateView>
     {
         [
-            self.hyp_run_view,
+            self.session_view,
             self.details_view,
             self.coverage_view,
             self.configuration_view,
@@ -84,12 +89,17 @@ impl PassivateViews
         self.get().map(|v| v.id())
     }
 
-    pub fn hyp_run_view(&self) -> &TestRunView
+    pub fn session_view(&self) -> &SessionView
     {
-        match &self.hyp_run_view
+        self.session_dock()
+    }
+
+    pub fn session_dock(&self) -> &SessionDock
+    {
+        match &self.session_view
         {
-            PassivateView::HypRun(test_run_view) => test_run_view,
-            _ => panic!("expected hyp run view")
+            PassivateView::HypRun(session_view) => session_view,
+            _ => panic!("expected session view")
         }
     }
 
@@ -105,6 +115,11 @@ impl PassivateViews
 
     pub fn details_view(&self) -> &DetailsView
     {
+        self.details_dock()
+    }
+
+    pub fn details_dock(&self) -> &DetailsDock
+    {
         match &self.details_view
         {
             PassivateView::Details(details_view) => details_view,
@@ -115,7 +130,7 @@ impl PassivateViews
     pub fn except_details_view(&self) -> [&PassivateView; 4]
     {
         [
-            &self.hyp_run_view,
+            &self.session_view,
             &self.coverage_view,
             &self.configuration_view,
             &self.log_view
@@ -123,6 +138,11 @@ impl PassivateViews
     }
 
     pub fn coverage_view(&self) -> &CoverageView
+    {
+        self.coverage_dock()
+    }
+
+    pub fn coverage_dock(&self) -> &CoverageDock
     {
         match &self.coverage_view
         {
@@ -134,7 +154,7 @@ impl PassivateViews
     pub fn except_coverage_view(&self) -> [&PassivateView; 4]
     {
         [
-            &self.hyp_run_view,
+            &self.session_view,
             &self.details_view,
             &self.configuration_view,
             &self.log_view
@@ -142,6 +162,11 @@ impl PassivateViews
     }
 
     pub fn configuration_view(&self) -> &ConfigurationView
+    {
+        self.configuration_dock()
+    }
+
+    pub fn configuration_dock(&self) -> &ConfigurationDock
     {
         match &self.configuration_view
         {
@@ -152,10 +177,15 @@ impl PassivateViews
 
     pub fn except_configuration_view(&self) -> [&PassivateView; 4]
     {
-        [&self.hyp_run_view, &self.details_view, &self.coverage_view, &self.log_view]
+        [&self.session_view, &self.details_view, &self.coverage_view, &self.log_view]
     }
 
     pub fn log_view(&self) -> &LogView
+    {
+        self.log_dock()
+    }
+
+    pub fn log_dock(&self) -> &LogDock
     {
         match &self.log_view
         {
@@ -167,7 +197,7 @@ impl PassivateViews
     pub fn except_log_view(&self) -> [&PassivateView; 4]
     {
         [
-            &self.hyp_run_view,
+            &self.session_view,
             &self.details_view,
             &self.coverage_view,
             &self.configuration_view
@@ -199,5 +229,170 @@ impl View for PassivateView
             PassivateView::Log(v) => v.title(),
             PassivateView::HypRun(v) => v.title()
         }
+    }
+}
+
+pub struct SessionDock(SessionView);
+
+impl View for SessionDock
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("session_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Tests")
+    }
+}
+
+impl Deref for SessionDock
+{
+    type Target = SessionView;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for SessionDock
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
+    }
+}
+
+pub struct LogDock(LogView);
+
+impl View for LogDock
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("log_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Log")
+    }
+}
+
+impl Deref for LogDock
+{
+    type Target = LogView;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for LogDock
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
+    }
+}
+
+pub struct DetailsDock(DetailsView);
+
+impl View for DetailsDock
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("details_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Details")
+    }
+}
+
+impl Deref for DetailsDock
+{
+    type Target = DetailsView;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for DetailsDock
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
+    }
+}
+
+pub struct CoverageDock(CoverageView);
+
+impl View for CoverageDock
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("coverage_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Coverage")
+    }
+}
+
+impl Deref for CoverageDock
+{
+    type Target = CoverageView;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for CoverageDock
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
+    }
+}
+
+pub struct ConfigurationDock(ConfigurationView);
+
+impl View for ConfigurationDock
+{
+    fn id(&self) -> DockId
+    {
+        DockId::from("configuration_view")
+    }
+
+    fn title(&self) -> String
+    {
+        String::from("Configuration")
+    }
+}
+
+impl Deref for ConfigurationDock
+{
+    type Target = ConfigurationView;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for ConfigurationDock
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
     }
 }

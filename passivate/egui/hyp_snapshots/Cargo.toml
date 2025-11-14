@@ -1,0 +1,15 @@
+[package]
+name = "passivate_egui_hyp_snapshots"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_hyp_names = { path = "../../hyp_names" }
+
+camino.workspace = true
+egui.workspace = true
+epaint.workspace = true
+png.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]

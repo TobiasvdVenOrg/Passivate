@@ -11,6 +11,12 @@ passivate_delegation = { path = "../delegation" }
 passivate_model_session = { path = "../model/session" }
 passivate_configuration = { path = "../configuration" }
 passivate_hyp_names = { path = "../hyp_names" }
+passivate_egui_core = { path = "../egui/core" }
+passivate_egui_view_configuration = { path = "../egui/view/configuration" }
+passivate_egui_view_coverage = { path = "../egui/view/coverage" }
+passivate_egui_view_details = { path = "../egui/view/details" }
+passivate_egui_view_log = { path = "../egui/view/log" }
+passivate_egui_view_session = { path = "../egui/view/session" }
 
 clap.workspace = true
 egui = { workspace = true, features = [ "persistence" ] }

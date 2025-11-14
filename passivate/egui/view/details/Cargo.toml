@@ -1,0 +1,21 @@
+[package]
+name = "passivate_egui_view_details"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+passivate_delegation = { path = "../../../delegation" }
+passivate_model_session = { path = "../../../model/session" }
+passivate_egui_hyp_snapshots = { path = "../../hyp_snapshots" }
+passivate_egui_core = { path = "../../core" }
+
+camino.workspace = true
+egui.workspace = true
+
+[dev-dependencies]
+passivate_hyp_names = { path = "../../../hyp_names" }
+passivate_testing = { path = "../../../testing" }
+
+egui_kittest.workspace = true
+galvanic-assert.workspace = true
+rstest.workspace = true
