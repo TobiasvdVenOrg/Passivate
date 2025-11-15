@@ -3,8 +3,8 @@ use passivate_delegation::Tx;
 use passivate_egui_core::HypDetails;
 use passivate_egui_hyp_snapshots::SnapshotError;
 use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
-use passivate_model_session::hyp_state::HypState;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_state::HypState;
 
 pub struct DetailsView
 {
@@ -135,9 +135,9 @@ mod tests
     use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
-    use passivate_model_session::hyp::Hyp;
-    use passivate_model_session::hyp_run_trigger::HypRunTrigger;
-    use passivate_model_session::hyp_state::HypState;
+    use passivate_model_core::hyp::Hyp;
+    use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+    use passivate_model_core::hyp_state::HypState;
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 

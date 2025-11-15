@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../hyp_names" }
-passivate_model_session = { path = "../model/session" }
+passivate_model_core = { path = "../model/core" }
 passivate_cargo = { path = "../cargo" }
 
 bon.workspace = true

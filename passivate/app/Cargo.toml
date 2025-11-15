@@ -8,7 +8,7 @@ passivate_core = { path = "../core" }
 passivate_egui_views = { path = "../egui/views" }
 passivate_egui_docking = { path = "../egui/docking" }
 passivate_delegation = { path = "../delegation" }
-passivate_model_session = { path = "../model/session" }
+passivate_model_core = { path = "../model/core" }
 passivate_configuration = { path = "../configuration" }
 passivate_hyp_names = { path = "../hyp_names" }
 passivate_egui_core = { path = "../egui/core" }

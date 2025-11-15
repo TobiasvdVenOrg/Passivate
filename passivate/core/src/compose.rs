@@ -10,7 +10,7 @@ use passivate_coverage::grcov::Grcov;
 use passivate_delegation::{Rx, Tx};
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
 use passivate_run_rust::change_event_handler::change_event_thread;
 use passivate_run_rust::hyp_run_handler::{HypRunHandler, test_run_thread};

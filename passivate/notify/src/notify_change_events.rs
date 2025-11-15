@@ -13,7 +13,7 @@ use notify::{
     Watcher
 };
 use passivate_delegation::Tx;
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;
 

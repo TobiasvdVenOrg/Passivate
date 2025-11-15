@@ -1,7 +1,7 @@
 use std::thread::{self, JoinHandle};
 
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 
 pub fn change_event_thread(rx: Rx<HypRunTrigger>, tx: Tx<CancellableMessage<HypRunTrigger>>) -> JoinHandle<()>
 {

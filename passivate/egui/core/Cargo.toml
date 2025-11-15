@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_core = { path = "../../core" }
 passivate_configuration = { path = "../../configuration" }
-passivate_model_session = { path = "../../model/session" }
+passivate_model_core = { path = "../../model/core" }
 passivate_egui_hyp_snapshots = { path = "../hyp_snapshots" }
 
 camino.workspace = true

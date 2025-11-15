@@ -2,7 +2,7 @@ use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_egui_hyp_snapshots::Snapshots;
 use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
-use passivate_model_session::hyp::Hyp;
+use passivate_model_core::hyp::Hyp;
 
 #[derive(Default)]
 pub struct PassivateViewState

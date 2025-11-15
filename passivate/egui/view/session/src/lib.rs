@@ -1,8 +1,8 @@
 use egui::{Color32, RichText, Ui};
-use passivate_model_session::hyp::Hyp;
-use passivate_model_session::hyp_session::HypSession;
-use passivate_model_session::hyp_session_state::{HypSessionState, HypSessionStateError};
-use passivate_model_session::hyp_state::HypState;
+use passivate_model_core::hyp::Hyp;
+use passivate_model_core::hyp_session::HypSession;
+use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
+use passivate_model_core::hyp_state::HypState;
 
 pub struct SessionView;
 
@@ -87,10 +87,10 @@ mod tests
     use egui_kittest::Harness;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
-    use passivate_model_session::hyp::Hyp;
-    use passivate_model_session::hyp_session::HypSession;
-    use passivate_model_session::hyp_session_event::HypSessionEvent;
-    use passivate_model_session::hyp_state::HypState;
+    use passivate_model_core::hyp::Hyp;
+    use passivate_model_core::hyp_session::HypSession;
+    use passivate_model_core::hyp_session_event::HypSessionEvent;
+    use passivate_model_core::hyp_state::HypState;
 
     use crate::SessionView;
 

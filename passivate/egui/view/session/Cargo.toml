@@ -7,7 +7,7 @@ edition = "2024"
 passivate_configuration = { path = "../../../configuration" }
 passivate_coverage = { path = "../../../coverage" }
 passivate_delegation = { path = "../../../delegation" }
-passivate_model_session = { path = "../../../model/session" }
+passivate_model_core = { path = "../../../model/core" }
 
 egui.workspace = true
 

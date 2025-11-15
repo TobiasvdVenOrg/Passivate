@@ -24,9 +24,9 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
-use passivate_model_session::hyp::Hyp;
-use passivate_model_session::hyp_session_event::HypSessionEvent;
-use passivate_model_session::hyp_state::HypState;
+use passivate_model_core::hyp::Hyp;
+use passivate_model_core::hyp_session_event::HypSessionEvent;
+use passivate_model_core::hyp_state::HypState;
 use passivate_run_core::hyp_run_errors::TestRunError;
 
 use crate::nextest_cargo_options;

@@ -13,7 +13,7 @@ use passivate_coverage::coverage_errors::{CoverageError, NoProfrawFilesKind};
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::get_profraw_count;
 use passivate_delegation::{Cancellation, Tx};
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 use passivate_hyp_names::test_name;
 use passivate_testing::path_resolution::test_output_path;
 use passivate_testing::spy_log::SpyLog;

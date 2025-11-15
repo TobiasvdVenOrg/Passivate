@@ -6,8 +6,8 @@ use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
-use passivate_model_session::hyp_session_event::HypSessionEvent;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_session_event::HypSessionEvent;
 
 use crate::hyp_runner::HypRunner;
 

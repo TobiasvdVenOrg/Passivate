@@ -2,7 +2,7 @@ use camino::Utf8PathBuf;
 use egui::Ui;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_delegation::Tx;
-use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 
 pub struct ConfigurationView
 {
@@ -75,7 +75,7 @@ mod tests
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
     use passivate_hyp_names::test_name;
-    use passivate_model_session::hyp_run_trigger::HypRunTrigger;
+    use passivate_model_core::hyp_run_trigger::HypRunTrigger;
     use passivate_run_rust::hyp_run_handler::HypRunHandler;
     use passivate_run_rust::hyp_runner::HypRunner;
 
