@@ -19,7 +19,7 @@ use passivate_model_session::hyp_run_trigger::HypRunTrigger;
 use passivate_model_session::hyp_session::HypSession;
 use passivate_model_session::hyp_session_event::HypSessionEvent;
 use passivate_model_session::hyp_state::HypState;
-use passivate_run_rust::hyp_run_errors::TestRunError;
+use passivate_run_core::hyp_run_errors::TestRunError;
 use passivate_run_rust::hyp_run_handler::HypRunHandler;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;

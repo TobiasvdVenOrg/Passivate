@@ -1,5 +1,4 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_egui_hyp_snapshots::Snapshots;
 use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;

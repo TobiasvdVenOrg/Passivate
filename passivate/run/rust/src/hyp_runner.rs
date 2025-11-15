@@ -27,8 +27,8 @@ use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
 use passivate_model_session::hyp::Hyp;
 use passivate_model_session::hyp_session_event::HypSessionEvent;
 use passivate_model_session::hyp_state::HypState;
+use passivate_run_core::hyp_run_errors::TestRunError;
 
-use crate::hyp_run_errors::TestRunError;
 use crate::nextest_cargo_options;
 
 #[faux::create]

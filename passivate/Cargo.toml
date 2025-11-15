@@ -10,7 +10,8 @@ members = [
     "model/session",
     "coverage",
     "cargo",
-    "run/rust"]
+    "run/rust",
+    "run/core"]
 
 resolver = "2"
 
