@@ -1,6 +1,8 @@
+pub trait ProjectTrait {}
+
 pub trait Bridge
 {
-    type TProject;
+    type TProject: ProjectTrait;
 }
 
 pub trait HypSessionBridge<TBridge: Bridge>
