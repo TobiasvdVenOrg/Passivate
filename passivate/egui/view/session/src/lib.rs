@@ -1,35 +1,18 @@
 #![feature(min_specialization)]
 
+mod rust_specialization;
+mod specialize_session_ui;
+
 use egui::{Color32, RichText, Ui};
-use passivate_model_core::bridge::{Bridge, ProjectTrait};
+use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp::Hyp;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
 use passivate_model_core::hyp_state::HypState;
-use passivate_model_rust::{HypPackage, RustBridge};
+
+use crate::specialize_session_ui::SpecializeSessionUi;
 
 pub struct SessionView;
-
-trait SessionViewTrait
-{
-    fn ui_project(&self);
-}
-
-impl<TProject> SessionViewTrait for TProject
-{
-    default fn ui_project(&self)
-    {
-        todo!();
-    }
-}
-
-impl SessionViewTrait for HypPackage
-{
-    fn ui_project(&self)
-    {
-        todo!();
-    }
-}
 
 impl SessionView
 {
@@ -45,7 +28,7 @@ impl SessionView
 
         for project in projects
         {
-            project.ui_project();
+            project.ui(ui);
         }
 
         let mut selected_hyp = None;

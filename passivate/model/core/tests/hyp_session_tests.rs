@@ -1,16 +1,13 @@
 #[macro_use]
 extern crate assert_matches;
 
-use camino::Utf8PathBuf;
-use passivate_model_core::bridge::{Bridge, ProjectTrait};
+use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
 
 struct TestBridge;
 struct TestProject;
-
-impl ProjectTrait for TestProject {}
 
 impl Bridge for TestBridge
 {
