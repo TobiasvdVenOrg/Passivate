@@ -2,13 +2,6 @@ use thiserror::Error;
 
 use super::Cancellation;
 
-#[derive(Clone)]
-enum Mode<T>
-{
-    Single(crossbeam_channel::Sender<T>),
-    Multi(Vec<crossbeam_channel::Sender<T>>)
-}
-
 #[derive(Error, Debug)]
 pub enum RxError
 {
@@ -23,7 +16,7 @@ pub enum RxError
 #[derive(Clone)]
 pub struct Tx<T>
 {
-    mode: Mode<T>
+    tx: crossbeam_channel::Sender<T>
 }
 
 #[faux::create]
@@ -59,8 +52,8 @@ impl<T> Rx<T>
 #[faux::methods]
 impl<T> IntoIterator for Rx<T>
 {
-    type Item = T;
     type IntoIter = std::vec::IntoIter<T>;
+    type Item = T;
 
     fn into_iter(self) -> <Rx<T> as IntoIterator>::IntoIter
     {
@@ -70,53 +63,21 @@ impl<T> IntoIterator for Rx<T>
 
 #[faux::methods]
 impl<T> Tx<T>
-where
-    T: Clone + Send + Sync
 {
     pub fn new() -> (Tx<T>, Rx<T>)
     {
         let (tx, rx) = crossbeam_channel::unbounded();
 
-        (Tx { mode: Mode::Single(tx) }, Rx::new(rx))
-    }
-
-    pub fn multi_2() -> (Tx<T>, Rx<T>, Rx<T>)
-    where
-        T: Clone + Send
-    {
-        let (tx1, rx1) = crossbeam_channel::unbounded();
-        let (tx2, rx2) = crossbeam_channel::unbounded();
-        let tx = Tx {
-            mode: Mode::Multi(vec![tx1, tx2])
-        };
-
-        (tx, Rx::new(rx1), Rx::new(rx2))
+        (Tx { tx }, Rx::new(rx))
     }
 
     pub fn send(&self, message: T)
     {
-        match &self.mode
-        {
-            Mode::Single(sender) => sender.send(message).expect("failed to send single message"),
-            Mode::Multi(senders) =>
-            {
-                if let Some((last, txs)) = senders.split_last()
-                {
-                    for tx in txs.iter()
-                    {
-                        tx.send(message.clone()).expect("failed to send multi message");
-                    }
-
-                    last.send(message).expect("failed to send multi message");
-                }
-            }
-        }
+        self.tx.send(message).expect("failed to send message");
     }
 }
 
 impl<T> Tx<T>
-where
-    T: Clone + Send + Sync
 {
     pub fn stub() -> Self
     {
@@ -143,8 +104,6 @@ impl<T: 'static> Rx<T>
 pub struct TxCancel<T>(Tx<CancellableMessage<T>>);
 
 impl<T> TxCancel<T>
-where
-    T: Clone + Send + Sync
 {
     pub fn send(&self, message: T, cancellation: Cancellation)
     {

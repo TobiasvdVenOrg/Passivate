@@ -24,10 +24,12 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+use passivate_model_core::bridge::HypSessionBridge;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_state::HypState;
 use passivate_model_rust::RustBridge;
 use passivate_run_core::hyp_run_errors::TestRunError;
+use passivate_run_core::session_event_tx::SessionEventTx;
 
 use crate::nextest_cargo_options;
 
@@ -58,11 +60,11 @@ impl HypRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent<RustBridge>>,
+        tx: &SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
-        tx.send(HypSessionEvent::RunStarted);
+        tx.start_run();
 
         let cargo_options = nextest_cargo_options::cargo_options()
             .target_dir(self.target_dir.clone())
@@ -76,7 +78,7 @@ impl HypRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent<RustBridge>>,
+        tx: &SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -105,7 +107,7 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent<RustBridge>>,
+        tx: &SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -252,7 +254,7 @@ impl HypRunner
 
         runner
             .execute(|test_event| {
-                let event = match test_event.kind
+                match test_event.kind
                 {
                     nextest_runner::reporter::events::TestEventKind::RunStarted {
                         test_list: _,
@@ -260,13 +262,14 @@ impl HypRunner
                         profile_name: _,
                         cli_args: _,
                         stress_condition: _
-                    } => None,
+                    } => tx.start_run(),
                     nextest_runner::reporter::events::TestEventKind::TestStarted {
                         stress_index: _,
                         test_instance,
                         current_stats: _,
                         running: _
-                    } => None,
+                    } =>
+                    {}
                     nextest_runner::reporter::events::TestEventKind::TestFinished {
                         stress_index: _,
                         test_instance,
@@ -321,22 +324,16 @@ impl HypRunner
                         };
 
                         let hyp_id = HypId::new(&test_instance.suite_info.binary_name, "todo_crate", test_instance.name);
-
-                        None
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
                         start_time: _,
                         elapsed: _,
                         run_stats: _
-                    } => Some(HypSessionEvent::RunCompleted),
-                    _ => None
+                    } => tx.complete_run(),
+                    _ =>
+                    {}
                 };
-
-                if let Some(event) = event
-                {
-                    tx.send(event);
-                }
             })
             .map_err(|error| TestRunError::Temp)?;
 
@@ -350,7 +347,7 @@ impl HypRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent<RustBridge>>
+        tx: &SessionEventTx<RustBridge>
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;
@@ -360,7 +357,7 @@ impl HypRunner
 
         let filter = vec![hyp_id.name(&strategy).to_string()];
 
-        tx.send(HypSessionEvent::RunStarted);
+        tx.start_run();
 
         if update_snapshots
         {

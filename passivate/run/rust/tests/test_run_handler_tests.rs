@@ -20,6 +20,7 @@ use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_state::HypState;
 use passivate_run_core::hyp_run_errors::TestRunError;
+use passivate_run_core::session_event_tx::SessionEventTx;
 use passivate_run_rust::hyp_run_handler::HypRunHandler;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;
@@ -29,7 +30,7 @@ use passivate_testing::test_snapshot_path::TestSnapshotPath;
 #[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
 
@@ -58,7 +59,7 @@ pub fn handle_single_test_run()
 #[test]
 pub fn single_hyp_run_only_runs_one_exact_hyp()
 {
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
 
@@ -167,7 +168,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
@@ -202,7 +203,9 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 #[cfg(target_os = "windows")]
 pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    use passivate_run_core::session_event_tx::SessionEventTx;
+
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
@@ -241,7 +244,7 @@ pub fn when_test_run_fails_error_is_reported()
     let mut test_runner = HypRunner::faux();
     test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
 
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
 
     let mut handler = HypRunHandler::builder()
         .runner(test_runner)

@@ -106,6 +106,7 @@ mod tests
     use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
     use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_delegation::{Rx, Tx};
+    use passivate_run_core::session_event_tx::SessionEventTx;
     use passivate_run_rust::{hyp_run_handler::HypRunHandler, hyp_runner::HypRunner};
     use passivate_hyp_names::test_name;
 
@@ -246,7 +247,7 @@ mod tests
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_tx(Tx::stub())
             .runner(HypRunner::faux())
-            .hyp_run_tx(Tx::stub())
+            .hyp_run_tx(SessionEventTx::stub())
             .build();
 
         let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());

@@ -8,6 +8,7 @@ passivate_configuration = { path = "../../../configuration" }
 passivate_coverage = { path = "../../../coverage" }
 passivate_delegation = { path = "../../../delegation" }
 passivate_model_core = { path = "../../../model/core" }
+passivate_run_core = { path = "../../../run/core" }
 
 camino.workspace = true
 egui.workspace = true

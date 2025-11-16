@@ -12,6 +12,7 @@ use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
+use passivate_run_core::session_event_tx::SessionEventTx;
 use passivate_run_rust::change_event_handler::change_event_thread;
 use passivate_run_rust::hyp_run_handler::{HypRunHandler, test_run_thread};
 use passivate_run_rust::hyp_runner::HypRunner;
@@ -50,7 +51,7 @@ pub fn compose(args: PassivateArgs) -> Result<PassivateCore, StartupError>
     let log_rx = initialize_logger()?;
 
     // Channels
-    let (hyp_run_tx, hyp_run_rx) = Tx::new();
+    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
     let (coverage_tx, coverage_rx) = Tx::new();
     let (configuration_tx, _configuration_rx1) = Tx::new();
     let (test_run_tx, test_run_rx) = Tx::new();

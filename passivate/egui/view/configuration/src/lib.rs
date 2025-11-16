@@ -76,6 +76,7 @@ mod tests
     use passivate_delegation::Tx;
     use passivate_hyp_names::test_name;
     use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+    use passivate_run_core::session_event_tx::SessionEventTx;
     use passivate_run_rust::hyp_run_handler::HypRunHandler;
     use passivate_run_rust::hyp_runner::HypRunner;
 
@@ -114,7 +115,7 @@ mod tests
             .coverage(Box::new(MockComputeCoverage::new()))
             .coverage_tx(Tx::stub())
             .runner(HypRunner::faux())
-            .hyp_run_tx(Tx::stub())
+            .hyp_run_tx(SessionEventTx::stub())
             .build();
 
         let (change_events_tx, change_events_rx) = Tx::new();

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use camino::Utf8Path;
 use passivate_delegation::Tx;
 
-use crate::configuration::{PassivateConfiguration};
+use crate::configuration::PassivateConfiguration;
 use crate::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
 use crate::configuration_event::ConfigurationEvent;
 use crate::configuration_source::ConfigurationSource;
@@ -18,7 +18,10 @@ pub struct ConfigurationManager
 
 impl ConfigurationManager
 {
-    pub fn from_source(configuration_tx: Tx<ConfigurationEvent>, source: ConfigurationSource<PassivateConfiguration>) -> Result<Self, ConfigurationLoadError>
+    pub fn from_source(
+        configuration_tx: Tx<ConfigurationEvent>,
+        source: ConfigurationSource<PassivateConfiguration>
+    ) -> Result<Self, ConfigurationLoadError>
     {
         let configuration = source.load()?.unwrap_or_default();
 
@@ -29,7 +32,10 @@ impl ConfigurationManager
         })
     }
 
-    pub fn from_file<P: AsRef<Utf8Path>>(configuration_tx: Tx<ConfigurationEvent>, file_path: P) -> Result<Self, ConfigurationLoadError>
+    pub fn from_file<P: AsRef<Utf8Path>>(
+        configuration_tx: Tx<ConfigurationEvent>,
+        file_path: P
+    ) -> Result<Self, ConfigurationLoadError>
     {
         let source = ConfigurationSource::from_file(file_path);
 
@@ -50,7 +56,10 @@ impl ConfigurationManager
         Self::new(PassivateConfiguration::default(), configuration_tx)
     }
 
-    pub fn update<TUpdater: Fn(&mut PassivateConfiguration)>(&mut self, updater: TUpdater) -> Result<(), ConfigurationPersistError>
+    pub fn update<TUpdater: Fn(&mut PassivateConfiguration)>(
+        &mut self,
+        updater: TUpdater
+    ) -> Result<(), ConfigurationPersistError>
     {
         let mut configuration = self.acquire();
 
@@ -64,8 +73,7 @@ impl ConfigurationManager
 
         if let Some(source) = &self.source
         {
-            source.persist(&new).map_err(|error| 
-            {
+            source.persist(&new).map_err(|error| {
                 log::error!("failed to persist configuration: {:?}", error);
                 error
             })?
@@ -138,12 +146,14 @@ mod tests
         let dir = test_output_path().join(test_name!());
 
         clean_directory(&dir);
-        
+
         let file = dir.join("new_configuration.toml");
 
         let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
 
-        manager.update(|c| c.snapshot_directories.push(Utf8PathBuf::from("first/change"))).unwrap();
+        manager
+            .update(|c| c.snapshot_directories.push(Utf8PathBuf::from("first/change")))
+            .unwrap();
 
         assert!(fs::exists(file)?);
         Ok(())
@@ -155,7 +165,12 @@ mod tests
         let mut source = ConfigurationSource::faux();
 
         source._when_load().then_return(Ok(None));
-        source._when_persist().then_return(Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(std::io::ErrorKind::Interrupted, "")))));
+        source
+            ._when_persist()
+            .then_return(Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                ""
+            )))));
 
         let mut manager = ConfigurationManager::from_source(Tx::stub(), source)?;
 
@@ -166,7 +181,7 @@ mod tests
         let error = spy_log.into_iter().exactly_one().unwrap();
 
         assert_that!(error.starts_with("ERROR"));
-        
+
         Ok(())
     }
 
@@ -176,25 +191,12 @@ mod tests
         let configuration = PassivateConfiguration::default();
         let mut manager = ConfigurationManager::new(configuration, Tx::stub());
 
-        manager.update(|c| c.snapshot_directories.push(Utf8PathBuf::from("Example/path"))).unwrap();
+        manager
+            .update(|c| c.snapshot_directories.push(Utf8PathBuf::from("Example/path")))
+            .unwrap();
 
         let snapshots_path = manager.get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone());
 
         assert_eq!(Utf8PathBuf::from("Example/path"), snapshots_path);
-    }
-
-    #[test]
-    pub fn configuration_change_is_broadcast()
-    {
-        let configuration = PassivateConfiguration::default();
-        let (tx, rx1, rx2) = Tx::multi_2();
-        let mut manager = ConfigurationManager::new(configuration, tx);
-
-        manager.update(|c| c.coverage_enabled = true).unwrap();
-
-        let broadcast1 = rx1.drain().last().unwrap().clone();
-        let broadcast2 = rx2.drain().last().unwrap().clone();
-
-        assert_eq!(broadcast1, broadcast2);
     }
 }

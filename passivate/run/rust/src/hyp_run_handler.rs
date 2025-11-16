@@ -7,8 +7,8 @@ use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_core::hyp_run_trigger::HypRunTrigger;
-use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_rust::RustBridge;
+use passivate_run_core::session_event_tx::SessionEventTx;
 
 use crate::hyp_runner::HypRunner;
 
@@ -29,7 +29,7 @@ pub struct HypRunHandler
 {
     runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
-    hyp_run_tx: Tx<HypSessionEvent<RustBridge>>,
+    hyp_run_tx: SessionEventTx<RustBridge>,
     coverage_tx: Tx<CoverageStatus>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>
@@ -129,7 +129,7 @@ impl HypRunHandler
 
     fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
     {
-        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx);
+        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &self.hyp_run_tx);
 
         if let Err(error) = result
         {

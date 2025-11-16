@@ -8,6 +8,7 @@ passivate_delegation = { path = "../delegation", features = ["testing"]}
 passivate_hyp_names = { path = "../hyp_names" }
 passivate_model_core = { path = "../model/core" }
 passivate_model_rust = { path = "../model/rust" }
+passivate_run_core = { path = "../run/core" }
 passivate_run_rust = { path = "../run/rust" }
 passivate_configuration = { path = "../configuration" }
 passivate_log = { path = "../log" }
