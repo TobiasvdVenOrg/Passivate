@@ -2,15 +2,23 @@
 extern crate assert_matches;
 
 use camino::Utf8PathBuf;
+use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
-use passivate_model_core::rust::RustHypProject;
+
+struct TestBridge;
+struct TestProject;
+
+impl Bridge for TestBridge
+{
+    type TProject = TestProject;
+}
 
 #[test]
 pub fn default_session_has_no_hyps()
 {
-    let session = HypSession::new();
+    let session = HypSession::<TestBridge>::new();
 
     assert_matches!(session.all_hyps().next(), None);
 }
@@ -18,7 +26,7 @@ pub fn default_session_has_no_hyps()
 #[test]
 pub fn default_session_is_idle()
 {
-    let session = HypSession::new();
+    let session = HypSession::<TestBridge>::new();
 
     assert_matches!(session.state(), Ok(HypSessionState::Idle));
 }
@@ -44,7 +52,7 @@ pub fn completed_session_is_idle()
 #[test]
 pub fn completing_an_idle_session_is_error_state()
 {
-    let mut session = HypSession::new();
+    let mut session = HypSession::<TestBridge>::new();
 
     session.update(HypSessionEvent::RunCompleted);
 
@@ -84,10 +92,9 @@ pub fn new_errors_do_not_replace_original_error_state()
 #[test]
 pub fn project_existence_updates_session_while_idle()
 {
-    let mut session = HypSession::new();
+    let mut session = HypSession::<TestBridge>::new();
 
-    session.update(HypSessionEvent::from(example_crate("name")));
-    // session.update(HypSessionEvent::CrateExists {})
+    session.update(HypSessionEvent::ProjectExists(TestProject));
 }
 
 #[test]
@@ -98,22 +105,11 @@ pub fn crate_existence_updates_while_running_is_an_error()
     // session.update(HypSessionEvent::CrateExists {})
 }
 
-fn new_started_session() -> HypSession
+fn new_started_session() -> HypSession<TestBridge>
 {
     let mut session = HypSession::new();
 
     session.update(HypSessionEvent::RunStarted);
 
     session
-}
-
-fn example_crate<TStr: ToString>(name: TStr) -> RustHypProject
-{
-    let package_name = name.to_string();
-    let manifest_path = Utf8PathBuf::new().join("example/path/").join(&package_name);
-
-    RustHypProject {
-        package_name,
-        manifest_path
-    }
 }

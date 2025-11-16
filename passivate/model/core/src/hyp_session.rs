@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::iter::{self, Empty};
+use std::marker::PhantomData;
 
+use crate::bridge::Bridge;
 use crate::hyp::Hyp;
 use crate::hyp_iter_ext::HypIterator;
 use crate::hyp_session_change::HypSessionChange;
@@ -16,21 +18,23 @@ enum Activity
 }
 
 #[derive(Debug, Clone)]
-pub struct HypSession
+pub struct HypSession<TBridge: Bridge>
 {
-    activity: Result<Activity, HypSessionStateError>
+    activity: Result<Activity, HypSessionStateError>,
+    bridge: PhantomData<TBridge>
 }
 
-impl HypSession
+impl<TBridge: Bridge> HypSession<TBridge>
 {
     pub fn new() -> Self
     {
         Self {
-            activity: Ok(Activity::Idle)
+            activity: Ok(Activity::Idle),
+            bridge: PhantomData
         }
     }
 
-    pub fn from_events(events: impl IntoIterator<Item = HypSessionEvent>) -> Self
+    pub fn from_events(events: impl IntoIterator<Item = HypSessionEvent<TBridge>>) -> Self
     {
         let mut session = Self::new();
         session.update_all(events);
@@ -44,6 +48,11 @@ impl HypSession
             Ok(activity) => Ok(Self::evaluate_state(activity)),
             Err(error) => Err(error)
         }
+    }
+
+    pub fn projects(&self) -> Vec<TBridge::TProject>
+    {
+        Vec::new()
     }
 
     fn evaluate_state(activity: &Activity) -> HypSessionState
@@ -60,7 +69,7 @@ impl HypSession
         iter::empty::<&&Hyp>()
     }
 
-    pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent>)
+    pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent<TBridge>>)
     {
         for event in events
         {
@@ -68,7 +77,7 @@ impl HypSession
         }
     }
 
-    pub fn update(&mut self, event: HypSessionEvent) -> Option<HypSessionChange<'_>>
+    pub fn update(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<'_>>
     {
         let mut change = None;
 
@@ -81,7 +90,7 @@ impl HypSession
         change
     }
 
-    fn process_event(activity: &Activity, event: HypSessionEvent) -> Result<Activity, HypSessionStateError>
+    fn process_event(activity: &Activity, event: HypSessionEvent<TBridge>) -> Result<Activity, HypSessionStateError>
     {
         match event
         {

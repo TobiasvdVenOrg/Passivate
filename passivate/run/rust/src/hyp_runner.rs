@@ -24,9 +24,9 @@ use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, Te
 use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::{Cancellation, Tx};
 use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
-use passivate_model_core::hyp::Hyp;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_state::HypState;
+use passivate_model_rust::RustBridge;
 use passivate_run_core::hyp_run_errors::TestRunError;
 
 use crate::nextest_cargo_options;
@@ -58,7 +58,7 @@ impl HypRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent>,
+        tx: &mut Tx<HypSessionEvent<RustBridge>>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -76,7 +76,7 @@ impl HypRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent>,
+        tx: &mut Tx<HypSessionEvent<RustBridge>>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -105,7 +105,7 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent>,
+        tx: &mut Tx<HypSessionEvent<RustBridge>>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -350,7 +350,7 @@ impl HypRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &mut Tx<HypSessionEvent>
+        tx: &mut Tx<HypSessionEvent<RustBridge>>
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;

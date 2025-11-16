@@ -8,6 +8,7 @@ members = [
     "egui/view/*",
     "egui/docking",
     "model/core",
+    "model/rust",
     "coverage",
     "cargo",
     "run/rust",

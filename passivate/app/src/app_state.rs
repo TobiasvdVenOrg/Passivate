@@ -75,6 +75,7 @@ pub mod tests
     use passivate_model_core::hyp_session::HypSession;
     use passivate_model_core::hyp_session_event::HypSessionEvent;
     use passivate_model_core::hyp_state::HypState;
+    use passivate_model_rust::RustBridge;
     use passivate_testing::path_resolution::test_data_path;
 
     use crate::app_state::AppState;
@@ -121,7 +122,7 @@ pub mod tests
         ui.snapshot(&test_name!());
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent>) -> (AppState, DockingLayout)
+    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent<RustBridge>>) -> (AppState, DockingLayout)
     {
         let example_hyp = example_hyp(HypState::Failed);
 

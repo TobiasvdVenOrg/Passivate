@@ -8,6 +8,7 @@ use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
+use passivate_model_rust::RustBridge;
 
 use crate::hyp_runner::HypRunner;
 
@@ -28,7 +29,7 @@ pub struct HypRunHandler
 {
     runner: HypRunner,
     coverage: Box<dyn ComputeCoverage + Send>,
-    hyp_run_tx: Tx<HypSessionEvent>,
+    hyp_run_tx: Tx<HypSessionEvent<RustBridge>>,
     coverage_tx: Tx<CoverageStatus>,
     configuration: ConfigurationManager,
     pinned_hyp: Option<HypId>

@@ -3,24 +3,26 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
+use passivate_model_rust::RustBridge;
 
 use crate::passivate_state_change::PassivateStateChange;
 
 pub struct PassivateState
 {
-    pub hyp_session: HypSession,
+    pub hyp_session: HypSession<RustBridge>,
     pub selected_hyp: Option<HypId>,
-    hyp_run_rx: Rx<HypSessionEvent>
+    hyp_run_rx: Rx<HypSessionEvent<RustBridge>>
 }
 
 impl PassivateState
 {
-    pub fn new(hyp_run_rx: Rx<HypSessionEvent>) -> Self
+    pub fn new(hyp_run_rx: Rx<HypSessionEvent<RustBridge>>) -> Self
     {
         Self::with_initial_session_state(HypSession::new(), hyp_run_rx)
     }
 
-    pub fn with_initial_session_state(hyp_session: HypSession, hyp_run_rx: Rx<HypSessionEvent>) -> Self
+    pub fn with_initial_session_state(hyp_session: HypSession<RustBridge>, hyp_run_rx: Rx<HypSessionEvent<RustBridge>>)
+    -> Self
     {
         Self {
             hyp_session,
@@ -54,7 +56,7 @@ impl PassivateState
         }
     }
 
-    fn process_hyp_run_event(&mut self, event: HypSessionEvent) -> Option<HypSessionChange<'_>>
+    fn process_hyp_run_event(&mut self, event: HypSessionEvent<RustBridge>) -> Option<HypSessionChange<'_>>
     {
         self.hyp_session.update(event)
     }

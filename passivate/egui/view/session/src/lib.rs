@@ -1,19 +1,41 @@
 use egui::{Color32, RichText, Ui};
+use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp::Hyp;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
 use passivate_model_core::hyp_state::HypState;
+use passivate_model_rust::{HypPackage, RustBridge};
 
 pub struct SessionView;
 
+trait SessionViewTrait<T>
+{
+    fn ui_project(&self, project: T);
+}
+
+impl SessionViewTrait<HypPackage> for SessionView
+{
+    fn ui_project(&self, project: HypPackage)
+    {
+        todo!()
+    }
+}
+
 impl SessionView
 {
-    pub fn ui<'a>(&mut self, ui: &mut Ui, session: &'a HypSession) -> Option<&'a Hyp>
+    pub fn ui<'a>(&mut self, ui: &mut Ui, session: &'a HypSession<RustBridge>) -> Option<&'a Hyp>
     {
         match &session.state()
         {
             Ok(state) => self.show_session_state(ui, state),
             Err(error) => self.show_error_state(ui, *error)
+        }
+
+        let projects = session.projects();
+
+        for project in projects
+        {
+            self.ui_project(project);
         }
 
         let mut selected_hyp = None;
@@ -91,6 +113,7 @@ mod tests
     use passivate_model_core::hyp_session::HypSession;
     use passivate_model_core::hyp_session_event::HypSessionEvent;
     use passivate_model_core::hyp_state::HypState;
+    use passivate_model_rust::RustBridge;
 
     use crate::SessionView;
 
@@ -139,7 +162,7 @@ mod tests
         todo!();
     }
 
-    fn run_and_snapshot(session: HypSession, snapshot_name: impl Into<String>)
+    fn run_and_snapshot(session: HypSession<RustBridge>, snapshot_name: impl Into<String>)
     {
         let mut test_run_view = SessionView;
 

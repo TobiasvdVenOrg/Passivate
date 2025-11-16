@@ -1,7 +1,6 @@
-use camino::{Utf8Path, Utf8PathBuf};
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::rust::RustHypProject;
+use crate::bridge::Bridge;
 
 #[derive(Debug, Clone)]
 pub enum ProjectCompilationEventKind
@@ -35,59 +34,10 @@ pub enum WorkspaceCompilationEvent
 }
 
 #[derive(Debug, Clone)]
-pub struct HypProject
-{
-    kind: HypProjectKind
-}
-
-impl HypProject
-{
-    pub fn new(kind: HypProjectKind) -> Self
-    {
-        Self { kind }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum HypProjectKind
-{
-    Rust(RustHypProject)
-}
-
-impl HypProject
-{
-    pub fn name(&self) -> &str
-    {
-        match &self.kind
-        {
-            HypProjectKind::Rust(project) => &project.package_name
-        }
-    }
-
-    pub fn path(&self) -> &Utf8Path
-    {
-        match &self.kind
-        {
-            HypProjectKind::Rust(project) => &project.manifest_path
-        }
-    }
-}
-
-impl<T> From<T> for HypSessionEvent
-where
-    T: Into<HypProject>
-{
-    fn from(value: T) -> Self
-    {
-        HypSessionEvent::ProjectExists(value.into())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum HypSessionEvent
+pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
-    ProjectExists(HypProject),
+    ProjectExists(TBridge::TProject),
     WorkspaceCompilation(WorkspaceCompilationEvent),
     ProjectCompilation(ProjectCompilationEvent),
     HypExists(HypId),
