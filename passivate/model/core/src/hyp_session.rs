@@ -7,10 +7,10 @@ use crate::hyp::Hyp;
 use crate::hyp_iter_ext::HypIterator;
 use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
-use crate::hyp_session_state::{HypSessionState, HypSessionStateError};
+use crate::hyp_session_state_error::HypSessionStateError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum Activity
+pub enum HypSessionActivity
 {
     Idle,
     Running
@@ -26,7 +26,7 @@ pub struct HypSession<TBridge: Bridge>
 #[derive(Debug, Clone)]
 struct Session<TBridge: Bridge>
 {
-    activity: Activity,
+    activity: HypSessionActivity,
     projects: Vec<TBridge::TProject>,
     workspace_compilation: Vec<TBridge::TWorkspaceCompilation>,
     bridge: PhantomData<TBridge>
@@ -37,7 +37,7 @@ impl<TBridge: Bridge> HypSession<TBridge>
     pub fn new() -> Self
     {
         let session = Session {
-            activity: Activity::Idle,
+            activity: HypSessionActivity::Idle,
             projects: Vec::new(),
             workspace_compilation: Vec::new(),
             bridge: PhantomData
@@ -53,11 +53,9 @@ impl<TBridge: Bridge> HypSession<TBridge>
         session
     }
 
-    pub fn state(&self) -> Result<HypSessionState, &HypSessionStateError<TBridge>>
+    pub fn activity(&self) -> Result<&HypSessionActivity, &HypSessionStateError<TBridge>>
     {
-        self.error
-            .as_ref()
-            .map_or_else(|| Ok(self.session.evaluate_state()), |e| Err(e))
+        self.error.as_ref().map_or_else(|| Ok(&self.session.activity), |e| Err(e))
     }
 
     pub fn projects(&self) -> impl Iterator<Item = &TBridge::TProject>
@@ -72,6 +70,15 @@ impl<TBridge: Bridge> HypSession<TBridge>
     pub fn all_hyps(&self) -> impl HypIterator<'_> + Debug
     {
         iter::empty::<&&Hyp>()
+    }
+
+    pub fn last_workspace_compilation(&self) -> Option<&TBridge::TWorkspaceCompilation>
+    {
+        match self.error
+        {
+            Some(_) => None,
+            None => self.session.workspace_compilation.last()
+        }
     }
 
     pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent<TBridge>>)
@@ -103,49 +110,23 @@ impl<TBridge: Bridge> HypSession<TBridge>
 
 impl<TBridge: Bridge> Session<TBridge>
 {
-    fn evaluate_state(&self) -> HypSessionState
-    {
-        match self.activity
-        {
-            Activity::Idle => HypSessionState::Idle,
-            Activity::Running =>
-            {
-                if self.workspace_compilation.is_empty()
-                {
-                    HypSessionState::Starting
-                }
-                else
-                {
-                    HypSessionState::Compiling
-                }
-            }
-        }
-    }
-
     fn update(
         &mut self,
         event: HypSessionEvent<TBridge>
     ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionStateError<TBridge>>
     {
-        let current_state = self.evaluate_state();
-
-        self.process_event(&current_state, event).map_err(|error_event| {
-            HypSessionStateError::UnexpectedEvent {
-                state: current_state,
-                event: error_event
-            }
-        })
+        self.process_event(event)
+            .map_err(|error_event| HypSessionStateError::UnexpectedEvent { event: error_event })
     }
 
     fn process_event(
         &mut self,
-        current_state: &HypSessionState,
         event: HypSessionEvent<TBridge>
     ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionEvent<TBridge>>
     {
         match self.activity
         {
-            Activity::Idle =>
+            HypSessionActivity::Idle =>
             {
                 match event
                 {
@@ -157,7 +138,7 @@ impl<TBridge: Bridge> Session<TBridge>
                     _ => Err(event)
                 }
             }
-            Activity::Running =>
+            HypSessionActivity::Running =>
             {
                 match event
                 {
@@ -180,12 +161,12 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn start_run<'a, 'c>(&mut self)
     {
-        self.activity = Activity::Running;
+        self.activity = HypSessionActivity::Running;
     }
 
     fn complete_run(&mut self)
     {
-        self.activity = Activity::Idle;
+        self.activity = HypSessionActivity::Idle;
     }
 
     fn project_exists(&mut self, project: TBridge::TProject) -> HypSessionChange<'_, TBridge>

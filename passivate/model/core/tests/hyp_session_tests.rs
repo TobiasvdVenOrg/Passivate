@@ -3,10 +3,10 @@ extern crate assert_matches;
 
 use itertools::assert_equal;
 use passivate_model_core::bridge::Bridge;
-use passivate_model_core::hyp_session::HypSession;
+use passivate_model_core::hyp_session::{HypSession, HypSessionActivity};
 use passivate_model_core::hyp_session_change::HypSessionChange;
-use passivate_model_core::hyp_session_event::{CompilationMessage, HypSessionEvent};
-use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
+use passivate_model_core::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
+use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct TestBridge;
@@ -44,15 +44,15 @@ pub fn default_session_is_idle()
 {
     let session = HypSession::<TestBridge>::new();
 
-    assert_matches!(session.state(), Ok(HypSessionState::Idle));
+    assert_matches!(session.activity(), Ok(HypSessionActivity::Idle));
 }
 
 #[test]
-pub fn started_session_is_starting()
+pub fn started_session_is_running()
 {
     let session = new_started_session();
 
-    assert_matches!(session.state(), Ok(HypSessionState::Starting));
+    assert_matches!(session.activity(), Ok(HypSessionActivity::Running));
 }
 
 #[test]
@@ -62,7 +62,7 @@ pub fn completed_session_is_idle()
 
     session.update(HypSessionEvent::RunCompleted);
 
-    assert_matches!(session.state(), Ok(HypSessionState::Idle));
+    assert_matches!(session.activity(), Ok(HypSessionActivity::Idle));
 }
 
 #[test]
@@ -72,11 +72,10 @@ pub fn completing_an_idle_session_is_error_state()
 
     session.update(HypSessionEvent::RunCompleted);
 
-    assert_matches!(session.state(), Err(error) =>
+    assert_matches!(session.activity(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
         {
-            assert_eq!(HypSessionState::Idle, *state);
             assert_eq!(HypSessionEvent::RunCompleted, *event);
         });
     });
@@ -89,11 +88,10 @@ pub fn starting_a_started_session_is_error_state()
 
     session.update(HypSessionEvent::RunStarted);
 
-    assert_matches!(session.state(), Err(error) =>
+    assert_matches!(session.activity(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
         {
-            assert_eq!(HypSessionState::Starting, *state);
             assert_eq!(HypSessionEvent::RunStarted, *event);
         });
     });
@@ -107,11 +105,10 @@ pub fn new_errors_do_not_replace_original_error_state()
     session.update(HypSessionEvent::RunStarted);
     session.update(HypSessionEvent::RunCompleted);
 
-    assert_matches!(session.state(), Err(error) =>
+    assert_matches!(session.activity(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
         {
-            assert_eq!(HypSessionState::Starting, *state);
             assert_eq!(HypSessionEvent::RunStarted, *event);
         });
     });
@@ -141,7 +138,7 @@ pub fn project_existence_updates_session()
 }
 
 #[test]
-pub fn workspace_compilation_is_compiling_state()
+pub fn last_workspace_compilation_is_most_recent()
 {
     let mut session = new_started_session();
 
@@ -149,7 +146,15 @@ pub fn workspace_compilation_is_compiling_state()
         "example message"
     )));
 
-    assert_matches!(session.state(), Ok(HypSessionState::Compiling));
+    session.update(HypSessionEvent::WorkspaceCompilation(CompilationMessage::new_warning(
+        "example warning"
+    )));
+
+    assert_matches!(session.last_workspace_compilation(), Some(compilation_message) =>
+    {
+        assert_matches!(compilation_message.kind, CompilationMessageKind::Warning);
+        assert_eq!(compilation_message.content, "example warning");
+    });
 }
 
 fn new_started_session() -> HypSession<TestBridge>
