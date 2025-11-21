@@ -9,31 +9,31 @@ pub enum ProjectCompilationEventKind
     Message(CompilationMessage)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectCompilationEvent {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
 {
     Warning,
     Error
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompilationMessage
 {
     pub content: String,
     pub kind: CompilationMessageKind
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkspaceCompilationEvent
 {
     WaitForLock,
     Message(CompilationMessage)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,

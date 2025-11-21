@@ -33,18 +33,19 @@ impl PassivateState
 
     pub fn update(&mut self) -> Option<PassivateStateChange<'_>>
     {
-        self.try_process_hyp_run_event().map(Self::map_hyp_run_change)
+        self.try_process_hyp_run_event().map(Self::map_hyp_run_change).flatten()
     }
 
-    fn map_hyp_run_change(change: HypSessionChange<'_>) -> PassivateStateChange<'_>
+    fn map_hyp_run_change(change: HypSessionChange<'_, RustBridge>) -> Option<PassivateStateChange<'_>>
     {
         match change
         {
-            HypSessionChange::HypUpdated(single_hyp) => PassivateStateChange::HypDetailsChanged(single_hyp)
+            HypSessionChange::HypUpdated(single_hyp) => Some(PassivateStateChange::HypDetailsChanged(single_hyp)),
+            HypSessionChange::NewProject(_) => None
         }
     }
 
-    fn try_process_hyp_run_event(&mut self) -> Option<HypSessionChange<'_>>
+    fn try_process_hyp_run_event(&mut self) -> Option<HypSessionChange<'_, RustBridge>>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
@@ -56,7 +57,7 @@ impl PassivateState
         }
     }
 
-    fn process_hyp_run_event(&mut self, event: HypSessionEvent<RustBridge>) -> Option<HypSessionChange<'_>>
+    fn process_hyp_run_event(&mut self, event: HypSessionEvent<RustBridge>) -> Option<HypSessionChange<'_, RustBridge>>
     {
         self.hyp_session.update(event)
     }

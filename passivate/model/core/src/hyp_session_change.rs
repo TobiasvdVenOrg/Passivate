@@ -1,6 +1,9 @@
+use crate::bridge::Bridge;
 use crate::hyp::Hyp;
 
-pub enum HypSessionChange<'a>
+#[derive(Debug)]
+pub enum HypSessionChange<'a, TBridge: Bridge>
 {
+    NewProject(&'a TBridge::TProject),
     HypUpdated(&'a Hyp)
 }

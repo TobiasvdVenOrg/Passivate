@@ -1,13 +1,29 @@
 #[macro_use]
 extern crate assert_matches;
 
+use itertools::assert_equal;
 use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
+use passivate_model_core::hyp_session_change::HypSessionChange;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 struct TestBridge;
-struct TestProject;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct TestProject
+{
+    pub name: String
+}
+
+impl TestProject
+{
+    pub fn new(name: impl Into<String>) -> Self
+    {
+        Self { name: name.into() }
+    }
+}
 
 impl Bridge for TestBridge
 {
@@ -31,11 +47,11 @@ pub fn default_session_is_idle()
 }
 
 #[test]
-pub fn started_session_is_running()
+pub fn started_session_is_starting()
 {
     let session = new_started_session();
 
-    assert_matches!(session.state(), Ok(HypSessionState::Running));
+    assert_matches!(session.state(), Ok(HypSessionState::Starting));
 }
 
 #[test]
@@ -57,12 +73,16 @@ pub fn completing_an_idle_session_is_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedCompletion);
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        {
+            assert_eq!(HypSessionState::Idle, *state);
+            assert_eq!(HypSessionEvent::RunCompleted, *event);
+        });
     });
 }
 
 #[test]
-pub fn starting_a_running_session_is_error_state()
+pub fn starting_a_started_session_is_error_state()
 {
     let mut session = new_started_session();
 
@@ -70,7 +90,11 @@ pub fn starting_a_running_session_is_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedStart);
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        {
+            assert_eq!(HypSessionState::Starting, *state);
+            assert_eq!(HypSessionEvent::RunStarted, *event);
+        });
     });
 }
 
@@ -84,24 +108,35 @@ pub fn new_errors_do_not_replace_original_error_state()
 
     assert_matches!(session.state(), Err(error) =>
     {
-        assert_matches!(error, HypSessionStateError::UnexpectedStart);
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { state, event } =>
+        {
+            assert_eq!(HypSessionState::Starting, *state);
+            assert_eq!(HypSessionEvent::RunStarted, *event);
+        });
     });
 }
 
 #[test]
-pub fn project_existence_updates_session_while_idle()
+pub fn project_existence_updates_session()
 {
     let mut session = HypSession::<TestBridge>::new();
 
-    session.update(HypSessionEvent::ProjectExists(TestProject));
-}
+    let project_1 = TestProject::new("test_project_1");
+    let project_2 = TestProject::new("test_project_2");
 
-#[test]
-pub fn crate_existence_updates_while_running_is_an_error()
-{
-    let mut session = new_started_session();
+    let change_1 = session.update(HypSessionEvent::ProjectExists(project_1.clone()));
+    assert_matches!(change_1, Some(HypSessionChange::NewProject(new_1)) =>
+    {
+        assert_eq!(*new_1, project_1);
+    });
 
-    // session.update(HypSessionEvent::CrateExists {})
+    let change_2 = session.update(HypSessionEvent::ProjectExists(project_2.clone()));
+    assert_matches!(change_2, Some(HypSessionChange::NewProject(new_2)) =>
+    {
+        assert_eq!(*new_2, project_2);
+    });
+
+    assert_equal(session.projects(), [&project_1, &project_2]);
 }
 
 fn new_started_session() -> HypSession<TestBridge>

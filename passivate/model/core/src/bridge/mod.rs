@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 pub trait Bridge
 {
-    type TProject;
+    type TProject: Clone + Debug + Eq + PartialEq;
 }
 
 pub trait HypSessionBridge<TBridge: Bridge>

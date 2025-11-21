@@ -49,13 +49,14 @@ impl SessionView
         let text = match state
         {
             HypSessionState::Idle => RichText::new("Idle").size(16.0).color(Color32::GREEN),
+            HypSessionState::Starting => RichText::new("Starting").size(16.0).color(Color32::GREEN),
             HypSessionState::Running => RichText::new("Running").size(16.0).color(Color32::GREEN)
         };
 
         ui.label(text);
     }
 
-    fn show_error_state(&mut self, ui: &mut Ui, error: &HypSessionStateError)
+    fn show_error_state<TBridge: Bridge>(&mut self, ui: &mut Ui, error: &HypSessionStateError<TBridge>)
     {
         let text = RichText::new(error.to_string()).size(32.0).color(Color32::RED);
 

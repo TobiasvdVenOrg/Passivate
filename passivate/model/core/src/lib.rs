@@ -1,3 +1,5 @@
+#![feature(push_mut)]
+
 pub mod bridge;
 pub mod hyp;
 pub mod hyp_iter_ext;
