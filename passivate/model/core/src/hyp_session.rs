@@ -129,7 +129,7 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         let current_state = self.evaluate_state();
 
-        self.process_event(event).map_err(|error_event| {
+        self.process_event(&current_state, event).map_err(|error_event| {
             HypSessionStateError::UnexpectedEvent {
                 state: current_state,
                 event: error_event
@@ -139,52 +139,53 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn process_event(
         &mut self,
+        current_state: &HypSessionState,
         event: HypSessionEvent<TBridge>
     ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionEvent<TBridge>>
-    {
-        match event
-        {
-            HypSessionEvent::RunStarted => self.start_run().or(Err(event)),
-            HypSessionEvent::ProjectExists(project) => Ok(Some(self.project_exists(project))),
-            HypSessionEvent::WorkspaceCompilation(workspace_compilation) =>
-            {
-                self.workspace_compilation(workspace_compilation);
-                Ok(None)
-            }
-            HypSessionEvent::ProjectCompilation(crate_compilation_event) => todo!(),
-            HypSessionEvent::HypExists(hyp_id) => todo!(),
-            HypSessionEvent::HypRunning(hyp_id) => todo!(),
-            HypSessionEvent::HypStdOut { id, lines } => todo!(),
-            HypSessionEvent::HypStdErr { id, lines } => todo!(),
-            HypSessionEvent::HypCompleted(hyp_id) => todo!(),
-            HypSessionEvent::RunCompleted => self.complete_run().or(Err(event))
-        }
-    }
-
-    fn start_run<'a, 'c>(&mut self) -> Result<Option<HypSessionChange<TBridge>>, ()>
     {
         match self.activity
         {
             Activity::Idle =>
             {
-                self.activity = Activity::Running;
-                Ok(None)
+                match event
+                {
+                    HypSessionEvent::RunStarted =>
+                    {
+                        self.start_run();
+                        Ok(None)
+                    }
+                    _ => Err(event)
+                }
             }
-            _ => Err(())
+            Activity::Running =>
+            {
+                match event
+                {
+                    HypSessionEvent::ProjectExists(project) => Ok(Some(self.project_exists(project))),
+                    HypSessionEvent::WorkspaceCompilation(workspace_compilation) =>
+                    {
+                        self.workspace_compilation(workspace_compilation);
+                        Ok(None)
+                    }
+                    HypSessionEvent::RunCompleted =>
+                    {
+                        self.complete_run();
+                        Ok(None)
+                    }
+                    _ => Err(event)
+                }
+            }
         }
     }
 
-    fn complete_run(&mut self) -> Result<Option<HypSessionChange<TBridge>>, ()>
+    fn start_run<'a, 'c>(&mut self)
     {
-        match self.activity
-        {
-            Activity::Running =>
-            {
-                self.activity = Activity::Idle;
-                Ok(None)
-            }
-            _ => Err(())
-        }
+        self.activity = Activity::Running;
+    }
+
+    fn complete_run(&mut self)
+    {
+        self.activity = Activity::Idle;
     }
 
     fn project_exists(&mut self, project: TBridge::TProject) -> HypSessionChange<'_, TBridge>

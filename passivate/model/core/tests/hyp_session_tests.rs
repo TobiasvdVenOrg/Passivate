@@ -120,7 +120,7 @@ pub fn new_errors_do_not_replace_original_error_state()
 #[test]
 pub fn project_existence_updates_session()
 {
-    let mut session = HypSession::<TestBridge>::new();
+    let mut session = new_started_session();
 
     let project_1 = TestProject::new("test_project_1");
     let project_2 = TestProject::new("test_project_2");
