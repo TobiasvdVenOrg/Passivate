@@ -11,6 +11,7 @@ pub enum HypSessionState
     #[default]
     Idle,
     Starting,
+    Compiling,
     Running
 }
 

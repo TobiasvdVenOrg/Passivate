@@ -50,6 +50,7 @@ impl SessionView
         {
             HypSessionState::Idle => RichText::new("Idle").size(16.0).color(Color32::GREEN),
             HypSessionState::Starting => RichText::new("Starting").size(16.0).color(Color32::GREEN),
+            HypSessionState::Compiling => RichText::new("Compiling").size(16.0).color(Color32::GREEN),
             HypSessionState::Running => RichText::new("Running").size(16.0).color(Color32::GREEN)
         };
 

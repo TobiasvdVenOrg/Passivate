@@ -15,6 +15,7 @@ pub struct ProjectCompilationEvent {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
 {
+    Info,
     Warning,
     Error
 }
@@ -26,11 +27,31 @@ pub struct CompilationMessage
     pub kind: CompilationMessageKind
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum WorkspaceCompilationEvent
+impl CompilationMessage
 {
-    WaitForLock,
-    Message(CompilationMessage)
+    pub fn new_info(message: impl Into<String>) -> Self
+    {
+        Self {
+            content: message.into(),
+            kind: CompilationMessageKind::Info
+        }
+    }
+
+    pub fn new_warning(message: impl Into<String>) -> Self
+    {
+        Self {
+            content: message.into(),
+            kind: CompilationMessageKind::Warning
+        }
+    }
+
+    pub fn new_error(message: impl Into<String>) -> Self
+    {
+        Self {
+            content: message.into(),
+            kind: CompilationMessageKind::Error
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,7 +59,7 @@ pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
     ProjectExists(TBridge::TProject),
-    WorkspaceCompilation(WorkspaceCompilationEvent),
+    WorkspaceCompilation(TBridge::TWorkspaceCompilation),
     ProjectCompilation(ProjectCompilationEvent),
     HypExists(HypId),
     HypRunning(HypId),

@@ -1,8 +1,11 @@
 use std::fmt::Debug;
 
+pub trait BridgeDerives = Clone + Debug + Eq + PartialEq;
+
 pub trait Bridge
 {
-    type TProject: Clone + Debug + Eq + PartialEq;
+    type TProject: BridgeDerives;
+    type TWorkspaceCompilation: BridgeDerives;
 }
 
 pub trait HypSessionBridge<TBridge: Bridge>

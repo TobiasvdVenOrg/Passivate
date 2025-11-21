@@ -28,6 +28,7 @@ struct Session<TBridge: Bridge>
 {
     activity: Activity,
     projects: Vec<TBridge::TProject>,
+    workspace_compilation: Vec<TBridge::TWorkspaceCompilation>,
     bridge: PhantomData<TBridge>
 }
 
@@ -38,6 +39,7 @@ impl<TBridge: Bridge> HypSession<TBridge>
         let session = Session {
             activity: Activity::Idle,
             projects: Vec::new(),
+            workspace_compilation: Vec::new(),
             bridge: PhantomData
         };
 
@@ -106,7 +108,17 @@ impl<TBridge: Bridge> Session<TBridge>
         match self.activity
         {
             Activity::Idle => HypSessionState::Idle,
-            Activity::Running => HypSessionState::Starting
+            Activity::Running =>
+            {
+                if self.workspace_compilation.is_empty()
+                {
+                    HypSessionState::Starting
+                }
+                else
+                {
+                    HypSessionState::Compiling
+                }
+            }
         }
     }
 
@@ -132,49 +144,58 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         match event
         {
-            HypSessionEvent::RunStarted => self.start_run().map(|_| None).or(Err(event)),
+            HypSessionEvent::RunStarted => self.start_run().or(Err(event)),
             HypSessionEvent::ProjectExists(project) => Ok(Some(self.project_exists(project))),
-            HypSessionEvent::WorkspaceCompilation(workspace_compilation_event) => todo!(),
+            HypSessionEvent::WorkspaceCompilation(workspace_compilation) =>
+            {
+                self.workspace_compilation(workspace_compilation);
+                Ok(None)
+            }
             HypSessionEvent::ProjectCompilation(crate_compilation_event) => todo!(),
             HypSessionEvent::HypExists(hyp_id) => todo!(),
             HypSessionEvent::HypRunning(hyp_id) => todo!(),
             HypSessionEvent::HypStdOut { id, lines } => todo!(),
             HypSessionEvent::HypStdErr { id, lines } => todo!(),
             HypSessionEvent::HypCompleted(hyp_id) => todo!(),
-            HypSessionEvent::RunCompleted => self.complete_run().map(|_| None).or(Err(event))
+            HypSessionEvent::RunCompleted => self.complete_run().or(Err(event))
         }
     }
 
-    fn start_run<'a, 'c>(&mut self) -> Result<(), ()>
+    fn start_run<'a, 'c>(&mut self) -> Result<Option<HypSessionChange<TBridge>>, ()>
     {
         match self.activity
         {
             Activity::Idle =>
             {
                 self.activity = Activity::Running;
-                Ok(())
+                Ok(None)
             }
             _ => Err(())
         }
     }
 
-    fn complete_run(&mut self) -> Result<(), ()>
+    fn complete_run(&mut self) -> Result<Option<HypSessionChange<TBridge>>, ()>
     {
         match self.activity
         {
             Activity::Running =>
             {
                 self.activity = Activity::Idle;
-                Ok(())
+                Ok(None)
             }
             _ => Err(())
         }
     }
 
-    fn project_exists(&mut self, project: <TBridge as Bridge>::TProject) -> HypSessionChange<'_, TBridge>
+    fn project_exists(&mut self, project: TBridge::TProject) -> HypSessionChange<'_, TBridge>
     {
         let added = self.projects.push_mut(project);
 
         HypSessionChange::NewProject(added)
+    }
+
+    fn workspace_compilation(&mut self, workspace_compilation: TBridge::TWorkspaceCompilation)
+    {
+        self.workspace_compilation.push(workspace_compilation);
     }
 }

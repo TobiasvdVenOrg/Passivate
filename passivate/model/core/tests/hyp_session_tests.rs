@@ -5,7 +5,7 @@ use itertools::assert_equal;
 use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
-use passivate_model_core::hyp_session_event::HypSessionEvent;
+use passivate_model_core::hyp_session_event::{CompilationMessage, HypSessionEvent};
 use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -28,6 +28,7 @@ impl TestProject
 impl Bridge for TestBridge
 {
     type TProject = TestProject;
+    type TWorkspaceCompilation = CompilationMessage;
 }
 
 #[test]
@@ -137,6 +138,18 @@ pub fn project_existence_updates_session()
     });
 
     assert_equal(session.projects(), [&project_1, &project_2]);
+}
+
+#[test]
+pub fn workspace_compilation_is_compiling_state()
+{
+    let mut session = new_started_session();
+
+    session.update(HypSessionEvent::WorkspaceCompilation(CompilationMessage::new_info(
+        "example message"
+    )));
+
+    assert_matches!(session.state(), Ok(HypSessionState::Compiling));
 }
 
 fn new_started_session() -> HypSession<TestBridge>

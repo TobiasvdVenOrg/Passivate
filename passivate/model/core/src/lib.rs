@@ -1,4 +1,5 @@
 #![feature(push_mut)]
+#![feature(trait_alias)]
 
 pub mod bridge;
 pub mod hyp;
