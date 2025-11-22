@@ -22,17 +22,27 @@ impl<TBridge: Bridge> SessionEventTx<TBridge>
 #[faux::methods]
 impl<TBridge: Bridge> HypSessionBridge<TBridge> for SessionEventTx<TBridge>
 {
-    fn start_run(&self)
+    fn start_run(&mut self)
     {
         self.tx.send(HypSessionEvent::RunStarted);
     }
 
-    fn project_exists(&self, project_info: TBridge::TProjectInfo)
+    fn project_exists(&mut self, project_info: TBridge::TProjectInfo)
     {
         self.tx.send(HypSessionEvent::ProjectExists(project_info));
     }
 
-    fn complete_run(&self)
+    fn workspace_compilation(&mut self, compilation: TBridge::TWorkspaceCompilation)
+    {
+        self.tx.send(HypSessionEvent::WorkspaceCompilation(compilation))
+    }
+
+    fn project_compilation(&mut self, compilation: TBridge::TProjectCompilation)
+    {
+        self.tx.send(HypSessionEvent::ProjectCompilation(compilation));
+    }
+
+    fn complete_run(&mut self)
     {
         self.tx.send(HypSessionEvent::RunCompleted);
     }

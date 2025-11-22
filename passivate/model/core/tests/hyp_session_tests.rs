@@ -1,10 +1,11 @@
 #[macro_use]
 extern crate assert_matches;
 
+use std::ops::{Deref, DerefMut};
+
 use itertools::assert_equal;
-use passivate_model_core::bridge::{Bridge, ProjectId};
+use passivate_model_core::bridge::{Bridge, HypSessionBridge, ProjectId};
 use passivate_model_core::hyp_session::{HypSession, HypSessionActivity};
-use passivate_model_core::hyp_session_change::HypSessionChange;
 use passivate_model_core::hyp_session_event::{
     CompilationMessage,
     CompilationMessageKind,
@@ -14,12 +15,38 @@ use passivate_model_core::hyp_session_event::{
 use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-struct TestBridge;
+struct TestSession(HypSession<TestSession>);
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct TestProjectInfo
 {
     pub name: String
+}
+
+impl TestSession
+{
+    pub fn new() -> Self
+    {
+        Self(HypSession::<TestSession>::new())
+    }
+}
+
+impl Deref for TestSession
+{
+    type Target = HypSession<TestSession>;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.0
+    }
+}
+
+impl DerefMut for TestSession
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.0
+    }
 }
 
 impl TestProjectInfo
@@ -40,7 +67,7 @@ impl ProjectId for TestProjectInfo
     }
 }
 
-impl Bridge for TestBridge
+impl Bridge for TestSession
 {
     type TProjectCompilation = ProjectCompilation<String>;
     type TProjectId = String;
@@ -48,10 +75,38 @@ impl Bridge for TestBridge
     type TWorkspaceCompilation = CompilationMessage;
 }
 
+impl HypSessionBridge<TestSession> for TestSession
+{
+    fn start_run(&mut self)
+    {
+        self.0.update(HypSessionEvent::RunStarted);
+    }
+
+    fn project_exists(&mut self, project: TestProjectInfo)
+    {
+        self.0.update(HypSessionEvent::ProjectExists(project));
+    }
+
+    fn workspace_compilation(&mut self, compilation: CompilationMessage)
+    {
+        self.0.update(HypSessionEvent::WorkspaceCompilation(compilation));
+    }
+
+    fn project_compilation(&mut self, compilation: ProjectCompilation<String>)
+    {
+        self.0.update(HypSessionEvent::ProjectCompilation(compilation));
+    }
+
+    fn complete_run(&mut self)
+    {
+        self.0.update(HypSessionEvent::RunCompleted);
+    }
+}
+
 #[test]
 pub fn default_session_has_no_hyps()
 {
-    let session = HypSession::<TestBridge>::new();
+    let session = TestSession::new();
 
     assert_matches!(session.all_hyps().next(), None);
 }
@@ -59,7 +114,7 @@ pub fn default_session_has_no_hyps()
 #[test]
 pub fn default_session_is_idle()
 {
-    let session = HypSession::<TestBridge>::new();
+    let session = TestSession::new();
 
     assert_matches!(session.activity(), Ok(HypSessionActivity::Idle));
 }
@@ -77,7 +132,7 @@ pub fn completed_session_is_idle()
 {
     let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunCompleted);
+    session.complete_run();
 
     assert_matches!(session.activity(), Ok(HypSessionActivity::Idle));
 }
@@ -85,9 +140,9 @@ pub fn completed_session_is_idle()
 #[test]
 pub fn completing_an_idle_session_is_error_state()
 {
-    let mut session = HypSession::<TestBridge>::new();
+    let mut session = TestSession::new();
 
-    session.update(HypSessionEvent::RunCompleted);
+    session.complete_run();
 
     assert_matches!(session.activity(), Err(error) =>
     {
@@ -103,7 +158,7 @@ pub fn starting_a_started_session_is_error_state()
 {
     let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunStarted);
+    session.start_run();
 
     assert_matches!(session.activity(), Err(error) =>
     {
@@ -119,8 +174,8 @@ pub fn new_errors_do_not_replace_original_error_state()
 {
     let mut session = new_started_session();
 
-    session.update(HypSessionEvent::RunStarted);
-    session.update(HypSessionEvent::RunCompleted);
+    session.start_run();
+    session.complete_run();
 
     assert_matches!(session.activity(), Err(error) =>
     {
@@ -139,17 +194,8 @@ pub fn project_existence_updates_session()
     let project_1 = TestProjectInfo::new("test_project_1");
     let project_2 = TestProjectInfo::new("test_project_2");
 
-    let change_1 = session.update(HypSessionEvent::ProjectExists(project_1.clone()));
-    assert_matches!(change_1, Some(HypSessionChange::NewProject(new_1)) =>
-    {
-        assert_eq!(new_1.info, project_1);
-    });
-
-    let change_2 = session.update(HypSessionEvent::ProjectExists(project_2.clone()));
-    assert_matches!(change_2, Some(HypSessionChange::NewProject(new_2)) =>
-    {
-        assert_eq!(new_2.info, project_2);
-    });
+    session.project_exists(project_1.clone());
+    session.project_exists(project_2.clone());
 
     assert_equal(session.project_infos(), [&project_1, &project_2]);
 }
@@ -159,13 +205,8 @@ pub fn last_workspace_compilation_is_most_recent()
 {
     let mut session = new_started_session();
 
-    session.update(HypSessionEvent::WorkspaceCompilation(CompilationMessage::new_info(
-        "example message"
-    )));
-
-    session.update(HypSessionEvent::WorkspaceCompilation(CompilationMessage::new_warning(
-        "example warning"
-    )));
+    session.workspace_compilation(CompilationMessage::new_info("example message"));
+    session.workspace_compilation(CompilationMessage::new_warning("example warning"));
 
     assert_matches!(session.last_workspace_compilation(), Some(compilation_message) =>
     {
@@ -182,8 +223,8 @@ pub fn project_compilation_is_associated_with_project()
     let project_1 = TestProjectInfo::new("test_project_1");
     let project_2 = TestProjectInfo::new("test_project_2");
 
-    let _ = session.update(HypSessionEvent::ProjectExists(project_1.clone()));
-    let _ = session.update(HypSessionEvent::ProjectExists(project_2.clone()));
+    let _ = session.project_exists(project_1.clone());
+    let _ = session.project_exists(project_2.clone());
 
     let example_project_compilation = ProjectCompilation {
         project_id: project_2.id().clone(),
@@ -209,8 +250,8 @@ pub fn compilation_for_unknown_project_is_error_state()
         message: CompilationMessage::new_warning("example warning")
     };
 
-    let invalid_event = HypSessionEvent::ProjectCompilation(example_project_compilation);
-    let _ = session.update(invalid_event.clone());
+    let invalid_event = HypSessionEvent::ProjectCompilation(example_project_compilation.clone());
+    let _ = session.project_compilation(example_project_compilation);
 
     assert_matches!(session.activity(), Err(error) =>
     {
@@ -221,11 +262,11 @@ pub fn compilation_for_unknown_project_is_error_state()
     });
 }
 
-fn new_started_session() -> HypSession<TestBridge>
+fn new_started_session() -> TestSession
 {
-    let mut session = HypSession::new();
+    let mut session = TestSession::new();
 
-    session.update(HypSessionEvent::RunStarted);
+    session.start_run();
 
     session
 }

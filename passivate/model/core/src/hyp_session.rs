@@ -16,21 +16,21 @@ pub enum HypSessionActivity
     Running
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct HypSession<TBridge: Bridge>
 {
     session: Session<TBridge>,
     error: Option<HypSessionStateError<TBridge>>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Project<TBridge: Bridge>
 {
     pub info: TBridge::TProjectInfo,
     pub compilation: Vec<TBridge::TProjectCompilation>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 struct Session<TBridge: Bridge>
 {
     activity: HypSessionActivity,

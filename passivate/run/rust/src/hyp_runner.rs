@@ -59,7 +59,7 @@ impl HypRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &SessionEventTx<RustBridge>,
+        tx: &mut SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -77,7 +77,7 @@ impl HypRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &SessionEventTx<RustBridge>,
+        tx: &mut SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -106,7 +106,7 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &SessionEventTx<RustBridge>,
+        tx: &mut SessionEventTx<RustBridge>,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     {
@@ -346,7 +346,7 @@ impl HypRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &SessionEventTx<RustBridge>
+        tx: &mut SessionEventTx<RustBridge>
     ) -> Result<(), TestRunError>
     {
         let instrument_coverage = false;

@@ -19,9 +19,11 @@ pub trait Bridge
 
 pub trait HypSessionBridge<TBridge: Bridge>
 {
-    fn start_run(&self);
-    fn project_exists(&self, project: TBridge::TProjectInfo);
-    fn complete_run(&self);
+    fn start_run(&mut self);
+    fn project_exists(&mut self, project: TBridge::TProjectInfo);
+    fn workspace_compilation(&mut self, compilation: TBridge::TWorkspaceCompilation);
+    fn project_compilation(&mut self, compilation: TBridge::TProjectCompilation);
+    fn complete_run(&mut self);
 }
 
 pub trait HypRunBridge<TBridge: Bridge>
