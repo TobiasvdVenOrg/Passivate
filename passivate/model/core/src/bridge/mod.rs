@@ -2,10 +2,19 @@ use std::fmt::Debug;
 
 pub trait BridgeDerives = Clone + Debug + Eq + PartialEq;
 
+pub trait ProjectId
+{
+    type T;
+
+    fn id(&self) -> &Self::T;
+}
+
 pub trait Bridge
 {
-    type TProject: BridgeDerives;
+    type TProjectId: BridgeDerives;
+    type TProject: ProjectId<T = Self::TProjectId> + BridgeDerives;
     type TWorkspaceCompilation: BridgeDerives;
+    type TProjectCompilation: ProjectId<T = Self::TProjectId> + BridgeDerives;
 }
 
 pub trait HypSessionBridge<TBridge: Bridge>

@@ -258,5 +258,5 @@ pub fn when_test_run_fails_error_is_reported()
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    assert_matches!(session.state(), Err(_));
+    assert_matches!(session.activity(), Err(_));
 }

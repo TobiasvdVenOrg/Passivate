@@ -6,8 +6,8 @@ mod specialize_session_ui;
 use egui::{Color32, RichText, Ui};
 use passivate_model_core::bridge::Bridge;
 use passivate_model_core::hyp::Hyp;
-use passivate_model_core::hyp_session::HypSession;
-use passivate_model_core::hyp_session_state::{HypSessionState, HypSessionStateError};
+use passivate_model_core::hyp_session::{HypSession, HypSessionActivity};
+use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 use passivate_model_core::hyp_state::HypState;
 
 use crate::specialize_session_ui::SpecializeSessionUi;
@@ -18,10 +18,10 @@ impl SessionView
 {
     pub fn ui<'a, TBridge: Bridge>(&mut self, ui: &mut Ui, session: &'a HypSession<TBridge>) -> Option<&'a Hyp>
     {
-        match &session.state()
+        match session.activity()
         {
-            Ok(state) => self.show_session_state(ui, state),
-            Err(error) => self.show_error_state(ui, *error)
+            Ok(activity) => self.show_session_state(ui, activity),
+            Err(error) => self.show_error_state(ui, error)
         }
 
         let projects = session.projects();
@@ -44,14 +44,12 @@ impl SessionView
         selected_hyp
     }
 
-    fn show_session_state(&mut self, ui: &mut Ui, state: &HypSessionState)
+    fn show_session_state(&mut self, ui: &mut Ui, activity: &HypSessionActivity)
     {
-        let text = match state
+        let text = match activity
         {
-            HypSessionState::Idle => RichText::new("Idle").size(16.0).color(Color32::GREEN),
-            HypSessionState::Starting => RichText::new("Starting").size(16.0).color(Color32::GREEN),
-            HypSessionState::Compiling => RichText::new("Compiling").size(16.0).color(Color32::GREEN),
-            HypSessionState::Running => RichText::new("Running").size(16.0).color(Color32::GREEN)
+            HypSessionActivity::Idle => RichText::new("Idle").size(16.0).color(Color32::GREEN),
+            HypSessionActivity::Running => RichText::new("Running").size(16.0).color(Color32::GREEN)
         };
 
         ui.label(text);

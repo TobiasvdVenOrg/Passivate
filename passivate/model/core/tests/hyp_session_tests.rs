@@ -2,10 +2,15 @@
 extern crate assert_matches;
 
 use itertools::assert_equal;
-use passivate_model_core::bridge::Bridge;
+use passivate_model_core::bridge::{Bridge, ProjectId};
 use passivate_model_core::hyp_session::{HypSession, HypSessionActivity};
 use passivate_model_core::hyp_session_change::HypSessionChange;
-use passivate_model_core::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
+use passivate_model_core::hyp_session_event::{
+    CompilationMessage,
+    CompilationMessageKind,
+    HypSessionEvent,
+    ProjectCompilation
+};
 use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -25,9 +30,21 @@ impl TestProject
     }
 }
 
+impl ProjectId for TestProject
+{
+    type T = String;
+
+    fn id(&self) -> &Self::T
+    {
+        &self.name
+    }
+}
+
 impl Bridge for TestBridge
 {
     type TProject = TestProject;
+    type TProjectCompilation = ProjectCompilation<String>;
+    type TProjectId = String;
     type TWorkspaceCompilation = CompilationMessage;
 }
 

@@ -1,16 +1,6 @@
 use passivate_hyp_names::hyp_id::HypId;
 
-use crate::bridge::Bridge;
-
-#[derive(Debug, Clone)]
-pub enum ProjectCompilationEventKind
-{
-    StartCompilation,
-    Message(CompilationMessage)
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectCompilationEvent {}
+use crate::bridge::{Bridge, ProjectId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
@@ -25,6 +15,23 @@ pub struct CompilationMessage
 {
     pub content: String,
     pub kind: CompilationMessageKind
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ProjectCompilation<TProjectId>
+{
+    pub project_id: TProjectId,
+    pub message: CompilationMessage
+}
+
+impl<TProjectId> ProjectId for ProjectCompilation<TProjectId>
+{
+    type T = TProjectId;
+
+    fn id(&self) -> &Self::T
+    {
+        &self.project_id
+    }
 }
 
 impl CompilationMessage
@@ -60,7 +67,7 @@ pub enum HypSessionEvent<TBridge: Bridge>
     RunStarted,
     ProjectExists(TBridge::TProject),
     WorkspaceCompilation(TBridge::TWorkspaceCompilation),
-    ProjectCompilation(ProjectCompilationEvent),
+    ProjectCompilation(TBridge::TProjectCompilation),
     HypExists(HypId),
     HypRunning(HypId),
     HypStdOut
