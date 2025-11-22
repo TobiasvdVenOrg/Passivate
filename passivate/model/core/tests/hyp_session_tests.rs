@@ -199,6 +199,28 @@ pub fn project_compilation_is_associated_with_project()
     assert_equal(second_project.compilation.iter(), [&example_project_compilation]);
 }
 
+#[test]
+pub fn compilation_for_unknown_project_is_error_state()
+{
+    let mut session = new_started_session();
+
+    let example_project_compilation = ProjectCompilation {
+        project_id: String::from("unknown project"),
+        message: CompilationMessage::new_warning("example warning")
+    };
+
+    let invalid_event = HypSessionEvent::ProjectCompilation(example_project_compilation);
+    let _ = session.update(invalid_event.clone());
+
+    assert_matches!(session.activity(), Err(error) =>
+    {
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
+        {
+            assert_eq!(*event, invalid_event);
+        });
+    });
+}
+
 fn new_started_session() -> HypSession<TestBridge>
 {
     let mut session = HypSession::new();

@@ -39,6 +39,8 @@ struct Session<TBridge: Bridge>
     bridge: PhantomData<TBridge>
 }
 
+type ChangeResult<'a, TBridge> = Result<Option<HypSessionChange<'a, TBridge>>, HypSessionEvent<TBridge>>;
+
 impl<TBridge: Bridge> HypSession<TBridge>
 {
     pub fn new() -> Self
@@ -131,10 +133,7 @@ impl<TBridge: Bridge> Session<TBridge>
             .map_err(|error_event| HypSessionStateError::UnexpectedEvent { event: error_event })
     }
 
-    fn process_event(
-        &mut self,
-        event: HypSessionEvent<TBridge>
-    ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionEvent<TBridge>>
+    fn process_event(&mut self, event: HypSessionEvent<TBridge>) -> ChangeResult<'_, TBridge>
     {
         match self.activity
         {
@@ -142,11 +141,7 @@ impl<TBridge: Bridge> Session<TBridge>
             {
                 match event
                 {
-                    HypSessionEvent::RunStarted =>
-                    {
-                        self.start_run();
-                        Ok(None)
-                    }
+                    HypSessionEvent::RunStarted => self.start_run(),
                     _ => Err(event)
                 }
             }
@@ -154,57 +149,62 @@ impl<TBridge: Bridge> Session<TBridge>
             {
                 match event
                 {
-                    HypSessionEvent::ProjectExists(project) => Ok(Some(self.project_exists(project))),
+                    HypSessionEvent::ProjectExists(project) => self.project_exists(project),
                     HypSessionEvent::WorkspaceCompilation(workspace_compilation) =>
                     {
-                        self.workspace_compilation(workspace_compilation);
-                        Ok(None)
+                        self.workspace_compilation(workspace_compilation)
                     }
-                    HypSessionEvent::ProjectCompilation(project_compilation) =>
-                    {
-                        self.project_compilation(project_compilation);
-                        Ok(None)
-                    }
-                    HypSessionEvent::RunCompleted =>
-                    {
-                        self.complete_run();
-                        Ok(None)
-                    }
+                    HypSessionEvent::ProjectCompilation(project_compilation) => self.project_compilation(project_compilation),
+                    HypSessionEvent::RunCompleted => self.complete_run(),
                     _ => Err(event)
                 }
             }
         }
     }
 
-    fn start_run<'a, 'c>(&mut self)
+    fn start_run(&mut self) -> ChangeResult<'_, TBridge>
     {
         self.activity = HypSessionActivity::Running;
+
+        Ok(None)
     }
 
-    fn complete_run(&mut self)
+    fn complete_run(&mut self) -> ChangeResult<'_, TBridge>
     {
         self.activity = HypSessionActivity::Idle;
+
+        Ok(None)
     }
 
-    fn project_exists(&mut self, project_info: TBridge::TProjectInfo) -> HypSessionChange<'_, TBridge>
+    fn project_exists(&mut self, project_info: TBridge::TProjectInfo) -> ChangeResult<'_, TBridge>
     {
         let added = self.projects.push_mut(Project {
             info: project_info,
             compilation: Vec::new()
         });
 
-        HypSessionChange::NewProject(added)
+        Ok(Some(HypSessionChange::NewProject(added)))
     }
 
-    fn workspace_compilation(&mut self, workspace_compilation: TBridge::TWorkspaceCompilation)
+    fn workspace_compilation(&mut self, workspace_compilation: TBridge::TWorkspaceCompilation) -> ChangeResult<'_, TBridge>
     {
         self.workspace_compilation.push(workspace_compilation);
+
+        Ok(None)
     }
 
-    fn project_compilation(&mut self, project_compilation: TBridge::TProjectCompilation)
+    fn project_compilation(&mut self, project_compilation: TBridge::TProjectCompilation) -> ChangeResult<'_, TBridge>
     {
         let project = self.projects.iter_mut().find(|p| p.info.id() == project_compilation.id());
 
-        project.map(|p| p.compilation.push(project_compilation));
+        match project
+        {
+            Some(p) =>
+            {
+                p.compilation.push(project_compilation);
+                Ok(None)
+            }
+            None => Err(HypSessionEvent::ProjectCompilation(project_compilation))
+        }
     }
 }
