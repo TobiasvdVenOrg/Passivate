@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::{iter, slice};
 
-use crate::bridge::Bridge;
+use crate::bridge::{Bridge, ProjectId};
 use crate::hyp::Hyp;
 use crate::hyp_iter_ext::HypIterator;
 use crate::hyp_session_change::HypSessionChange;
@@ -24,10 +24,17 @@ pub struct HypSession<TBridge: Bridge>
 }
 
 #[derive(Debug, Clone)]
+pub struct Project<TBridge: Bridge>
+{
+    pub info: TBridge::TProjectInfo,
+    pub compilation: Vec<TBridge::TProjectCompilation>
+}
+
+#[derive(Debug, Clone)]
 struct Session<TBridge: Bridge>
 {
     activity: HypSessionActivity,
-    projects: Vec<TBridge::TProject>,
+    projects: Vec<Project<TBridge>>,
     workspace_compilation: Vec<TBridge::TWorkspaceCompilation>,
     bridge: PhantomData<TBridge>
 }
@@ -58,13 +65,18 @@ impl<TBridge: Bridge> HypSession<TBridge>
         self.error.as_ref().map_or_else(|| Ok(&self.session.activity), |e| Err(e))
     }
 
-    pub fn projects(&self) -> impl Iterator<Item = &TBridge::TProject>
+    pub fn projects(&self) -> impl Iterator<Item = &Project<TBridge>>
     {
         match self.error
         {
             Some(_) => slice::Iter::default(),
             None => self.session.projects.iter()
         }
+    }
+
+    pub fn project_infos(&self) -> impl Iterator<Item = &TBridge::TProjectInfo>
+    {
+        self.projects().map(|p| &p.info)
     }
 
     pub fn all_hyps(&self) -> impl HypIterator<'_> + Debug
@@ -148,6 +160,11 @@ impl<TBridge: Bridge> Session<TBridge>
                         self.workspace_compilation(workspace_compilation);
                         Ok(None)
                     }
+                    HypSessionEvent::ProjectCompilation(project_compilation) =>
+                    {
+                        self.project_compilation(project_compilation);
+                        Ok(None)
+                    }
                     HypSessionEvent::RunCompleted =>
                     {
                         self.complete_run();
@@ -169,9 +186,12 @@ impl<TBridge: Bridge> Session<TBridge>
         self.activity = HypSessionActivity::Idle;
     }
 
-    fn project_exists(&mut self, project: TBridge::TProject) -> HypSessionChange<'_, TBridge>
+    fn project_exists(&mut self, project_info: TBridge::TProjectInfo) -> HypSessionChange<'_, TBridge>
     {
-        let added = self.projects.push_mut(project);
+        let added = self.projects.push_mut(Project {
+            info: project_info,
+            compilation: Vec::new()
+        });
 
         HypSessionChange::NewProject(added)
     }
@@ -179,5 +199,12 @@ impl<TBridge: Bridge> Session<TBridge>
     fn workspace_compilation(&mut self, workspace_compilation: TBridge::TWorkspaceCompilation)
     {
         self.workspace_compilation.push(workspace_compilation);
+    }
+
+    fn project_compilation(&mut self, project_compilation: TBridge::TProjectCompilation)
+    {
+        let project = self.projects.iter_mut().find(|p| p.info.id() == project_compilation.id());
+
+        project.map(|p| p.compilation.push(project_compilation));
     }
 }

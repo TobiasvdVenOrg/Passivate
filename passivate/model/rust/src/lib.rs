@@ -3,13 +3,13 @@ use passivate_model_core::bridge::{Bridge, ProjectId};
 use passivate_model_core::hyp_session_event::{CompilationMessage, ProjectCompilation};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct HypPackage
+pub struct PackageInfo
 {
     pub package_name: String,
     pub manifest_path: Utf8PathBuf
 }
 
-impl ProjectId for HypPackage
+impl ProjectId for PackageInfo
 {
     type T = String;
 
@@ -30,8 +30,8 @@ pub struct RustBridge;
 
 impl Bridge for RustBridge
 {
-    type TProject = HypPackage;
     type TProjectCompilation = ProjectCompilation<String>;
     type TProjectId = String;
+    type TProjectInfo = PackageInfo;
     type TWorkspaceCompilation = WorkspaceCompilation;
 }

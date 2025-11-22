@@ -27,9 +27,9 @@ impl<TBridge: Bridge> HypSessionBridge<TBridge> for SessionEventTx<TBridge>
         self.tx.send(HypSessionEvent::RunStarted);
     }
 
-    fn project_exists(&self, project: TBridge::TProject)
+    fn project_exists(&self, project_info: TBridge::TProjectInfo)
     {
-        self.tx.send(HypSessionEvent::ProjectExists(project));
+        self.tx.send(HypSessionEvent::ProjectExists(project_info));
     }
 
     fn complete_run(&self)

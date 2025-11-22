@@ -1,9 +1,9 @@
 use egui::Ui;
-use passivate_model_rust::HypPackage;
+use passivate_model_rust::PackageInfo;
 
 use crate::specialize_session_ui::SpecializeSessionUi;
 
-impl SpecializeSessionUi for HypPackage
+impl SpecializeSessionUi for PackageInfo
 {
     fn ui(&self, ui: &mut Ui)
     {

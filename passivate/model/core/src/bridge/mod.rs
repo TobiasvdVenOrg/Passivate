@@ -12,7 +12,7 @@ pub trait ProjectId
 pub trait Bridge
 {
     type TProjectId: BridgeDerives;
-    type TProject: ProjectId<T = Self::TProjectId> + BridgeDerives;
+    type TProjectInfo: ProjectId<T = Self::TProjectId> + BridgeDerives;
     type TWorkspaceCompilation: BridgeDerives;
     type TProjectCompilation: ProjectId<T = Self::TProjectId> + BridgeDerives;
 }
@@ -20,7 +20,7 @@ pub trait Bridge
 pub trait HypSessionBridge<TBridge: Bridge>
 {
     fn start_run(&self);
-    fn project_exists(&self, project: TBridge::TProject);
+    fn project_exists(&self, project: TBridge::TProjectInfo);
     fn complete_run(&self);
 }
 

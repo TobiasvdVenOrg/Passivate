@@ -17,12 +17,12 @@ use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 struct TestBridge;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-struct TestProject
+struct TestProjectInfo
 {
     pub name: String
 }
 
-impl TestProject
+impl TestProjectInfo
 {
     pub fn new(name: impl Into<String>) -> Self
     {
@@ -30,7 +30,7 @@ impl TestProject
     }
 }
 
-impl ProjectId for TestProject
+impl ProjectId for TestProjectInfo
 {
     type T = String;
 
@@ -42,9 +42,9 @@ impl ProjectId for TestProject
 
 impl Bridge for TestBridge
 {
-    type TProject = TestProject;
     type TProjectCompilation = ProjectCompilation<String>;
     type TProjectId = String;
+    type TProjectInfo = TestProjectInfo;
     type TWorkspaceCompilation = CompilationMessage;
 }
 
@@ -136,22 +136,22 @@ pub fn project_existence_updates_session()
 {
     let mut session = new_started_session();
 
-    let project_1 = TestProject::new("test_project_1");
-    let project_2 = TestProject::new("test_project_2");
+    let project_1 = TestProjectInfo::new("test_project_1");
+    let project_2 = TestProjectInfo::new("test_project_2");
 
     let change_1 = session.update(HypSessionEvent::ProjectExists(project_1.clone()));
     assert_matches!(change_1, Some(HypSessionChange::NewProject(new_1)) =>
     {
-        assert_eq!(*new_1, project_1);
+        assert_eq!(new_1.info, project_1);
     });
 
     let change_2 = session.update(HypSessionEvent::ProjectExists(project_2.clone()));
     assert_matches!(change_2, Some(HypSessionChange::NewProject(new_2)) =>
     {
-        assert_eq!(*new_2, project_2);
+        assert_eq!(new_2.info, project_2);
     });
 
-    assert_equal(session.projects(), [&project_1, &project_2]);
+    assert_equal(session.project_infos(), [&project_1, &project_2]);
 }
 
 #[test]
@@ -172,6 +172,31 @@ pub fn last_workspace_compilation_is_most_recent()
         assert_matches!(compilation_message.kind, CompilationMessageKind::Warning);
         assert_eq!(compilation_message.content, "example warning");
     });
+}
+
+#[test]
+pub fn project_compilation_is_associated_with_project()
+{
+    let mut session = new_started_session();
+
+    let project_1 = TestProjectInfo::new("test_project_1");
+    let project_2 = TestProjectInfo::new("test_project_2");
+
+    let _ = session.update(HypSessionEvent::ProjectExists(project_1.clone()));
+    let _ = session.update(HypSessionEvent::ProjectExists(project_2.clone()));
+
+    let example_project_compilation = ProjectCompilation {
+        project_id: project_2.id().clone(),
+        message: CompilationMessage::new_warning("example warning")
+    };
+
+    let _ = session.update(HypSessionEvent::ProjectCompilation(example_project_compilation.clone()));
+
+    let first_project = session.projects().next().unwrap();
+    let second_project = session.projects().last().unwrap();
+
+    assert_eq!(first_project.compilation.is_empty(), true);
+    assert_equal(second_project.compilation.iter(), [&example_project_compilation]);
 }
 
 fn new_started_session() -> HypSession<TestBridge>

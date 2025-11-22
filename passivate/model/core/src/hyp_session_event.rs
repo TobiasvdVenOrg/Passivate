@@ -65,7 +65,7 @@ impl CompilationMessage
 pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
-    ProjectExists(TBridge::TProject),
+    ProjectExists(TBridge::TProjectInfo),
     WorkspaceCompilation(TBridge::TWorkspaceCompilation),
     ProjectCompilation(TBridge::TProjectCompilation),
     HypExists(HypId),
