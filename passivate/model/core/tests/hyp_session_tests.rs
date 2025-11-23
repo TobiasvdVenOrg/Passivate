@@ -59,16 +59,45 @@ impl TestProjectInfo
 
 impl ProjectId for TestProjectInfo
 {
-    type T = String;
+    type TId = String;
 
-    fn id(&self) -> &Self::T
+    fn id(&self) -> &Self::TId
     {
         &self.name
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct TestHyp
+{
+    project: String,
+    name: String
+}
+
+impl ProjectId for TestHyp
+{
+    type TId = String;
+
+    fn id(&self) -> &Self::TId
+    {
+        &self.project
+    }
+}
+
+impl TestHyp
+{
+    pub fn new(project: impl Into<String>, name: impl Into<String>) -> Self
+    {
+        Self {
+            project: project.into(),
+            name: name.into()
+        }
+    }
+}
+
 impl Bridge for TestSession
 {
+    type THypNode = TestHyp;
     type TProjectCompilation = ProjectCompilation<String>;
     type TProjectId = String;
     type TProjectInfo = TestProjectInfo;
@@ -95,6 +124,11 @@ impl HypSessionBridge<TestSession> for TestSession
     fn project_compilation(&mut self, compilation: ProjectCompilation<String>)
     {
         self.0.update(HypSessionEvent::ProjectCompilation(compilation));
+    }
+
+    fn hyp_node_exists(&mut self, hyp_node: TestHyp)
+    {
+        self.0.update(HypSessionEvent::HypNodeExists(hyp_node));
     }
 
     fn complete_run(&mut self)
@@ -223,15 +257,15 @@ pub fn project_compilation_is_associated_with_project()
     let project_1 = TestProjectInfo::new("test_project_1");
     let project_2 = TestProjectInfo::new("test_project_2");
 
-    let _ = session.project_exists(project_1.clone());
-    let _ = session.project_exists(project_2.clone());
+    session.project_exists(project_1.clone());
+    session.project_exists(project_2.clone());
 
     let example_project_compilation = ProjectCompilation {
         project_id: project_2.id().clone(),
         message: CompilationMessage::new_warning("example warning")
     };
 
-    let _ = session.update(HypSessionEvent::ProjectCompilation(example_project_compilation.clone()));
+    session.project_compilation(example_project_compilation.clone());
 
     let first_project = session.projects().next().unwrap();
     let second_project = session.projects().last().unwrap();
@@ -250,9 +284,43 @@ pub fn compilation_for_unknown_project_is_error_state()
         message: CompilationMessage::new_warning("example warning")
     };
 
-    let invalid_event = HypSessionEvent::ProjectCompilation(example_project_compilation.clone());
-    let _ = session.project_compilation(example_project_compilation);
+    session.project_compilation(example_project_compilation.clone());
 
+    let invalid_event = HypSessionEvent::ProjectCompilation(example_project_compilation);
+    assert_matches!(session.activity(), Err(error) =>
+    {
+        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
+        {
+            assert_eq!(*event, invalid_event);
+        });
+    });
+}
+
+#[test]
+pub fn hyp_becomes_part_of_project()
+{
+    let mut session = new_started_session();
+
+    let project_info = TestProjectInfo::new("example_project");
+    session.project_exists(project_info);
+
+    let hyp = TestHyp::new("example_project", "example_hyp");
+    session.hyp_node_exists(hyp.clone());
+
+    let project = session.projects().next().unwrap();
+
+    assert_equal(project.hyp_nodes.iter(), [&hyp]);
+}
+
+#[test]
+pub fn hyp_for_unknown_project_is_error_state()
+{
+    let mut session = new_started_session();
+
+    let hyp = TestHyp::new("invalid_project", "example_hyp");
+    session.hyp_node_exists(hyp.clone());
+
+    let invalid_event = HypSessionEvent::HypNodeExists(hyp);
     assert_matches!(session.activity(), Err(error) =>
     {
         assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>

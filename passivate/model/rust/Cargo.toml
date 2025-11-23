@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 passivate_model_core = { path = "../core" }
+passivate_hyp_names = { path = "../../hyp_names" }
 
 camino.workspace = true

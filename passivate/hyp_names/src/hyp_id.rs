@@ -1,5 +1,8 @@
 use std::borrow::Cow;
 
+use crate::crate_id::CrateId;
+use crate::package_id::PackageId;
+
 pub enum HypNameStrategy
 {
     Default,
@@ -33,10 +36,10 @@ impl HypNameStrategy
             HypNameStrategy::FullyQualified { separator } =>
             {
                 Cow::Owned(format!(
-                    "{}{}{}{}{}",
-                    id.package_name(),
+                    "{:?}{}{:?}{}{}",
+                    id.package_id(),
                     separator,
-                    id.crate_name(),
+                    id.crate_id(),
                     separator,
                     id.parts.join(separator)
                 ))
@@ -48,37 +51,37 @@ impl HypNameStrategy
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct HypId
 {
-    package_name: String,
-    crate_name: String,
+    package_id: PackageId,
+    crate_id: CrateId,
     parts: Vec<String>
 }
 
 impl HypId
 {
-    pub fn new(package_name: impl Into<String>, crate_name: impl Into<String>, hyp_name: impl Into<String>) -> Self
+    pub fn new(package_id: impl Into<PackageId>, crate_id: impl Into<CrateId>, hyp_name: impl Into<String>) -> Self
     {
         let parts: Vec<String> = hyp_name.into().split_terminator("::").map(String::from).collect();
 
         Self {
-            package_name: package_name.into(),
-            crate_name: crate_name.into(),
+            package_id: package_id.into(),
+            crate_id: crate_id.into(),
             parts
         }
     }
 
-    pub fn package_name(&self) -> &str
+    pub fn package_id(&self) -> &PackageId
     {
-        &self.package_name
+        &self.package_id
     }
 
-    pub fn crate_name(&self) -> &str
+    pub fn crate_id(&self) -> &CrateId
     {
-        &self.crate_name
+        &self.crate_id
     }
 
     pub fn package_crate_name(&self, separator: impl AsRef<str>) -> String
     {
-        format!("{}{}{}", self.package_name(), separator.as_ref(), self.crate_name())
+        format!("{:?}{}{:?}", self.package_id(), separator.as_ref(), self.crate_id())
     }
 
     pub fn name<'a>(&'a self, strategy: impl AsRef<HypNameStrategy>) -> Cow<'a, str>

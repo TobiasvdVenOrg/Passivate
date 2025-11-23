@@ -42,6 +42,11 @@ impl<TBridge: Bridge> HypSessionBridge<TBridge> for SessionEventTx<TBridge>
         self.tx.send(HypSessionEvent::ProjectCompilation(compilation));
     }
 
+    fn hyp_node_exists(&mut self, hyp_node: TBridge::THypNode)
+    {
+        self.tx.send(HypSessionEvent::HypNodeExists(hyp_node));
+    }
+
     fn complete_run(&mut self)
     {
         self.tx.send(HypSessionEvent::RunCompleted);

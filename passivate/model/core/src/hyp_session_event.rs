@@ -26,9 +26,9 @@ pub struct ProjectCompilation<TProjectId>
 
 impl<TProjectId> ProjectId for ProjectCompilation<TProjectId>
 {
-    type T = TProjectId;
+    type TId = TProjectId;
 
-    fn id(&self) -> &Self::T
+    fn id(&self) -> &Self::TId
     {
         &self.project_id
     }
@@ -68,7 +68,7 @@ pub enum HypSessionEvent<TBridge: Bridge>
     ProjectExists(TBridge::TProjectInfo),
     WorkspaceCompilation(TBridge::TWorkspaceCompilation),
     ProjectCompilation(TBridge::TProjectCompilation),
-    HypExists(HypId),
+    HypNodeExists(TBridge::THypNode),
     HypRunning(HypId),
     HypStdOut
     {

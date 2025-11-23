@@ -27,7 +27,8 @@ pub struct HypSession<TBridge: Bridge>
 pub struct Project<TBridge: Bridge>
 {
     pub info: TBridge::TProjectInfo,
-    pub compilation: Vec<TBridge::TProjectCompilation>
+    pub compilation: Vec<TBridge::TProjectCompilation>,
+    pub hyp_nodes: Vec<TBridge::THypNode>
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -155,6 +156,7 @@ impl<TBridge: Bridge> Session<TBridge>
                         self.workspace_compilation(workspace_compilation)
                     }
                     HypSessionEvent::ProjectCompilation(project_compilation) => self.project_compilation(project_compilation),
+                    HypSessionEvent::HypNodeExists(hyp_node) => self.hyp_node_exists(hyp_node),
                     HypSessionEvent::RunCompleted => self.complete_run(),
                     _ => Err(event)
                 }
@@ -180,7 +182,8 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         let added = self.projects.push_mut(Project {
             info: project_info,
-            compilation: Vec::new()
+            compilation: Vec::new(),
+            hyp_nodes: Vec::new()
         });
 
         Ok(Some(HypSessionChange::NewProject(added)))
@@ -205,6 +208,21 @@ impl<TBridge: Bridge> Session<TBridge>
                 Ok(None)
             }
             None => Err(HypSessionEvent::ProjectCompilation(project_compilation))
+        }
+    }
+
+    fn hyp_node_exists(&mut self, hyp_node: TBridge::THypNode) -> ChangeResult<'_, TBridge>
+    {
+        let project = self.projects.iter_mut().find(|p| p.info.id() == hyp_node.id());
+
+        match project
+        {
+            Some(p) =>
+            {
+                p.hyp_nodes.push(hyp_node);
+                Ok(None)
+            }
+            None => Err(HypSessionEvent::HypNodeExists(hyp_node))
         }
     }
 }

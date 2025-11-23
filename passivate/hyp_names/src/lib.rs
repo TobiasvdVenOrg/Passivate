@@ -1,4 +1,6 @@
+pub mod crate_id;
 pub mod hyp_id;
+pub mod package_id;
 pub use stdext;
 
 #[macro_export]
