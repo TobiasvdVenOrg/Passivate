@@ -3,7 +3,6 @@
 
 pub mod bridge;
 pub mod hyp;
-pub mod hyp_iter_ext;
 pub mod hyp_run_trigger;
 pub mod hyp_session;
 pub mod hyp_session_change;

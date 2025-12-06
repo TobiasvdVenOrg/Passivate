@@ -9,6 +9,7 @@ passivate_hyp_names = { path = "../../hyp_names" }
 camino.workspace = true
 itertools.workspace = true
 thiserror.workspace = true
+indextree.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true

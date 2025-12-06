@@ -3,8 +3,9 @@ use std::ops::Deref;
 use camino::Utf8PathBuf;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::package_id::PackageId;
-use passivate_model_core::bridge::{Bridge, ProjectId};
-use passivate_model_core::hyp_session_event::{CompilationMessage, ProjectCompilation};
+use passivate_model_core::bridge::{Bridge, HypPath};
+use passivate_model_core::hyp_session_event::CompilationMessage;
+use radix_trie::TrieKey;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageInfo
@@ -13,13 +14,16 @@ pub struct PackageInfo
     pub manifest_path: Utf8PathBuf
 }
 
-impl ProjectId for PackageInfo
-{
-    type TId = PackageId;
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct PackageKey(PackageId);
 
-    fn id(&self) -> &Self::TId
+impl HypPath for PackageInfo
+{
+    type TId = Vec<u8>;
+
+    fn path(&self) -> &Self::TId
     {
-        &self.package_id
+        self.package_id.as_bytes().to_vec()
     }
 }
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -45,21 +49,19 @@ impl Deref for RustHyp
     }
 }
 
-impl ProjectId for RustHyp
+impl HypPath for RustHyp
 {
-    type TId = PackageId;
+    type TId = String;
 
-    fn id(&self) -> &Self::TId
+    fn path(&self) -> &Self::TId
     {
-        self.package_id()
+        &self.fully_qualified("::")
     }
 }
 
 impl Bridge for RustBridge
 {
-    type THypNode = RustHyp;
-    type TProjectCompilation = ProjectCompilation<PackageId>;
-    type TProjectId = PackageId;
-    type TProjectInfo = PackageInfo;
-    type TWorkspaceCompilation = WorkspaceCompilation;
+    type THypNodeInfo = RustHyp;
+    type TId = String;
+    type TOutput = CompilationMessage;
 }

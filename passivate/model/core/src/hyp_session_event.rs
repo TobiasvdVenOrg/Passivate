@@ -1,6 +1,4 @@
-use passivate_hyp_names::hyp_id::HypId;
-
-use crate::bridge::{Bridge, ProjectId};
+use crate::bridge::{Bridge, HypPath};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
@@ -17,20 +15,13 @@ pub struct CompilationMessage
     pub kind: CompilationMessageKind
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ProjectCompilation<TProjectId>
+impl HypPath for CompilationMessage
 {
-    pub project_id: TProjectId,
-    pub message: CompilationMessage
-}
+    type TId = String;
 
-impl<TProjectId> ProjectId for ProjectCompilation<TProjectId>
-{
-    type TId = TProjectId;
-
-    fn id(&self) -> &Self::TId
+    fn path(&self) -> Self::TId
     {
-        &self.project_id
+        self.content.clone()
     }
 }
 
@@ -65,21 +56,9 @@ impl CompilationMessage
 pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
-    ProjectExists(TBridge::TProjectInfo),
-    WorkspaceCompilation(TBridge::TWorkspaceCompilation),
-    ProjectCompilation(TBridge::TProjectCompilation),
-    HypNodeExists(TBridge::THypNode),
-    HypRunning(HypId),
-    HypStdOut
-    {
-        id: HypId,
-        lines: Vec<String>
-    },
-    HypStdErr
-    {
-        id: HypId,
-        lines: Vec<String>
-    },
-    HypCompleted(HypId),
+    Output(TBridge::TOutput),
+    HypExists(TBridge::THypInfo),
+    HypRunning(TBridge::TId),
+    HypCompleted(TBridge::TId),
     RunCompleted
 }

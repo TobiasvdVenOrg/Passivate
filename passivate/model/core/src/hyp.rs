@@ -1,47 +1,31 @@
 use std::fmt::Display;
 
-use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
-
-use crate::hyp_state::HypState;
+use crate::bridge::{Bridge, HypPath};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Hyp
+pub struct Hyp<TBridge: Bridge>
 {
-    pub id: HypId,
-    pub name: String,
-    state: HypState,
-    pub output: Vec<String>
+    pub info: TBridge::THypInfo
 }
 
-impl Hyp
+impl<TBridge: Bridge> Hyp<TBridge> {}
+
+impl<TBridge: Bridge> HypPath for Hyp<TBridge>
 {
-    pub fn new(id: HypId, state: HypState) -> Self
-    {
-        let name = id.name(HypNameStrategy::Default).to_string();
+    type TId = TBridge::TId;
 
-        Self {
-            id,
-            name,
-            state,
-            output: Vec::new()
-        }
-    }
-
-    pub fn current_state(&self) -> HypState
+    fn path(&self) -> Self::TId
     {
-        self.state
-    }
-
-    pub fn add_output(&mut self, output: String)
-    {
-        self.output.push(output);
+        self.info.path()
     }
 }
 
-impl Display for Hyp
+impl<TBridge: Bridge> Display for Hyp<TBridge>
+where
+    TBridge::TId: Display
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        write!(f, "{} - {:?}", self.name, self.current_state())
+        self.path().fmt(f)
     }
 }
