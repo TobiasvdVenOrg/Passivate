@@ -14,6 +14,9 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
+        libPath = with pkgs; lib.makeLibraryPath [
+          wayland
+        ];
       in
       with pkgs;
       {
@@ -26,6 +29,8 @@
               })
             )
           ];
+
+          LD_LIBRARY_PATH = libPath;
         };
       }
     );
