@@ -6,16 +6,6 @@ pub trait HypTreeValue<P: Hash>
     fn path(&self) -> &[P];
 }
 
-impl<TPart: Hash, T> Hash for T
-where
-    T: HypTreeValue<TPart>
-{
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H)
-    {
-        state.write(self.path());
-    }
-}
-
 impl<P: Hash, T> HypTreeValue<P> for HypNode<P, T>
 {
     fn path(&self) -> &[P]
@@ -39,14 +29,7 @@ impl<P: Hash + Clone, T: HypTreeValue<P>> HypTree<P, T>
 {
     pub fn new(root: T) -> Self
     {
-        let r = HypNode {
-            hyp: root,
-            path: root.path().iter().map(|p| p.hash()).collect()
-        };
-
-        let p = r.path();
-
-        Self { tree: vec![root] }
+        todo!()
     }
 }
 

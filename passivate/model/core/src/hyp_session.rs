@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use indextree::Arena;
 
 use crate::bridge::{Bridge, HypPath};
-use crate::hyp::HypNode;
+use crate::hyp::Hyp;
 use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state_error::HypSessionStateError;
@@ -26,7 +26,7 @@ pub struct HypSession<TBridge: Bridge>
 struct Session<TBridge: Bridge>
 {
     activity: HypSessionActivity,
-    hyp_nodes: Arena<TBridge::TId, HypNode<TBridge>>
+    hyp_nodes: Arena<TBridge::TId, Hyp<TBridge>>
 }
 
 type ChangeResult<TBridge> = Result<Option<HypSessionChange<TBridge>>, HypSessionEvent<TBridge>>;
@@ -110,7 +110,7 @@ impl<TBridge: Bridge> Session<TBridge>
                 match event
                 {
                     HypSessionEvent::Output(output) => self.output(output),
-                    HypSessionEvent::HypNodeExists(project) => self.hyp_node_exists(project),
+                    HypSessionEvent::HypExists(project) => self.hyp_node_exists(project),
                     HypSessionEvent::RunCompleted => self.complete_run(),
                     _ => Err(event)
                 }
@@ -137,7 +137,7 @@ impl<TBridge: Bridge> Session<TBridge>
         todo!()
     }
 
-    fn hyp_node_exists(&mut self, hyp_node_info: TBridge::THypNodeInfo) -> ChangeResult<TBridge>
+    fn hyp_node_exists(&mut self, hyp_node_info: TBridge::THypInfo) -> ChangeResult<TBridge>
     {
         let hyp_node: HypNode<TBridge> = HypNode { info: hyp_node_info };
         let key = hyp_node.path().clone();
