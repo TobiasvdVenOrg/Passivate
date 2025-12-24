@@ -16,6 +16,7 @@
         };
         libPath = with pkgs; lib.makeLibraryPath [
           wayland
+          libxkbcommon
         ];
       in
       with pkgs;
