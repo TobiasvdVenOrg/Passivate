@@ -2,22 +2,31 @@
   description = "Passivate";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url      = "github:NixOS/nixpkgs/nixos-25.11";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+    flake-utils.url  = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs }: let
-    pkgs = nixpkgs.legacyPackages."x86_64-linux";
-  in {
-    devShells."x86_64-linux".default = pkgs.mkShell {
-      buildInputs = with pkgs; [
-        cargo
-        rustc
-        rustfmt
-        clippy
-        rust-analyzer
-      ];
-
-      env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-    };
-  };
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        overlays = [ (import rust-overlay) ];
+        pkgs = import nixpkgs {
+          inherit system overlays;
+        };
+      in
+      with pkgs;
+      {
+        devShells.default = mkShell {
+          buildInputs = [
+            (
+              rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
+                extensions = [ "rust-src" "rust-analyzer" ];
+                #targets = [ "x86_64-unknown-linux-gnu" ]
+              })
+            )
+          ];
+        };
+      }
+    );
 }
