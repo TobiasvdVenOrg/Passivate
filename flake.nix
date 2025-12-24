@@ -17,6 +17,7 @@
         libPath = with pkgs; lib.makeLibraryPath [
           wayland
           libxkbcommon
+          libGL
         ];
       in
       with pkgs;
