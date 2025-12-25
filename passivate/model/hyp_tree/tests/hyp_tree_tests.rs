@@ -1,7 +1,9 @@
+use passivate_model_hyp_tree::depth::Depth;
+use passivate_model_hyp_tree::hyp_tree::HypTree;
+use passivate_model_hyp_tree::hyp_tree_value::HypTreeValue;
+
 #[macro_use]
 extern crate assert_matches;
-
-use passivate_model_hyp_tree::{Depth, HypTree, HypTreeValue};
 
 #[derive(Debug)]
 struct TestValue
