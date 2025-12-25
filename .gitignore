@@ -1,6 +1,7 @@
 Cargo.lock
 **/.passivate
 **target
+**target_backup
 lcov.info
 **/tests/snapshots/**/*.diff.png
 **/tests/snapshots/**/*.new.png

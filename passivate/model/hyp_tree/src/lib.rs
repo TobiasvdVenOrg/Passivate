@@ -1,72 +1,83 @@
-use std::collections::HashSet;
-use std::hash::Hash;
+use core::slice;
+use std::hash::{BuildHasher, Hash, Hasher};
+use std::marker::PhantomData;
 
-pub trait HypTreeValue<P: Hash>
+use hashbrown::DefaultHashBuilder;
+
+pub trait HypTreeValue<TPart: Hash>
 {
-    fn path(&self) -> &[P];
+    fn path(&self) -> &[TPart];
 }
 
-impl<P: Hash, T> HypTreeValue<P> for HypNode<P, T>
+fn hash_path<TPart: Hash, H: Hasher>(value: impl HypTreeValue<TPart>, state: &mut H)
 {
-    fn path(&self) -> &[P]
+    for part in value.path()
     {
-        todo!()
+        part.hash(state);
     }
 }
 
-pub struct HypNode<P, T>
+pub struct HypNode<TValue>
 {
-    hyp: T,
-    path: Vec<P>
+    value: TValue
 }
 
-pub struct HypTree<P: Hash, T: HypTreeValue<P>>
+pub struct HypTree<TPart: Hash, TValue: HypTreeValue<TPart>, TBuildHasher = DefaultHashBuilder>
 {
-    tree: HashSet<HypNode<P, T>>
+    values: Vec<HypNode<TValue>>,
+    build_hasher: TBuildHasher,
+    _phantom_tpart: PhantomData<TPart>
 }
 
-impl<P: Hash + Clone, T: HypTreeValue<P>> HypTree<P, T>
+pub struct Hyperator<'a, TValue>
 {
-    pub fn new(root: T) -> Self
+    iter: slice::Iter<'a, HypNode<TValue>>
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Depth(u16);
+
+impl Depth
+{
+    pub fn new(depth: u16) -> Self
     {
-        todo!()
+        Self(depth)
     }
 }
 
-#[cfg(test)]
-mod tests
+impl<'a, TValue> Iterator for Hyperator<'a, TValue>
 {
-    use crate::{HypTree, HypTreeValue};
+    type Item = (Depth, &'a TValue);
 
-    struct TestValue
+    fn next(&mut self) -> Option<Self::Item>
     {
-        value: i32,
-        path: Vec<String>
+        self.iter.next().map(|node| (Depth(0), &node.value))
     }
+}
 
-    impl TestValue
+impl<TPart: Hash, TValue: HypTreeValue<TPart>> HypTree<TPart, TValue, DefaultHashBuilder>
+{
+    pub fn new() -> Self
     {
-        pub fn new(value: i32, path: impl Into<String>) -> Self
-        {
-            Self {
-                value,
-                path: path.into().split("::").map(String::from).collect()
-            }
+        Self {
+            values: Vec::new(),
+            build_hasher: DefaultHashBuilder::default(),
+            _phantom_tpart: PhantomData
         }
     }
 
-    impl HypTreeValue<String> for TestValue
+    pub fn insert(&mut self, element: TValue)
     {
-        fn path(&self) -> &[String]
-        {
-            todo!()
-        }
+        self.values.push(HypNode { value: element });
     }
+}
 
-    #[test]
-    pub fn new_hyp_tree_has_root()
+impl<TPart: Hash, TValue: HypTreeValue<TPart>, THasherBuilder: BuildHasher> HypTree<TPart, TValue, THasherBuilder>
+{
+    pub fn iter<'a>(&'a self) -> Hyperator<'a, TValue>
     {
-        let root = TestValue::new(0, "");
-        let tree = HypTree::new(root);
+        let vec_iterator = self.values.iter();
+
+        Hyperator { iter: vec_iterator }
     }
 }
