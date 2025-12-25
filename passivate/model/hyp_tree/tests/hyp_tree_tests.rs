@@ -21,11 +21,13 @@ impl TestValue
     }
 }
 
-impl HypTreeValue<String> for TestValue
+impl HypTreeValue for TestValue
 {
-    fn path(&self) -> &[String]
+    type Part = String;
+
+    fn path(&self) -> &[Self::Part]
     {
-        todo!()
+        self.path.as_slice()
     }
 }
 

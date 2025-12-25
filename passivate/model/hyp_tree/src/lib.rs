@@ -1,20 +1,11 @@
 use core::slice;
-use std::hash::{BuildHasher, Hash, Hasher};
 use std::marker::PhantomData;
 
-use hashbrown::DefaultHashBuilder;
-
-pub trait HypTreeValue<TPart: Hash>
+pub trait HypTreeValue
 {
-    fn path(&self) -> &[TPart];
-}
+    type Part;
 
-fn hash_path<TPart: Hash, H: Hasher>(value: impl HypTreeValue<TPart>, state: &mut H)
-{
-    for part in value.path()
-    {
-        part.hash(state);
-    }
+    fn path(&self) -> &[Self::Part];
 }
 
 pub struct HypNode<TValue>
@@ -22,10 +13,20 @@ pub struct HypNode<TValue>
     value: TValue
 }
 
-pub struct HypTree<TPart: Hash, TValue: HypTreeValue<TPart>, TBuildHasher = DefaultHashBuilder>
+impl<TPart, TValue> HypNode<TValue>
+where
+    TPart: Eq,
+    TValue: HypTreeValue<Part = TPart>
+{
+    pub fn depth(&self) -> Depth
+    {
+        Depth(self.value.path().len() - 1)
+    }
+}
+
+pub struct HypTree<TPart: Eq, TValue: HypTreeValue<Part = TPart>>
 {
     values: Vec<HypNode<TValue>>,
-    build_hasher: TBuildHasher,
     _phantom_tpart: PhantomData<TPart>
 }
 
@@ -35,33 +36,35 @@ pub struct Hyperator<'a, TValue>
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Depth(u16);
+pub struct Depth(usize);
 
 impl Depth
 {
-    pub fn new(depth: u16) -> Self
+    pub fn new(depth: usize) -> Self
     {
         Self(depth)
     }
 }
 
-impl<'a, TValue> Iterator for Hyperator<'a, TValue>
+impl<'a, TPart, TValue> Iterator for Hyperator<'a, TValue>
+where
+    TPart: Eq,
+    TValue: HypTreeValue<Part = TPart>
 {
     type Item = (Depth, &'a TValue);
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        self.iter.next().map(|node| (Depth(0), &node.value))
+        self.iter.next().map(|node| (node.depth(), &node.value))
     }
 }
 
-impl<TPart: Hash, TValue: HypTreeValue<TPart>> HypTree<TPart, TValue, DefaultHashBuilder>
+impl<TPart: Eq, TValue: HypTreeValue<Part = TPart>> HypTree<TPart, TValue>
 {
     pub fn new() -> Self
     {
         Self {
             values: Vec::new(),
-            build_hasher: DefaultHashBuilder::default(),
             _phantom_tpart: PhantomData
         }
     }
@@ -70,10 +73,7 @@ impl<TPart: Hash, TValue: HypTreeValue<TPart>> HypTree<TPart, TValue, DefaultHas
     {
         self.values.push(HypNode { value: element });
     }
-}
 
-impl<TPart: Hash, TValue: HypTreeValue<TPart>, THasherBuilder: BuildHasher> HypTree<TPart, TValue, THasherBuilder>
-{
     pub fn iter<'a>(&'a self) -> Hyperator<'a, TValue>
     {
         let vec_iterator = self.values.iter();
