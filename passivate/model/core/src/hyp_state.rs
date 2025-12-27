@@ -3,5 +3,6 @@ pub enum HypState
 {
     Passed,
     Failed,
-    Unknown
+    Unknown,
+    Running
 }

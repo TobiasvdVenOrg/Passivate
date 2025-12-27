@@ -8,6 +8,8 @@ passivate_core = { path = "../../core" }
 passivate_configuration = { path = "../../configuration" }
 passivate_model_core = { path = "../../model/core" }
 passivate_egui_hyp_snapshots = { path = "../hyp_snapshots" }
+passivate_model_bridge = { path = "../../model/bridge" }
+passivate_model_rust = { path = "../../model/rust" }
 
 camino.workspace = true
 egui.workspace = true

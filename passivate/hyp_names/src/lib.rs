@@ -1,5 +1,6 @@
 pub mod crate_id;
 pub mod hyp_id;
+pub mod hyp_name_strategy;
 pub mod package_id;
 pub use stdext;
 
@@ -37,7 +38,7 @@ macro_rules! test_id {
 macro_rules! test_name {
     () => {
         $crate::test_id!()
-            .name($crate::hyp_id::HypNameStrategy::Default)
+            .name($crate::hyp_name_strategy::HypNameStrategy::Default)
             .to_string()
     };
 }

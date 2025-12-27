@@ -1,32 +1,27 @@
 use std::fmt::Debug;
 
-use indextree::Arena;
+use passivate_id_chain_tree::tree::Tree;
+use passivate_model_bridge::{Bridge, OutputReport};
 
-use crate::bridge::{Bridge, HypPath};
+use crate::evaluate::Evaluate;
 use crate::hyp::Hyp;
 use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state_error::HypSessionStateError;
+use crate::hyp_state::HypState;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum HypSessionActivity
-{
-    Idle,
-    Running
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct HypSession<TBridge: Bridge>
 {
     session: Session<TBridge>,
     error: Option<HypSessionStateError<TBridge>>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 struct Session<TBridge: Bridge>
 {
-    activity: HypSessionActivity,
-    hyp_nodes: Arena<TBridge::TId, Hyp<TBridge>>
+    activity: HypState,
+    hyps: Tree<TBridge::IdLink, Hyp<TBridge>>
 }
 
 type ChangeResult<TBridge> = Result<Option<HypSessionChange<TBridge>>, HypSessionEvent<TBridge>>;
@@ -36,8 +31,8 @@ impl<TBridge: Bridge> HypSession<TBridge>
     pub fn new() -> Self
     {
         let session = Session {
-            activity: HypSessionActivity::Idle,
-            hyp_nodes: Trie::new()
+            activity: HypState::Unknown,
+            hyps: Tree::new()
         };
 
         HypSession { session, error: None }
@@ -50,9 +45,14 @@ impl<TBridge: Bridge> HypSession<TBridge>
         session
     }
 
-    pub fn activity(&self) -> Result<&HypSessionActivity, &HypSessionStateError<TBridge>>
+    pub fn activity(&self) -> Result<HypState, &HypSessionStateError<TBridge>>
     {
-        self.error.as_ref().map_or_else(|| Ok(&self.session.activity), |e| Err(e))
+        self.error.as_ref().map_or_else(|| Ok(self.session.activity), |e| Err(e))
+    }
+
+    pub fn hyps(&self) -> &Tree<TBridge::IdLink, Hyp<TBridge>>
+    {
+        &self.session.hyps
     }
 
     pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent<TBridge>>)
@@ -82,6 +82,14 @@ impl<TBridge: Bridge> HypSession<TBridge>
     }
 }
 
+impl<TBridge: Bridge> Evaluate for HypSession<TBridge>
+{
+    fn state(&self) -> HypState
+    {
+        self.activity().unwrap_or(HypState::Failed)
+    }
+}
+
 impl<TBridge: Bridge> Session<TBridge>
 {
     fn update(
@@ -97,7 +105,7 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         match self.activity
         {
-            HypSessionActivity::Idle =>
+            HypState::Unknown | HypState::Passed | HypState::Failed =>
             {
                 match event
                 {
@@ -105,12 +113,12 @@ impl<TBridge: Bridge> Session<TBridge>
                     _ => Err(event)
                 }
             }
-            HypSessionActivity::Running =>
+            HypState::Running =>
             {
                 match event
                 {
-                    HypSessionEvent::Output(output) => self.output(output),
-                    HypSessionEvent::HypExists(project) => self.hyp_node_exists(project),
+                    HypSessionEvent::Output(report) => self.output(report),
+                    HypSessionEvent::HypExists(project) => self.hyp_exists(project),
                     HypSessionEvent::RunCompleted => self.complete_run(),
                     _ => Err(event)
                 }
@@ -120,29 +128,28 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn start_run(&mut self) -> ChangeResult<TBridge>
     {
-        self.activity = HypSessionActivity::Running;
+        self.activity = HypState::Running;
 
         Ok(None)
     }
 
     fn complete_run(&mut self) -> ChangeResult<TBridge>
     {
-        self.activity = HypSessionActivity::Idle;
+        self.activity = HypState::Passed;
 
         Ok(None)
     }
 
-    fn output(&mut self, output: TBridge::TOutput) -> ChangeResult<TBridge>
+    fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<TBridge>
     {
         todo!()
     }
 
-    fn hyp_node_exists(&mut self, hyp_node_info: TBridge::THypInfo) -> ChangeResult<TBridge>
+    fn hyp_exists(&mut self, hyp_node_info: TBridge::HypInfo) -> ChangeResult<TBridge>
     {
-        let hyp_node: HypNode<TBridge> = HypNode { info: hyp_node_info };
-        let key = hyp_node.path().clone();
+        let hyp: Hyp<TBridge> = Hyp::new(hyp_node_info);
 
-        self.hyp_nodes.insert(key, hyp_node);
+        self.hyps.insert(hyp);
 
         Ok(None)
     }

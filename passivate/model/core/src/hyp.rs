@@ -1,31 +1,30 @@
-use std::fmt::Display;
-
-use crate::bridge::{Bridge, HypPath};
+use passivate_id_chain_tree::id_chain::IdChain;
+use passivate_model_bridge::Bridge;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Hyp<TBridge: Bridge>
 {
-    pub info: TBridge::THypInfo
+    pub info: TBridge::HypInfo,
+    pub output: Vec<TBridge::Output>
 }
 
-impl<TBridge: Bridge> Hyp<TBridge> {}
-
-impl<TBridge: Bridge> HypPath for Hyp<TBridge>
+impl<TBridge: Bridge> Hyp<TBridge>
 {
-    type TId = TBridge::TId;
-
-    fn path(&self) -> Self::TId
+    pub fn new(info: TBridge::HypInfo) -> Self
     {
-        self.info.path()
+        Self {
+            info,
+            output: Vec::new()
+        }
     }
 }
 
-impl<TBridge: Bridge> Display for Hyp<TBridge>
-where
-    TBridge::TId: Display
+impl<TBridge: Bridge> IdChain for Hyp<TBridge>
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    type Link = TBridge::IdLink;
+
+    fn chain(&self) -> &[Self::Link]
     {
-        self.path().fmt(f)
+        self.info.chain()
     }
 }

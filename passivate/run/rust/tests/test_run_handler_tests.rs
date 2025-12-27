@@ -14,11 +14,14 @@ use passivate_coverage::compute_coverage;
 use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
-use passivate_model_core::hyp_iter_ext::HypIterator;
+use passivate_id_chain_tree::id_chain::IdChain;
+use passivate_model_core::evaluate::Evaluate;
 use passivate_model_core::hyp_run_trigger::HypRunTrigger;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_state::HypState;
+use passivate_model_core::hyp_session_event::CompilationMessage;
+use passivate_model_rust::RustOutput;
 use passivate_run_core::hyp_run_errors::TestRunError;
 use passivate_run_core::session_event_tx::SessionEventTx;
 use passivate_run_rust::hyp_run_handler::HypRunHandler;
@@ -27,7 +30,6 @@ use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn handle_single_test_run()
 {
     let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
@@ -53,7 +55,7 @@ pub fn handle_single_test_run()
 
     let session = HypSession::from_events(events);
 
-    assert!(session.all_hyps().current_state() == HypState::Passed);
+    assert!(session.state() == HypState::Passed);
 }
 
 #[test]
@@ -77,11 +79,10 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    assert_matches!(session.all_hyps().exactly_one(), Ok(hyp_to_run));
+    assert_matches!(session.hyps().iter().exactly_one(), Ok(hyp_to_run));
 }
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 {
     let setup = TestDataSetup::builder(test_name!(), "project_snapshot_tests")
@@ -120,7 +121,6 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 }
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoError>
 {
     let setup = TestDataSetup::builder(test_name!(), "project_snapshot_tests")
@@ -165,7 +165,6 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
 }
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
     let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
@@ -183,13 +182,13 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    let failed_test = session.all_hyps().by_id(&failed_test).unwrap();
+    let failed_test = session.hyps().entry(failed_test.chain()).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
-        &failed_test.output.clone().into_iter().skip(2).collect::<Vec<_>>(),
+        &failed_test.output.clone().into_iter().skip(2).map(|m| m).collect::<Vec<_>>(),
         contains_in_order(vec![
-            "assertion `left == right` failed".to_string(),
+            RustOutput::Console( "assertion `left == right` failed".to_string(),
             "  left: 5".to_string(),
             " right: 4".to_string(),
             "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
@@ -200,7 +199,6 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 }
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
     use passivate_run_core::session_event_tx::SessionEventTx;
@@ -221,7 +219,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    let failed_test = session.all_hyps().by_id(&failed_hyp).unwrap();
+    let failed_test = session.hyps().by_id(&failed_hyp).unwrap();
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -238,7 +236,6 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 }
 
 #[test]
-#[cfg(target_os = "windows")]
 pub fn when_test_run_fails_error_is_reported()
 {
     let mut test_runner = HypRunner::faux();

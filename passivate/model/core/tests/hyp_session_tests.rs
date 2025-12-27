@@ -4,12 +4,15 @@ extern crate assert_matches;
 use std::ops::{Deref, DerefMut};
 
 use itertools::assert_equal;
-use passivate_model_core::bridge::{Bridge, HypPath, HypSessionBridge};
+use passivate_id_chain_tree::chain;
+use passivate_id_chain_tree::depth::Depth;
+use passivate_id_chain_tree::id_chain::IdChain;
+use passivate_model_bridge::{Bridge, HypSessionBridge, OutputReport};
 use passivate_model_core::hyp_session::{HypSession, HypSessionActivity};
 use passivate_model_core::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
 use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 struct TestSession(HypSession<TestSession>);
 
 impl TestSession
@@ -39,18 +42,72 @@ impl DerefMut for TestSession
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-struct TestHyp
+struct TestId(Vec<String>);
+
+impl TestId
 {
-    name: String
+    pub fn empty() -> Self
+    {
+        Self(Vec::new())
+    }
 }
 
-impl HypPath for TestHyp
+impl IdChain for TestId
 {
-    type TId = String;
+    type Link = String;
 
-    fn path(&self) -> &Self::TId
+    fn chain(&self) -> &[Self::Link]
     {
-        &self.name
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum TestHypKind
+{
+    Hyp(TestHyp),
+    Project(TestProject)
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct TestHyp
+{
+    id: TestId
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct TestProject
+{
+    id: TestId
+}
+
+impl TestProject
+{
+    fn new(id: impl Into<TestId>) -> Self
+    {
+        Self { id: id.into() }
+    }
+}
+
+impl<T: Into<String>> From<T> for TestId
+{
+    fn from(value: T) -> Self
+    {
+        Self(vec![value.into()])
+    }
+}
+
+impl IdChain for TestHypKind
+{
+    type Link = String;
+
+    fn chain(&self) -> &[Self::Link]
+    {
+        match self
+        {
+            TestHypKind::Hyp(test_hyp) => test_hyp.id.chain(),
+            TestHypKind::Project(test_project) => test_project.id.chain()
+        }
     }
 }
 
@@ -58,15 +115,37 @@ impl TestHyp
 {
     pub fn new(name: impl Into<String>) -> Self
     {
-        Self { name: name.into() }
+        Self {
+            id: TestId(name.into().split("::").map(String::from).collect())
+        }
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum TestOutput
+{
+    Compilation(CompilationMessage)
+}
+
+impl IdChain for TestOutput
+{
+    type Link = String;
+
+    fn chain(&self) -> &[Self::Link]
+    {
+        self.id.chain()
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct TestBridge;
+
 impl Bridge for TestSession
 {
-    type THypNodeInfo = TestHyp;
-    type TId = String;
-    type TOutput = CompilationMessage;
+    type HypInfo = TestHypKind;
+    type Id = TestId;
+    type IdLink = String;
+    type Output = TestOutput;
 }
 
 impl HypSessionBridge<TestSession> for TestSession
@@ -76,14 +155,14 @@ impl HypSessionBridge<TestSession> for TestSession
         self.0.update(HypSessionEvent::RunStarted);
     }
 
-    fn output(&mut self, output: CompilationMessage)
+    fn output(&mut self, report: OutputReport<TestOutput>)
     {
-        self.0.update(HypSessionEvent::Output(output));
+        self.0.update(HypSessionEvent::Output(report));
     }
 
-    fn hyp_node(&mut self, hyp_node: TestHyp)
+    fn hyp(&mut self, hyp: TestHypKind)
     {
-        self.0.update(HypSessionEvent::HypNodeExists(hyp_node));
+        self.0.update(HypSessionEvent::HypExists(hyp));
     }
 
     fn complete_run(&mut self)
@@ -97,7 +176,7 @@ pub fn default_session_has_no_hyps()
 {
     let session = TestSession::new();
 
-    assert_matches!(session.all_hyps().next(), None);
+    assert_matches!(session.hyps().next(), None);
 }
 
 #[test]
@@ -180,13 +259,10 @@ pub fn project_existence_updates_session()
 {
     let mut session = new_started_session();
 
-    let project_1 = TestProjectInfo::new("test_project_1");
-    let project_2 = TestProjectInfo::new("test_project_2");
+    let project_1 = TestProject::new("test_project_1");
+    let project_2 = TestProject::new("test_project_2");
 
-    session.project_exists(project_1.clone());
-    session.project_exists(project_2.clone());
-
-    assert_equal(session.project_infos(), [&project_1, &project_2]);
+    assert_equal(session.hyps(), [(Depth::new(0), &project_1), (Depth::new(0), &project_2)]);
 }
 
 #[test]
@@ -194,8 +270,14 @@ pub fn last_session_output_is_most_recent()
 {
     let mut session = new_started_session();
 
-    session.output(CompilationMessage::new_info("example message"));
-    session.output(CompilationMessage::new_warning("example warning"));
+    session.output(OutputReport::new(
+        TestId::empty(),
+        TestOutput::Compilation(CompilationMessage::new_info("example message"))
+    ));
+    session.output(OutputReport::new(
+        TestId::empty(),
+        TestOutput::Compilation(CompilationMessage::new_warning("example warning"))
+    ));
 
     assert_matches!(session.last_workspace_compilation(), Some(compilation_message) =>
     {
@@ -230,7 +312,7 @@ pub fn project_compilation_is_associated_with_project()
 }
 
 #[test]
-pub fn compilation_for_unknown_project_is_error_state()
+pub fn output_for_unknown_hyp_is_error_state()
 {
     let mut session = new_started_session();
 
@@ -252,37 +334,20 @@ pub fn compilation_for_unknown_project_is_error_state()
 }
 
 #[test]
-pub fn hyp_becomes_part_of_project()
+pub fn hyp_becomes_part_of_parent()
 {
     let mut session = new_started_session();
 
-    let project_info = TestProjectInfo::new("example_project");
-    session.project_exists(project_info);
+    let project_info = TestHypKind::Project(TestProject::new("example_project"));
+    session.hyp(project_info);
 
-    let hyp = TestHyp::new("example_project", "example_hyp");
-    session.hyp_node_exists(hyp.clone());
+    let hyp = TestHypKind::Hyp(TestHyp::new("example_project::example_hyp"));
+    session.hyp(hyp);
 
-    let project = session.projects().next().unwrap();
+    let project_id = chain!("example_project");
+    let project = session.hyps().entry(project_id).unwrap();
 
-    assert_equal(project.hyp_nodes.iter(), [&hyp]);
-}
-
-#[test]
-pub fn hyp_for_unknown_project_is_error_state()
-{
-    let mut session = new_started_session();
-
-    let hyp = TestHyp::new("invalid_project", "example_hyp");
-    session.hyp_node_exists(hyp.clone());
-
-    let invalid_event = HypSessionEvent::HypNodeExists(hyp);
-    assert_matches!(session.activity(), Err(error) =>
-    {
-        assert_matches!(error, HypSessionStateError::UnexpectedEvent { event } =>
-        {
-            assert_eq!(*event, invalid_event);
-        });
-    });
+    assert_equal(project.children().iter(), [&hyp]);
 }
 
 #[test]
@@ -290,8 +355,8 @@ pub fn nested_hyps_are_included_in_all_hyps()
 {
     let mut session = new_started_session();
 
-    let project = TestProjectInfo::new("test_project");
-    session.hyp_node(project.clone());
+    let project = TestProject::new("test_project");
+    session.hyp(project.clone());
 
     let hyp = TestHyp::new("test 1");
     session.hyp_node(hyp.clone());

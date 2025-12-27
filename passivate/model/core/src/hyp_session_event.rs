@@ -1,4 +1,4 @@
-use crate::bridge::{Bridge, HypPath};
+use passivate_model_bridge::{Bridge, OutputReport};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
@@ -13,16 +13,6 @@ pub struct CompilationMessage
 {
     pub content: String,
     pub kind: CompilationMessageKind
-}
-
-impl HypPath for CompilationMessage
-{
-    type TId = String;
-
-    fn path(&self) -> Self::TId
-    {
-        self.content.clone()
-    }
 }
 
 impl CompilationMessage
@@ -53,12 +43,26 @@ impl CompilationMessage
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConsoleOutput
+{
+    pub content: String,
+    pub kind: ConsoleOutputKind
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConsoleOutputKind
+{
+    StdOut,
+    StdErr
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
-    Output(TBridge::TOutput),
-    HypExists(TBridge::THypInfo),
-    HypRunning(TBridge::TId),
-    HypCompleted(TBridge::TId),
+    Output(OutputReport<TBridge>),
+    HypExists(TBridge::HypInfo),
+    HypRunning(TBridge::Id),
+    HypCompleted(TBridge::Id),
     RunCompleted
 }

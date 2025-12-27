@@ -1,58 +1,14 @@
 use std::borrow::Cow;
 
+use passivate_id_chain_tree::id_chain::IdChain;
+
 use crate::crate_id::CrateId;
+use crate::hyp_name_strategy::HypNameStrategy;
 use crate::package_id::PackageId;
-
-pub enum HypNameStrategy
-{
-    Default,
-    NameOnly,
-    QualifiedWithoutCrate
-    {
-        separator: String
-    },
-    FullyQualified
-    {
-        separator: String
-    }
-}
-
-impl AsRef<HypNameStrategy> for HypNameStrategy
-{
-    fn as_ref(&self) -> &HypNameStrategy
-    {
-        self
-    }
-}
-
-impl HypNameStrategy
-{
-    pub fn convert<'a>(&self, id: &'a HypId) -> Cow<'a, str>
-    {
-        match self
-        {
-            HypNameStrategy::Default | HypNameStrategy::NameOnly => Cow::Borrowed(id.parts.last().unwrap()),
-            HypNameStrategy::QualifiedWithoutCrate { separator } => Cow::Owned(id.parts.join(separator)),
-            HypNameStrategy::FullyQualified { separator } =>
-            {
-                Cow::Owned(format!(
-                    "{:?}{}{:?}{}{}",
-                    id.package_id(),
-                    separator,
-                    id.crate_id(),
-                    separator,
-                    id.parts.join(separator)
-                ))
-            }
-        }
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct HypId
 {
-    package_id: PackageId,
-    crate_id: CrateId,
     parts: Vec<String>
 }
 
@@ -60,28 +16,34 @@ impl HypId
 {
     pub fn new(package_id: impl Into<PackageId>, crate_id: impl Into<CrateId>, hyp_name: impl Into<String>) -> Self
     {
-        let parts: Vec<String> = hyp_name.into().split_terminator("::").map(String::from).collect();
+        let package_id = package_id.into().to_string();
+        let crate_id = crate_id.into().to_string();
+        let mut name_parts: Vec<String> = hyp_name.into().split_terminator("::").map(String::from).collect();
 
-        Self {
-            package_id: package_id.into(),
-            crate_id: crate_id.into(),
-            parts
-        }
+        let mut parts = vec![package_id, crate_id];
+        parts.append(&mut name_parts);
+
+        Self { parts }
     }
 
-    pub fn package_id(&self) -> &PackageId
+    pub fn package_id(&self) -> PackageId
     {
-        &self.package_id
+        PackageId::from(&self.parts[0])
     }
 
-    pub fn crate_id(&self) -> &CrateId
+    pub fn crate_id(&self) -> CrateId
     {
-        &self.crate_id
+        CrateId::from(&self.parts[1])
     }
 
-    pub fn package_crate_name(&self, separator: impl AsRef<str>) -> String
+    pub fn package_crate_name(&self) -> &[String]
     {
-        format!("{:?}{}{:?}", self.package_id(), separator.as_ref(), self.crate_id())
+        &self.parts[.. 2]
+    }
+
+    pub fn without_package_crate(&self) -> &[String]
+    {
+        &self.parts[2 ..]
     }
 
     pub fn name<'a>(&'a self, strategy: impl AsRef<HypNameStrategy>) -> Cow<'a, str>
@@ -96,6 +58,16 @@ impl HypId
         };
 
         strategy.convert(self).to_string()
+    }
+}
+
+impl IdChain for HypId
+{
+    type Link = String;
+
+    fn chain(&self) -> &[Self::Link]
+    {
+        &self.parts
     }
 }
 

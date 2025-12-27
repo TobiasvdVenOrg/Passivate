@@ -1,6 +1,6 @@
+use passivate_model_bridge::Bridge;
 use thiserror::*;
 
-use crate::bridge::Bridge;
 use crate::hyp_session_event::HypSessionEvent;
 
 #[derive(Error, Debug, Clone, Eq, PartialEq)]

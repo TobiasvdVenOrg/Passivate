@@ -1,5 +1,5 @@
 [package]
-name = "passivate_model_hyp_tree"
+name = "passivate_id_chain_tree"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,3 +7,4 @@ edition = "2024"
 
 [dev-dependencies]
 assert_matches.workspace = true
+itertools.workspace = true

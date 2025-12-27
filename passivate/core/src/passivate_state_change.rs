@@ -1,7 +1,10 @@
+use std::rc::Weak;
+
+use passivate_model_bridge::Bridge;
 use passivate_model_core::hyp::Hyp;
 
-pub enum PassivateStateChange<'a>
+pub enum PassivateStateChange<TBridge: Bridge>
 {
-    HypSelected(&'a Hyp),
-    HypDetailsChanged(&'a Hyp)
+    HypSelected(Weak<Hyp<TBridge>>),
+    HypDetailsChanged(Weak<Hyp<TBridge>>)
 }

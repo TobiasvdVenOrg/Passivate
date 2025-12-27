@@ -1,4 +1,4 @@
-use passivate_hyp_names::hyp_id::HypNameStrategy;
+use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_hyp_names::test_id;
 
 mod sub_dir
@@ -30,7 +30,10 @@ pub fn get_crate_name_from_test_id()
 {
     let id = test_id!();
 
-    assert_eq!("passivate_hyp_names::integration_tests", id.package_crate_name("::").as_str());
+    assert_eq!(
+        "passivate_hyp_names::integration_tests",
+        id.package_crate_name().join("::").as_str()
+    );
 }
 
 mod sub_mod

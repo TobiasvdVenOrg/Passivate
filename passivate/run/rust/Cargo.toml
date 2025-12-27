@@ -6,11 +6,13 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../../delegation" }
 passivate_model_core = { path = "../../model/core" }
+passivate_model_bridge = { path = "../../model/bridge" }
 passivate_model_rust = { path = "../../model/rust" }
 passivate_configuration = { path = "../../configuration" }
 passivate_hyp_names = { path = "../../hyp_names" }
 passivate_coverage = { path = "../../coverage" }
 passivate_run_core = { path = "../core" }
+passivate_id_chain_tree = { path = "../../id_chain_tree" }
 
 #nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
 #nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }

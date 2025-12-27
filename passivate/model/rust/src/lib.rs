@@ -1,11 +1,11 @@
-use std::ops::Deref;
+use std::fmt::{Display, Pointer};
 
 use camino::Utf8PathBuf;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::package_id::PackageId;
-use passivate_model_core::bridge::{Bridge, HypPath};
-use passivate_model_core::hyp_session_event::CompilationMessage;
-use radix_trie::TrieKey;
+use passivate_id_chain_tree::id_chain::IdChain;
+use passivate_model_bridge::Bridge;
+use passivate_model_core::hyp_session_event::{CompilationMessage, ConsoleOutput};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageInfo
@@ -14,18 +14,6 @@ pub struct PackageInfo
     pub manifest_path: Utf8PathBuf
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct PackageKey(PackageId);
-
-impl HypPath for PackageInfo
-{
-    type TId = Vec<u8>;
-
-    fn path(&self) -> &Self::TId
-    {
-        self.package_id.as_bytes().to_vec()
-    }
-}
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum WorkspaceCompilation
 {
@@ -37,31 +25,45 @@ pub enum WorkspaceCompilation
 pub struct RustBridge;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct RustHyp(HypId);
-
-impl Deref for RustHyp
+pub struct RustHyp
 {
-    type Target = HypId;
+    pub id: HypId
+}
 
-    fn deref(&self) -> &Self::Target
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RustOutput
+{
+    Workspace(WorkspaceCompilation),
+    Project(CompilationMessage),
+    Console(ConsoleOutput)
+}
+
+impl Display for RustOutput
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        &self.0
+        match self
+        {
+            RustOutput::Workspace(workspace_compilation) => workspace_compilation.fmt(f),
+            RustOutput::Project(compilation_message) => compilation_message.fmt(f),
+            RustOutput::Console(console_output) => console_output.fmt(f)
+        }
     }
 }
 
-impl HypPath for RustHyp
+impl IdChain for RustHyp
 {
-    type TId = String;
+    type Link = String;
 
-    fn path(&self) -> &Self::TId
+    fn chain(&self) -> &[Self::Link]
     {
-        &self.fully_qualified("::")
+        self.id.chain()
     }
 }
 
 impl Bridge for RustBridge
 {
-    type THypNodeInfo = RustHyp;
-    type TId = String;
-    type TOutput = CompilationMessage;
+    type HypInfo = RustHyp;
+    type Id = String;
+    type Output = RustOutput;
 }

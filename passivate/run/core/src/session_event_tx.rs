@@ -1,5 +1,5 @@
 use passivate_delegation::{Rx, Tx};
-use passivate_model_core::bridge::{Bridge, HypSessionBridge};
+use passivate_model_bridge::{Bridge, HypSessionBridge, OutputReport};
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 
 #[faux::create]
@@ -27,24 +27,14 @@ impl<TBridge: Bridge> HypSessionBridge<TBridge> for SessionEventTx<TBridge>
         self.tx.send(HypSessionEvent::RunStarted);
     }
 
-    fn project_exists(&mut self, project_info: TBridge::TProjectInfo)
+    fn output(&mut self, report: OutputReport<TBridge>)
     {
-        self.tx.send(HypSessionEvent::ProjectExists(project_info));
+        self.tx.send(HypSessionEvent::Output(report));
     }
 
-    fn workspace_compilation(&mut self, compilation: TBridge::TWorkspaceCompilation)
+    fn hyp(&mut self, hyp_info: TBridge::HypInfo)
     {
-        self.tx.send(HypSessionEvent::WorkspaceCompilation(compilation))
-    }
-
-    fn project_compilation(&mut self, compilation: TBridge::TProjectCompilation)
-    {
-        self.tx.send(HypSessionEvent::ProjectCompilation(compilation));
-    }
-
-    fn hyp_node_exists(&mut self, hyp_node: TBridge::THypNode)
-    {
-        self.tx.send(HypSessionEvent::HypNodeExists(hyp_node));
+        self.tx.send(HypSessionEvent::HypExists(hyp_info));
     }
 
     fn complete_run(&mut self)
@@ -59,7 +49,8 @@ impl<TBridge: Bridge> SessionEventTx<TBridge>
     {
         let mut stub = SessionEventTx::faux();
         stub._when_start_run().then(|_| {});
-        stub._when_project_exists().then(|_| {});
+        stub._when_output().then(|_| {});
+        stub._when_hyp().then(|_| {});
         stub._when_complete_run().then(|_| {});
 
         stub

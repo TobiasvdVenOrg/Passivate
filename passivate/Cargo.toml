@@ -9,7 +9,7 @@ members = [
     "egui/docking",
     "model/core",
     "model/rust",
-    "model/hyp_tree",
+    "id_chain_tree",
     "coverage",
     "cargo",
     "run/rust",
@@ -51,7 +51,6 @@ galvanic-assert = "0.8.7"
 grcov = "0.10.5"
 guppy = "0.17.21"
 indexmap = "2.8.0"
-indextree = "4.7.4"
 itertools = "0.14.0"
 libtest-mimic = "0.8.1"
 log = "0.4.28"

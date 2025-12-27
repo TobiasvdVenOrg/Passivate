@@ -5,7 +5,8 @@ use std::io::Error as IoError;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use epaint::ColorImage;
-use passivate_hyp_names::hyp_id::{HypId, HypNameStrategy};
+use passivate_hyp_names::hyp_id::HypId;
+use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use png::DecodingError;
 use thiserror::Error;
 
