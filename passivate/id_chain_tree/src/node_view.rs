@@ -1,6 +1,6 @@
 use crate::id_chain::IdChain;
 use crate::node::Node;
-use crate::tree::{ChainLink, Iter, Tree};
+use crate::tree::{ChainLink, Tree};
 
 #[derive(Debug)]
 pub struct NodeView<'a, TLink, TValue>
@@ -22,8 +22,8 @@ where
         Self { node, tree }
     }
 
-    pub fn iter_children(&self) -> Iter<'_, TLink, TValue>
+    pub fn iter_children(&self) -> impl Iterator<Item = &TValue>
     {
-        todo!()
+        self.tree.children(self.node).map(|node| &node.value)
     }
 }

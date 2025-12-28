@@ -1,8 +1,7 @@
-use core::slice;
 use std::fmt::Debug;
 
 use crate::entry::Entry;
-use crate::id_chain::IdChain;
+use crate::id_chain::{Depth, IdChain};
 use crate::node::Node;
 use crate::node_view::NodeView;
 
@@ -26,76 +25,35 @@ impl<TLink: ChainLink, TValue: IdChain<Link = TLink>> Tree<TLink, TValue>
         self.values.push(Node::new(element));
     }
 
-    pub fn iter(&self) -> Iter<'_, TLink, TValue>
+    pub fn iter(&self) -> impl Iterator<Item = &TValue>
     {
-        let inner = self.values[..].iter();
-
-        Iter { inner }
+        self.values.iter().map(|node| &node.value)
     }
 
-    pub fn iter_nodes(&self) -> Iter<'_, TLink, TValue>
+    pub fn iter_nodes<'a>(&'a self) -> impl Iterator<Item = NodeView<'a, TLink, TValue>>
     {
-        todo!();
+        self.values.iter().map(|node| NodeView::new(node, self))
     }
 
     pub fn entry<'a>(&'a self, chain: &'a [TLink]) -> Entry<'a, TLink, TValue>
     {
-        let node = self.values.iter().find(|e| e.chain() == chain);
+        let node = self.find_node(chain);
         Entry::new(node, self, chain)
     }
-}
 
-#[derive(Debug)]
-pub struct Iter<'a, TLink, TValue: 'a>
-where
-    TLink: ChainLink,
-    TValue: 'a + IdChain<Link = TLink>
-{
-    inner: slice::Iter<'a, Node<TValue>>
-}
-
-#[derive(Debug)]
-pub struct NodeIter<'a, TLink, TValue>
-where
-    TLink: ChainLink,
-    TValue: 'a + IdChain<Link = TLink>
-{
-    inner: slice::Iter<'a, Node<TValue>>,
-    tree: &'a Tree<TLink, TValue>
-}
-
-impl<'a, TLink, TValue: 'a> Iter<'a, TLink, TValue>
-where
-    TLink: ChainLink,
-    TValue: 'a + IdChain<Link = TLink>
-{
-    pub fn empty() -> Self
+    fn find_node(&self, chain: &[TLink]) -> Option<&Node<TValue>>
     {
-        let inner = [].iter();
-        Self { inner }
+        self.values.iter().find(|e| e.chain() == chain)
     }
-}
 
-impl<'a, TLink: ChainLink, TValue> Iterator for Iter<'a, TLink, TValue>
-where
-    TValue: IdChain<Link = TLink>
-{
-    type Item = &'a TValue;
-
-    fn next(&mut self) -> Option<Self::Item>
+    pub(crate) fn children(&self, node: &Node<TValue>) -> impl Iterator<Item = &Node<TValue>>
     {
-        self.inner.next().map(|node| &node.value)
-    }
-}
+        let index = self
+            .values
+            .iter()
+            .position(|n| n.chain() == node.chain())
+            .expect("Tree::children was called with a node that isn't in the tree");
 
-impl<'a, TLink: ChainLink, TValue> Iterator for NodeIter<'a, TLink, TValue>
-where
-    TValue: IdChain<Link = TLink>
-{
-    type Item = NodeView<'a, TLink, TValue>;
-
-    fn next(&mut self) -> Option<Self::Item>
-    {
-        self.inner.next().map(|node| NodeView::new(node, self.tree))
+        self.values.iter().skip(index + 1).take_while(|n| n.depth() >= node.depth())
     }
 }

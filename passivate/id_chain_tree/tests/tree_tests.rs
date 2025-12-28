@@ -69,7 +69,7 @@ pub fn find_value_by_chain()
 }
 
 #[test]
-pub fn iterate_node_children()
+pub fn iterate_children_of_a_node()
 {
     let parent = TestValue::new("PARENT", "A");
     let child1 = TestValue::new("CHILD1", "A::1");
@@ -77,7 +77,7 @@ pub fn iterate_node_children()
 
     let tree = tree!(parent, child1.clone(), child2.clone());
 
-    let parent_chain = chain!("PARENT");
+    let parent_chain = chain!("A");
     let node = tree.entry(parent_chain).node_or_none().unwrap();
 
     assert_equal(node.iter_children(), [&child1, &child2]);

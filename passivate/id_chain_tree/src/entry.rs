@@ -9,7 +9,7 @@ where
 {
     node: Option<&'a Node<TValue>>,
     tree: &'a Tree<TLink, TValue>,
-    chain: &'a [TLink]
+    _chain: &'a [TLink]
 }
 
 impl<'a, TLink: ChainLink, TValue> Entry<'a, TLink, TValue>
@@ -18,7 +18,7 @@ where
 {
     pub(crate) fn new(node: Option<&'a Node<TValue>>, tree: &'a Tree<TLink, TValue>, chain: &'a [TLink]) -> Self
     {
-        Self { node, tree, chain }
+        Self { node, tree, _chain: chain }
     }
 
     pub fn or_none(&self) -> Option<&'a TValue>
