@@ -123,8 +123,6 @@ impl<TBridge: Bridge> DetailsView<TBridge>
 #[cfg(test)]
 mod tests
 {
-    use std::marker::PhantomData;
-
     use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use passivate_egui_hyp_snapshots::Snapshots;
@@ -214,7 +212,7 @@ mod tests
     #[rstest]
     #[case::current_and_new("tests::example_snapshot_changed")]
     #[case::only_new("tests::example_snapshot_only_new")]
-    pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] hyp: &str)
+    pub fn approving_new_snapshot_emits_event_to_run_test_with_update_snapshots_enabled(#[case] _hyp: &str)
     {
         todo!();
     }

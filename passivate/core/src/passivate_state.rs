@@ -1,5 +1,4 @@
 use passivate_delegation::Rx;
-use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
@@ -30,7 +29,7 @@ impl<TBridge: Bridge> PassivateState<TBridge>
         }
     }
 
-    pub fn update(&mut self) -> Option<PassivateStateChange<TBridge>>
+    pub fn update(&mut self) -> Option<PassivateStateChange<'_, TBridge>>
     {
         self.try_process_hyp_run_event().map(Self::map_hyp_run_change).flatten()
     }
@@ -44,7 +43,7 @@ impl<TBridge: Bridge> PassivateState<TBridge>
         }
     }
 
-    fn try_process_hyp_run_event(&mut self) -> Option<HypSessionChange<TBridge>>
+    fn try_process_hyp_run_event(&mut self) -> Option<HypSessionChange<'_, TBridge>>
     {
         if let Ok(hyp_run_event) = self.hyp_run_rx.try_recv()
         {
@@ -56,7 +55,7 @@ impl<TBridge: Bridge> PassivateState<TBridge>
         }
     }
 
-    fn process_hyp_run_event(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<TBridge>>
+    fn process_hyp_run_event(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<'_, TBridge>>
     {
         self.hyp_session.update(event)
     }

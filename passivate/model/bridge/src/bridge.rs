@@ -9,7 +9,7 @@ use crate::hyp_run_bridge::HypRunBridge;
 pub trait Bridge
 {
     type IdLink: BridgeType;
-    type Id: IdChain<Link = Self::IdLink> + BridgeType;
+    type Id: IdChain<Link = Self::IdLink> + Display + BridgeType;
     type Output: Display + BridgeType;
     type HypInfo: BridgeHyp<Id = Self::Id> + IdChain<Link = Self::IdLink> + BridgeType;
     type HypRunner: HypRunBridge;

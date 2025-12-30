@@ -96,3 +96,19 @@ pub enum HypSessionEvent<TBridge: Bridge>
     HypCompleted(TBridge::Id),
     RunCompleted
 }
+
+impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self
+        {
+            HypSessionEvent::RunStarted => write!(f, "Run Started"),
+            HypSessionEvent::Output(output_report) => write!(f, "Output: {}", output_report.id()),
+            HypSessionEvent::HypExists(_) => todo!(),
+            HypSessionEvent::HypRunning(_) => todo!(),
+            HypSessionEvent::HypCompleted(_) => todo!(),
+            HypSessionEvent::RunCompleted => todo!()
+        }
+    }
+}

@@ -13,4 +13,9 @@ impl<TBridge: Bridge> OutputReport<TBridge>
     {
         Self { id, output }
     }
+
+    pub fn id(&self) -> &TBridge::Id
+    {
+        &self.id
+    }
 }

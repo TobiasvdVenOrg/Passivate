@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Display;
 use std::ops::Deref;
 
 use passivate_id_chain_tree::id_chain::IdChain;
@@ -59,6 +60,14 @@ impl HypId
         };
 
         strategy.convert(self).to_string()
+    }
+}
+
+impl Display for HypId
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{}", self.parts.join("::"))
     }
 }
 
