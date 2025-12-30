@@ -1,15 +1,25 @@
-use std::ops::Deref;
-
 use egui::Ui;
-use passivate_model_rust::PackageInfo;
+use passivate_model_core::hyp::Hyp;
+use passivate_model_rust::{RustBridge, RustHypKind};
 
+use crate::session_view::{self, HypUiAction};
 use crate::specialize_session_ui::SpecializeSessionUi;
 
-impl SpecializeSessionUi for PackageInfo
+impl SpecializeSessionUi for Hyp<RustBridge>
 {
-    fn ui(&self, ui: &mut Ui)
+    fn ui(&self, ui: &mut Ui) -> Option<HypUiAction>
     {
-        ui.label(self.package_id.deref());
-        ui.label(self.manifest_path.as_str());
+        let info = self.info();
+        let name = info.name();
+
+        match &info.kind
+        {
+            RustHypKind::Single(_) => session_view::show_hyp(ui, self, name),
+            RustHypKind::Package(package_info) =>
+            {
+                let package = format!("{} ({})", name, package_info.manifest_path);
+                session_view::show_hyp(ui, self, package)
+            }
+        }
     }
 }

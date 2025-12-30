@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::ops::Deref;
 
 use passivate_id_chain_tree::id_chain::IdChain;
 
@@ -68,6 +69,16 @@ impl IdChain for HypId
     fn chain(&self) -> &[Self::Link]
     {
         &self.parts
+    }
+}
+
+impl Deref for HypId
+{
+    type Target = [String];
+
+    fn deref(&self) -> &Self::Target
+    {
+        self.chain()
     }
 }
 

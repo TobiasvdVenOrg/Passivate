@@ -1,25 +1,27 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
-use passivate_egui_core::PassivateViewState;
+use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_views::passivate_ui;
 use passivate_egui_views::passivate_views::PassivateView;
+use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
+use passivate_model_rust::RustBridge;
 
-pub struct AppState
+pub struct AppState<THypRunBridge: HypRunBridge>
 {
-    state: PassivateState,
-    view_state: PassivateViewState,
-    dock_views: DockViews<PassivateView>,
+    state: PassivateState<RustBridge>,
+    view_state: PassivateViewState<RustBridge>,
+    dock_views: DockViews<PassivateView<RustBridge, THypRunBridge>>,
     configuration: ConfigurationManager
 }
 
-impl AppState
+impl<THypRunBridge: HypRunBridge> AppState<THypRunBridge>
 {
     pub fn new(
-        state: PassivateState,
-        view_state: PassivateViewState,
-        dock_views: DockViews<PassivateView>,
+        state: PassivateState<RustBridge>,
+        view_state: PassivateViewState<RustBridge>,
+        dock_views: DockViews<PassivateView<RustBridge, THypRunBridge>>,
         configuration: ConfigurationManager
     ) -> Self
     {
@@ -64,18 +66,19 @@ pub mod tests
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
     use passivate_delegation::{Rx, Tx};
-    use passivate_egui_core::PassivateViewState;
+    use passivate_egui_core::passivate_view_state::PassivateViewState;
     use passivate_egui_docking::dock_views::DockViews;
     use passivate_egui_docking::docking_layout::DockingLayout;
     use passivate_egui_views::passivate_layout;
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_bridge::hyp_run_bridge::MockHypRunBridge;
+    use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
     use passivate_model_core::hyp_session::HypSession;
     use passivate_model_core::hyp_session_event::HypSessionEvent;
-    use passivate_model_core::hyp_state::HypState;
-    use passivate_model_rust::RustBridge;
+    use passivate_model_rust::{RustBridge, RustHyp};
     use passivate_testing::path_resolution::test_data_path;
 
     use crate::app_state::AppState;
@@ -116,13 +119,13 @@ pub mod tests
         ui.step();
 
         let example_hyp = example_hyp(HypState::Passed);
-        hyp_run_tx.send(HypSessionEvent::HypCompleted(example_hyp.id));
+        hyp_run_tx.send(HypSessionEvent::HypCompleted(example_hyp.id().clone()));
 
         ui.step();
         ui.snapshot(&test_name!());
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent<RustBridge>>) -> (AppState, DockingLayout)
+    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent<RustBridge>>) -> (AppState<MockHypRunBridge>, DockingLayout)
     {
         let example_hyp = example_hyp(HypState::Failed);
 
@@ -139,7 +142,7 @@ pub mod tests
             Tx::stub()
         );
 
-        let views = PassivateViews::stub();
+        let views = PassivateViews::<RustBridge, MockHypRunBridge>::stub();
 
         let layout = passivate_layout::default(&views);
         let dock_views = DockViews::new(views.into());
@@ -153,9 +156,9 @@ pub mod tests
         test_data_path().join("example_snapshots")
     }
 
-    fn example_hyp(state: HypState) -> Hyp
+    fn example_hyp(state: HypState) -> Hyp<RustBridge>
     {
-        let hyp_id = HypId::new("example_package", "example_crate", "example_test");
-        Hyp::new(hyp_id, state)
+        let hyp_id = RustHyp::new_single(HypId::new("example_package", "example_crate", "example_test"));
+        Hyp::with_state(hyp_id, state)
     }
 }

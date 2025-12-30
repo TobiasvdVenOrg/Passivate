@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 passivate_delegation = { path = "../delegation" }
-passivate_model_core = { path = "../model/core" }
+passivate_model_bridge = { path = "../model/bridge" }
 
 notify.workspace = true
 camino.workspace = true

@@ -6,23 +6,20 @@ use notify::Error as NotifyError;
 
 pub enum NotifyChangeEventsError
 {
-    InvalidPath(InvalidPathError)
-}
-
-pub struct InvalidPathError
-{
-    pub path: Utf8PathBuf,
-    pub notify_error: NotifyError
+    InvalidPath
+    {
+        path: Utf8PathBuf, notify_error: NotifyError
+    }
 }
 
 impl NotifyChangeEventsError
 {
     pub fn invalid_path(path: &Utf8Path, notify_error: NotifyError) -> NotifyChangeEventsError
     {
-        NotifyChangeEventsError::InvalidPath(InvalidPathError {
+        NotifyChangeEventsError::InvalidPath {
             path: path.to_path_buf(),
             notify_error
-        })
+        }
     }
 
     fn try_absolute_path(relative_path: &Utf8Path) -> String
@@ -54,10 +51,10 @@ impl Display for NotifyChangeEventsError
     {
         match &self
         {
-            NotifyChangeEventsError::InvalidPath(invalid_path) =>
+            NotifyChangeEventsError::InvalidPath { path, notify_error: _ } =>
             {
-                writeln!(f, "input was: {}", invalid_path.path)?;
-                writeln!(f, "full path was: {}", Self::try_absolute_path(&invalid_path.path))?;
+                writeln!(f, "input was: {}", path)?;
+                writeln!(f, "full path was: {}", Self::try_absolute_path(path))?;
                 write!(f, "working directory: {}", Self::try_working_dir())
             }
         }
@@ -78,7 +75,7 @@ impl Error for NotifyChangeEventsError
     {
         match &self
         {
-            NotifyChangeEventsError::InvalidPath(invalid_path) => Some(invalid_path.notify_error.source()?)
+            NotifyChangeEventsError::InvalidPath { path: _, notify_error } => Some(notify_error.source()?)
         }
     }
 }

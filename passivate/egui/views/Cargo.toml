@@ -7,8 +7,10 @@ edition = "2024"
 passivate_delegation = { path = "../../delegation" }
 passivate_configuration = { path = "../../configuration" }
 passivate_core = { path = "../../core" }
+passivate_model_bridge = { path = "../../model/bridge" }
 passivate_egui_core = { path = "../core" }
 passivate_egui_docking = { path = "../docking" }
+passivate_id_chain_tree = { path = "../../id_chain_tree" }
 passivate_egui_view_configuration = { path = "../view/configuration" }
 passivate_egui_view_coverage = { path = "../view/coverage" }
 passivate_egui_view_details = { path = "../view/details" }
@@ -27,6 +29,7 @@ epaint.workspace = true
 [dev-dependencies]
 passivate_testing = { path = "../../testing" }
 passivate_hyp_names = { path = "../../hyp_names" }
+passivate_model_rust = { path = "../../model/rust" }
 
 egui_kittest.workspace = true
 galvanic-assert.workspace = true

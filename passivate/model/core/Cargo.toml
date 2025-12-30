@@ -11,7 +11,10 @@ passivate_model_bridge = { path = "../bridge" }
 camino.workspace = true
 itertools.workspace = true
 thiserror.workspace = true
+enum-display-derive.workspace = true
 
 [dev-dependencies]
+passivate_testing = { path = "../../testing" }
+
 assert_matches.workspace = true
 galvanic-assert.workspace = true

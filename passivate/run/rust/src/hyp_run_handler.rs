@@ -6,13 +6,16 @@ use passivate_coverage::compute_coverage::ComputeCoverage;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
 use passivate_hyp_names::hyp_id::HypId;
-use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
 use passivate_model_rust::RustBridge;
 use passivate_run_core::session_event_tx::SessionEventTx;
 
 use crate::hyp_runner::HypRunner;
 
-pub fn test_run_thread(rx: Rx<CancellableMessage<HypRunTrigger>>, mut handler: HypRunHandler) -> JoinHandle<HypRunHandler>
+pub fn test_run_thread(
+    rx: Rx<CancellableMessage<HypRunTrigger<RustBridge>>>,
+    mut handler: HypRunHandler
+) -> JoinHandle<HypRunHandler>
 {
     thread::spawn(move || {
         while let Ok(event) = rx.recv()
@@ -31,40 +34,22 @@ pub struct HypRunHandler
     coverage: Box<dyn ComputeCoverage + Send>,
     hyp_run_tx: SessionEventTx<RustBridge>,
     coverage_tx: Tx<CoverageStatus>,
-    configuration: ConfigurationManager,
-    pinned_hyp: Option<HypId>
+    configuration: ConfigurationManager
 }
 
 impl HypRunHandler
 {
-    pub fn handle(&mut self, event: HypRunTrigger, cancellation: Cancellation)
+    pub fn handle(&mut self, event: HypRunTrigger<RustBridge>, cancellation: Cancellation)
     {
         match event
         {
             HypRunTrigger::DefaultRun => self.run_hyps(cancellation.clone()),
-            HypRunTrigger::PinHyp { id } =>
-            {
-                self.pinned_hyp = Some(id);
-                self.run_hyps(cancellation.clone());
-            }
-            HypRunTrigger::ClearPinnedHyps =>
-            {
-                self.pinned_hyp = None;
-                self.run_hyps(cancellation.clone());
-            }
             HypRunTrigger::Hyp { id, update_snapshots } => self.run_hyp(&id, update_snapshots, cancellation.clone())
         }
     }
 
     fn run_hyps(&mut self, cancellation: Cancellation)
     {
-        if let Some(pinned_hyp) = self.pinned_hyp.clone()
-        {
-            let update_snapshots = false;
-            self.run_hyp(&pinned_hyp, update_snapshots, cancellation.clone());
-            return;
-        }
-
         let coverage_enabled = self.coverage_enabled();
 
         if coverage_enabled

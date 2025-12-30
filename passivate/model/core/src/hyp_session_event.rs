@@ -1,6 +1,9 @@
-use passivate_model_bridge::{Bridge, OutputReport};
+use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::output_report::OutputReport;
+
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum CompilationMessageKind
 {
     Info,
@@ -42,11 +45,38 @@ impl CompilationMessage
     }
 }
 
+impl Display for CompilationMessage
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{}: {}", self.kind, self.content)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConsoleOutput
 {
     pub content: String,
     pub kind: ConsoleOutputKind
+}
+
+impl ConsoleOutput
+{
+    pub fn new_stdout(content: impl Into<String>) -> Self
+    {
+        Self {
+            content: content.into(),
+            kind: ConsoleOutputKind::StdOut
+        }
+    }
+
+    pub fn new_stderr(content: impl Into<String>) -> Self
+    {
+        Self {
+            content: content.into(),
+            kind: ConsoleOutputKind::StdErr
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

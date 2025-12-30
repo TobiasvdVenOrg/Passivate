@@ -2,7 +2,7 @@ use crate::id_chain::IdChain;
 use crate::tree::ChainLink;
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct Node<TValue>
+pub struct Node<TValue>
 {
     pub(crate) value: TValue
 }

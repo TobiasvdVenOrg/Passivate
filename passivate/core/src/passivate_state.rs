@@ -1,6 +1,6 @@
 use passivate_delegation::Rx;
 use passivate_hyp_names::hyp_id::HypId;
-use passivate_model_bridge::Bridge;
+use passivate_model_bridge::bridge::Bridge;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
@@ -10,7 +10,7 @@ use crate::passivate_state_change::PassivateStateChange;
 pub struct PassivateState<TBridge: Bridge>
 {
     pub hyp_session: HypSession<TBridge>,
-    pub selected_hyp: Option<HypId>,
+    pub selected_hyp: Option<TBridge::Id>,
     hyp_run_rx: Rx<HypSessionEvent<TBridge>>
 }
 

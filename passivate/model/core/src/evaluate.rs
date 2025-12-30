@@ -1,6 +1,9 @@
-use crate::hyp_state::HypState;
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_state::HypState;
 
-pub trait Evaluate
+use crate::hyp::Hyp;
+
+pub trait Evaluate<TBridge: Bridge>
 {
-    fn state(&self) -> HypState;
+    fn state_of(&self, hyp: Hyp<TBridge>) -> HypState;
 }

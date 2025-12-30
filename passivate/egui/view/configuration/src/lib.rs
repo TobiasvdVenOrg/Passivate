@@ -1,24 +1,23 @@
 use camino::Utf8PathBuf;
 use egui::Ui;
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_delegation::Tx;
-use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
 
-pub struct ConfigurationView
+pub struct ConfigurationView<THypRunBridge: HypRunBridge>
 {
     configuration_manager: ConfigurationManager,
     snapshots_path_field: String,
-    change_event_tx: Tx<HypRunTrigger>
+    hyp_runner: THypRunBridge
 }
 
-impl ConfigurationView
+impl<THypRunBridge: HypRunBridge> ConfigurationView<THypRunBridge>
 {
-    pub fn new(configuration_manager: ConfigurationManager, change_event_tx: Tx<HypRunTrigger>) -> Self
+    pub fn new(configuration_manager: ConfigurationManager, hyp_runner: THypRunBridge) -> Self
     {
         Self {
             configuration_manager,
             snapshots_path_field: String::new(),
-            change_event_tx
+            hyp_runner
         }
     }
 
@@ -34,7 +33,7 @@ impl ConfigurationView
                 c.coverage_enabled = configuration.coverage_enabled;
             });
 
-            self.change_event_tx.send(HypRunTrigger::DefaultRun);
+            self.hyp_runner.run_hyps();
         }
 
         ui.label("Snapshot Directories");
@@ -55,7 +54,7 @@ impl ConfigurationView
             });
 
             self.snapshots_path_field = String::new();
-            self.change_event_tx.send(HypRunTrigger::DefaultRun);
+            self.hyp_runner.run_hyps();
         }
     }
 }
@@ -75,7 +74,8 @@ mod tests
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::Tx;
     use passivate_hyp_names::test_name;
-    use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+    use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
+    use passivate_model_rust::RustBridge;
     use passivate_run_core::session_event_tx::SessionEventTx;
     use passivate_run_rust::hyp_run_handler::HypRunHandler;
     use passivate_run_rust::hyp_runner::HypRunner;
@@ -86,7 +86,8 @@ mod tests
     pub fn show_configuration()
     {
         let mut configuration_manager = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
-        let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), Tx::stub());
+        let tx: Tx<HypRunTrigger<RustBridge>> = Tx::stub();
+        let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), tx);
 
         let ui = |ui: &mut egui::Ui| {
             configuration_view.ui(ui);
@@ -134,7 +135,7 @@ mod tests
 
         assert_that!(
             &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(HypRunTrigger::DefaultRun)
+            eq(HypRunTrigger::<RustBridge>::DefaultRun)
         );
 
         assert!(test_run_handler.coverage_enabled());
@@ -165,7 +166,7 @@ mod tests
 
         assert_that!(
             &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(HypRunTrigger::DefaultRun)
+            eq(HypRunTrigger::<RustBridge>::DefaultRun)
         );
 
         assert_eq!(

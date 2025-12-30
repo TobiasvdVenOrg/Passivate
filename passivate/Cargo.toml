@@ -40,6 +40,7 @@ crossbeam-channel = "0.5.14"
 duct = "0.13.7"
 dunce = "1.0.5"
 eframe = { version = "0.31", features = [ "default_fonts", "wgpu", "accesskit", "wayland", "persistence" ] }
+enum-display-derive = "0.1.1"
 egui = { version = "0.31", features = [ "persistence" ] }
 egui_dock = "0.16.0"
 egui_kittest = { version = "0.31.0", features = [ "wgpu", "snapshot" ] }

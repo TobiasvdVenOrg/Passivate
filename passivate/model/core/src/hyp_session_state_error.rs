@@ -1,4 +1,4 @@
-use passivate_model_bridge::Bridge;
+use passivate_model_bridge::bridge::Bridge;
 use thiserror::*;
 
 use crate::hyp_session_event::HypSessionEvent;

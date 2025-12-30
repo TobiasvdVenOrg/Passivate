@@ -1,14 +1,15 @@
+pub mod snapshot_error;
 pub mod snapshot_handles;
+pub mod snapshots;
 
 use std::fs::File;
-use std::io::Error as IoError;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use epaint::ColorImage;
-use passivate_hyp_names::hyp_id::HypId;
-use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
-use png::DecodingError;
-use thiserror::Error;
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_core::hyp::Hyp;
+
+use crate::snapshot_error::SnapshotError;
 
 pub struct Snapshot
 {
@@ -22,34 +23,6 @@ pub struct Snapshots
     pub snapshot_directories: Vec<Utf8PathBuf>
 }
 
-#[derive(Error, Debug)]
-pub enum SnapshotError
-{
-    #[error("snapshot format '{color_type:?}' is not supported: {path}")]
-    Unsupported
-    {
-        color_type: png::ColorType, path: Utf8PathBuf
-    },
-
-    #[error("snapshot data did not match expected size: {path}")]
-    InvalidData
-    {
-        path: Utf8PathBuf
-    },
-
-    #[error("io error occurred loading snapshot:\n{error}\n{path}")]
-    Io
-    {
-        error: IoError, path: Utf8PathBuf
-    },
-
-    #[error("decoding error {error} in snapshot: {path}")]
-    Decoding
-    {
-        error: DecodingError, path: Utf8PathBuf
-    }
-}
-
 impl Snapshots
 {
     pub fn new(snapshot_directories: Vec<Utf8PathBuf>) -> Self
@@ -57,9 +30,9 @@ impl Snapshots
         Self { snapshot_directories }
     }
 
-    pub fn from_hyp(&self, hyp_id: &HypId) -> Snapshot
+    pub fn from_hyp<TBridge: Bridge>(&self, hyp: &Hyp<TBridge>) -> Snapshot
     {
-        let file_name = hyp_id.name(HypNameStrategy::Default);
+        let file_name = hyp.name();
         let current = self.from_file(Utf8PathBuf::from(&file_name).with_extension("png"));
         let new = self.from_file(Utf8PathBuf::from(&file_name).with_extension("new.png"));
 

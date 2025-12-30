@@ -10,7 +10,7 @@ use passivate_coverage::grcov::Grcov;
 use passivate_delegation::{Rx, Tx};
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
-use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
 use passivate_model_rust::RustBridge;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
 use passivate_run_core::session_event_tx::SessionEventTx;
@@ -28,7 +28,7 @@ pub struct PassivateCore
 {
     pub state: PassivateState<RustBridge>,
     pub passivate_path: Utf8PathBuf,
-    pub change_event_tx: Tx<HypRunTrigger>,
+    pub change_event_tx: Tx<HypRunTrigger<RustBridge>>,
     pub configuration: ConfigurationManager,
     pub log_rx: Rx<LogMessage>,
     pub coverage_rx: Rx<CoverageStatus>,

@@ -12,8 +12,7 @@ use notify::{
     Result as NotifyResult,
     Watcher
 };
-use passivate_delegation::Tx;
-use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;
 
@@ -25,7 +24,10 @@ pub struct NotifyChangeEvents
 
 impl NotifyChangeEvents
 {
-    pub fn new(path: &Utf8Path, change_events: Tx<HypRunTrigger>) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
+    pub fn new(
+        path: &Utf8Path,
+        hyp_run: impl HypRunBridge + Send + 'static
+    ) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
 
@@ -50,16 +52,12 @@ impl NotifyChangeEvents
                                 {
                                     if &modified > last_modification
                                     {
-                                        let change_event = HypRunTrigger::DefaultRun;
-
-                                        change_events.send(change_event);
+                                        hyp_run.run_hyps();
                                     }
                                 }
                                 else
                                 {
-                                    let change_event = HypRunTrigger::DefaultRun;
-
-                                    change_events.send(change_event);
+                                    hyp_run.run_hyps();
                                 }
 
                                 modification_cache.insert(path.clone(), modified);

@@ -1,5 +1,7 @@
 use passivate_delegation::{Rx, Tx};
-use passivate_model_bridge::{Bridge, HypSessionBridge, OutputReport};
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_session_bridge::HypSessionBridge;
+use passivate_model_bridge::output_report::OutputReport;
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 
 #[faux::create]
@@ -27,12 +29,12 @@ impl<TBridge: Bridge> HypSessionBridge<TBridge> for SessionEventTx<TBridge>
         self.tx.send(HypSessionEvent::RunStarted);
     }
 
-    fn output(&mut self, report: OutputReport<TBridge>)
+    fn send_output(&mut self, report: OutputReport<TBridge>)
     {
         self.tx.send(HypSessionEvent::Output(report));
     }
 
-    fn hyp(&mut self, hyp_info: TBridge::HypInfo)
+    fn send_hyp(&mut self, hyp_info: TBridge::HypInfo)
     {
         self.tx.send(HypSessionEvent::HypExists(hyp_info));
     }
@@ -49,8 +51,8 @@ impl<TBridge: Bridge> SessionEventTx<TBridge>
     {
         let mut stub = SessionEventTx::faux();
         stub._when_start_run().then(|_| {});
-        stub._when_output().then(|_| {});
-        stub._when_hyp().then(|_| {});
+        stub._when_send_output().then(|_| {});
+        stub._when_send_hyp().then(|_| {});
         stub._when_complete_run().then(|_| {});
 
         stub

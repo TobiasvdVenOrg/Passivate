@@ -1,20 +1,19 @@
 use epaint::TextureHandle;
 use epaint::textures::TextureOptions;
-use passivate_hyp_names::hyp_id::HypId;
 
 use crate::{Snapshot, SnapshotError};
 
-pub struct SnapshotHandles
+pub struct SnapshotHandles<THypId>
 {
     pub current: Option<Result<TextureHandle, SnapshotError>>,
     pub new: Option<Result<TextureHandle, SnapshotError>>,
     pub are_identical: bool,
-    pub hyp_id: HypId
+    pub hyp_id: THypId
 }
 
-impl SnapshotHandles
+impl<THypId> SnapshotHandles<THypId>
 {
-    pub fn new(hyp_id: HypId, snapshot: Snapshot, egui_context: &egui::Context) -> Self
+    pub fn new(hyp_id: THypId, snapshot: Snapshot, egui_context: &egui::Context) -> Self
     {
         let mut are_identical = false;
 
@@ -39,7 +38,7 @@ impl SnapshotHandles
         }
     }
 
-    pub fn empty(hyp_id: HypId) -> Self
+    pub fn empty(hyp_id: THypId) -> Self
     {
         SnapshotHandles {
             current: None,

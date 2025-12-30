@@ -1,12 +1,12 @@
 use passivate_core::compose::PassivateCore;
 use passivate_core::startup_errors::StartupError;
-use passivate_egui_core::PassivateViewState;
+use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_view_configuration::ConfigurationView;
 use passivate_egui_view_coverage::CoverageView;
-use passivate_egui_view_details::DetailsView;
+use passivate_egui_view_details::details_view::DetailsView;
 use passivate_egui_view_log::LogView;
-use passivate_egui_view_session::SessionView;
+use passivate_egui_view_session::session_view::SessionView;
 use passivate_egui_views::passivate_layout;
 use passivate_egui_views::passivate_views::PassivateViews;
 
@@ -35,7 +35,7 @@ pub fn run_app_and_get_context(
 
     // Views
     let tests_view = SessionView;
-    let details_view = DetailsView::new(change_event_tx.clone());
+    let details_view = DetailsView::new();
     let coverage_view = CoverageView::new(coverage_rx, configuration.clone());
     let configuration_view = ConfigurationView::new(configuration.clone(), change_event_tx);
     let log_view = LogView::new(log_rx);

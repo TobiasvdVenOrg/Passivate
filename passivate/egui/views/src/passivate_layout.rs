@@ -4,15 +4,20 @@ use passivate_configuration::configuration_errors::ConfigurationLoadError;
 use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_docking::layout_management::LayoutManagement;
 use passivate_egui_docking::view::View;
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
 
 use crate::passivate_views::PassivateViews;
 
-pub fn load(path: &Utf8Path, views: &PassivateViews) -> Result<LayoutManagement, ConfigurationLoadError>
+pub fn load<TBridge: Bridge>(
+    path: &Utf8Path,
+    views: &PassivateViews<TBridge, TBridge::HypRunner>
+) -> Result<LayoutManagement, ConfigurationLoadError>
 {
     LayoutManagement::from_file_or_default(path, || default(views))
 }
 
-pub fn default(views: &PassivateViews) -> DockingLayout
+pub fn default<TBridge: Bridge, THypRunBridge: HypRunBridge>(views: &PassivateViews<TBridge, THypRunBridge>) -> DockingLayout
 {
     let mut layout = DockingLayout::new(vec![views.session_dock().id()]);
 

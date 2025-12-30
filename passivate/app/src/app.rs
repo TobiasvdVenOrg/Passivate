@@ -1,18 +1,21 @@
 use eframe::Frame;
 use egui::Context;
+use passivate_delegation::Tx;
 use passivate_egui_docking::layout_management::LayoutManagement;
+use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
+use passivate_model_rust::RustBridge;
 
 use crate::app_state::AppState;
 
 pub struct App<'a>
 {
     layout: LayoutManagement,
-    state: &'a mut AppState
+    state: &'a mut AppState<Tx<HypRunTrigger<RustBridge>>>
 }
 
 impl<'a> App<'a>
 {
-    pub fn new(layout: LayoutManagement, state: &'a mut AppState) -> Self
+    pub fn new(layout: LayoutManagement, state: &'a mut AppState<Tx<HypRunTrigger<RustBridge>>>) -> Self
     {
         Self { layout, state }
     }

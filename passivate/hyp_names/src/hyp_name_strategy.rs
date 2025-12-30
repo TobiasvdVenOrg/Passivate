@@ -4,6 +4,7 @@ use passivate_id_chain_tree::id_chain::IdChain;
 
 use crate::hyp_id::HypId;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum HypNameStrategy
 {
     Default,

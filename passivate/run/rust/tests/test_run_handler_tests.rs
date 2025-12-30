@@ -15,13 +15,12 @@ use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
-use passivate_model_core::evaluate::Evaluate;
-use passivate_model_core::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::bridge_hyp::BridgeHyp;
+use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
-use passivate_model_core::hyp_session_event::HypSessionEvent;
-use passivate_model_core::hyp_state::HypState;
-use passivate_model_core::hyp_session_event::CompilationMessage;
-use passivate_model_rust::RustOutput;
+use passivate_model_core::hyp_session_event::{ConsoleOutput, HypSessionEvent};
+use passivate_model_rust::{RustHyp, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
 use passivate_run_core::session_event_tx::SessionEventTx;
 use passivate_run_rust::hyp_run_handler::HypRunHandler;
@@ -67,19 +66,21 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
 
-    let hyp_to_run = HypId::new("simple_project", "add_tests", "add_2_and_2_is_4");
+    let hyp_to_run = RustHyp::new_single(HypId::new("simple_project", "add_tests", "add_2_and_2_is_4"));
 
     handler.handle(
         HypRunTrigger::Hyp {
-            id: hyp_to_run.clone(),
+            id: hyp_to_run.id().clone(),
             update_snapshots: false
         },
         Cancellation::default()
     );
 
     let session = HypSession::from_events(hyp_run_rx);
+    let mut iter = session.hyps().iter();
 
-    assert_matches!(session.hyps().iter().exactly_one(), Ok(hyp_to_run));
+    assert_matches!(iter.next(), Some(hyp_to_run));
+    assert_matches!(iter.next(), None);
 }
 
 #[test]
@@ -184,15 +185,18 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = session.hyps().entry(failed_test.chain()).unwrap();
 
+    let expected = vec![
+        RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),
+        RustOutput::Console(ConsoleOutput::new_stderr("  left: 5")),
+        RustOutput::Console(ConsoleOutput::new_stderr(" right: 4")),
+        RustOutput::Console(ConsoleOutput::new_stderr(
+            "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+        )),
+    ];
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
-        &failed_test.output.clone().into_iter().skip(2).map(|m| m).collect::<Vec<_>>(),
-        contains_in_order(vec![
-            RustOutput::Console( "assertion `left == right` failed".to_string(),
-            "  left: 5".to_string(),
-            " right: 4".to_string(),
-            "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
-        ])
+        &failed_test.iter_output().skip(2).collect::<Vec<_>>(),
+        contains_in_order(expected.iter())
     );
 
     Ok(())
@@ -219,17 +223,21 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let session = HypSession::from_events(hyp_run_rx);
 
-    let failed_test = session.hyps().by_id(&failed_hyp).unwrap();
+    let failed_test = session.hyps().entry(&failed_hyp).unwrap();
+
+    let expected = vec![
+        RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),
+        RustOutput::Console(ConsoleOutput::new_stderr("  left: 5")),
+        RustOutput::Console(ConsoleOutput::new_stderr(" right: 4")),
+        RustOutput::Console(ConsoleOutput::new_stderr(
+            "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+        )),
+    ];
 
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
-        &failed_test.output.clone().into_iter().skip(2).collect::<Vec<_>>(),
-        contains_in_order(vec![
-            "assertion `left == right` failed".to_string(),
-            "  left: 5".to_string(),
-            " right: 4".to_string(),
-            "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace".to_string()
-        ])
+        &failed_test.iter_output().skip(2).collect::<Vec<_>>(),
+        contains_in_order(expected.iter())
     );
 
     Ok(())

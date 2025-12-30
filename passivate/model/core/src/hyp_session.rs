@@ -1,14 +1,14 @@
 use std::fmt::Debug;
 
 use passivate_id_chain_tree::tree::Tree;
-use passivate_model_bridge::{Bridge, OutputReport};
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_state::HypState;
+use passivate_model_bridge::output_report::OutputReport;
 
-use crate::evaluate::Evaluate;
 use crate::hyp::Hyp;
 use crate::hyp_session_change::HypSessionChange;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state_error::HypSessionStateError;
-use crate::hyp_state::HypState;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct HypSession<TBridge: Bridge>
@@ -21,10 +21,11 @@ pub struct HypSession<TBridge: Bridge>
 struct Session<TBridge: Bridge>
 {
     activity: HypState,
-    hyps: Tree<TBridge::IdLink, Hyp<TBridge>>
+    hyps: Tree<TBridge::IdLink, Hyp<TBridge>>,
+    output: Vec<TBridge::Output>
 }
 
-type ChangeResult<TBridge> = Result<Option<HypSessionChange<TBridge>>, HypSessionEvent<TBridge>>;
+type ChangeResult<'a, TBridge> = Result<Option<HypSessionChange<'a, TBridge>>, HypSessionEvent<TBridge>>;
 
 impl<TBridge: Bridge> HypSession<TBridge>
 {
@@ -32,7 +33,8 @@ impl<TBridge: Bridge> HypSession<TBridge>
     {
         let session = Session {
             activity: HypState::Unknown,
-            hyps: Tree::new()
+            hyps: Tree::new(),
+            output: Vec::new()
         };
 
         HypSession { session, error: None }
@@ -55,6 +57,11 @@ impl<TBridge: Bridge> HypSession<TBridge>
         &self.session.hyps
     }
 
+    pub fn iter_output(&self) -> impl Iterator<Item = &TBridge::Output>
+    {
+        self.session.output.iter()
+    }
+
     pub fn update_all(&mut self, events: impl IntoIterator<Item = HypSessionEvent<TBridge>>)
     {
         for event in events
@@ -63,7 +70,7 @@ impl<TBridge: Bridge> HypSession<TBridge>
         }
     }
 
-    pub fn update(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<TBridge>>
+    pub fn update(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<'_, TBridge>>
     {
         if self.error.is_some()
         {
@@ -80,11 +87,8 @@ impl<TBridge: Bridge> HypSession<TBridge>
             }
         }
     }
-}
 
-impl<TBridge: Bridge> Evaluate for HypSession<TBridge>
-{
-    fn state(&self) -> HypState
+    pub fn state(&self) -> HypState
     {
         self.activity().unwrap_or(HypState::Failed)
     }
@@ -95,13 +99,13 @@ impl<TBridge: Bridge> Session<TBridge>
     fn update(
         &mut self,
         event: HypSessionEvent<TBridge>
-    ) -> Result<Option<HypSessionChange<TBridge>>, HypSessionStateError<TBridge>>
+    ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionStateError<TBridge>>
     {
         self.process_event(event)
             .map_err(|error_event| HypSessionStateError::UnexpectedEvent { event: error_event })
     }
 
-    fn process_event(&mut self, event: HypSessionEvent<TBridge>) -> ChangeResult<TBridge>
+    fn process_event(&mut self, event: HypSessionEvent<TBridge>) -> ChangeResult<'_, TBridge>
     {
         match self.activity
         {
@@ -126,26 +130,26 @@ impl<TBridge: Bridge> Session<TBridge>
         }
     }
 
-    fn start_run(&mut self) -> ChangeResult<TBridge>
+    fn start_run(&mut self) -> ChangeResult<'_, TBridge>
     {
         self.activity = HypState::Running;
 
         Ok(None)
     }
 
-    fn complete_run(&mut self) -> ChangeResult<TBridge>
+    fn complete_run(&mut self) -> ChangeResult<'_, TBridge>
     {
         self.activity = HypState::Passed;
 
         Ok(None)
     }
 
-    fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<TBridge>
+    fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
     {
         todo!()
     }
 
-    fn hyp_exists(&mut self, hyp_node_info: TBridge::HypInfo) -> ChangeResult<TBridge>
+    fn hyp_exists(&mut self, hyp_node_info: TBridge::HypInfo) -> ChangeResult<'_, TBridge>
     {
         let hyp: Hyp<TBridge> = Hyp::new(hyp_node_info);
 
