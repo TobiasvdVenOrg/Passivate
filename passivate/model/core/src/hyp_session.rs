@@ -1,13 +1,14 @@
 use std::fmt::Debug;
 
+use passivate_delegation::Rx;
 use passivate_id_chain_tree::tree::Tree;
 use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
 
 use crate::hyp::Hyp;
 use crate::hyp_session_change::HypSessionChange;
-use crate::hyp_session_event::HypSessionEvent;
 use crate::hyp_session_state_error::HypSessionStateError;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -70,6 +71,11 @@ impl<TBridge: Bridge> HypSession<TBridge>
         }
     }
 
+    pub fn update_next(&mut self, events_rx: &impl Rx<HypSessionEvent<TBridge>>) -> Option<HypSessionChange<'_, TBridge>>
+    {
+        events_rx.try_recv().map(|event| self.update(event)).ok().flatten()
+    }
+
     pub fn update(&mut self, event: HypSessionEvent<TBridge>) -> Option<HypSessionChange<'_, TBridge>>
     {
         if self.error.is_some()
@@ -107,6 +113,8 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn process_event(&mut self, event: HypSessionEvent<TBridge>) -> ChangeResult<'_, TBridge>
     {
+        log::info!("process_event: {}", event);
+
         match self.activity
         {
             HypState::Unknown | HypState::Passed | HypState::Failed =>
@@ -144,7 +152,7 @@ impl<TBridge: Bridge> Session<TBridge>
         Ok(None)
     }
 
-    fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
+    fn output(&mut self, _output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
     {
         todo!()
     }

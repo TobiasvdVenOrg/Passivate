@@ -24,21 +24,23 @@ pub fn run_app_and_get_context(
 ) -> Result<(), StartupError>
 {
     let PassivateCore {
+        session,
         state,
         passivate_path,
-        change_event_tx,
+        session_trigger_tx,
+        session_trigger_rx,
+        session_event_rx,
         configuration,
         log_rx,
-        coverage_rx,
         ..
     } = passivate;
 
     // Views
     let tests_view = SessionView;
-    let details_view = DetailsView::new();
-    let coverage_view = CoverageView::new(coverage_rx, configuration.clone());
-    let configuration_view = ConfigurationView::new(configuration.clone(), change_event_tx);
-    let log_view = LogView::new(log_rx);
+    let details_view = DetailsView;
+    let coverage_view = CoverageView;
+    let configuration_view = ConfigurationView::new();
+    let log_view = LogView;
 
     let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
@@ -60,7 +62,15 @@ pub fn run_app_and_get_context(
     };
 
     let view_state = PassivateViewState::default();
-    let mut app_state = AppState::new(state, view_state, dock_views, configuration);
+    let mut app_state = AppState::new(
+        session,
+        state,
+        view_state,
+        dock_views,
+        configuration,
+        session_event_rx,
+        log_rx
+    );
 
     eframe::run_native(
         "Passivate",

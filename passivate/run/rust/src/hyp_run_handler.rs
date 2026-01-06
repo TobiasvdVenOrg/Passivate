@@ -1,129 +1,117 @@
-use std::thread::{self, JoinHandle};
+use std::thread;
 
-use bon::Builder;
-use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_coverage::compute_coverage::ComputeCoverage;
-use passivate_coverage::coverage_status::CoverageStatus;
-use passivate_delegation::{CancellableMessage, Cancellation, Rx, Tx};
+use passivate_delegation::{CancellableMessage, Cancellation, Rx};
 use passivate_hyp_names::hyp_id::HypId;
-use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_run_bridge::{HypRunTrigger, HypRunTriggerKind};
+use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
 use passivate_model_rust::RustBridge;
-use passivate_run_core::session_event_tx::SessionEventTx;
 
 use crate::hyp_runner::HypRunner;
 
-pub fn test_run_thread(
-    rx: Rx<CancellableMessage<HypRunTrigger<RustBridge>>>,
-    mut handler: HypRunHandler
-) -> JoinHandle<HypRunHandler>
-{
-    thread::spawn(move || {
-        while let Ok(event) = rx.recv()
-        {
-            handler.handle(event.message, event.cancellation);
-        }
+pub trait HypSessionBridge<TBridge: Bridge> =
+    StartRunBridge<TBridge> + SendHypBridge<TBridge> + SendOutputBridge<TBridge> + CompleteRunBridge<TBridge>;
 
-        handler
-    })
+pub fn hyp_run_thread<'scope, 'env>(
+    scope: &'scope thread::Scope<'scope, 'env>,
+    hyp_run_trigger_rx: impl Rx<CancellableMessage<HypRunTrigger<RustBridge>>> + 'env,
+    mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
+    mut runner: HypRunner
+)
+{
+    scope.spawn(move || {
+        while let Ok(trigger) = hyp_run_trigger_rx.recv()
+        {
+            hyp_session_bridge.start_run();
+            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger.message, trigger.cancellation);
+            hyp_session_bridge.complete_run();
+        }
+    });
 }
 
-#[derive(Builder)]
-pub struct HypRunHandler
+pub fn handle_hyp_run_trigger(
+    runner: &mut HypRunner,
+    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
+    trigger: HypRunTrigger<RustBridge>,
+    cancellation: Cancellation
+)
 {
-    runner: HypRunner,
-    coverage: Box<dyn ComputeCoverage + Send>,
-    hyp_run_tx: SessionEventTx<RustBridge>,
-    coverage_tx: Tx<CoverageStatus>,
-    configuration: ConfigurationManager
+    match trigger.kind
+    {
+        HypRunTriggerKind::All =>
+        {
+            run_hyps(
+                runner,
+                hyp_session_bridge,
+                cancellation.clone(),
+                trigger.options.compute_coverage
+            )
+        }
+        HypRunTriggerKind::Single { hyp_id } =>
+        {
+            run_hyp(
+                runner,
+                hyp_session_bridge,
+                &hyp_id,
+                trigger.options.update_snapshots,
+                cancellation.clone()
+            )
+        }
+    }
 }
 
-impl HypRunHandler
+fn run_hyps(
+    runner: &mut HypRunner,
+    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
+    cancellation: Cancellation,
+    compute_coverage: bool
+)
 {
-    pub fn handle(&mut self, event: HypRunTrigger<RustBridge>, cancellation: Cancellation)
+    // if compute_coverage
+    // {
+    //     self.coverage_tx.send(CoverageStatus::Preparing);
+    // }
+
+    // if let Err(clean_error) = self.coverage.clean_coverage_output()
+    // {
+    //     log::error!("error cleaning coverage output: {:?}", clean_error);
+    // }
+
+    if cancellation.is_cancelled()
     {
-        match event
-        {
-            HypRunTrigger::DefaultRun => self.run_hyps(cancellation.clone()),
-            HypRunTrigger::Hyp { id, update_snapshots } => self.run_hyp(&id, update_snapshots, cancellation.clone())
-        }
+        return;
     }
 
-    fn run_hyps(&mut self, cancellation: Cancellation)
+    let test_output = runner.run_hyps(compute_coverage, cancellation.clone(), hyp_session_bridge, Vec::new());
+
+    if cancellation.is_cancelled()
     {
-        let coverage_enabled = self.coverage_enabled();
-
-        if coverage_enabled
-        {
-            self.coverage_tx.send(CoverageStatus::Preparing);
-        }
-
-        if let Err(clean_error) = self.coverage.clean_coverage_output()
-        {
-            log::error!("error cleaning coverage output: {:?}", clean_error);
-        }
-
-        if cancellation.is_cancelled()
-        {
-            return;
-        }
-
-        let test_output = self
-            .runner
-            .run_hyps(coverage_enabled, cancellation.clone(), &mut self.hyp_run_tx, Vec::new());
-
-        if cancellation.is_cancelled()
-        {
-            return;
-        }
-
-        match test_output
-        {
-            Ok(_) =>
-            {
-                if self.coverage_enabled()
-                {
-                    log::info!("Coverage enabled, computing...");
-                    self.compute_coverage(cancellation.clone());
-                }
-                else
-                {
-                    log::info!("Coverage disabled.");
-                }
-            }
-            Err(test_error) =>
-            {
-                todo!()
-            }
-        };
+        return;
     }
 
-    fn compute_coverage(&mut self, cancellation: Cancellation)
+    match test_output
     {
-        self.coverage_tx.send(CoverageStatus::Running);
-
-        let coverage_status = self.coverage.compute_coverage(cancellation.clone());
-
-        log::info!("Coverage completed.");
-
-        match coverage_status
-        {
-            Ok(coverage_status) => self.coverage_tx.send(coverage_status),
-            Err(coverage_error) => self.coverage_tx.send(CoverageStatus::Error(coverage_error.to_string()))
-        }
-    }
-
-    fn run_hyp(&mut self, id: &HypId, update_snapshots: bool, cancellation: Cancellation)
-    {
-        let result = self.runner.run_hyp(id, update_snapshots, cancellation, &mut self.hyp_run_tx);
-
-        if let Err(error) = result
+        Ok(_) =>
+        {}
+        Err(test_error) =>
         {
             todo!()
         }
-    }
+    };
+}
 
-    pub fn coverage_enabled(&self) -> bool
+fn run_hyp(
+    runner: &mut HypRunner,
+    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
+    id: &HypId,
+    update_snapshots: bool,
+    cancellation: Cancellation
+)
+{
+    let result = runner.run_hyp(id, update_snapshots, cancellation, hyp_session_bridge);
+
+    if let Err(error) = result
     {
-        self.configuration.get(|c| c.coverage_enabled)
+        todo!()
     }
 }

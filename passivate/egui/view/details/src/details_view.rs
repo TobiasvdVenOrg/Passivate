@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use egui::{Color32, RichText, TextureHandle, Ui};
 use passivate_egui_hyp_snapshots::snapshot_error::SnapshotError;
 use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
@@ -8,19 +6,11 @@ use passivate_model_bridge::hyp_state::HypState;
 
 use crate::hyp_details::HypDetails;
 
-pub struct DetailsView<TBridge: Bridge>
-{
-    _tbridge: PhantomData<TBridge>
-}
+pub struct DetailsView;
 
-impl<TBridge: Bridge> DetailsView<TBridge>
+impl DetailsView
 {
-    pub fn new() -> Self
-    {
-        Self { _tbridge: PhantomData }
-    }
-
-    pub fn ui(&mut self, ui: &mut Ui, details: Option<&HypDetails<'_, TBridge>>)
+    pub fn ui<TBridge: Bridge>(&mut self, ui: &mut Ui, details: Option<&HypDetails<'_, TBridge>>)
     {
         if let Some(details) = details
         {
@@ -60,7 +50,7 @@ impl<TBridge: Bridge> DetailsView<TBridge>
 
             if let Some(snapshot_handles) = &details.snapshot_handles
             {
-                self.draw_snapshots(ui, snapshot_handles);
+                self.draw_snapshots::<TBridge>(ui, snapshot_handles);
             }
         }
         else
@@ -69,7 +59,7 @@ impl<TBridge: Bridge> DetailsView<TBridge>
         }
     }
 
-    fn draw_snapshots(&self, ui: &mut Ui, snapshot_handles: &SnapshotHandles<TBridge::Id>)
+    fn draw_snapshots<TBridge: Bridge>(&self, ui: &mut Ui, snapshot_handles: &SnapshotHandles<TBridge::Id>)
     {
         if let Some(current) = &snapshot_handles.current
         {

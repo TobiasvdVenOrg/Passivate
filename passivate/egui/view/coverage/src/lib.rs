@@ -1,53 +1,41 @@
 use egui::collapsing_header::CollapsingState;
 use egui::{Color32, RichText, Ui};
-use passivate_configuration::configuration_manager::ConfigurationManager;
+use passivate_configuration::configuration::ConfigurationChange;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::covdir_json::CovdirJson;
-use passivate_delegation::Rx;
 
-pub struct CoverageView
-{
-    receiver: Rx<CoverageStatus>,
-    configuration: ConfigurationManager,
-    status: CoverageStatus
-}
+pub struct CoverageView;
 
 impl CoverageView
 {
-    pub fn new(receiver: Rx<CoverageStatus>, configuration: ConfigurationManager) -> CoverageView
+    pub fn ui(&mut self, ui: &mut Ui, status: &CoverageStatus) -> Option<ConfigurationChange>
     {
-        CoverageView {
-            receiver,
-            configuration,
-            status: CoverageStatus::Disabled
-        }
-    }
-
-    pub fn ui(&mut self, ui: &mut Ui)
-    {
-        if let Ok(status) = self.receiver.try_recv()
-        {
-            self.status = status;
-        }
-
-        match &self.status
+        match status
         {
             CoverageStatus::Disabled => self.draw_disabled(ui),
             CoverageStatus::Error(coverage_error) =>
             {
                 let text = RichText::new(coverage_error).size(16.0).color(Color32::RED);
                 ui.heading(text);
+                None
             }
             CoverageStatus::Preparing =>
             {
                 ui.heading("Preparing...");
+                None
             }
             CoverageStatus::Running =>
             {
                 ui.heading("Running...");
+                None
             }
-            CoverageStatus::Done(json) => Self::draw_coverage(ui, json, egui::Id::new(format!("root{}", json.name)))
-        };
+            CoverageStatus::Done(json) =>
+            {
+                let egui_id = egui::Id::new(format!("root{}", json.name));
+                Self::draw_coverage(ui, json, egui_id);
+                None
+            }
+        }
     }
 
     fn draw_coverage(ui: &mut Ui, coverage: &CovdirJson, id: egui::Id)
@@ -84,15 +72,17 @@ impl CoverageView
         }
     }
 
-    fn draw_disabled(&mut self, ui: &mut Ui)
+    fn draw_disabled(&mut self, ui: &mut Ui) -> Option<ConfigurationChange>
     {
         ui.heading("Code coverage is disabled");
 
         if ui.button("Enable").clicked()
         {
-            _ = self.configuration.update(|c| {
-                c.coverage_enabled = true;
-            });
+            Some(ConfigurationChange::CoverageEnabled(true))
+        }
+        else
+        {
+            None
         }
     }
 }
@@ -116,7 +106,7 @@ mod tests
     pub fn show_coverage_hierarchy_fully_collapsed()
     {
         let (coverage_tx, coverage_rx) = Tx::new();
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
 
         let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
@@ -147,7 +137,7 @@ mod tests
     {
         let (coverage_tx, coverage_rx) = Tx::new();
 
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
 
         let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 
@@ -241,7 +231,7 @@ mod tests
     #[test]
     pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
     {
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
         let test_run_handler = HypRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
@@ -273,7 +263,7 @@ mod tests
     pub fn show_error()
     {
         let (coverage_tx, coverage_rx) = Tx::new();
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
 
         let mut coverage_view = CoverageView::new(coverage_rx, configuration);
 

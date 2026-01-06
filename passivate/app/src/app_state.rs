@@ -1,58 +1,94 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
+use passivate_core::passivate_state_change::PassivateStateChange;
+use passivate_delegation::Rx;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_views::passivate_ui;
 use passivate_egui_views::passivate_views::PassivateView;
-use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
+use passivate_log::log_message::LogMessage;
+use passivate_model_bridge::hyp_session_event::HypSessionEvent;
+use passivate_model_core::hyp_session::HypSession;
+use passivate_model_core::hyp_session_change::HypSessionChange;
 use passivate_model_rust::RustBridge;
 
-pub struct AppState<THypRunBridge: HypRunBridge>
+pub struct AppState
 {
+    session: HypSession<RustBridge>,
     state: PassivateState<RustBridge>,
     view_state: PassivateViewState<RustBridge>,
-    dock_views: DockViews<PassivateView<RustBridge, THypRunBridge>>,
-    configuration: ConfigurationManager
+    dock_views: DockViews<PassivateView>,
+    configuration: ConfigurationManager,
+    session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
+    log_rx: crossbeam_channel::Receiver<LogMessage>
 }
 
-impl<THypRunBridge: HypRunBridge> AppState<THypRunBridge>
+impl AppState
 {
     pub fn new(
+        session: HypSession<RustBridge>,
         state: PassivateState<RustBridge>,
         view_state: PassivateViewState<RustBridge>,
-        dock_views: DockViews<PassivateView<RustBridge, THypRunBridge>>,
-        configuration: ConfigurationManager
+        dock_views: DockViews<PassivateView>,
+        configuration: ConfigurationManager,
+        session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
+        log_rx: crossbeam_channel::Receiver<LogMessage>
     ) -> Self
     {
         Self {
+            session,
             state,
             view_state,
             dock_views,
-            configuration
+            configuration,
+            session_event_rx,
+            log_rx
         }
     }
 
-    pub fn update(&mut self, egui_context: &egui::Context)
+    pub fn update_app(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout)
     {
-        let change = self.state.update();
+        let configuration = &*self.configuration.acquire();
 
-        if let Some(change) = &change
+        let session_change = self
+            .session
+            .update_next(&self.session_event_rx)
+            .map(map_session_change)
+            .flatten();
+
+        if let Some(session_change) = session_change
         {
-            self.view_state.update(change, &self.configuration, egui_context);
+            self.state.update_state(&session_change);
+            self.view_state
+                .update_view_state(&session_change, configuration, egui_context, &self.log_rx);
+        }
+
+        let ui_changes = passivate_ui::ui(
+            &self.session,
+            &self.view_state,
+            &self.state,
+            configuration,
+            egui_context,
+            &mut self.dock_views,
+            layout
+        );
+
+        for ui_change in ui_changes
+        {
+            self.state.update_state(&ui_change);
+            self.view_state
+                .update_view_state(&ui_change, configuration, egui_context, &self.log_rx);
         }
     }
+}
 
-    pub fn update_and_ui(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout)
+fn map_session_change(change: HypSessionChange<RustBridge>) -> Option<PassivateStateChange<RustBridge>>
+{
+    match change
     {
-        self.update(egui_context);
-
-        let changes = passivate_ui::ui(&self.view_state, &self.state, egui_context, &mut self.dock_views, layout);
-
-        for change in &changes
-        {
-            self.view_state.update(change, &self.configuration, egui_context);
-        }
+        HypSessionChange::HypUpdated(single_hyp) => Some(PassivateStateChange::HypDetailsChanged(single_hyp)),
+        HypSessionChange::NewHyp(_) => None
     }
 }
 

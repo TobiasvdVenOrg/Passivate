@@ -1,31 +1,35 @@
 use camino::Utf8Path;
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
-use passivate_configuration::configuration_source::ConfigurationSource;
+use passivate_configuration::configuration_source::{ConfigurationSource, FileConfigurationSource};
 
 use crate::docking_layout::DockingLayout;
 
 #[derive(Debug)]
-pub struct LayoutManagement
+pub struct LayoutManagement<TSource>
+where
+    TSource: ConfigurationSource<DockingLayout>
 {
     current_layout: DockingLayout,
-    source: Option<ConfigurationSource<DockingLayout>>
+    source: TSource
 }
 
-impl LayoutManagement
+impl<TSource> LayoutManagement<TSource>
+where
+    TSource: ConfigurationSource<DockingLayout>
 {
-    pub fn from_file_or_default<FDefault>(path: &Utf8Path, default: FDefault) -> Result<Self, ConfigurationLoadError>
+    pub fn from_file_or_default<FDefault>(
+        path: &Utf8Path,
+        default: FDefault
+    ) -> Result<LayoutManagement<FileConfigurationSource<DockingLayout>>, ConfigurationLoadError>
     where
         FDefault: FnOnce() -> DockingLayout
     {
-        let source = ConfigurationSource::from_file(path);
+        let source = FileConfigurationSource::from(path);
 
-        Self::from_source_or_default(source, default)
+        LayoutManagement::<FileConfigurationSource<DockingLayout>>::from_source_or_default(source, default)
     }
 
-    pub fn from_source_or_default<FDefault>(
-        source: ConfigurationSource<DockingLayout>,
-        default: FDefault
-    ) -> Result<Self, ConfigurationLoadError>
+    pub fn from_source_or_default<FDefault>(source: TSource, default: FDefault) -> Result<Self, ConfigurationLoadError>
     where
         FDefault: FnOnce() -> DockingLayout
     {
@@ -33,14 +37,14 @@ impl LayoutManagement
         {
             Ok(Self {
                 current_layout: layout,
-                source: Some(source)
+                source
             })
         }
         else
         {
             Ok(Self {
                 current_layout: default(),
-                source: Some(source)
+                source
             })
         }
     }
@@ -51,15 +55,14 @@ impl LayoutManagement
     }
 }
 
-impl Drop for LayoutManagement
+impl<TSource> Drop for LayoutManagement<TSource>
+where
+    TSource: ConfigurationSource<DockingLayout>
 {
     fn drop(&mut self)
     {
-        if let Some(source) = &self.source
-        {
-            let _error = source.persist(&self.current_layout).map_err(|error| {
-                log::error!("failed to persist docking layout: {:?}", error);
-            });
-        }
+        let _error = self.source.persist(&self.current_layout).map_err(|error| {
+            log::error!("failed to persist docking layout: {:?}", error);
+        });
     }
 }

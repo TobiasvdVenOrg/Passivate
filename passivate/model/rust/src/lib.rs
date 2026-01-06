@@ -2,17 +2,14 @@ use std::borrow::Cow;
 use std::fmt::{Display, Pointer};
 
 use camino::Utf8PathBuf;
-use passivate_delegation::Tx;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_hyp_names::package_id::PackageId;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
-use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
-use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
+use passivate_model_bridge::hyp_session_event::{CompilationMessage, ConsoleOutput};
 use passivate_model_bridge::hyp_state::HypState;
-use passivate_model_core::hyp_session_event::{CompilationMessage, ConsoleOutput};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageInfo
@@ -141,7 +138,6 @@ impl IdChain for RustHyp
 impl Bridge for RustBridge
 {
     type HypInfo = RustHyp;
-    type HypRunner = Tx<HypRunTrigger<RustBridge>>;
     type Id = HypId;
     type IdLink = String;
     type Output = RustOutput;

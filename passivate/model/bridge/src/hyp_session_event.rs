@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::output_report::OutputReport;
+use crate::bridge::Bridge;
+use crate::output_report::OutputReport;
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum CompilationMessageKind

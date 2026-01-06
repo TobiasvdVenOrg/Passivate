@@ -1,39 +1,39 @@
 use camino::Utf8PathBuf;
 use egui::Ui;
-use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
+use passivate_configuration::configuration::PassivateConfiguration;
 
-pub struct ConfigurationView<THypRunBridge: HypRunBridge>
+pub struct ConfigurationView
 {
-    configuration_manager: ConfigurationManager,
-    snapshots_path_field: String,
-    hyp_runner: THypRunBridge
+    snapshots_path_field: String
 }
 
-impl<THypRunBridge: HypRunBridge> ConfigurationView<THypRunBridge>
+pub enum ConfigurationViewAction
 {
-    pub fn new(configuration_manager: ConfigurationManager, hyp_runner: THypRunBridge) -> Self
+    RequestRerun,
+    UpdateConfiguration(Box<dyn FnOnce(&mut PassivateConfiguration)>)
+}
+
+impl ConfigurationView
+{
+    pub fn new() -> Self
     {
         Self {
-            configuration_manager,
-            snapshots_path_field: String::new(),
-            hyp_runner
+            snapshots_path_field: String::new()
         }
     }
 
-    pub fn ui(&mut self, ui: &mut Ui)
+    pub fn ui(&mut self, ui: &mut Ui, configuration: &PassivateConfiguration) -> Vec<ConfigurationViewAction>
     {
-        let mut configuration = self.configuration_manager.get_copy();
+        let mut actions = Vec::new();
+        let mut coverage_enabled = configuration.coverage_enabled;
 
-        if ui
-            .toggle_value(&mut configuration.coverage_enabled, "Compute Coverage")
-            .changed()
+        if ui.toggle_value(&mut coverage_enabled, "Compute Coverage").changed()
         {
-            _ = self.configuration_manager.update(|c| {
-                c.coverage_enabled = configuration.coverage_enabled;
-            });
+            actions.push(ConfigurationViewAction::UpdateConfiguration(Box::new(move |c| {
+                c.coverage_enabled = coverage_enabled;
+            })));
 
-            self.hyp_runner.run_hyps();
+            actions.push(ConfigurationViewAction::RequestRerun);
         }
 
         ui.label("Snapshot Directories");
@@ -48,14 +48,18 @@ impl<THypRunBridge: HypRunBridge> ConfigurationView<THypRunBridge>
 
         if ui.text_edit_singleline(&mut self.snapshots_path_field).lost_focus()
         {
-            _ = self.configuration_manager.update(|c| {
-                c.snapshot_directories
-                    .push(Utf8PathBuf::from(self.snapshots_path_field.as_str()));
-            });
+            let new_snapshots_path = Utf8PathBuf::from(&self.snapshots_path_field);
+
+            actions.push(ConfigurationViewAction::UpdateConfiguration(Box::new(|c| {
+                c.snapshot_directories.push(new_snapshots_path);
+            })));
+
+            actions.push(ConfigurationViewAction::RequestRerun);
 
             self.snapshots_path_field = String::new();
-            self.hyp_runner.run_hyps();
         }
+
+        actions
     }
 }
 
@@ -72,7 +76,7 @@ mod tests
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::compute_coverage::MockComputeCoverage;
-    use passivate_delegation::Tx;
+    use passivate_delegation::{MockTx, Tx};
     use passivate_hyp_names::test_name;
     use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
     use passivate_model_rust::RustBridge;
@@ -85,7 +89,7 @@ mod tests
     #[test]
     pub fn show_configuration()
     {
-        let mut configuration_manager = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let mut configuration_manager = ConfigurationManager::default();
         let tx: Tx<HypRunTrigger<RustBridge>> = Tx::stub();
         let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), tx);
 
@@ -110,11 +114,11 @@ mod tests
     #[test]
     pub fn configure_coverage_enabled()
     {
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
         let test_run_handler = HypRunHandler::builder()
             .configuration(configuration.clone())
             .coverage(Box::new(MockComputeCoverage::new()))
-            .coverage_tx(Tx::stub())
+            .coverage_tx(MockTx::new())
             .runner(HypRunner::faux())
             .hyp_run_tx(SessionEventTx::stub())
             .build();
@@ -144,7 +148,7 @@ mod tests
     #[test]
     pub fn configuring_snapshots_path_starts_test_run()
     {
-        let configuration = ConfigurationManager::new(PassivateConfiguration::default(), Tx::stub());
+        let configuration = ConfigurationManager::default();
         let (change_events_tx, change_events_rx) = Tx::new();
         let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
 

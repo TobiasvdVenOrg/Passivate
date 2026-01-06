@@ -8,13 +8,13 @@ passivate_delegation = { path = "../delegation" }
 passivate_hyp_names = { path = "../hyp_names" }
 
 camino.workspace = true
-faux.workspace = true
 log.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 serde_json.workspace = true
 stdext.workspace = true
+mockall.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../testing" }

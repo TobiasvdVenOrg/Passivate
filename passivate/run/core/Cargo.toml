@@ -9,4 +9,4 @@ passivate_model_core = { path = "../../model/core" }
 passivate_model_bridge = { path = "../../model/bridge" }
 
 thiserror.workspace = true
-faux.workspace = true
+log.workspace = true

@@ -2,20 +2,22 @@ use passivate_delegation::Tx;
 
 use crate::log_message::LogMessage;
 
-pub struct TxLog
+pub trait LogMessageTx = Tx<LogMessage> + Send + Sync + 'static;
+
+pub struct TxLog<TTx: LogMessageTx>
 {
-    tx: Tx<LogMessage>
+    tx: TTx
 }
 
-impl TxLog
+impl<TTx: LogMessageTx> TxLog<TTx>
 {
-    pub fn new(tx: Tx<LogMessage>) -> Self
+    pub fn new(tx: TTx) -> Self
     {
         Self { tx }
     }
 }
 
-impl log::Log for TxLog
+impl<TTx: LogMessageTx> log::Log for TxLog<TTx>
 {
     fn enabled(&self, _metadata: &log::Metadata) -> bool
     {
@@ -26,7 +28,8 @@ impl log::Log for TxLog
     {
         if record.metadata().target().starts_with("passivate")
         {
-            self.tx.send(LogMessage::new(format!("{} - {}", record.level(), record.args())));
+            self.tx
+                .send(LogMessage::new(format!("{} - {}", record.level(), record.args())));
         }
     }
 

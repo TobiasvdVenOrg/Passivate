@@ -10,6 +10,8 @@ passivate_model_core = { path = "../../model/core" }
 passivate_egui_hyp_snapshots = { path = "../hyp_snapshots" }
 passivate_model_bridge = { path = "../../model/bridge" }
 passivate_hyp_names = { path = "../../hyp_names" }
+passivate_delegation = { path = "../../delegation" }
+passivate_log = { path = "../../log" }
 
 camino.workspace = true
 egui.workspace = true

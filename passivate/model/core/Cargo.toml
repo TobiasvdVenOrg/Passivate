@@ -5,9 +5,11 @@ edition = "2024"
 
 [dependencies]
 passivate_hyp_names = { path = "../../hyp_names" }
+passivate_delegation = { path = "../../delegation" }
 passivate_id_chain_tree = { path = "../../id_chain_tree" }
 passivate_model_bridge = { path = "../bridge" }
 
+log.workspace = true
 camino.workspace = true
 itertools.workspace = true
 thiserror.workspace = true

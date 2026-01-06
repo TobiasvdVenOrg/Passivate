@@ -23,7 +23,6 @@ log.workspace = true
 bon.workspace = true
 thiserror.workspace = true
 camino.workspace = true
-faux.workspace = true
 dunce.workspace = true
 guppy.workspace = true
 itertools.workspace = true

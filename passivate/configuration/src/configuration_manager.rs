@@ -1,94 +1,54 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use camino::Utf8Path;
-use passivate_delegation::Tx;
-
-use crate::configuration::PassivateConfiguration;
+use crate::configuration::{ConfigurationChange, PassivateConfiguration};
 use crate::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
-use crate::configuration_event::ConfigurationEvent;
 use crate::configuration_source::ConfigurationSource;
 
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfiguration>>,
-    configuration_tx: Tx<ConfigurationEvent>,
-    source: Option<ConfigurationSource<PassivateConfiguration>>
+    source: Option<Arc<dyn ConfigurationSource<PassivateConfiguration> + Send + Sync + 'static>>
 }
 
 impl ConfigurationManager
 {
-    pub fn from_source(
-        configuration_tx: Tx<ConfigurationEvent>,
-        source: ConfigurationSource<PassivateConfiguration>
-    ) -> Result<Self, ConfigurationLoadError>
+    pub fn new(configuration: PassivateConfiguration) -> ConfigurationManager
     {
-        let configuration = source.load()?.unwrap_or_default();
-
-        Ok(Self {
+        ConfigurationManager {
             configuration: Arc::new(Mutex::new(configuration)),
-            configuration_tx,
-            source: Some(source)
-        })
-    }
-
-    pub fn from_file<P: AsRef<Utf8Path>>(
-        configuration_tx: Tx<ConfigurationEvent>,
-        file_path: P
-    ) -> Result<Self, ConfigurationLoadError>
-    {
-        let source = ConfigurationSource::from_file(file_path);
-
-        Self::from_source(configuration_tx, source)
-    }
-
-    pub fn new(configuration: PassivateConfiguration, configuration_tx: Tx<ConfigurationEvent>) -> Self
-    {
-        Self {
-            configuration: Arc::new(Mutex::new(configuration)),
-            configuration_tx,
             source: None
         }
     }
 
-    pub fn default_config(configuration_tx: Tx<ConfigurationEvent>) -> Self
+    pub fn from_source<TSource>(source: TSource) -> Result<Self, ConfigurationLoadError>
+    where
+        TSource: ConfigurationSource<PassivateConfiguration> + Send + Sync + 'static
     {
-        Self::new(PassivateConfiguration::default(), configuration_tx)
+        let configuration = source.load()?.unwrap_or_default();
+        let source = Arc::new(source);
+
+        Ok(Self {
+            configuration: Arc::new(Mutex::new(configuration)),
+            source: Some(source)
+        })
     }
 
-    pub fn update<TUpdater: Fn(&mut PassivateConfiguration)>(
-        &mut self,
-        updater: TUpdater
-    ) -> Result<(), ConfigurationPersistError>
+    pub fn change(&mut self, change: ConfigurationChange) -> Result<(), ConfigurationPersistError>
     {
         let mut configuration = self.acquire();
 
-        let old = configuration.clone();
-
-        updater(&mut configuration);
-
-        let new = configuration.clone();
-
-        drop(configuration);
+        configuration.change(change);
 
         if let Some(source) = &self.source
         {
-            source.persist(&new).map_err(|error| {
+            source.persist(&configuration).map_err(|error| {
                 log::error!("failed to persist configuration: {:?}", error);
                 error
             })?
         }
 
-        self.configuration_tx.send(ConfigurationEvent { old, new });
-
         Ok(())
-    }
-
-    pub fn get_copy(&self) -> PassivateConfiguration
-    {
-        let configuration = self.acquire();
-
-        configuration.clone()
     }
 
     pub fn get<TValue, TGet: Fn(&PassivateConfiguration) -> TValue>(&self, get: TGet) -> TValue
@@ -97,9 +57,17 @@ impl ConfigurationManager
         get(&configuration)
     }
 
-    fn acquire(&self) -> MutexGuard<'_, PassivateConfiguration>
+    pub fn acquire(&self) -> MutexGuard<'_, PassivateConfiguration>
     {
         self.configuration.lock().expect("failed to acquire configuration lock.")
+    }
+}
+
+impl Default for ConfigurationManager
+{
+    fn default() -> Self
+    {
+        Self::new(PassivateConfiguration::default())
     }
 }
 
@@ -114,27 +82,26 @@ mod tests
     use galvanic_assert::assert_that;
     use galvanic_assert::matchers::eq;
     use itertools::Itertools;
-    use passivate_delegation::Tx;
     use passivate_hyp_names::test_name;
     use passivate_testing::path_resolution::{clean_directory, copy_from_data_to_output, test_output_path};
     use passivate_testing::spy_log::SpyLog;
 
-    use crate::configuration::PassivateConfiguration;
+    use crate::configuration::{ConfigurationChange, PassivateConfiguration};
     use crate::configuration_errors::ConfigurationPersistError;
     use crate::configuration_manager::ConfigurationManager;
-    use crate::configuration_source::ConfigurationSource;
+    use crate::configuration_source::{FileConfigurationSource, MockConfigurationSource};
 
     #[test]
     pub fn when_configuration_is_loaded_from_file_then_changes_are_persisted_there() -> Result<(), Box<dyn Error>>
     {
         let file = copy_from_data_to_output("example_configurations/minimal_configuration.toml")?;
 
-        let mut manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
+        let mut manager = ConfigurationManager::from_source(FileConfigurationSource::from(&file))?;
 
         assert_that!(&manager.get(|c| c.coverage_enabled), eq(false));
-        manager.update(|c| c.coverage_enabled = true).unwrap();
+        manager.change(ConfigurationChange::CoverageEnabled(true)).unwrap();
 
-        let reloaded_manager = ConfigurationManager::from_file(Tx::stub(), &file)?;
+        let reloaded_manager = ConfigurationManager::from_source(FileConfigurationSource::from(&file))?;
 
         assert_that!(&reloaded_manager.get(|c| c.coverage_enabled), eq(true));
         Ok(())
@@ -148,11 +115,12 @@ mod tests
         clean_directory(&dir);
 
         let file = dir.join("new_configuration.toml");
+        let source = FileConfigurationSource::from(&file);
 
-        let mut manager = ConfigurationManager::from_file(Tx::stub(), file.as_path())?;
+        let mut manager = ConfigurationManager::from_source(source)?;
 
         manager
-            .update(|c| c.snapshot_directories.push(Utf8PathBuf::from("first/change")))
+            .change(ConfigurationChange::AddSnapshotDirectory(Utf8PathBuf::from("first/change")))
             .unwrap();
 
         assert!(fs::exists(file)?);
@@ -162,21 +130,21 @@ mod tests
     #[test]
     pub fn an_error_is_logged_when_configuration_persistence_fails() -> Result<(), Box<dyn Error>>
     {
-        let mut source = ConfigurationSource::faux();
+        let mut source = MockConfigurationSource::new();
 
-        source._when_load().then_return(Ok(None));
-        source
-            ._when_persist()
-            .then_return(Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(
+        source.expect_load().returning(|| Ok(None));
+        source.expect_persist().returning(|_| {
+            Err(ConfigurationPersistError::Io(Arc::new(std::io::Error::new(
                 std::io::ErrorKind::Interrupted,
                 ""
-            )))));
+            ))))
+        });
 
-        let mut manager = ConfigurationManager::from_source(Tx::stub(), source)?;
+        let mut manager = ConfigurationManager::from_source(source)?;
 
         let spy_log = SpyLog::set();
 
-        manager.update(|c| c.coverage_enabled = true).unwrap_err();
+        manager.change(ConfigurationChange::CoverageEnabled(true)).unwrap_err();
 
         let error = spy_log.into_iter().exactly_one().unwrap();
 
@@ -189,10 +157,10 @@ mod tests
     pub fn configuration_update_changes_configuration()
     {
         let configuration = PassivateConfiguration::default();
-        let mut manager = ConfigurationManager::new(configuration, Tx::stub());
+        let mut manager = ConfigurationManager::new(configuration);
 
         manager
-            .update(|c| c.snapshot_directories.push(Utf8PathBuf::from("Example/path")))
+            .change(ConfigurationChange::AddSnapshotDirectory(Utf8PathBuf::from("Example/path")))
             .unwrap();
 
         let snapshots_path = manager.get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone());

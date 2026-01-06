@@ -8,6 +8,7 @@ passivate_delegation = { path = "../../delegation" }
 passivate_configuration = { path = "../../configuration" }
 passivate_core = { path = "../../core" }
 passivate_model_bridge = { path = "../../model/bridge" }
+passivate_model_core = { path = "../../model/core" }
 passivate_egui_core = { path = "../core" }
 passivate_egui_docking = { path = "../docking" }
 passivate_id_chain_tree = { path = "../../id_chain_tree" }

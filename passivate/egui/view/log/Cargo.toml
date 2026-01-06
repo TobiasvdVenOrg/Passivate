@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_log = { path = "../../../log" }
 passivate_delegation = { path = "../../../delegation" }
+passivate_egui_core = { path = "../../core" }
 
 egui.workspace = true
 
@@ -14,3 +15,4 @@ passivate_hyp_names = { path = "../../../hyp_names" }
 
 chrono.workspace = true
 egui_kittest.workspace = true
+crossbeam-channel.workspace = true

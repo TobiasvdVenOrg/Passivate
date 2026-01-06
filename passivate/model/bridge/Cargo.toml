@@ -9,3 +9,5 @@ passivate_id_chain_tree = { path = "../../id_chain_tree" }
 passivate_delegation = { path = "../../delegation" }
 
 mockall.workspace = true
+enum-display-derive.workspace = true
+log.workspace = true

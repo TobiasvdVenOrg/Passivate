@@ -12,107 +12,50 @@ pub enum RxError
     TryRecv(#[from] crossbeam_channel::TryRecvError)
 }
 
-#[faux::create]
-#[derive(Clone)]
-pub struct Tx<T>
+#[mockall::automock]
+pub trait Tx<T>: Send + Sync
+where
+    T: Send + Sync + 'static
 {
-    tx: crossbeam_channel::Sender<T>
+    fn send(&self, message: T);
 }
 
-#[faux::create]
-pub struct Rx<T>
+impl<T> Tx<T> for crossbeam_channel::Sender<T>
+where
+    T: Send + Sync + 'static
 {
-    rx: crossbeam_channel::Receiver<T>
-}
-
-#[faux::methods]
-impl<T> Rx<T>
-{
-    fn new(rx: crossbeam_channel::Receiver<T>) -> Rx<T>
+    fn send(&self, message: T)
     {
-        Rx { rx }
-    }
-
-    pub fn drain(&self) -> Vec<T>
-    {
-        self.rx.try_iter().collect()
-    }
-
-    pub fn recv(&self) -> Result<T, RxError>
-    {
-        Ok(self.rx.recv()?)
-    }
-
-    pub fn try_recv(&self) -> Result<T, RxError>
-    {
-        Ok(self.rx.try_recv()?)
+        self.send(message).expect("failed to send t")
     }
 }
 
-#[faux::methods]
-impl<T> IntoIterator for Rx<T>
+#[mockall::automock]
+pub trait Rx<T>: Send + Sync
+where
+    T: Send + Sync + 'static
 {
-    type IntoIter = std::vec::IntoIter<T>;
-    type Item = T;
-
-    fn into_iter(self) -> <Rx<T> as IntoIterator>::IntoIter
-    {
-        self.drain().into_iter()
-    }
+    fn recv(&self) -> Result<T, RxError>;
+    fn try_recv(&self) -> Result<T, RxError>;
 }
 
-#[faux::methods]
-impl<T> Tx<T>
+impl<T> Rx<T> for crossbeam_channel::Receiver<T>
+where
+    T: Send + Sync + 'static
 {
-    pub fn new() -> (Tx<T>, Rx<T>)
+    fn recv(&self) -> Result<T, RxError>
     {
-        let (tx, rx) = crossbeam_channel::unbounded();
-
-        (Tx { tx }, Rx::new(rx))
+        Ok(self.recv()?)
     }
 
-    pub fn send(&self, message: T)
+    fn try_recv(&self) -> Result<T, RxError>
     {
-        self.tx.send(message).expect("failed to send message");
-    }
-}
-
-impl<T> Tx<T>
-{
-    pub fn stub() -> Self
-    {
-        let mut tx = Tx::faux();
-        tx._when_send().then(|_| {});
-
-        tx
-    }
-}
-
-impl<T: 'static> Rx<T>
-{
-    pub fn stub() -> Self
-    {
-        let mut rx = Rx::faux();
-        rx._when_recv().then(|_| Err(RxError::Recv(crossbeam_channel::RecvError {})));
-        rx._when_try_recv()
-            .then(|_| Err(RxError::TryRecv(crossbeam_channel::TryRecvError::Empty)));
-
-        rx
-    }
-}
-
-pub struct TxCancel<T>(Tx<CancellableMessage<T>>);
-
-impl<T> TxCancel<T>
-{
-    pub fn send(&self, message: T, cancellation: Cancellation)
-    {
-        self.0.send(CancellableMessage { message, cancellation });
+        Ok(self.try_recv()?)
     }
 }
 
 #[derive(Clone)]
-pub struct CancellableMessage<T>
+pub struct CancellableMessage<T: Send + Sync + 'static>
 {
     pub message: T,
     pub cancellation: Cancellation

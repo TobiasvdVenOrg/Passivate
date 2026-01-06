@@ -1,4 +1,5 @@
 use egui_dock::{DockArea, Style};
+use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
@@ -7,38 +8,52 @@ use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_view_details::hyp_details::HypDetails;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
+use passivate_model_core::hyp_session::HypSession;
 
 use crate::passivate_views::PassivateView;
 
-pub struct PassivateViewContext<'a, 'b, TBridge: Bridge>
+/// This context object is used to grant access to broad state for views to use
+/// Any state changes produced by views are aggregated in the context
+/// These changes are returned to the caller after the view ui has finished
+struct PassivateViewContext<'ctx, 'env, TBridge: Bridge>
 {
-    view_state: &'a PassivateViewState<TBridge>,
-    state: &'b PassivateState<TBridge>,
-    changes: Vec<PassivateStateChange<'b, TBridge>>
+    session: &'env HypSession<TBridge>,
+    view_state: &'ctx PassivateViewState<TBridge>,
+    state: &'ctx PassivateState<TBridge>,
+    configuration: &'ctx PassivateConfiguration,
+    changes: Vec<PassivateStateChange<'env, TBridge>>
 }
 
-impl<'a, 'b, TBridge: Bridge> PassivateViewContext<'a, 'b, TBridge>
+impl<'ctx, 'env, TBridge: Bridge> PassivateViewContext<'ctx, 'env, TBridge>
 {
-    fn new(view_state: &'a PassivateViewState<TBridge>, state: &'b PassivateState<TBridge>) -> Self
+    fn new(
+        session: &'env HypSession<TBridge>,
+        view_state: &'ctx PassivateViewState<TBridge>,
+        state: &'ctx PassivateState<TBridge>,
+        configuration: &'ctx PassivateConfiguration
+    ) -> Self
     {
         Self {
+            session,
             state,
             view_state,
+            configuration,
             changes: Vec::new()
         }
     }
 }
 
-pub fn ui<'b, TBridge: Bridge, THypRunBridge: HypRunBridge>(
+pub fn ui<'env, TBridge: Bridge>(
+    session: &'env HypSession<TBridge>,
     view_state: &PassivateViewState<TBridge>,
-    state: &'b PassivateState<TBridge>,
+    state: &PassivateState<TBridge>,
+    configuration: &PassivateConfiguration,
     egui_context: &egui::Context,
-    dock_views: &mut DockViews<PassivateView<TBridge, THypRunBridge>>,
+    dock_views: &mut DockViews<PassivateView>,
     layout: &mut DockingLayout
-) -> Vec<PassivateStateChange<'b, TBridge>>
+) -> Vec<PassivateStateChange<'env, TBridge>>
 {
-    let mut passivate_context = PassivateViewContext::new(view_state, state);
+    let mut passivate_context = PassivateViewContext::new(session, view_state, state, configuration);
 
     let mut dock_viewer = DockViewer {
         dock_views,
@@ -58,33 +73,36 @@ pub fn ui<'b, TBridge: Bridge, THypRunBridge: HypRunBridge>(
     passivate_context.changes
 }
 
-fn internal_ui<'a, 'b, TBridge: Bridge, THypRunBridge: HypRunBridge>(
+fn internal_ui<'a, 'b, TBridge: Bridge>(
     ui: &mut egui::Ui,
-    view: &mut PassivateView<TBridge, THypRunBridge>,
+    view: &mut PassivateView,
     context: &mut PassivateViewContext<'a, 'b, TBridge>
 )
 {
     let change = {
+        let session = context.session;
         let state = context.state;
         let view_state = context.view_state;
+        let configuration = context.configuration;
 
         match view
         {
             PassivateView::Configuration(configuration_view) =>
             {
-                configuration_view.ui(ui);
+                configuration_view.ui(ui, configuration);
                 None
             }
             PassivateView::Coverage(coverage_view) =>
             {
-                coverage_view.ui(ui);
-                None
+                coverage_view
+                    .ui(ui, &state.coverage)
+                    .map(PassivateStateChange::ConfigurationChanged)
             }
             PassivateView::Details(details_view) =>
             {
                 if let Some(selected_hyp_id) = &state.selected_hyp
                 {
-                    let hyp = state.hyp_session.hyps().entry(selected_hyp_id.chain()).or_none();
+                    let hyp = session.hyps().entry(selected_hyp_id.chain()).or_none();
 
                     if let Some(hyp) = hyp
                     {
@@ -98,22 +116,17 @@ fn internal_ui<'a, 'b, TBridge: Bridge, THypRunBridge: HypRunBridge>(
                 }
                 else
                 {
-                    details_view.ui(ui, None);
+                    details_view.ui::<TBridge>(ui, None);
                 }
 
                 None
             }
             PassivateView::Log(log_view) =>
             {
-                log_view.ui(ui);
+                log_view.ui(ui, view_state.logs());
                 None
             }
-            PassivateView::HypRun(test_run_view) =>
-            {
-                test_run_view
-                    .ui(ui, &state.hyp_session)
-                    .map(PassivateStateChange::HypSelected)
-            }
+            PassivateView::HypRun(test_run_view) => test_run_view.ui(ui, session).map(PassivateStateChange::HypSelected)
         }
     };
 

@@ -10,33 +10,32 @@ use passivate_egui_view_details::details_view::DetailsView;
 use passivate_egui_view_log::LogView;
 use passivate_egui_view_session::session_view::SessionView;
 use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::hyp_run_bridge::{HypRunBridge, MockHypRunBridge};
 
-pub enum PassivateView<TBridge: Bridge, THypRunBridge: HypRunBridge>
+pub enum PassivateView
 {
-    Configuration(ConfigurationDock<THypRunBridge>),
+    Configuration(ConfigurationDock),
     Coverage(CoverageDock),
-    Details(DetailsDock<TBridge>),
+    Details(DetailsDock),
     Log(LogDock),
     HypRun(SessionDock)
 }
 
-pub struct PassivateViews<TBridge: Bridge, THypRunBridge: HypRunBridge>
+pub struct PassivateViews
 {
-    session_view: PassivateView<TBridge, THypRunBridge>,
-    details_view: PassivateView<TBridge, THypRunBridge>,
-    coverage_view: PassivateView<TBridge, THypRunBridge>,
-    configuration_view: PassivateView<TBridge, THypRunBridge>,
-    log_view: PassivateView<TBridge, THypRunBridge>
+    session_view: PassivateView,
+    details_view: PassivateView,
+    coverage_view: PassivateView,
+    configuration_view: PassivateView,
+    log_view: PassivateView
 }
 
-impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypRunBridge>
+impl PassivateViews
 {
     pub fn new(
         session_view: SessionView,
-        details_view: DetailsView<TBridge>,
+        details_view: DetailsView,
         coverage_view: CoverageView,
-        configuration_view: ConfigurationView<THypRunBridge>,
+        configuration_view: ConfigurationView,
         log_view: LogView
     ) -> Self
     {
@@ -49,21 +48,12 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn stub<TStubBridge: Bridge>() -> PassivateViews<TStubBridge, MockHypRunBridge>
+    pub fn stub<TStubBridge: Bridge>() -> PassivateViews
     {
-        let configuration = ConfigurationManager::default_config(Tx::stub());
-        let hyp_runner = MockHypRunBridge::new();
-
-        PassivateViews::new(
-            SessionView,
-            DetailsView::new(),
-            CoverageView::new(Rx::stub(), configuration.clone()),
-            ConfigurationView::new(configuration, hyp_runner),
-            LogView::new(Rx::stub())
-        )
+        PassivateViews::new(SessionView, DetailsView, CoverageView, ConfigurationView::new(), LogView)
     }
 
-    pub fn get(&self) -> [&PassivateView<TBridge, THypRunBridge>; 5]
+    pub fn get(&self) -> [&PassivateView; 5]
     {
         [
             &self.session_view,
@@ -74,7 +64,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         ]
     }
 
-    pub fn into(self) -> Vec<PassivateView<TBridge, THypRunBridge>>
+    pub fn into(self) -> Vec<PassivateView>
     {
         [
             self.session_view,
@@ -106,7 +96,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn except_hyp_run_view(&self) -> [&PassivateView<TBridge, THypRunBridge>; 4]
+    pub fn except_hyp_run_view(&self) -> [&PassivateView; 4]
     {
         [
             &self.details_view,
@@ -116,12 +106,12 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         ]
     }
 
-    pub fn details_view(&self) -> &DetailsView<TBridge>
+    pub fn details_view(&self) -> &DetailsView
     {
         self.details_dock()
     }
 
-    pub fn details_dock(&self) -> &DetailsDock<TBridge>
+    pub fn details_dock(&self) -> &DetailsDock
     {
         match &self.details_view
         {
@@ -130,7 +120,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn except_details_view(&self) -> [&PassivateView<TBridge, THypRunBridge>; 4]
+    pub fn except_details_view(&self) -> [&PassivateView; 4]
     {
         [
             &self.session_view,
@@ -154,7 +144,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn except_coverage_view(&self) -> [&PassivateView<TBridge, THypRunBridge>; 4]
+    pub fn except_coverage_view(&self) -> [&PassivateView; 4]
     {
         [
             &self.session_view,
@@ -164,12 +154,12 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         ]
     }
 
-    pub fn configuration_view(&self) -> &ConfigurationView<THypRunBridge>
+    pub fn configuration_view(&self) -> &ConfigurationView
     {
         self.configuration_dock()
     }
 
-    pub fn configuration_dock(&self) -> &ConfigurationDock<THypRunBridge>
+    pub fn configuration_dock(&self) -> &ConfigurationDock
     {
         match &self.configuration_view
         {
@@ -178,7 +168,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn except_configuration_view(&self) -> [&PassivateView<TBridge, THypRunBridge>; 4]
+    pub fn except_configuration_view(&self) -> [&PassivateView; 4]
     {
         [&self.session_view, &self.details_view, &self.coverage_view, &self.log_view]
     }
@@ -197,7 +187,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
         }
     }
 
-    pub fn except_log_view(&self) -> [&PassivateView<TBridge, THypRunBridge>; 4]
+    pub fn except_log_view(&self) -> [&PassivateView; 4]
     {
         [
             &self.session_view,
@@ -208,7 +198,7 @@ impl<TBridge: Bridge, THypRunBridge: HypRunBridge> PassivateViews<TBridge, THypR
     }
 }
 
-impl<TBridge: Bridge, THypRunBridge: HypRunBridge> View for PassivateView<TBridge, THypRunBridge>
+impl View for PassivateView
 {
     fn id(&self) -> DockId
     {
@@ -301,9 +291,9 @@ impl DerefMut for LogDock
     }
 }
 
-pub struct DetailsDock<TBridge: Bridge>(DetailsView<TBridge>);
+pub struct DetailsDock(DetailsView);
 
-impl<TBridge: Bridge> View for DetailsDock<TBridge>
+impl View for DetailsDock
 {
     fn id(&self) -> DockId
     {
@@ -316,9 +306,9 @@ impl<TBridge: Bridge> View for DetailsDock<TBridge>
     }
 }
 
-impl<TBridge: Bridge> Deref for DetailsDock<TBridge>
+impl Deref for DetailsDock
 {
-    type Target = DetailsView<TBridge>;
+    type Target = DetailsView;
 
     fn deref(&self) -> &Self::Target
     {
@@ -326,7 +316,7 @@ impl<TBridge: Bridge> Deref for DetailsDock<TBridge>
     }
 }
 
-impl<TBridge: Bridge> DerefMut for DetailsDock<TBridge>
+impl DerefMut for DetailsDock
 {
     fn deref_mut(&mut self) -> &mut Self::Target
     {
@@ -367,9 +357,9 @@ impl DerefMut for CoverageDock
     }
 }
 
-pub struct ConfigurationDock<THypRunBridge: HypRunBridge>(ConfigurationView<THypRunBridge>);
+pub struct ConfigurationDock(ConfigurationView);
 
-impl<THypRunBridge: HypRunBridge> View for ConfigurationDock<THypRunBridge>
+impl View for ConfigurationDock
 {
     fn id(&self) -> DockId
     {
@@ -382,9 +372,9 @@ impl<THypRunBridge: HypRunBridge> View for ConfigurationDock<THypRunBridge>
     }
 }
 
-impl<THypRunBridge: HypRunBridge> Deref for ConfigurationDock<THypRunBridge>
+impl Deref for ConfigurationDock
 {
-    type Target = ConfigurationView<THypRunBridge>;
+    type Target = ConfigurationView;
 
     fn deref(&self) -> &Self::Target
     {
@@ -392,7 +382,7 @@ impl<THypRunBridge: HypRunBridge> Deref for ConfigurationDock<THypRunBridge>
     }
 }
 
-impl<THypRunBridge: HypRunBridge> DerefMut for ConfigurationDock<THypRunBridge>
+impl DerefMut for ConfigurationDock
 {
     fn deref_mut(&mut self) -> &mut Self::Target
     {

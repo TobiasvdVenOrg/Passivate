@@ -1,28 +1,27 @@
 use eframe::Frame;
 use egui::Context;
-use passivate_delegation::Tx;
+use passivate_configuration::configuration_source::FileConfigurationSource;
+use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_docking::layout_management::LayoutManagement;
-use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
-use passivate_model_rust::RustBridge;
 
 use crate::app_state::AppState;
 
 pub struct App<'a>
 {
-    layout: LayoutManagement,
-    state: &'a mut AppState<Tx<HypRunTrigger<RustBridge>>>
+    layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
+    state: &'a mut AppState
 }
 
 impl<'a> App<'a>
 {
-    pub fn new(layout: LayoutManagement, state: &'a mut AppState<Tx<HypRunTrigger<RustBridge>>>) -> Self
+    pub fn new(layout: LayoutManagement<FileConfigurationSource<DockingLayout>>, state: &'a mut AppState) -> Self
     {
         Self { layout, state }
     }
 
     fn main_update(&mut self, ctx: &Context)
     {
-        self.state.update_and_ui(ctx, self.layout.get_current());
+        self.state.update_app(ctx, self.layout.get_current());
     }
 }
 

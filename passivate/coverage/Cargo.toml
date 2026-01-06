@@ -13,7 +13,6 @@ bon.workspace = true
 camino.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-faux.workspace = true
 mockall.workspace = true
 indexmap.workspace = true
 serde_json.workspace = true

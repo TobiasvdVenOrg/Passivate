@@ -1,7 +1,6 @@
 use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use thiserror::*;
-
-use crate::hyp_session_event::HypSessionEvent;
 
 #[derive(Error, Debug, Clone, Eq, PartialEq)]
 pub enum HypSessionStateError<TBridge: Bridge>

@@ -25,15 +25,13 @@ use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::Cancellation;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
-use passivate_model_bridge::hyp_session_bridge::HypSessionBridge;
+use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_rust::RustBridge;
 use passivate_run_core::hyp_run_errors::TestRunError;
-use passivate_run_core::session_event_tx::SessionEventTx;
 
 use crate::nextest_cargo_options;
 
-#[faux::create]
 #[derive(Clone)]
 pub struct HypRunner
 {
@@ -43,7 +41,6 @@ pub struct HypRunner
     coverage_output_dir: Utf8PathBuf
 }
 
-#[faux::methods]
 impl HypRunner
 {
     pub fn new(target: OsString, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
@@ -56,16 +53,16 @@ impl HypRunner
         }
     }
 
-    pub fn run_hyps(
+    pub fn run_hyps<TTx>(
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut SessionEventTx<RustBridge>,
+        tx: &TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
-        tx.start_run();
-
         let cargo_options = nextest_cargo_options::cargo_options()
             .target_dir(self.target_dir.clone())
             .call();
@@ -73,14 +70,16 @@ impl HypRunner
         self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter)
     }
 
-    fn run_hyps_with_options(
+    fn run_hyps_with_options<TTx>(
         &mut self,
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &mut SessionEventTx<RustBridge>,
+        tx: &TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         fs::create_dir_all(&self.coverage_output_dir)?;
         let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
@@ -103,13 +102,15 @@ impl HypRunner
         result
     }
 
-    fn run_hyps_internal(
+    fn run_hyps_internal<TTx>(
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &mut SessionEventTx<RustBridge>,
+        tx: &TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         log::info!("Starting test run");
 
@@ -262,7 +263,8 @@ impl HypRunner
                         profile_name: _,
                         cli_args: _,
                         stress_condition: _
-                    } => tx.start_run(),
+                    } =>
+                    {}
                     nextest_runner::reporter::events::TestEventKind::TestStarted {
                         stress_index: _,
                         test_instance,
@@ -330,7 +332,8 @@ impl HypRunner
                         start_time: _,
                         elapsed: _,
                         run_stats: _
-                    } => tx.complete_run(),
+                    } =>
+                    {}
                     _ =>
                     {}
                 };
@@ -342,13 +345,15 @@ impl HypRunner
         Ok(())
     }
 
-    pub fn run_hyp(
+    pub fn run_hyp<TTx>(
         &mut self,
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &mut SessionEventTx<RustBridge>
+        tx: &TTx
     ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         let instrument_coverage = false;
         let strategy = HypNameStrategy::QualifiedWithoutCrate {
@@ -356,8 +361,6 @@ impl HypRunner
         };
 
         let filter = vec![hyp_id.name(&strategy).to_string()];
-
-        tx.start_run();
 
         if update_snapshots
         {

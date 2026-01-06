@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 passivate_core = { path = "../core" }
+passivate_log = { path = "../log" }
 passivate_egui_views = { path = "../egui/views" }
 passivate_egui_docking = { path = "../egui/docking" }
 passivate_delegation = { path = "../delegation" }

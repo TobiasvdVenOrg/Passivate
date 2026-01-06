@@ -5,12 +5,17 @@ use std::ops::{Deref, DerefMut};
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
-use passivate_model_bridge::hyp_run_bridge::HypRunBridge;
-use passivate_model_bridge::hyp_session_bridge::HypSessionBridge;
+use passivate_model_bridge::hyp_session_bridge::{
+    CompleteRunBridge,
+    HypSessionBridge,
+    SendHypBridge,
+    SendOutputBridge,
+    StartRunBridge
+};
+use passivate_model_bridge::hyp_session_event::{CompilationMessage, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
 use passivate_model_core::hyp_session::HypSession;
-use passivate_model_core::hyp_session_event::{CompilationMessage, HypSessionEvent};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct TestSession(HypSession<TestSession>);
@@ -169,9 +174,9 @@ where
     }
 }
 
-impl HypRunBridge for TestSession
+impl HypSessionBridge for TestSession
 {
-    fn run_hyps(&self)
+    fn request_rerun(&self)
     {
         todo!()
     }
@@ -180,29 +185,37 @@ impl HypRunBridge for TestSession
 impl Bridge for TestSession
 {
     type HypInfo = TestHypKind;
-    type HypRunner = TestSession;
     type Id = TestId;
     type IdLink = String;
     type Output = TestOutput;
 }
 
-impl HypSessionBridge<TestSession> for TestSession
+impl StartRunBridge<TestSession> for TestSession
 {
     fn start_run(&mut self)
     {
         self.0.update(HypSessionEvent::RunStarted);
     }
+}
 
+impl SendOutputBridge<TestSession> for TestSession
+{
     fn send_output(&mut self, report: OutputReport<TestSession>)
     {
         self.0.update(HypSessionEvent::Output(report));
     }
+}
 
+impl SendHypBridge<TestSession> for TestSession
+{
     fn send_hyp(&mut self, hyp: TestHypKind)
     {
         self.0.update(HypSessionEvent::HypExists(hyp));
     }
+}
 
+impl CompleteRunBridge<TestSession> for TestSession
+{
     fn complete_run(&mut self)
     {
         self.0.update(HypSessionEvent::RunCompleted);

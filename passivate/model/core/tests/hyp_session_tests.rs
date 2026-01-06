@@ -3,10 +3,10 @@ extern crate assert_matches;
 
 use itertools::assert_equal;
 use passivate_id_chain_tree::chain;
-use passivate_model_bridge::hyp_session_bridge::HypSessionBridge;
+use passivate_model_bridge::hyp_session_bridge::*;
+use passivate_model_bridge::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
-use passivate_model_core::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
 use passivate_model_core::hyp_session_state_error::HypSessionStateError;
 use passivate_testing::model::{TestHyp, TestHypKind, TestId, TestOutput, TestProject, TestSession};
 
