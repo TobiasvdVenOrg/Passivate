@@ -48,7 +48,7 @@ impl PassivateViews
         }
     }
 
-    pub fn stub<TStubBridge: Bridge>() -> PassivateViews
+    pub fn stub() -> PassivateViews
     {
         PassivateViews::new(SessionView, DetailsView, CoverageView, ConfigurationView::new(), LogView)
     }
