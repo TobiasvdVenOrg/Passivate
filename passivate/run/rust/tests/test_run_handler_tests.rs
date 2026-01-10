@@ -38,10 +38,7 @@ pub fn runing_single_hyp_leaves_session_in_passed_state()
 
     HandleHypRunTrigger::new(&setup)
         .with_hyp_session_bridge(session_tx)
-        .call(HypRunRequest {
-            kind: HypRunRequestKind::Single { hyp_id: hyp_to_run },
-            options: HypRunOptions::default()
-        });
+        .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
     let session = HypSession::from_events(session_rx);
 
@@ -59,10 +56,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     HandleHypRunTrigger::new(&setup)
         .with_hyp_session_bridge(session_tx)
-        .call(HypRunRequest {
-            kind: HypRunRequestKind::Single { hyp_id: hyp_to_run },
-            options: HypRunOptions::default()
-        });
+        .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
     let session = HypSession::from_events(session_rx);
     let mut iter = session.hyps().iter();
@@ -89,20 +83,21 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
     }
 
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
-    let mut handler = helpers::test_hyp_run_handler(&setup).call();
+
+    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup);
 
     // Run all tests first to generate a new snapshot
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
 
     let snapshot_hyp_id = HypId::new("simple_project", "snapshot_tests", "snapshot_test");
 
-    handler.handle(
-        HypRunTrigger::Hyp {
-            id: snapshot_hyp_id,
-            update_snapshots: true
-        },
-        Cancellation::default()
-    );
+    handle_hyp_run.call(HypRunRequest::single(
+        snapshot_hyp_id,
+        HypRunOptions {
+            update_snapshots: true,
+            ..HypRunOptions::default()
+        }
+    ));
 
     assert!(fs::exists(expected_approved_snapshot)?);
 

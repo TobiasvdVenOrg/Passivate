@@ -87,7 +87,7 @@ impl<THypSessionBridge> HandleHypRunTrigger<THypSessionBridge>
 where
     THypSessionBridge: HypSessionBridge<RustBridge>
 {
-    pub fn call(mut self, request: HypRunRequest<RustBridge>)
+    pub fn call(&mut self, request: HypRunRequest<RustBridge>)
     {
         handle_hyp_run_trigger(
             &mut self.runner,

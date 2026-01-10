@@ -6,6 +6,25 @@ pub struct HypRunRequest<TBridge: Bridge>
     pub options: HypRunOptions
 }
 
+impl<TBridge: Bridge> HypRunRequest<TBridge>
+{
+    pub fn all(options: HypRunOptions) -> Self
+    {
+        Self {
+            kind: HypRunRequestKind::All,
+            options
+        }
+    }
+
+    pub fn single(hyp_id: TBridge::Id, options: HypRunOptions) -> Self
+    {
+        Self {
+            kind: HypRunRequestKind::Single { hyp_id },
+            options
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct HypRunOptions
 {
