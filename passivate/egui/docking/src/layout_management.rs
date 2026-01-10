@@ -13,9 +13,7 @@ where
     source: TSource
 }
 
-impl<TSource> LayoutManagement<TSource>
-where
-    TSource: ConfigurationSource<DockingLayout>
+impl LayoutManagement<FileConfigurationSource<DockingLayout>>
 {
     pub fn from_file_or_default<FDefault>(
         path: &Utf8Path,
@@ -28,7 +26,12 @@ where
 
         LayoutManagement::<FileConfigurationSource<DockingLayout>>::from_source_or_default(source, default)
     }
+}
 
+impl<TSource> LayoutManagement<TSource>
+where
+    TSource: ConfigurationSource<DockingLayout>
+{
     pub fn from_source_or_default<FDefault>(source: TSource, default: FDefault) -> Result<Self, ConfigurationLoadError>
     where
         FDefault: FnOnce() -> DockingLayout

@@ -7,7 +7,7 @@ use egui_kittest::Harness;
 use galvanic_assert::assert_that;
 use itertools::Itertools;
 use passivate_configuration::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
-use passivate_configuration::configuration_source::ConfigurationSource;
+use passivate_configuration::configuration_source::{ConfigurationSource, MockConfigurationSource};
 use passivate_egui_docking::dock_views::{DockViewer, DockViews};
 use passivate_egui_docking::docking_layout::{DockId, DockingLayout};
 use passivate_egui_docking::layout_management::LayoutManagement;
@@ -39,11 +39,11 @@ pub fn failing_to_persist_layout_logs_an_error()
     let spy_log = SpyLog::set();
 
     {
-        let mut source = ConfigurationSource::faux();
-        source._when_load().then_return(Ok(None));
+        let mut source = MockConfigurationSource::new();
+        source.expect_load().returning(|| Ok(None));
         source
-            ._when_persist()
-            .then_return(Err(ConfigurationPersistError::Path(Utf8PathBuf::new())));
+            .expect_persist()
+            .returning(|_| Err(ConfigurationPersistError::Path(Utf8PathBuf::new())));
 
         let _layout = LayoutManagement::from_source_or_default(source, || DockingLayout::new(vec![])).unwrap();
     }
