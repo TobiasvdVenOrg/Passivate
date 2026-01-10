@@ -78,10 +78,7 @@ mod tests
     use passivate_coverage::compute_coverage::MockComputeCoverage;
     use passivate_delegation::{MockTx, Tx};
     use passivate_hyp_names::test_name;
-    use passivate_model_bridge::hyp_run_trigger::HypRunTrigger;
     use passivate_model_rust::RustBridge;
-    use passivate_run_core::session_event_tx::SessionEventTx;
-    use passivate_run_rust::hyp_run_handler::HypRunHandler;
     use passivate_run_rust::hyp_runner::HypRunner;
 
     use crate::ConfigurationView;
@@ -89,23 +86,18 @@ mod tests
     #[test]
     pub fn show_configuration()
     {
-        let mut configuration_manager = ConfigurationManager::default();
-        let tx: Tx<HypRunTrigger<RustBridge>> = Tx::stub();
-        let mut configuration_view = ConfigurationView::new(configuration_manager.clone(), tx);
+        let mut configuration_view = ConfigurationView::new();
+
+        let configuration = PassivateConfiguration {
+            coverage_enabled: true,
+            snapshot_directories: vec![Utf8PathBuf::from("tests/snapshots")]
+        };
 
         let ui = |ui: &mut egui::Ui| {
-            configuration_view.ui(ui);
+            configuration_view.ui(ui, &configuration);
         };
 
         let mut harness = Harness::new_ui(ui);
-
-        configuration_manager
-            .update(|c| {
-                c.coverage_enabled = true;
-                c.snapshot_directories.push(Utf8PathBuf::from("tests/snapshots"));
-            })
-            .unwrap();
-
         harness.run();
         harness.fit_contents();
         harness.snapshot(&test_name!());
