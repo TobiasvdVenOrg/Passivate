@@ -101,13 +101,3 @@ mock! {
         fn complete_run(&mut self);
     }
 }
-
-struct S;
-
-impl S
-{
-    fn bla<TBridge: Bridge>()
-    {
-        let m = MockHypSessionBridge::<TBridge>::new();
-    }
-}

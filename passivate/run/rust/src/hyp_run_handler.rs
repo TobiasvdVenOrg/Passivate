@@ -7,7 +7,7 @@ use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
 use passivate_model_rust::RustBridge;
 
-use crate::hyp_runner::HypRunner;
+use crate::hyp_runner::RunHyps;
 
 pub trait HypSessionBridge<TBridge: Bridge> =
     StartRunBridge<TBridge> + SendHypBridge<TBridge> + SendOutputBridge<TBridge> + CompleteRunBridge<TBridge>;
@@ -16,7 +16,7 @@ pub fn hyp_run_thread<'scope, 'env>(
     scope: &'scope thread::Scope<'scope, 'env>,
     hyp_run_trigger_rx: impl Rx<CancellableMessage<HypRunRequest<RustBridge>>> + 'env,
     mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
-    mut runner: HypRunner
+    mut runner: impl RunHyps + Send + Sync + 'static
 )
 {
     scope.spawn(move || {
@@ -30,7 +30,7 @@ pub fn hyp_run_thread<'scope, 'env>(
 }
 
 pub fn handle_hyp_run_trigger(
-    runner: &mut HypRunner,
+    runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     request: HypRunRequest<RustBridge>,
     cancellation: Cancellation
@@ -61,7 +61,7 @@ pub fn handle_hyp_run_trigger(
 }
 
 fn run_hyps(
-    runner: &mut HypRunner,
+    runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     cancellation: Cancellation,
     compute_coverage: bool
@@ -101,7 +101,7 @@ fn run_hyps(
 }
 
 fn run_hyp(
-    runner: &mut HypRunner,
+    runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     id: &HypId,
     update_snapshots: bool,

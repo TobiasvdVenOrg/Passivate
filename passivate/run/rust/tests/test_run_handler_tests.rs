@@ -15,14 +15,14 @@ use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
-use passivate_model_bridge::bridge_hyp::BridgeHyp;
-use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
+use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest};
+use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
 use passivate_model_bridge::hyp_session_event::ConsoleOutput;
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
-use passivate_model_rust::{RustHyp, RustOutput};
+use passivate_model_rust::{RustBridge, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
-use passivate_run_rust::hyp_runner::HypRunner;
+use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps};
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
@@ -37,7 +37,8 @@ pub fn runing_single_hyp_leaves_session_in_passed_state()
 
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_8_and_8_is_16");
 
-    HandleHypRunTrigger::new(&setup)
+    HandleHypRunTrigger::new()
+        .with_runner_from_setup(&setup)
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
@@ -55,7 +56,8 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
 
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_2_and_2_is_4");
 
-    HandleHypRunTrigger::new(&setup)
+    HandleHypRunTrigger::new()
+        .with_runner_from_setup(&setup)
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
@@ -85,7 +87,7 @@ pub fn update_snapshots_replaces_snapshot_with_approved() -> Result<(), IoError>
 
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
 
-    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup);
+    let mut handle_hyp_run = HandleHypRunTrigger::new().with_runner_from_setup(&setup);
 
     // Run all tests first to generate a new snapshot
     handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
@@ -125,7 +127,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let expected_unapproved_snapshot = snapshots_dir.join("different_example_snapshot.new.png");
 
-    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup);
+    let mut handle_hyp_run = HandleHypRunTrigger::new().with_runner_from_setup(&setup);
 
     // Run all tests first to generate a new snapshot
     handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
@@ -158,7 +160,8 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
         .build()
         .clean_output();
 
-    HandleHypRunTrigger::new(&setup)
+    HandleHypRunTrigger::new()
+        .with_runner_from_setup(&setup)
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::all(HypRunOptions::default()));
 
@@ -194,7 +197,9 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
         .build()
         .clean_output();
 
-    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup).with_hyp_session_bridge(session_tx);
+    let mut handle_hyp_run = HandleHypRunTrigger::new()
+        .with_runner_from_setup(&setup)
+        .with_hyp_session_bridge(session_tx);
 
     // Run tests twice
     handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
@@ -225,24 +230,21 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 }
 
 #[test]
-pub fn when_test_run_fails_error_is_reported()
+pub fn when_hyp_run_fails_error_is_reported()
 {
-    let mut test_runner = HypRunner::faux();
-    test_runner._when_run_hyps().then(|_| Err(TestRunError::Cancelled(Cancelled)));
+    let mut run_hyps = MockRunHyps::new();
+    run_hyps
+        .expect_run_hyps()
+        .returning(|_, _, _: &MockHypSessionBridge<RustBridge>, _| Err(TestRunError::Temp));
 
-    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
+    let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
-    let mut handler = HypRunHandler::builder()
-        .runner(test_runner)
-        .coverage(Box::new(compute_coverage::stub()))
-        .hyp_run_tx(hyp_run_tx)
-        .coverage_tx(Tx::stub())
-        .configuration(ConfigurationManager::default_config(Tx::stub()))
-        .build();
+    HandleHypRunTrigger::new()
+        .with_runner(run_hyps)
+        .with_hyp_session_bridge(session_tx)
+        .call(HypRunRequest::all(HypRunOptions::default()));
 
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
-
-    let session = HypSession::from_events(hyp_run_rx);
+    let session = HypSession::from_events(session_rx);
 
     assert_matches!(session.activity(), Err(_));
 }

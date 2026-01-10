@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::ffi::OsString;
 use std::fs;
 use std::sync::Arc;
 
@@ -32,6 +31,30 @@ use passivate_run_core::hyp_run_errors::TestRunError;
 
 use crate::nextest_cargo_options;
 
+#[mockall::automock]
+pub trait RunHyps
+{
+    fn run_hyps<TTx>(
+        &mut self,
+        instrument_coverage: bool,
+        cancellation: Cancellation,
+        tx: &TTx,
+        filter: Vec<String>
+    ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
+
+    fn run_hyp<TTx>(
+        &mut self,
+        hyp_id: &HypId,
+        update_snapshots: bool,
+        cancellation: Cancellation,
+        tx: &TTx
+    ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
+}
+
 #[derive(Clone)]
 pub struct HypRunner
 {
@@ -51,23 +74,6 @@ impl HypRunner
             target_dir,
             coverage_output_dir
         }
-    }
-
-    pub fn run_hyps<TTx>(
-        &mut self,
-        instrument_coverage: bool,
-        cancellation: Cancellation,
-        tx: &TTx,
-        filter: Vec<String>
-    ) -> Result<(), TestRunError>
-    where
-        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
-    {
-        let cargo_options = nextest_cargo_options::cargo_options()
-            .target_dir(self.target_dir.clone())
-            .call();
-
-        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter)
     }
 
     fn run_hyps_with_options<TTx>(
@@ -344,8 +350,28 @@ impl HypRunner
 
         Ok(())
     }
+}
 
-    pub fn run_hyp<TTx>(
+impl RunHyps for HypRunner
+{
+    fn run_hyps<TTx>(
+        &mut self,
+        instrument_coverage: bool,
+        cancellation: Cancellation,
+        tx: &TTx,
+        filter: Vec<String>
+    ) -> Result<(), TestRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
+    {
+        let cargo_options = nextest_cargo_options::cargo_options()
+            .target_dir(self.target_dir.clone())
+            .call();
+
+        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter)
+    }
+
+    fn run_hyp<TTx>(
         &mut self,
         hyp_id: &HypId,
         update_snapshots: bool,
