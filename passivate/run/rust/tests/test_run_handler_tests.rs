@@ -17,6 +17,7 @@ use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
 use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
+use passivate_model_bridge::hyp_session_event::ConsoleOutput;
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_rust::{RustHyp, RustOutput};
@@ -151,20 +152,19 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
 #[test]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
-    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
+    let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
         .clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
-
-    // Run all tests first to generate a new snapshot
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    HandleHypRunTrigger::new(&setup)
+        .with_hyp_session_bridge(session_tx)
+        .call(HypRunRequest::all(HypRunOptions::default()));
 
     let failed_test = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
 
-    let session = HypSession::from_events(hyp_run_rx);
+    let session = HypSession::from_events(session_rx);
 
     let failed_test = session.hyps().entry(failed_test.chain()).unwrap();
 
