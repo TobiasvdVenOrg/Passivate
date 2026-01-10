@@ -129,17 +129,7 @@ mod tests
     #[test]
     pub fn show_coverage_hierarchy_expand_children()
     {
-        let (coverage_tx, coverage_rx) = Tx::new();
-
-        let configuration = ConfigurationManager::default();
-
-        let mut coverage_view = CoverageView::new(coverage_rx, configuration);
-
-        let ui = |ui: &mut egui::Ui| {
-            coverage_view.ui(ui);
-        };
-
-        let mut harness = Harness::new_ui(ui);
+        let mut coverage_view = CoverageView;
 
         let coverage_info = CovdirJson {
             children: Some(IndexMap::from([
@@ -196,7 +186,13 @@ mod tests
             name: "example.rs".to_string()
         };
 
-        coverage_tx.send(CoverageStatus::Done(Box::new(coverage_info)));
+        let coverage_status = CoverageStatus::Done(Box::new(coverage_info));
+
+        let ui = |ui: &mut egui::Ui| {
+            coverage_view.ui(ui, &coverage_status);
+        };
+
+        let mut harness = Harness::new_ui(ui);
 
         harness.run();
 
