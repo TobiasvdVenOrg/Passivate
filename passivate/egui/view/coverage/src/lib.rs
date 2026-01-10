@@ -93,9 +93,7 @@ mod tests
     use egui::accesskit::Role;
     use egui_kittest::{kittest::Queryable, Harness};
     use indexmap::IndexMap;
-    use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
-    use passivate_delegation::{Rx, Tx};
+    use passivate_coverage::{coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_hyp_names::test_name;
 
     use crate::CoverageView;
@@ -219,53 +217,18 @@ mod tests
     }
 
     #[test]
-    pub fn enable_button_when_coverage_is_disabled_triggers_configuration_event()
-    {
-        let configuration = ConfigurationManager::default();
-        let test_run_handler = HypRunHandler::builder()
-            .configuration(configuration.clone())
-            .coverage(Box::new(MockComputeCoverage::new()))
-            .coverage_tx(Tx::stub())
-            .runner(HypRunner::faux())
-            .hyp_run_tx(SessionEventTx::stub())
-            .build();
-
-        let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
-
-        let ui = |ui: &mut egui::Ui| {
-            coverage_view.ui(ui);
-        };
-
-        let mut harness = Harness::new_ui(ui);
-
-        let enable_button = harness.get_by_label("Enable");
-        enable_button.click();
-
-        harness.run();
-
-        assert!(test_run_handler.coverage_enabled());
-
-        harness.fit_contents();
-        harness.snapshot(&test_name!());
-    }
-
-    #[test]
     pub fn show_error()
     {
-        let (coverage_tx, coverage_rx) = Tx::new();
-        let configuration = ConfigurationManager::default();
+        let mut coverage_view = CoverageView;
 
-        let mut coverage_view = CoverageView::new(coverage_rx, configuration);
+        let coverage_status = CoverageStatus::Error("Something went wrong with the coverage!".to_string());
 
         let ui = |ui: &mut egui::Ui| {
-            coverage_view.ui(ui);
+            coverage_view.ui(ui, &coverage_status);
         };
-
-        coverage_tx.send(CoverageStatus::Error("Something went wrong with the coverage!".to_string()));
 
         let mut harness = Harness::new_ui(ui);
         harness.run();
-
         harness.fit_contents();
         harness.snapshot(&test_name!());
     }

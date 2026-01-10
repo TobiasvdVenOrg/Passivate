@@ -195,6 +195,37 @@ pub mod tests
     }
 
     #[test]
+    pub fn enabling_coverage_in_coverage_view_modifies_configuration()
+    {
+        let configuration = ConfigurationManager::default();
+        let test_run_handler = HypRunHandler::builder()
+            .configuration(configuration.clone())
+            .coverage(Box::new(MockComputeCoverage::new()))
+            .coverage_tx(Tx::stub())
+            .runner(HypRunner::faux())
+            .hyp_run_tx(SessionEventTx::stub())
+            .build();
+
+        let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
+
+        let ui = |ui: &mut egui::Ui| {
+            coverage_view.ui(ui);
+        };
+
+        let mut harness = Harness::new_ui(ui);
+
+        let enable_button = harness.get_by_label("Enable");
+        enable_button.click();
+
+        harness.run();
+
+        assert!(test_run_handler.coverage_enabled());
+
+        harness.fit_contents();
+        harness.snapshot(&test_name!());
+    }
+
+    #[test]
     pub fn configuring_snapshots_path_starts_a_hyp_run()
     {
         let configuration = ConfigurationManager::default();
