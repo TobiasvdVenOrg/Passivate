@@ -188,23 +188,21 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 #[test]
 pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 {
-    use passivate_run_core::session_event_tx::SessionEventTx;
-
-    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
+    let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project_failing_tests")
         .build()
         .clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
+    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup).with_hyp_session_bridge(session_tx);
 
     // Run tests twice
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
+    handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
 
     let failed_hyp = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
 
-    let session = HypSession::from_events(hyp_run_rx);
+    let session = HypSession::from_events(session_rx);
 
     let failed_test = session.hyps().entry(&failed_hyp).unwrap();
 
