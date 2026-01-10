@@ -16,11 +16,11 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
+use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_rust::{RustHyp, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
-use passivate_run_rust::hyp_run_handler::handle_hyp_run_trigger;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
@@ -28,31 +28,22 @@ use passivate_testing::test_snapshot_path::TestSnapshotPath;
 use crate::helpers::HandleHypRunTrigger;
 
 #[test]
-pub fn handle_single_test_run()
+pub fn runing_single_hyp_leaves_session_in_passed_state()
 {
-    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
+    let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
-
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_8_and_8_is_16");
 
-    let handle_hyp_run_trigger = HandleHypRunTrigger::new()
-    handle_hyp_run_trigger(
-        HypRunTrigger::Hyp {
-            id: hyp_to_run,
-            update_snapshots: false
-        },
-        Cancellation::default()
-    );
+    HandleHypRunTrigger::new(&setup)
+        .with_hyp_session_bridge(session_tx)
+        .call(HypRunRequest {
+            kind: HypRunRequestKind::Single { hyp_id: hyp_to_run },
+            options: HypRunOptions::default()
+        });
 
-    let events = hyp_run_rx.into_iter().collect::<Vec<_>>();
-
-    assert_matches!(events.first(), Some(HypSessionEvent::RunStarted));
-    assert_matches!(events.last(), Some(HypSessionEvent::RunCompleted));
-
-    let session = HypSession::from_events(events);
+    let session = HypSession::from_events(session_rx);
 
     assert!(session.state() == HypState::Passed);
 }
@@ -60,23 +51,20 @@ pub fn handle_single_test_run()
 #[test]
 pub fn single_hyp_run_only_runs_one_exact_hyp()
 {
-    let (hyp_run_tx, hyp_run_rx) = SessionEventTx::new();
+    let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
 
-    let mut handler = helpers::test_hyp_run_handler(&setup).hyp_run_tx(hyp_run_tx).call();
+    let hyp_to_run = HypId::new("simple_project", "simple_project", "add_2_and_2_is_4");
 
-    let hyp_to_run = RustHyp::new_single(HypId::new("simple_project", "add_tests", "add_2_and_2_is_4"));
+    HandleHypRunTrigger::new(&setup)
+        .with_hyp_session_bridge(session_tx)
+        .call(HypRunRequest {
+            kind: HypRunRequestKind::Single { hyp_id: hyp_to_run },
+            options: HypRunOptions::default()
+        });
 
-    handler.handle(
-        HypRunTrigger::Hyp {
-            id: hyp_to_run.id().clone(),
-            update_snapshots: false
-        },
-        Cancellation::default()
-    );
-
-    let session = HypSession::from_events(hyp_run_rx);
+    let session = HypSession::from_events(session_rx);
     let mut iter = session.hyps().iter();
 
     assert_matches!(iter.next(), Some(hyp_to_run));

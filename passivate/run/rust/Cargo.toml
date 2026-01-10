@@ -21,12 +21,14 @@ nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest
 
 log.workspace = true
 bon.workspace = true
+crossbeam-channel.workspace = true
 thiserror.workspace = true
 camino.workspace = true
 dunce.workspace = true
 guppy.workspace = true
 itertools.workspace = true
 stdext.workspace = true
+mockall.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../../testing" }
