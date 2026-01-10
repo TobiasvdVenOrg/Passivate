@@ -93,11 +93,9 @@ mod tests
     use egui::accesskit::Role;
     use egui_kittest::{kittest::Queryable, Harness};
     use indexmap::IndexMap;
-    use passivate_configuration::{configuration::PassivateConfiguration, configuration_manager::ConfigurationManager};
+    use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_coverage::{compute_coverage::MockComputeCoverage, coverage_status::CoverageStatus, grcov::covdir_json::CovdirJson};
     use passivate_delegation::{Rx, Tx};
-    use passivate_run_core::session_event_tx::SessionEventTx;
-    use passivate_run_rust::{hyp_run_handler::HypRunHandler, hyp_runner::HypRunner};
     use passivate_hyp_names::test_name;
 
     use crate::CoverageView;
@@ -105,16 +103,7 @@ mod tests
     #[test]
     pub fn show_coverage_hierarchy_fully_collapsed()
     {
-        let (coverage_tx, coverage_rx) = Tx::new();
-        let configuration = ConfigurationManager::default();
-
-        let mut coverage_view = CoverageView::new(coverage_rx, configuration);
-
-        let ui = |ui: &mut egui::Ui| {
-            coverage_view.ui(ui);
-        };
-
-        let mut harness = Harness::new_ui(ui);
+        let mut coverage_view = CoverageView;
 
         let coverage_info = CovdirJson {
             children: Some(IndexMap::new()),
@@ -125,8 +114,13 @@ mod tests
             name: "example.rs".to_string()
         };
 
-        coverage_tx.send(CoverageStatus::Done(Box::new(coverage_info)));
+        let coverage_status = CoverageStatus::Done(Box::new(coverage_info));
 
+        let ui = |ui: &mut egui::Ui| {
+            coverage_view.ui(ui, &coverage_status);
+        };
+
+        let mut harness = Harness::new_ui(ui);
         harness.run();
         harness.fit_contents();
         harness.snapshot(&test_name!());
