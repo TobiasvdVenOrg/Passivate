@@ -124,23 +124,23 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     let expected_approved_snapshot = snapshots_dir.join("example_snapshot.png");
     let expected_unapproved_snapshot = snapshots_dir.join("different_example_snapshot.new.png");
 
-    let mut handler = helpers::test_hyp_run_handler(&setup).call();
+    let mut handle_hyp_run = HandleHypRunTrigger::new(&setup);
 
     // Run all tests first to generate a new snapshot
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
 
     let snapshot_hyp_id = HypId::new("simple_project", "snapshot_tests", "snapshot_test");
 
-    handler.handle(
-        HypRunTrigger::Hyp {
-            id: snapshot_hyp_id,
-            update_snapshots: true
-        },
-        Cancellation::default()
-    );
+    handle_hyp_run.call(HypRunRequest::single(
+        snapshot_hyp_id,
+        HypRunOptions {
+            update_snapshots: true,
+            ..HypRunOptions::default()
+        }
+    ));
 
-    // Run all tests again, which should no approve snapshots
-    handler.handle(HypRunTrigger::DefaultRun, Cancellation::default());
+    // Run all tests again, which should not approve snapshots
+    handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
 
     assert!(fs::exists(expected_approved_snapshot)?);
     assert!(fs::exists(expected_unapproved_snapshot)?);
