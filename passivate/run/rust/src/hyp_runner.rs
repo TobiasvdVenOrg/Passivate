@@ -35,7 +35,7 @@ use crate::nextest_cargo_options;
 #[derive(Clone)]
 pub struct HypRunner
 {
-    target: OsString,
+    target: String,
     working_dir: Utf8PathBuf,
     target_dir: Utf8PathBuf,
     coverage_output_dir: Utf8PathBuf
@@ -43,7 +43,7 @@ pub struct HypRunner
 
 impl HypRunner
 {
-    pub fn new(target: OsString, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
+    pub fn new(target: String, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
     {
         Self {
             target,

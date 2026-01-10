@@ -1,3 +1,4 @@
+use std::env;
 use std::ffi::os_str::OsString;
 
 use passivate_configuration::configuration::PassivateConfiguration;
@@ -5,11 +6,13 @@ use passivate_configuration::configuration_event::ConfigurationEvent;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_coverage::coverage_status::CoverageStatus;
 use passivate_coverage::grcov::Grcov;
-use passivate_delegation::Tx;
+use passivate_delegation::{Cancellation, Tx};
+use passivate_model_bridge::hyp_run_bridge::HypRunTrigger;
+use passivate_model_bridge::hyp_session_bridge::{HypSessionBridge, MockHypSessionBridge};
 use passivate_model_core::hyp_session_event::HypSessionEvent;
 use passivate_model_rust::RustBridge;
 use passivate_run_core::session_event_tx::SessionEventTx;
-use passivate_run_rust::hyp_run_handler::HypRunHandler;
+use passivate_run_rust::hyp_run_handler::{HypRunHandler, handle_hyp_run_trigger};
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;
 
@@ -26,11 +29,7 @@ pub fn test_grcov(#[builder(start_fn)] setup: &TestDataSetup) -> Grcov
 #[bon::builder]
 pub fn test_hyp_runner(#[builder(start_fn)] setup: &TestDataSetup) -> HypRunner
 {
-    #[cfg(target_os = "windows")]
-    let target = OsString::from("x86_64-pc-windows-msvc");
-
-    #[cfg(target_os = "linux")]
-    let target = OsString::from("aarch64-unknown-linux-gnu");
+    let target = env::var("HOST").expect("expected 'HOST' environment target triple");
 
     HypRunner::new(
         target,
@@ -53,13 +52,10 @@ pub fn test_hyp_run_handler(
 
     let grcov = test_grcov(setup).call();
 
-    let configuration = ConfigurationManager::new(
-        PassivateConfiguration {
-            coverage_enabled,
-            snapshot_directories: setup.snapshot_directories()
-        },
-        configuration_tx
-    );
+    let configuration = ConfigurationManager::new(PassivateConfiguration {
+        coverage_enabled,
+        snapshot_directories: setup.snapshot_directories()
+    });
 
     HypRunHandler::builder()
         .runner(runner)
@@ -68,4 +64,52 @@ pub fn test_hyp_run_handler(
         .coverage_tx(coverage_tx)
         .configuration(configuration)
         .build()
+}
+
+pub struct HandleHypRunTrigger<THypSessionBridge>
+where
+    THypSessionBridge: HypSessionBridge
+{
+    runner: HypRunner,
+    hyp_session_bridge: THypSessionBridge,
+    cancellation: Cancellation
+}
+
+impl HandleHypRunTrigger<MockHypSessionBridge>
+{
+    pub fn new(setup: &TestDataSetup) -> Self
+    {
+        let mut mock_hyp_session_bridge = MockHypSessionBridge::new();
+        mock_hyp_session_bridge.expect_request_rerun();
+
+        let target = env::var("HOST").expect("expected 'HOST' environment target triple");
+
+        let runner = HypRunner::new(
+            target,
+            setup.workspace_path().clone(),
+            setup.output_path().clone(),
+            setup.coverage_path().clone()
+        );
+
+        Self {
+            runner,
+            hyp_session_bridge: mock_hyp_session_bridge,
+            cancellation: Cancellation::default()
+        }
+    }
+}
+
+impl<THypSessionBridge> HandleHypRunTrigger<THypSessionBridge>
+where
+    THypSessionBridge: HypSessionBridge
+{
+    pub fn call(mut self, trigger: HypRunTrigger<RustBridge>)
+    {
+        handle_hyp_run_trigger(
+            &mut self.runner,
+            &mut self.hyp_session_bridge,
+            trigger,
+            self.cancellation.clone()
+        );
+    }
 }

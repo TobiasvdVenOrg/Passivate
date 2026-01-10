@@ -12,7 +12,7 @@ use notify::{
     Result as NotifyResult,
     Watcher
 };
-use passivate_model_bridge::hyp_session_bridge::HypSessionBridge;
+use passivate_model_bridge::source_change_bridge::FileChangedBridge;
 
 use crate::notify_change_events_errors::NotifyChangeEventsError;
 
@@ -26,7 +26,7 @@ impl NotifyChangeEvents
 {
     pub fn new(
         path: &Utf8Path,
-        session_bridge: impl HypSessionBridge + Send + Sync + 'static
+        bridge: impl FileChangedBridge + Send + Sync + 'static
     ) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
         let mut modification_cache: HashMap<PathBuf, SystemTime> = HashMap::new();
@@ -52,12 +52,12 @@ impl NotifyChangeEvents
                                 {
                                     if &modified > last_modification
                                     {
-                                        session_bridge.request_rerun();
+                                        bridge.file_changed(path.clone());
                                     }
                                 }
                                 else
                                 {
-                                    session_bridge.request_rerun();
+                                    bridge.file_changed(path.clone());
                                 }
 
                                 modification_cache.insert(path.clone(), modified);

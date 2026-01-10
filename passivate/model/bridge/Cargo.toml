@@ -8,6 +8,10 @@ passivate_hyp_names = { path = "../../hyp_names" }
 passivate_id_chain_tree = { path = "../../id_chain_tree" }
 passivate_delegation = { path = "../../delegation" }
 
+camino.workspace = true
 mockall.workspace = true
 enum-display-derive.workspace = true
 log.workspace = true
+
+[dev-dependencies]
+passivate_testing = { path = "../../testing" }

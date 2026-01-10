@@ -20,10 +20,12 @@ use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_rust::{RustHyp, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
-use passivate_run_rust::hyp_run_handler::HypRunHandler;
+use passivate_run_rust::hyp_run_handler::handle_hyp_run_trigger;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
+
+use crate::helpers::HandleHypRunTrigger;
 
 #[test]
 pub fn handle_single_test_run()
@@ -36,7 +38,8 @@ pub fn handle_single_test_run()
 
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_8_and_8_is_16");
 
-    handler.handle(
+    let handle_hyp_run_trigger = HandleHypRunTrigger::new()
+    handle_hyp_run_trigger(
         HypRunTrigger::Hyp {
             id: hyp_to_run,
             update_snapshots: false

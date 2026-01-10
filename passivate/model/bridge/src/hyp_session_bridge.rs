@@ -5,28 +5,6 @@ use crate::bridge::Bridge;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::output_report::OutputReport;
 
-/// Interface from non-core systems (notify, configuration) to communicate to the session that something has changed
-/// and tests may need to be re-discovered and/or run
-pub trait HypSessionBridge
-{
-    fn request_rerun(&self);
-}
-
-pub enum HypSessionTrigger
-{
-    RequestRerun
-}
-
-impl<TTx> HypSessionBridge for TTx
-where
-    TTx: Tx<HypSessionTrigger>
-{
-    fn request_rerun(&self)
-    {
-        self.send(HypSessionTrigger::RequestRerun);
-    }
-}
-
 /// Interfaces from a test runner implementation to communicate changes to the session state.
 pub trait StartRunBridge<TBridge: Bridge>: Send + Sync + 'static
 {

@@ -3,7 +3,7 @@ use std::thread;
 use passivate_delegation::{CancellableMessage, Cancellation, Rx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::hyp_run_bridge::{HypRunTrigger, HypRunTriggerKind};
+use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
 use passivate_model_rust::RustBridge;
 
@@ -14,7 +14,7 @@ pub trait HypSessionBridge<TBridge: Bridge> =
 
 pub fn hyp_run_thread<'scope, 'env>(
     scope: &'scope thread::Scope<'scope, 'env>,
-    hyp_run_trigger_rx: impl Rx<CancellableMessage<HypRunTrigger<RustBridge>>> + 'env,
+    hyp_run_trigger_rx: impl Rx<CancellableMessage<HypRunRequest<RustBridge>>> + 'env,
     mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
     mut runner: HypRunner
 )
@@ -32,28 +32,28 @@ pub fn hyp_run_thread<'scope, 'env>(
 pub fn handle_hyp_run_trigger(
     runner: &mut HypRunner,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    trigger: HypRunTrigger<RustBridge>,
+    request: HypRunRequest<RustBridge>,
     cancellation: Cancellation
 )
 {
-    match trigger.kind
+    match request.kind
     {
-        HypRunTriggerKind::All =>
+        HypRunRequestKind::All =>
         {
             run_hyps(
                 runner,
                 hyp_session_bridge,
                 cancellation.clone(),
-                trigger.options.compute_coverage
+                request.options.compute_coverage
             )
         }
-        HypRunTriggerKind::Single { hyp_id } =>
+        HypRunRequestKind::Single { hyp_id } =>
         {
             run_hyp(
                 runner,
                 hyp_session_bridge,
                 &hyp_id,
-                trigger.options.update_snapshots,
+                request.options.update_snapshots,
                 cancellation.clone()
             )
         }

@@ -1,7 +1,6 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_delegation::Rx;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
@@ -170,13 +169,10 @@ pub mod tests
         let mut session = HypSession::new();
         let passivate_state = PassivateState::with_initial_session_state(session, hyp_run_rx);
         let view_state = PassivateViewState::default();
-        let configuration = ConfigurationManager::new(
-            PassivateConfiguration {
-                snapshot_directories: vec![get_example_snapshots_path()],
-                ..PassivateConfiguration::default()
-            },
-            Tx::stub()
-        );
+        let configuration = ConfigurationManager::new(PassivateConfiguration {
+            snapshot_directories: vec![get_example_snapshots_path()],
+            ..PassivateConfiguration::default()
+        });
 
         let views = PassivateViews::<RustBridge, MockHypRunBridge>::stub();
 

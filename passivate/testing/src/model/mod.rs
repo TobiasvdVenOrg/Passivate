@@ -5,13 +5,7 @@ use std::ops::{Deref, DerefMut};
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
-use passivate_model_bridge::hyp_session_bridge::{
-    CompleteRunBridge,
-    HypSessionBridge,
-    SendHypBridge,
-    SendOutputBridge,
-    StartRunBridge
-};
+use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
 use passivate_model_bridge::hyp_session_event::{CompilationMessage, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
@@ -171,14 +165,6 @@ where
     fn from(value: T) -> Self
     {
         Self::Compilation(CompilationMessage::new_info(value))
-    }
-}
-
-impl HypSessionBridge for TestSession
-{
-    fn request_rerun(&self)
-    {
-        todo!()
     }
 }
 
