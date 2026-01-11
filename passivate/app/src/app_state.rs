@@ -53,22 +53,13 @@ impl AppState
     {
         let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
 
-        match session_change
+        if let Some(session_change) = session_change
         {
-            Some(PassivateStateChange::ConfigurationChanged(configuration_change)) =>
-            {
-                _ = self.configuration.change(configuration_change);
-            }
-            Some(session_change) =>
-            {
-                self.state.update_state(&session_change);
+            self.state.update_state(&session_change);
 
-                let configuration = &*self.configuration.acquire();
-                self.view_state
-                    .update_view_state(&session_change, configuration, egui_context, log_rx);
-            }
-            None =>
-            {}
+            let configuration = &*self.configuration.acquire();
+            self.view_state
+                .update_view_state(&session_change, configuration, egui_context, log_rx);
         }
 
         let ui_changes = {
