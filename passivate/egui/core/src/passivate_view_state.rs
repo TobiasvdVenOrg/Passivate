@@ -1,5 +1,4 @@
 use passivate_configuration::configuration::PassivateConfiguration;
-use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_delegation::Rx;
 use passivate_egui_hyp_snapshots::Snapshots;

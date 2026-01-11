@@ -62,15 +62,7 @@ pub fn run_app_and_get_context(
     };
 
     let view_state = PassivateViewState::default();
-    let mut app_state = AppState::new(
-        session,
-        state,
-        view_state,
-        dock_views,
-        configuration,
-        session_event_rx,
-        log_rx
-    );
+    let mut app_state = AppState::new(session, state, view_state, dock_views, configuration);
 
     eframe::run_native(
         "Passivate",
@@ -78,7 +70,7 @@ pub fn run_app_and_get_context(
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
 
-            Ok(Box::new(App::new(layout, &mut app_state)))
+            Ok(Box::new(App::new(layout, &mut app_state, session_event_rx, log_rx)))
         })
     )
     .expect("Failed to start Passivate!");

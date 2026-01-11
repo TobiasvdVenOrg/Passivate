@@ -1,6 +1,7 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
+use passivate_delegation::Rx;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
@@ -18,9 +19,7 @@ pub struct AppState
     state: PassivateState<RustBridge>,
     view_state: PassivateViewState<RustBridge>,
     dock_views: DockViews<PassivateView>,
-    configuration: ConfigurationManager,
-    session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
-    log_rx: crossbeam_channel::Receiver<LogMessage>
+    configuration: ConfigurationManager
 }
 
 impl AppState
@@ -30,9 +29,7 @@ impl AppState
         state: PassivateState<RustBridge>,
         view_state: PassivateViewState<RustBridge>,
         dock_views: DockViews<PassivateView>,
-        configuration: ConfigurationManager,
-        session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
-        log_rx: crossbeam_channel::Receiver<LogMessage>
+        configuration: ConfigurationManager
     ) -> Self
     {
         Self {
@@ -40,27 +37,27 @@ impl AppState
             state,
             view_state,
             dock_views,
-            configuration,
-            session_event_rx,
-            log_rx
+            configuration
         }
     }
 
-    pub fn update_app(&mut self, egui_context: &egui::Context, layout: &mut DockingLayout)
+    pub fn update_app(
+        &mut self,
+        egui_context: &egui::Context,
+        layout: &mut DockingLayout,
+        session_event_rx: &impl Rx<HypSessionEvent<RustBridge>>,
+        log_rx: &impl Rx<LogMessage>
+    )
     {
         let configuration = &*self.configuration.acquire();
 
-        let session_change = self
-            .session
-            .update_next(&self.session_event_rx)
-            .map(map_session_change)
-            .flatten();
+        let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
 
         if let Some(session_change) = session_change
         {
             self.state.update_state(&session_change);
             self.view_state
-                .update_view_state(&session_change, configuration, egui_context, &self.log_rx);
+                .update_view_state(&session_change, configuration, egui_context, log_rx);
         }
 
         let ui_changes = passivate_ui::ui(
@@ -77,7 +74,7 @@ impl AppState
         {
             self.state.update_state(&ui_change);
             self.view_state
-                .update_view_state(&ui_change, configuration, egui_context, &self.log_rx);
+                .update_view_state(&ui_change, configuration, egui_context, log_rx);
         }
     }
 }
@@ -108,23 +105,22 @@ pub mod tests
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
-    use passivate_model_bridge::hyp_run_bridge::MockHypRunBridge;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
     use passivate_model_core::hyp_session::HypSession;
-    use passivate_model_core::hyp_session_event::HypSessionEvent;
     use passivate_model_rust::{RustBridge, RustHyp};
     use passivate_testing::path_resolution::test_data_path;
 
     use crate::app_state::AppState;
+    use crate::testing::app_state::UpdateApp;
 
     #[test]
     pub fn selecting_a_test_shows_it_in_details_view()
     {
-        let (mut app_state, mut layout) = example_app_state(Rx::stub());
+        let (mut app_state, mut layout) = example_app_state();
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            app_state.update_and_ui(ui.ctx(), &mut layout);
+            UpdateApp::new(&mut app_state, ui.ctx(), &mut layout).call();
         });
 
         ui.step();
@@ -261,25 +257,21 @@ pub mod tests
         );
     }
 
-    fn example_app_state(hyp_run_rx: Rx<HypSessionEvent<RustBridge>>) -> (AppState<MockHypRunBridge>, DockingLayout)
+    fn example_app_state() -> (AppState, DockingLayout)
     {
-        let example_hyp = example_hyp(HypState::Failed);
-
-        todo!("Add the hyp to the state");
-
-        let mut session = HypSession::new();
-        let passivate_state = PassivateState::with_initial_session_state(session, hyp_run_rx);
+        let session = HypSession::new();
+        let passivate_state = PassivateState::new();
         let view_state = PassivateViewState::default();
         let configuration = ConfigurationManager::new(PassivateConfiguration {
             snapshot_directories: vec![get_example_snapshots_path()],
             ..PassivateConfiguration::default()
         });
 
-        let views = PassivateViews::<RustBridge, MockHypRunBridge>::stub();
+        let views = PassivateViews::stub();
 
         let layout = passivate_layout::default(&views);
         let dock_views = DockViews::new(views.into());
-        let app_state = AppState::new(passivate_state, view_state, dock_views, configuration);
+        let app_state = AppState::new(session, passivate_state, view_state, dock_views, configuration);
 
         (app_state, layout)
     }

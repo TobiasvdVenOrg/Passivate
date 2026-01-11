@@ -9,9 +9,6 @@ use std::io::Error as IoError;
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
 use itertools::Itertools;
-use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_coverage::compute_coverage;
-use passivate_delegation::{Cancellation, Cancelled, Tx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
@@ -22,7 +19,7 @@ use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_rust::{RustBridge, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
-use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps};
+use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 

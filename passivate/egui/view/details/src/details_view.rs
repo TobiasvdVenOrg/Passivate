@@ -209,7 +209,7 @@ mod tests
 
     fn show_hyp<TBridge: Bridge>(test_name: &str, hyp: Hyp<TBridge>)
     {
-        let mut details_view = DetailsView::new();
+        let mut details_view = DetailsView;
 
         let ui = |ui: &mut egui::Ui| {
             let snapshot = Snapshots::new(vec![get_example_snapshots_path()]).from_hyp(&hyp);

@@ -35,6 +35,7 @@ camino.workspace = true
 eframe.workspace = true
 log.workspace = true
 itertools.workspace = true
+maybe-owned.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../testing" }
@@ -51,3 +52,6 @@ galvanic-assert.workspace = true
 [[test]]
 name = "passivate_tests"
 harness = false
+
+[features]
+testing = []
