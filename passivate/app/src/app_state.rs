@@ -94,9 +94,11 @@ fn map_session_change(change: HypSessionChange<RustBridge>) -> Option<PassivateS
 pub mod tests
 {
     use camino::Utf8PathBuf;
+    use egui::accesskit::Role;
     use egui_kittest::Harness;
-    use egui_kittest::kittest::Queryable;
+    use egui_kittest::kittest::{Key, Queryable};
     use galvanic_assert::assert_that;
+    use itertools::Itertools;
     use maybe_owned::MaybeOwned;
     use mockall::predicate::{always, eq};
     use mockall::{Predicate, predicate};
@@ -215,33 +217,29 @@ pub mod tests
     #[test]
     pub fn configuring_snapshots_path_starts_a_hyp_run()
     {
-        let configuration = ConfigurationManager::default();
-        let (change_events_tx, change_events_rx) = Tx::new();
-        let mut configuration_view = ConfigurationView::new(configuration.clone(), change_events_tx);
+        let (mut app_state, mut layout) = example_app_state();
+        let mut mock_run_hyps = MockRunHypsBridge::new();
+        mock_run_hyps.expect_run_all().once();
 
-        let ui = |ui: &mut egui::Ui| {
-            configuration_view.ui(ui);
-        };
+        {
+            let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
+                    .with_run_hyps(MaybeOwned::Borrowed(&mock_run_hyps))
+                    .call();
+            });
 
-        let mut harness = Harness::new_ui(ui);
+            ui.get_by_role(Role::TextInput).type_text("Some/Path/");
+            ui.run();
 
-        harness.get_by_role(Role::TextInput).type_text("Some/Path/");
-        harness.run();
-
-        // Simulate typing across multiple frames...
-        harness.get_by_role(Role::TextInput).type_text("To/Snapshots");
-        harness.get_by_role(Role::TextInput).press_keys(&[Key::Enter]);
-        harness.run();
-
-        drop(harness);
-
-        assert_that!(
-            &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(HypRunTrigger::<RustBridge>::DefaultRun)
-        );
+            // Simulate typing across multiple frames...
+            ui.get_by_role(Role::TextInput).type_text("To/Snapshots");
+            ui.get_by_role(Role::TextInput).press_keys(&[Key::Enter]);
+            ui.run();
+        }
 
         assert_eq!(
-            configuration
+            app_state
+                .configuration
                 .get(|c| c.snapshot_directories.iter().exactly_one().unwrap().clone())
                 .as_str(),
             "Some/Path/To/Snapshots"
