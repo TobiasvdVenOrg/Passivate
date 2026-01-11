@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use passivate_delegation::Rx;
+use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_id_chain_tree::tree::Tree;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
@@ -152,9 +153,13 @@ impl<TBridge: Bridge> Session<TBridge>
         Ok(None)
     }
 
-    fn output(&mut self, _output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
+    fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
     {
-        todo!()
+        match self.hyps.entry(output.id().chain()).or_none()
+        {
+            Some(_) => todo!(),
+            None => Err(HypSessionEvent::Output(output))
+        }
     }
 
     fn hyp_exists(&mut self, hyp_node_info: TBridge::HypInfo) -> ChangeResult<'_, TBridge>
