@@ -196,32 +196,20 @@ pub mod tests
     #[test]
     pub fn enabling_coverage_in_coverage_view_modifies_configuration()
     {
-        let configuration = ConfigurationManager::default();
-        let test_run_handler = HypRunHandler::builder()
-            .configuration(configuration.clone())
-            .coverage(Box::new(MockComputeCoverage::new()))
-            .coverage_tx(Tx::stub())
-            .runner(HypRunner::faux())
-            .hyp_run_tx(SessionEventTx::stub())
-            .build();
+        let (mut app_state, mut layout) = example_app_state();
 
-        let mut coverage_view = CoverageView::new(Rx::stub(), configuration.clone());
+        {
+            let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                UpdateApp::with(&mut app_state, ui.ctx(), &mut layout).call();
+            });
 
-        let ui = |ui: &mut egui::Ui| {
-            coverage_view.ui(ui);
-        };
+            let coverage_toggle = ui.get_by_label("Enable");
+            coverage_toggle.click();
+            ui.run();
+        }
 
-        let mut harness = Harness::new_ui(ui);
-
-        let enable_button = harness.get_by_label("Enable");
-        enable_button.click();
-
-        harness.run();
-
-        assert!(test_run_handler.coverage_enabled());
-
-        harness.fit_contents();
-        harness.snapshot(&test_name!());
+        let coverage_enabled = app_state.configuration.get(|c| c.coverage_enabled);
+        assert!(coverage_enabled);
     }
 
     #[test]
