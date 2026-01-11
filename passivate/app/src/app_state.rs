@@ -51,32 +51,57 @@ impl AppState
         log_rx: &impl Rx<LogMessage>
     )
     {
-        let configuration = &*self.configuration.acquire();
-
         let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
 
-        if let Some(session_change) = session_change
+        match session_change
         {
-            self.state.update_state(&session_change);
-            self.view_state
-                .update_view_state(&session_change, configuration, egui_context, log_rx);
+            Some(PassivateStateChange::ConfigurationChanged(configuration_change)) =>
+            {
+                _ = self.configuration.change(configuration_change);
+            }
+            Some(session_change) =>
+            {
+                self.state.update_state(&session_change);
+
+                let configuration = &*self.configuration.acquire();
+                self.view_state
+                    .update_view_state(&session_change, configuration, egui_context, log_rx);
+            }
+            None =>
+            {}
         }
 
-        let ui_changes = passivate_ui::ui(
-            &self.session,
-            &self.view_state,
-            &self.state,
-            configuration,
-            egui_context,
-            &mut self.dock_views,
-            layout
-        );
+        let ui_changes = {
+            let configuration = &*self.configuration.acquire();
+
+            passivate_ui::ui(
+                &self.session,
+                &self.view_state,
+                &self.state,
+                configuration,
+                egui_context,
+                &mut self.dock_views,
+                layout
+            )
+        };
 
         for ui_change in ui_changes
         {
-            self.state.update_state(&ui_change);
-            self.view_state
-                .update_view_state(&ui_change, configuration, egui_context, log_rx);
+            match ui_change
+            {
+                PassivateStateChange::ConfigurationChanged(configuration_change) =>
+                {
+                    _ = self.configuration.change(configuration_change);
+                }
+                ui_change =>
+                {
+                    self.state.update_state(&ui_change);
+
+                    let configuration = &*self.configuration.acquire();
+                    self.view_state
+                        .update_view_state(&ui_change, configuration, egui_context, log_rx);
+                }
+            }
         }
     }
 }
@@ -93,23 +118,23 @@ fn map_session_change(change: HypSessionChange<RustBridge>) -> Option<PassivateS
 #[cfg(test)]
 pub mod tests
 {
+    use std::fmt::Debug;
+
     use camino::Utf8PathBuf;
     use egui::accesskit::Role;
     use egui_kittest::Harness;
     use egui_kittest::kittest::{Key, Queryable};
-    use galvanic_assert::assert_that;
     use itertools::Itertools;
     use maybe_owned::MaybeOwned;
-    use mockall::predicate::{always, eq};
-    use mockall::{Predicate, predicate};
+    use mockall::predicate;
+    use mockall::predicate::eq;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
-    use passivate_delegation::{Rx, Tx};
     use passivate_egui_core::passivate_view_state::PassivateViewState;
     use passivate_egui_docking::dock_views::DockViews;
     use passivate_egui_docking::docking_layout::DockingLayout;
-    use passivate_egui_view_configuration::ConfigurationView;
+    use passivate_egui_docking::view::View;
     use passivate_egui_views::passivate_layout;
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
@@ -195,16 +220,31 @@ pub mod tests
         ui.run();
     }
 
+    struct DebugHarness<'a, State = ()>(&'a Harness<'a, State>);
+
+    impl<'a, State> Debug for DebugHarness<'a, State>
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+        {
+            f.debug_struct("State").field("tree", &self.0.kittest_state().root()).finish()
+        }
+    }
+
     #[test]
     pub fn enabling_coverage_in_coverage_view_modifies_configuration()
     {
         let (mut app_state, mut layout) = example_app_state();
+
+        let views = PassivateViews::stub();
+        let coverage_tab = layout.dock_state().find_tab(&views.coverage_dock().id()).unwrap();
+        layout.dock_state().set_active_tab(coverage_tab);
 
         {
             let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
                 UpdateApp::with(&mut app_state, ui.ctx(), &mut layout).call();
             });
 
+            ui.run();
             let coverage_toggle = ui.get_by_label("Enable");
             coverage_toggle.click();
             ui.run();
