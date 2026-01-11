@@ -1,3 +1,4 @@
+use itertools::Update;
 use maybe_owned::MaybeOwned;
 use passivate_delegation::{MockRx, Rx, RxError};
 use passivate_egui_docking::docking_layout::DockingLayout;
@@ -18,7 +19,7 @@ pub struct UpdateApp<'a, TRxSession, TRxLog>
 
 impl<'a> UpdateApp<'a, MockRx<HypSessionEvent<RustBridge>>, MockRx<LogMessage>>
 {
-    pub fn new(test_self: &'a mut AppState, egui_context: &'a egui::Context, layout: &'a mut DockingLayout) -> Self
+    pub fn with(test_self: &'a mut AppState, egui_context: &'a egui::Context, layout: &'a mut DockingLayout) -> Self
     {
         let mut mock_session_rx = MockRx::new();
         mock_session_rx
@@ -42,6 +43,20 @@ impl<'a> UpdateApp<'a, MockRx<HypSessionEvent<RustBridge>>, MockRx<LogMessage>>
             layout,
             session_rx: MaybeOwned::Owned(mock_session_rx),
             log_rx: MaybeOwned::Owned(mock_log_rx)
+        }
+    }
+}
+
+impl<'a, _TRxSession, _TRxLog> UpdateApp<'a, _TRxSession, _TRxLog>
+{
+    pub fn with_session_rx<TRxSession>(self, session_rx: MaybeOwned<'a, TRxSession>) -> UpdateApp<'a, TRxSession, _TRxLog>
+    {
+        UpdateApp {
+            test_self: self.test_self,
+            egui_context: self.egui_context,
+            layout: self.layout,
+            session_rx,
+            log_rx: self.log_rx
         }
     }
 }

@@ -94,6 +94,7 @@ pub mod tests
     use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
+    use maybe_owned::MaybeOwned;
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
@@ -105,6 +106,7 @@ pub mod tests
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
     use passivate_model_core::hyp_session::HypSession;
@@ -120,7 +122,7 @@ pub mod tests
         let (mut app_state, mut layout) = example_app_state();
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            UpdateApp::new(&mut app_state, ui.ctx(), &mut layout).call();
+            UpdateApp::with(&mut app_state, ui.ctx(), &mut layout).call();
         });
 
         ui.step();
@@ -135,12 +137,13 @@ pub mod tests
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
-        let (hyp_run_tx, hyp_run_rx) = Tx::new();
-
-        let (mut app_state, mut layout) = example_app_state(hyp_run_rx);
+        let (session_tx, session_rx) = crossbeam_channel::unbounded();
+        let (mut app_state, mut layout) = example_app_state();
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
-            app_state.update_and_ui(ui.ctx(), &mut layout);
+            UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
+                .with_session_rx(MaybeOwned::Borrowed(&session_rx))
+                .call();
         });
 
         ui.step();
@@ -150,7 +153,7 @@ pub mod tests
         ui.step();
 
         let example_hyp = example_hyp(HypState::Passed);
-        hyp_run_tx.send(HypSessionEvent::HypCompleted(example_hyp.id().clone()));
+        session_tx.send(HypSessionEvent::HypCompleted(example_hyp.id().clone()));
 
         ui.step();
         ui.snapshot(&test_name!());
