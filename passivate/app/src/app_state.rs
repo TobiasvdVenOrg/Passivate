@@ -8,6 +8,7 @@ use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_egui_views::passivate_ui;
 use passivate_egui_views::passivate_views::PassivateView;
 use passivate_log::log_message::LogMessage;
+use passivate_model_bridge::hyp_run_bridge::RunHypsBridge;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
@@ -45,6 +46,7 @@ impl AppState
         &mut self,
         egui_context: &egui::Context,
         layout: &mut DockingLayout,
+        run_hyps: &impl RunHypsBridge<RustBridge>,
         session_event_rx: &impl Rx<HypSessionEvent<RustBridge>>,
         log_rx: &impl Rx<LogMessage>
     )
@@ -94,7 +96,10 @@ pub mod tests
     use camino::Utf8PathBuf;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
+    use galvanic_assert::assert_that;
     use maybe_owned::MaybeOwned;
+    use mockall::predicate::{always, eq};
+    use mockall::{Predicate, predicate};
     use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_configuration::configuration_manager::ConfigurationManager;
     use passivate_core::passivate_state::PassivateState;
@@ -102,10 +107,13 @@ pub mod tests
     use passivate_egui_core::passivate_view_state::PassivateViewState;
     use passivate_egui_docking::dock_views::DockViews;
     use passivate_egui_docking::docking_layout::DockingLayout;
+    use passivate_egui_view_configuration::ConfigurationView;
     use passivate_egui_views::passivate_layout;
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
+    use passivate_model_bridge::hyp_run_request::HypRunOptions;
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
@@ -160,37 +168,29 @@ pub mod tests
     }
 
     #[test]
-    pub fn set_coverage_enabled_then_future_hyp_runs_have_coverage_enabled()
+    pub fn when_configuration_view_enables_coverage_hyps_run_with_coverage_enabled()
     {
-        let configuration = ConfigurationManager::default();
-        let test_run_handler = HypRunHandler::builder()
-            .configuration(configuration.clone())
-            .coverage(Box::new(MockComputeCoverage::new()))
-            .coverage_tx(MockTx::new())
-            .runner(HypRunner::faux())
-            .hyp_run_tx(SessionEventTx::stub())
-            .build();
+        let (mut app_state, mut layout) = example_app_state();
+        let mut mock_run_hyps = MockRunHypsBridge::new();
+        mock_run_hyps.expect_run_all().once().with(
+            eq(HypRunOptions {
+                compute_coverage: true,
+                ..Default::default()
+            }),
+            predicate::always()
+        );
+        mock_run_hyps.expect_run_single().never();
 
-        let (change_events_tx, change_events_rx) = Tx::new();
-        let mut configuration_view = ConfigurationView::new(configuration, change_events_tx);
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
+                .with_run_hyps(MaybeOwned::Borrowed(&mock_run_hyps))
+                .call();
+        });
 
-        let ui = |ui: &mut egui::Ui| {
-            configuration_view.ui(ui);
-        };
-
-        let mut harness = Harness::new_ui(ui);
-
-        let coverage_toggle = harness.get_by_label("Compute Coverage");
+        let coverage_toggle = ui.get_by_label("Compute Coverage");
         coverage_toggle.click();
 
-        harness.run();
-
-        assert_that!(
-            &change_events_rx.drain().last().expect("expected change event").clone(),
-            eq(HypRunTrigger::<RustBridge>::DefaultRun)
-        );
-
-        assert!(test_run_handler.coverage_enabled());
+        ui.run();
     }
 
     #[test]

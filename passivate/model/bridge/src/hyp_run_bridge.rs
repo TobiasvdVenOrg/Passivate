@@ -1,44 +1,40 @@
-use passivate_delegation::Tx;
+use passivate_delegation::{CancellableMessage, Cancellation, Tx};
 
 use crate::bridge::Bridge;
 use crate::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
 
 /// Interface from a session state to start test runs.
 #[mockall::automock]
-pub trait RunAllHypsBridge<TBridge: Bridge>
+pub trait RunHypsBridge<TBridge: Bridge>
 {
-    fn run_all(&self, options: HypRunOptions);
+    fn run_all(&self, options: HypRunOptions, cancellation: Cancellation);
+    fn run_single(&self, hyp: TBridge::Id, options: HypRunOptions, cancellation: Cancellation);
 }
 
-pub trait RunSingleHypBridge<TBridge: Bridge>
-{
-    fn run(&self, hyp: TBridge::Id, options: HypRunOptions);
-}
-
-impl<TTx, TBridge> RunAllHypsBridge<TBridge> for TTx
+impl<TTx, TBridge> RunHypsBridge<TBridge> for TTx
 where
     TBridge: Bridge,
-    TTx: Tx<HypRunRequest<TBridge>>
+    TTx: Tx<CancellableMessage<HypRunRequest<TBridge>>>
 {
-    fn run_all(&self, options: HypRunOptions)
+    fn run_all(&self, options: HypRunOptions, cancellation: Cancellation)
     {
-        self.send(HypRunRequest {
-            kind: HypRunRequestKind::All,
-            options
+        self.send(CancellableMessage {
+            message: HypRunRequest {
+                kind: HypRunRequestKind::All,
+                options
+            },
+            cancellation
         });
     }
-}
 
-impl<TTx, TBridge> RunSingleHypBridge<TBridge> for TTx
-where
-    TBridge: Bridge,
-    TTx: Tx<HypRunRequest<TBridge>>
-{
-    fn run(&self, hyp_id: TBridge::Id, options: HypRunOptions)
+    fn run_single(&self, hyp_id: TBridge::Id, options: HypRunOptions, cancellation: Cancellation)
     {
-        self.send(HypRunRequest {
-            kind: HypRunRequestKind::Single { hyp_id },
-            options
+        self.send(CancellableMessage {
+            message: HypRunRequest {
+                kind: HypRunRequestKind::Single { hyp_id },
+                options
+            },
+            cancellation
         });
     }
 }

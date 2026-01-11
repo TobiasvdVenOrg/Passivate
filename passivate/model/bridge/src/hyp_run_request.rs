@@ -25,7 +25,7 @@ impl<TBridge: Bridge> HypRunRequest<TBridge>
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct HypRunOptions
 {
     pub update_snapshots: bool,

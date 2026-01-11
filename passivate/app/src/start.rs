@@ -70,7 +70,13 @@ pub fn run_app_and_get_context(
         Box::new(|cc| {
             context_accessor(cc.egui_ctx.clone());
 
-            Ok(Box::new(App::new(layout, &mut app_state, session_event_rx, log_rx)))
+            Ok(Box::new(App::new(
+                layout,
+                &mut app_state,
+                hyp_run_tx,
+                session_event_rx,
+                log_rx
+            )))
         })
     )
     .expect("Failed to start Passivate!");
