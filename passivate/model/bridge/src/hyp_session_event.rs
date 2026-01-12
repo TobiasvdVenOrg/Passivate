@@ -94,7 +94,8 @@ pub enum HypSessionEvent<TBridge: Bridge>
     HypExists(TBridge::HypInfo),
     HypRunning(TBridge::Id),
     HypCompleted(TBridge::Id),
-    RunCompleted
+    RunCompleted,
+    RunError(TBridge::RunError)
 }
 
 impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
@@ -108,7 +109,8 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
             HypSessionEvent::HypExists(_) => todo!(),
             HypSessionEvent::HypRunning(_) => todo!(),
             HypSessionEvent::HypCompleted(_) => todo!(),
-            HypSessionEvent::RunCompleted => todo!()
+            HypSessionEvent::RunCompleted => todo!(),
+            HypSessionEvent::RunError(_) => todo!()
         }
     }
 }

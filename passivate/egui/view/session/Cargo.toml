@@ -9,7 +9,7 @@ passivate_coverage = { path = "../../../coverage" }
 passivate_delegation = { path = "../../../delegation" }
 passivate_model_bridge = { path = "../../../model/bridge" }
 passivate_model_core = { path = "../../../model/core" }
-passivate_model_rust = { path = "../../../model/rust" }
+passivate_run_rust = { path = "../../../run/rust" }
 passivate_egui_core = { path = "../../core" }
 
 egui.workspace = true

@@ -53,19 +53,9 @@ impl ConfigurationView
 mod tests
 {
     use camino::Utf8PathBuf;
-    use egui::accesskit::Role;
     use egui_kittest::Harness;
-    use egui_kittest::kittest::{Key, Queryable};
-    use galvanic_assert::assert_that;
-    use galvanic_assert::matchers::eq;
-    use itertools::Itertools;
     use passivate_configuration::configuration::PassivateConfiguration;
-    use passivate_configuration::configuration_manager::ConfigurationManager;
-    use passivate_coverage::compute_coverage::MockComputeCoverage;
-    use passivate_delegation::{MockTx, Tx};
     use passivate_hyp_names::test_name;
-    use passivate_model_rust::RustBridge;
-    use passivate_run_rust::hyp_runner::HypRunner;
 
     use crate::ConfigurationView;
 

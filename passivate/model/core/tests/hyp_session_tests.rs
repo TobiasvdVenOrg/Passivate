@@ -169,6 +169,18 @@ pub fn hyp_becomes_part_of_parent()
     assert_equal(project.iter_children().map(|c| c.info()), [&hyp]);
 }
 
+#[test]
+pub fn run_error_leaves_session_completed_but_in_failed_state()
+{
+    let mut session = new_started_session();
+
+    session.run_error(String::from(
+        "An error occurred that affects the entire run (but is not a logic error)"
+    ));
+
+    assert_matches!(session.activity(), Ok(HypState::Failed));
+}
+
 fn new_started_session() -> TestSession
 {
     let mut session = TestSession::new();

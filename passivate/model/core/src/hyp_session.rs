@@ -133,6 +133,7 @@ impl<TBridge: Bridge> Session<TBridge>
                     HypSessionEvent::Output(report) => self.output(report),
                     HypSessionEvent::HypExists(project) => self.hyp_exists(project),
                     HypSessionEvent::RunCompleted => self.complete_run(),
+                    HypSessionEvent::RunError(run_error) => self.run_error(run_error),
                     _ => Err(event)
                 }
             }
@@ -167,6 +168,16 @@ impl<TBridge: Bridge> Session<TBridge>
         let hyp: Hyp<TBridge> = Hyp::new(hyp_node_info);
 
         self.hyps.insert(hyp);
+
+        Ok(None)
+    }
+
+    fn run_error(
+        &mut self,
+        run_error: <TBridge as Bridge>::RunError
+    ) -> Result<Option<HypSessionChange<'_, TBridge>>, HypSessionEvent<TBridge>>
+    {
+        self.activity = HypState::Failed;
 
         Ok(None)
     }

@@ -11,4 +11,5 @@ pub trait Bridge: Send + Sync + 'static
     type Id: IdChain<Link = Self::IdLink> + Display + BridgeType;
     type Output: Display + BridgeType;
     type HypInfo: BridgeHyp<Id = Self::Id> + IdChain<Link = Self::IdLink> + BridgeType;
+    type RunError: BridgeType;
 }

@@ -6,28 +6,29 @@ use crate::hyp_session_event::HypSessionEvent;
 use crate::output_report::OutputReport;
 
 /// Interfaces from a test runner implementation to communicate changes to the session state.
-#[mockall::automock]
 pub trait StartRunBridge<TBridge: Bridge>: Send + Sync + 'static
 {
     fn start_run(&mut self);
 }
 
-#[mockall::automock]
 pub trait SendOutputBridge<TBridge: Bridge>: Send + Sync + 'static
 {
     fn send_output(&mut self, output: OutputReport<TBridge>);
 }
 
-#[mockall::automock]
 pub trait SendHypBridge<TBridge: Bridge>: Send + Sync + 'static
 {
     fn send_hyp(&mut self, hyp_info: TBridge::HypInfo);
 }
 
-#[mockall::automock]
 pub trait CompleteRunBridge<TBridge: Bridge>: Send + Sync + 'static
 {
     fn complete_run(&mut self);
+}
+
+pub trait RunErrorBridge<TBridge: Bridge>: Send + Sync + 'static
+{
+    fn run_error(&mut self, run_error: TBridge::RunError);
 }
 
 impl<TTx, TBridge> StartRunBridge<TBridge> for TTx
@@ -78,6 +79,18 @@ where
     }
 }
 
+impl<TTx, TBridge: Bridge> RunErrorBridge<TBridge> for TTx
+where
+    TBridge: Bridge,
+    TTx: Tx<HypSessionEvent<TBridge>> + Send + Sync + 'static
+{
+    fn run_error(&mut self, run_error: TBridge::RunError)
+    {
+        log::info!("run_error");
+        self.send(HypSessionEvent::RunError(run_error));
+    }
+}
+
 mock! {
     pub HypSessionBridge<TBridge: Bridge> { }
 
@@ -99,5 +112,10 @@ mock! {
     impl<TBridge: Bridge> CompleteRunBridge<TBridge> for HypSessionBridge<TBridge>
     {
         fn complete_run(&mut self);
+    }
+
+    impl<TBridge: Bridge> RunErrorBridge<TBridge> for HypSessionBridge<TBridge>
+    {
+        fn run_error(&mut self, run_error: TBridge::RunError);
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::fs;
+use std::path::Display;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
@@ -26,9 +27,9 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge};
 use passivate_model_bridge::hyp_state::HypState;
-use passivate_model_rust::RustBridge;
 use passivate_run_core::hyp_run_errors::TestRunError;
 
+use crate::model::RustBridge;
 use crate::nextest_cargo_options;
 
 #[mockall::automock]

@@ -4,8 +4,8 @@ use std::sync::mpsc::SendError;
 
 use passivate_configuration::configuration_errors::ConfigurationLoadError;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
-use passivate_model_rust::RustBridge;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
+use passivate_run_rust::model::RustBridge;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

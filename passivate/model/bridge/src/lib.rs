@@ -16,4 +16,4 @@ pub mod source_change_event;
 
 use std::fmt::Debug;
 
-pub trait BridgeType = Clone + Debug + Eq + PartialEq + Send + Sync + 'static;
+pub trait BridgeType = Clone + Debug + PartialEq + Eq + Send + Sync + 'static;

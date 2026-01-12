@@ -5,7 +5,13 @@ use std::ops::{Deref, DerefMut};
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
-use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
+use passivate_model_bridge::hyp_session_bridge::{
+    CompleteRunBridge,
+    RunErrorBridge,
+    SendHypBridge,
+    SendOutputBridge,
+    StartRunBridge
+};
 use passivate_model_bridge::hyp_session_event::{CompilationMessage, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
@@ -174,6 +180,7 @@ impl Bridge for TestSession
     type Id = TestId;
     type IdLink = String;
     type Output = TestOutput;
+    type RunError = String;
 }
 
 impl StartRunBridge<TestSession> for TestSession
@@ -205,5 +212,13 @@ impl CompleteRunBridge<TestSession> for TestSession
     fn complete_run(&mut self)
     {
         self.0.update(HypSessionEvent::RunCompleted);
+    }
+}
+
+impl RunErrorBridge<TestSession> for TestSession
+{
+    fn run_error(&mut self, run_error: <TestSession as Bridge>::RunError)
+    {
+        self.0.update(HypSessionEvent::RunError(run_error));
     }
 }

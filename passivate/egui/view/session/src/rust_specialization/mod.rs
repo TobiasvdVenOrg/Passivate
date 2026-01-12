@@ -1,6 +1,6 @@
 use egui::Ui;
 use passivate_model_core::hyp::Hyp;
-use passivate_model_rust::{RustBridge, RustHypKind};
+use passivate_run_rust::model::{RustBridge, RustHypKind};
 
 use crate::session_view::{self, HypUiAction};
 use crate::specialize_session_ui::SpecializeSessionUi;

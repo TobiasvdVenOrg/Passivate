@@ -4,13 +4,22 @@ use passivate_delegation::{CancellableMessage, Cancellation, Rx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
-use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, SendOutputBridge, StartRunBridge};
-use passivate_model_rust::RustBridge;
+use passivate_model_bridge::hyp_session_bridge::{
+    CompleteRunBridge,
+    RunErrorBridge,
+    SendHypBridge,
+    SendOutputBridge,
+    StartRunBridge
+};
 
 use crate::hyp_runner::RunHyps;
+use crate::model::RustBridge;
 
-pub trait HypSessionBridge<TBridge: Bridge> =
-    StartRunBridge<TBridge> + SendHypBridge<TBridge> + SendOutputBridge<TBridge> + CompleteRunBridge<TBridge>;
+pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
+    + SendHypBridge<TBridge>
+    + SendOutputBridge<TBridge>
+    + CompleteRunBridge<TBridge>
+    + RunErrorBridge<TBridge>;
 
 pub fn hyp_run_thread<'scope, 'env>(
     scope: &'scope thread::Scope<'scope, 'env>,
@@ -93,10 +102,7 @@ fn run_hyps(
     {
         Ok(_) =>
         {}
-        Err(test_error) =>
-        {
-            todo!()
-        }
+        Err(test_error) => hyp_session_bridge.run_error(test_error)
     };
 }
 

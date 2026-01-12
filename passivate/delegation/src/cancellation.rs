@@ -1,4 +1,7 @@
-use std::{error::Error, fmt::Display, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::error::Error;
+use std::fmt::Display;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Default, Clone)]
 pub struct Cancellation
@@ -6,7 +9,7 @@ pub struct Cancellation
     flag: Arc<AtomicBool>
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cancelled;
 
 impl Cancellation

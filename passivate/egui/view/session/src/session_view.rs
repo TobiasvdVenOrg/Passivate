@@ -101,7 +101,7 @@ mod tests
     use passivate_hyp_names::test_name;
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_core::hyp_session::HypSession;
-    use passivate_model_rust::RustBridge;
+    use passivate_run_rust::model::RustBridge;
 
     use crate::session_view::SessionView;
 

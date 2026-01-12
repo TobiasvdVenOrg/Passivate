@@ -122,13 +122,14 @@ mod tests
     use passivate_model_bridge::bridge::Bridge;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
-    use passivate_model_rust::{RustBridge, RustHyp};
+    use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestOutput, TestSession};
     use passivate_testing::path_resolution::test_data_path;
     use rstest::*;
 
     use crate::details_view::DetailsView;
     use crate::hyp_details::HypDetails;
+
     #[test]
     pub fn show_a_passing_test()
     {

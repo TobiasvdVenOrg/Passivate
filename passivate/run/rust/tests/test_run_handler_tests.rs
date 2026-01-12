@@ -13,13 +13,12 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest};
-use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
-use passivate_model_bridge::hyp_session_event::ConsoleOutput;
+use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
-use passivate_model_rust::{RustBridge, RustOutput};
 use passivate_run_core::hyp_run_errors::TestRunError;
 use passivate_run_rust::hyp_runner::MockRunHyps;
+use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
@@ -231,8 +230,8 @@ pub fn when_hyp_run_fails_error_is_reported()
 {
     let mut run_hyps = MockRunHyps::new();
     run_hyps
-        .expect_run_hyps()
-        .returning(|_, _, _: &MockHypSessionBridge<RustBridge>, _| Err(TestRunError::Temp));
+        .expect_run_hyps::<crossbeam_channel::Sender<HypSessionEvent<RustBridge>>>()
+        .return_const(Err(TestRunError::Temp));
 
     let (session_tx, session_rx) = crossbeam_channel::unbounded();
 

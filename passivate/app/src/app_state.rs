@@ -13,7 +13,7 @@ use passivate_model_bridge::hyp_run_request::HypRunOptions;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
-use passivate_model_rust::RustBridge;
+use passivate_run_rust::model::RustBridge;
 
 pub struct AppState
 {
@@ -148,8 +148,7 @@ pub mod tests
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_core::hyp::Hyp;
     use passivate_model_core::hyp_session::HypSession;
-    use passivate_model_rust::{RustBridge, RustHyp};
-    use passivate_testing::path_resolution::test_data_path;
+    use passivate_run_rust::model::{RustBridge, RustHyp};
 
     use crate::app_state::AppState;
     use crate::testing::app_state::UpdateApp;
