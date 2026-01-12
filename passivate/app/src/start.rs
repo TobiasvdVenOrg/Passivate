@@ -45,7 +45,6 @@ pub fn run_app_and_get_context(
     let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
     let layout = passivate_layout::load(&passivate_path.join("default_docking_layout.toml"), &views)?;
-
     let dock_views = DockViews::new(views.into());
 
     log::info!("Passivate started.");

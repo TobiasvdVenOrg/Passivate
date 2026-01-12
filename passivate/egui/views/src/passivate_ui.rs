@@ -73,65 +73,72 @@ pub fn ui<'env, TBridge: Bridge>(
     passivate_context.changes
 }
 
-fn internal_ui<'a, 'b, TBridge: Bridge>(
+fn internal_ui<'ctx, 'env, TBridge: Bridge>(
     ui: &mut egui::Ui,
     view: &mut PassivateView,
-    context: &mut PassivateViewContext<'a, 'b, TBridge>
+    context: &mut PassivateViewContext<'ctx, 'env, TBridge>
 )
 {
-    let change = {
-        let session = context.session;
-        let state = context.state;
-        let view_state = context.view_state;
-        let configuration = context.configuration;
+    let session = context.session;
+    let state = context.state;
+    let view_state = context.view_state;
+    let configuration = context.configuration;
 
-        match view
+    let mut changes: Vec<PassivateStateChange<'env, TBridge>> = match view
+    {
+        PassivateView::Configuration(configuration_view) =>
         {
-            PassivateView::Configuration(configuration_view) =>
+            configuration_view
+                .ui(ui, configuration)
+                .into_iter()
+                .map(PassivateStateChange::ConfigurationChanged)
+                .collect()
+        }
+        PassivateView::Coverage(coverage_view) =>
+        {
+            coverage_view
+                .ui(ui, &state.coverage)
+                .into_iter()
+                .map(PassivateStateChange::ConfigurationChanged)
+                .collect()
+        }
+        PassivateView::Details(details_view) =>
+        {
+            if let Some(selected_hyp_id) = &state.selected_hyp
             {
-                configuration_view.ui(ui, configuration);
-                None
-            }
-            PassivateView::Coverage(coverage_view) =>
-            {
-                coverage_view
-                    .ui(ui, &state.coverage)
-                    .map(PassivateStateChange::ConfigurationChanged)
-            }
-            PassivateView::Details(details_view) =>
-            {
-                if let Some(selected_hyp_id) = &state.selected_hyp
+                let hyp = session.hyps().entry(selected_hyp_id.chain()).or_none();
+
+                if let Some(hyp) = hyp
                 {
-                    let hyp = session.hyps().entry(selected_hyp_id.chain()).or_none();
+                    let hyp_details = HypDetails {
+                        hyp,
+                        snapshot_handles: view_state.snapshot_handles()
+                    };
 
-                    if let Some(hyp) = hyp
-                    {
-                        let hyp_details = HypDetails {
-                            hyp,
-                            snapshot_handles: view_state.snapshot_handles()
-                        };
-
-                        details_view.ui(ui, Some(&hyp_details));
-                    }
+                    details_view.ui(ui, Some(&hyp_details));
                 }
-                else
-                {
-                    details_view.ui::<TBridge>(ui, None);
-                }
-
-                None
             }
-            PassivateView::Log(log_view) =>
+            else
             {
-                log_view.ui(ui, view_state.logs());
-                None
+                details_view.ui::<TBridge>(ui, None);
             }
-            PassivateView::HypRun(test_run_view) => test_run_view.ui(ui, session).map(PassivateStateChange::HypSelected)
+
+            vec![]
+        }
+        PassivateView::Log(log_view) =>
+        {
+            log_view.ui(ui, view_state.logs());
+            vec![]
+        }
+        PassivateView::HypRun(test_run_view) =>
+        {
+            test_run_view
+                .ui(ui, session)
+                .map(PassivateStateChange::HypSelected)
+                .into_iter()
+                .collect()
         }
     };
 
-    if let Some(change) = change
-    {
-        context.changes.push(change);
-    }
+    context.changes.append(&mut changes);
 }

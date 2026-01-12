@@ -1,16 +1,10 @@
 use camino::Utf8PathBuf;
 use egui::Ui;
-use passivate_configuration::configuration::PassivateConfiguration;
+use passivate_configuration::configuration::{ConfigurationChange, PassivateConfiguration};
 
 pub struct ConfigurationView
 {
     snapshots_path_field: String
-}
-
-pub enum ConfigurationViewAction
-{
-    RequestRerun,
-    UpdateConfiguration(Box<dyn FnOnce(&mut PassivateConfiguration)>)
 }
 
 impl ConfigurationView
@@ -22,18 +16,14 @@ impl ConfigurationView
         }
     }
 
-    pub fn ui(&mut self, ui: &mut Ui, configuration: &PassivateConfiguration) -> Vec<ConfigurationViewAction>
+    pub fn ui(&mut self, ui: &mut Ui, configuration: &PassivateConfiguration) -> Vec<ConfigurationChange>
     {
         let mut actions = Vec::new();
         let mut coverage_enabled = configuration.coverage_enabled;
 
         if ui.toggle_value(&mut coverage_enabled, "Compute Coverage").changed()
         {
-            actions.push(ConfigurationViewAction::UpdateConfiguration(Box::new(move |c| {
-                c.coverage_enabled = coverage_enabled;
-            })));
-
-            actions.push(ConfigurationViewAction::RequestRerun);
+            actions.push(ConfigurationChange::CoverageEnabled(coverage_enabled));
         }
 
         ui.label("Snapshot Directories");
@@ -50,11 +40,7 @@ impl ConfigurationView
         {
             let new_snapshots_path = Utf8PathBuf::from(&self.snapshots_path_field);
 
-            actions.push(ConfigurationViewAction::UpdateConfiguration(Box::new(|c| {
-                c.snapshot_directories.push(new_snapshots_path);
-            })));
-
-            actions.push(ConfigurationViewAction::RequestRerun);
+            actions.push(ConfigurationChange::AddSnapshotDirectory(new_snapshots_path));
 
             self.snapshots_path_field = String::new();
         }

@@ -1,7 +1,7 @@
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_delegation::Rx;
+use passivate_delegation::{Cancellation, Rx};
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
@@ -9,6 +9,7 @@ use passivate_egui_views::passivate_ui;
 use passivate_egui_views::passivate_views::PassivateView;
 use passivate_log::log_message::LogMessage;
 use passivate_model_bridge::hyp_run_bridge::RunHypsBridge;
+use passivate_model_bridge::hyp_run_request::HypRunOptions;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
@@ -51,6 +52,8 @@ impl AppState
         log_rx: &impl Rx<LogMessage>
     )
     {
+        let mut rerun_required = false;
+
         let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
 
         if let Some(session_change) = session_change
@@ -60,6 +63,8 @@ impl AppState
             let configuration = &*self.configuration.acquire();
             self.view_state
                 .update_view_state(&session_change, configuration, egui_context, log_rx);
+
+            rerun_required = session_change.requires_rerun();
         }
 
         let ui_changes = {
@@ -78,6 +83,8 @@ impl AppState
 
         for ui_change in ui_changes
         {
+            rerun_required |= ui_change.requires_rerun();
+
             match ui_change
             {
                 PassivateStateChange::ConfigurationChanged(configuration_change) =>
@@ -93,6 +100,11 @@ impl AppState
                         .update_view_state(&ui_change, configuration, egui_context, log_rx);
                 }
             }
+        }
+
+        if rerun_required
+        {
+            run_hyps.run_all(HypRunOptions::default(), Cancellation::default());
         }
     }
 }
@@ -250,7 +262,11 @@ pub mod tests
     {
         let (mut app_state, mut layout) = example_app_state();
         let mut mock_run_hyps = MockRunHypsBridge::new();
-        mock_run_hyps.expect_run_all().once();
+        mock_run_hyps.expect_run_all().return_const(()).once();
+
+        let views = PassivateViews::stub();
+        let configuration_tab = layout.dock_state().find_tab(&views.configuration_dock().id()).unwrap();
+        layout.dock_state().set_active_tab(configuration_tab);
 
         {
             let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
@@ -282,10 +298,7 @@ pub mod tests
         let session = HypSession::new();
         let passivate_state = PassivateState::new();
         let view_state = PassivateViewState::default();
-        let configuration = ConfigurationManager::new(PassivateConfiguration {
-            snapshot_directories: vec![get_example_snapshots_path()],
-            ..PassivateConfiguration::default()
-        });
+        let configuration = ConfigurationManager::new(PassivateConfiguration::default());
 
         let views = PassivateViews::stub();
 
@@ -294,11 +307,6 @@ pub mod tests
         let app_state = AppState::new(session, passivate_state, view_state, dock_views, configuration);
 
         (app_state, layout)
-    }
-
-    fn get_example_snapshots_path() -> Utf8PathBuf
-    {
-        test_data_path().join("example_snapshots")
     }
 
     fn example_hyp(state: HypState) -> Hyp<RustBridge>

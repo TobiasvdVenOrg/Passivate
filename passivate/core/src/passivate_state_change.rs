@@ -8,3 +8,16 @@ pub enum PassivateStateChange<'a, TBridge: Bridge>
     HypDetailsChanged(&'a Hyp<TBridge>),
     ConfigurationChanged(ConfigurationChange)
 }
+
+impl<'a, TBridge: Bridge> PassivateStateChange<'a, TBridge>
+{
+    pub fn requires_rerun(&self) -> bool
+    {
+        match self
+        {
+            PassivateStateChange::HypSelected(_) => false,
+            PassivateStateChange::HypDetailsChanged(_) => false,
+            PassivateStateChange::ConfigurationChanged(_) => true
+        }
+    }
+}
