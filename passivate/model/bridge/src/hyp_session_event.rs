@@ -110,7 +110,7 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
             HypSessionEvent::HypRunning(_) => todo!(),
             HypSessionEvent::HypCompleted(_) => todo!(),
             HypSessionEvent::RunCompleted => todo!(),
-            HypSessionEvent::RunError(_) => todo!()
+            HypSessionEvent::RunError(_) => write!(f, "Run Error")
         }
     }
 }

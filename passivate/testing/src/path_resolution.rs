@@ -1,11 +1,14 @@
-use std::fs;
+use std::{env, fs};
 
 use camino::{Utf8Path, Utf8PathBuf};
 
 pub fn test_output_path() -> Utf8PathBuf
 {
     Utf8PathBuf::from_path_buf(
-        dunce::canonicalize(Utf8PathBuf::from("../../test_output")).expect("test output path did not exist!")
+        dunce::canonicalize(Utf8PathBuf::from("../../../test_output")).expect(&format!(
+            "test output path did not exist, working directory is: {:?}",
+            env::current_dir().expect("failed to get 'current_dir'")
+        ))
     )
     .expect("expected utf8 path")
 }
@@ -13,7 +16,7 @@ pub fn test_output_path() -> Utf8PathBuf
 pub fn test_data_path() -> Utf8PathBuf
 {
     Utf8PathBuf::from_path_buf(
-        dunce::canonicalize(Utf8PathBuf::from("../../test_data")).expect("test data path did not exist!")
+        dunce::canonicalize(Utf8PathBuf::from("../../../test_data")).expect("test data path did not exist!")
     )
     .expect("expected utf8 path")
 }

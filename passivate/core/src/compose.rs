@@ -68,10 +68,7 @@ pub fn compose<'scope, 'env>(
     let target_path = passivate_path.join("target");
     let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
 
-    // Model
-    let target = String::from("x86_64-pc-windows-msvc");
-
-    let hyp_runner = HypRunner::new(target, workspace_path.clone(), target_path.clone(), coverage_path.clone());
+    let hyp_runner = HypRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
 
     let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
 

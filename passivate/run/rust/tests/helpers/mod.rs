@@ -19,19 +19,6 @@ pub fn test_grcov(#[builder(start_fn)] setup: &TestDataSetup) -> Grcov
         .build()
 }
 
-#[bon::builder]
-pub fn test_hyp_runner(#[builder(start_fn)] setup: &TestDataSetup) -> HypRunner
-{
-    let target = env::var("HOST").expect("expected 'HOST' environment target triple");
-
-    HypRunner::new(
-        target,
-        setup.workspace_path().clone(),
-        setup.output_path().clone(),
-        setup.coverage_path().clone()
-    )
-}
-
 /// Convenience builder to invoke 'handle_hyp_run_trigger'
 pub struct HandleHypRunTrigger<TRunHyps, THypSessionBridge>
 {
@@ -48,12 +35,12 @@ impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
         let mut mock_run_hyps = MockRunHyps::new();
 
         mock_run_hyps
-            .expect_run_hyps()
-            .returning(|_, _, _: &MockHypSessionBridge<RustBridge>, _| Ok(()));
+            .expect_run_hyps::<MockHypSessionBridge<RustBridge>>()
+            .return_const(Ok(()));
 
         mock_run_hyps
-            .expect_run_hyp()
-            .returning(|_, _, _, _: &MockHypSessionBridge<RustBridge>| Ok(()));
+            .expect_run_hyp::<MockHypSessionBridge<RustBridge>>()
+            .return_const(Ok(()));
 
         Self {
             run_hyps: mock_run_hyps,
@@ -92,10 +79,7 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
 
     pub fn with_runner_from_setup(self, setup: &TestDataSetup) -> HandleHypRunTrigger<HypRunner, _THypSessionBridge>
     {
-        let target = env::var("HOST").expect("expected 'HOST' environment target triple");
-
         let runner = HypRunner::new(
-            target,
             setup.workspace_path().clone(),
             setup.output_path().clone(),
             setup.coverage_path().clone()

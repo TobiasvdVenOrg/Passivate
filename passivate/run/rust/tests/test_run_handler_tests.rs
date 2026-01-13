@@ -25,7 +25,7 @@ use passivate_testing::test_snapshot_path::TestSnapshotPath;
 use crate::helpers::HandleHypRunTrigger;
 
 #[test]
-pub fn runing_single_hyp_leaves_session_in_passed_state()
+pub fn running_single_hyp_leaves_session_in_passed_state()
 {
     let (session_tx, session_rx) = crossbeam_channel::unbounded();
 
@@ -40,7 +40,7 @@ pub fn runing_single_hyp_leaves_session_in_passed_state()
 
     let session = HypSession::from_events(session_rx);
 
-    assert!(session.state() == HypState::Passed);
+    assert_matches!(session.state(), HypState::Passed);
 }
 
 #[test]
@@ -242,5 +242,5 @@ pub fn when_hyp_run_fails_error_is_reported()
 
     let session = HypSession::from_events(session_rx);
 
-    assert_matches!(session.activity(), Err(_));
+    assert_matches!(session.activity(), Ok(HypState::Failed));
 }

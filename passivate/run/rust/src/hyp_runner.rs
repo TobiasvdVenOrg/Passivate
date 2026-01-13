@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 use std::fs;
-use std::path::Display;
 use std::sync::Arc;
 
 use camino::Utf8PathBuf;
@@ -29,7 +28,7 @@ use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_run_core::hyp_run_errors::TestRunError;
 
-use crate::model::RustBridge;
+use crate::model::{RustBridge, RustHyp};
 use crate::nextest_cargo_options;
 
 #[mockall::automock]
@@ -39,7 +38,7 @@ pub trait RunHyps
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &TTx,
+        tx: &mut TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     where
@@ -50,7 +49,7 @@ pub trait RunHyps
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &TTx
+        tx: &mut TTx
     ) -> Result<(), TestRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
@@ -59,7 +58,6 @@ pub trait RunHyps
 #[derive(Clone)]
 pub struct HypRunner
 {
-    target: String,
     working_dir: Utf8PathBuf,
     target_dir: Utf8PathBuf,
     coverage_output_dir: Utf8PathBuf
@@ -67,10 +65,9 @@ pub struct HypRunner
 
 impl HypRunner
 {
-    pub fn new(target: String, working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
+    pub fn new(working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
     {
         Self {
-            target,
             working_dir,
             target_dir,
             coverage_output_dir
@@ -82,7 +79,7 @@ impl HypRunner
         options: CargoOptions,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &TTx,
+        tx: &mut TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     where
@@ -113,7 +110,7 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         cancellation: Cancellation,
-        tx: &TTx,
+        tx: &mut TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     where
@@ -333,6 +330,9 @@ impl HypRunner
                         };
 
                         let hyp_id = HypId::new(&test_instance.suite_info.binary_name, "todo_crate", test_instance.name);
+                        let hyp = RustHyp::new_single(hyp_id);
+
+                        tx.send_hyp(hyp);
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
@@ -359,7 +359,7 @@ impl RunHyps for HypRunner
         &mut self,
         instrument_coverage: bool,
         cancellation: Cancellation,
-        tx: &TTx,
+        tx: &mut TTx,
         filter: Vec<String>
     ) -> Result<(), TestRunError>
     where
@@ -377,7 +377,7 @@ impl RunHyps for HypRunner
         hyp_id: &HypId,
         update_snapshots: bool,
         cancellation: Cancellation,
-        tx: &TTx
+        tx: &mut TTx
     ) -> Result<(), TestRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
