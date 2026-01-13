@@ -345,7 +345,10 @@ impl HypRunner
                     {}
                 };
             })
-            .map_err(|error| TestRunError::Temp)?;
+            .map_err(|error| {
+                eprintln!("9 {:?}", error);
+                TestRunError::Temp
+            })?;
 
         log::info!("Completed test run");
 

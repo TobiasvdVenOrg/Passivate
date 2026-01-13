@@ -34,7 +34,6 @@
 
           LD_LIBRARY_PATH = libPath;
           PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
-          PASSIVATE_TEST_OUTPUT = "${toString ./.}/test_output";
         };
       }
     );

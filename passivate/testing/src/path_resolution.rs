@@ -4,8 +4,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 
 pub fn test_output_path() -> Utf8PathBuf
 {
-    let test_output = env::var("PASSIVATE_TEST_OUTPUT").expect("environment variable 'PASSIVATE_TEST_OUTPUT'");
-    Utf8PathBuf::from(test_output)
+    let temp_dir = Utf8PathBuf::from_path_buf(env::temp_dir()).expect("temp_dir was not UTF8");
+    temp_dir.join("passivate").join("test_output")
 }
 
 pub fn test_data_path() -> Utf8PathBuf
