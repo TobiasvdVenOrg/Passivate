@@ -81,6 +81,18 @@ impl<'a, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, _TRunHyps, _TRxSession, 
             log_rx: self.log_rx
         }
     }
+
+    pub fn with_log_rx<TRxLog>(self, log_rx: MaybeOwned<'a, TRxLog>) -> UpdateApp<'a, _TRunHyps, _TRxSession, TRxLog>
+    {
+        UpdateApp {
+            test_self: self.test_self,
+            egui_context: self.egui_context,
+            layout: self.layout,
+            run_hyps: self.run_hyps,
+            session_rx: self.session_rx,
+            log_rx
+        }
+    }
 }
 
 impl<'a, TRunHyps, TRxSession, TRxLog> UpdateApp<'a, TRunHyps, TRxSession, TRxLog>

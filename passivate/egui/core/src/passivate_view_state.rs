@@ -30,7 +30,7 @@ impl<TBridge: Bridge> PassivateViewState<TBridge>
 {
     pub fn update_view_state(
         &mut self,
-        change: &PassivateStateChange<TBridge>,
+        change: Option<&PassivateStateChange<TBridge>>,
         configuration: &PassivateConfiguration,
         egui_context: &egui::Context,
         logs_rx: &impl Rx<LogMessage>
@@ -41,6 +41,29 @@ impl<TBridge: Bridge> PassivateViewState<TBridge>
             self.logs.push(LogEntry::from(log));
         }
 
+        if let Some(change) = change
+        {
+            self.process_change(change, configuration, egui_context);
+        }
+    }
+
+    pub fn snapshot_handles(&self) -> Option<&SnapshotHandles<TBridge::Id>>
+    {
+        self.snapshot_handles.as_ref()
+    }
+
+    pub fn logs(&self) -> &Vec<LogEntry>
+    {
+        &self.logs
+    }
+
+    fn process_change(
+        &mut self,
+        change: &PassivateStateChange<TBridge>,
+        configuration: &PassivateConfiguration,
+        egui_context: &egui::Context
+    )
+    {
         match change
         {
             PassivateStateChange::HypSelected(hyp) =>
@@ -58,16 +81,6 @@ impl<TBridge: Bridge> PassivateViewState<TBridge>
             PassivateStateChange::ConfigurationChanged(_) =>
             {}
         };
-    }
-
-    pub fn snapshot_handles(&self) -> Option<&SnapshotHandles<TBridge::Id>>
-    {
-        self.snapshot_handles.as_ref()
-    }
-
-    pub fn logs(&self) -> &Vec<LogEntry>
-    {
-        &self.logs
     }
 
     fn check_for_snapshots(

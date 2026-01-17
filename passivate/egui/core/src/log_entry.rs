@@ -3,6 +3,7 @@ use passivate_log::log_message::LogMessage;
 /// This 'LogEntry' caches a 'stringified' version of 'LogMessage' from '/log'
 /// It's in /egui/core because this transformation is only for caching purposes
 /// to re-use when re-rendering the log
+#[derive(Debug)]
 pub struct LogEntry
 {
     pub timestamp: String,

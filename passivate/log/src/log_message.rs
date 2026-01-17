@@ -9,15 +9,15 @@ pub struct LogMessage
 
 impl LogMessage
 {
-    pub fn new(content: String) -> Self
+    pub fn new(content: impl Into<String>) -> Self
     {
-        Self::new_with_timestamp(content, Utc::now())
+        Self::new_with_timestamp(content.into(), Utc::now())
     }
 
-    pub fn new_with_timestamp(content: String, timestamp: DateTime<Utc>) -> Self
+    pub fn new_with_timestamp(content: impl Into<String>, timestamp: DateTime<Utc>) -> Self
     {
         Self {
-            content,
+            content: content.into(),
             timestamp
         }
     }

@@ -56,15 +56,12 @@ impl AppState
 
         let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
 
-        if let Some(session_change) = session_change
         {
-            self.state.update_state(&session_change);
+            self.state.update_state(session_change.as_ref());
 
             let configuration = &*self.configuration.acquire();
             self.view_state
-                .update_view_state(&session_change, configuration, egui_context, log_rx);
-
-            rerun_required = session_change.requires_rerun();
+                .update_view_state(session_change.as_ref(), configuration, egui_context, log_rx);
         }
 
         let ui_changes = {
@@ -93,11 +90,11 @@ impl AppState
                 }
                 ui_change =>
                 {
-                    self.state.update_state(&ui_change);
+                    self.state.update_state(Some(&ui_change));
 
                     let configuration = &*self.configuration.acquire();
                     self.view_state
-                        .update_view_state(&ui_change, configuration, egui_context, log_rx);
+                        .update_view_state(Some(&ui_change), configuration, egui_context, log_rx);
                 }
             }
         }
@@ -140,6 +137,7 @@ pub mod tests
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_log::log_message::LogMessage;
     use passivate_model_bridge::hyp_report::HypReport;
     use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
     use passivate_model_bridge::hyp_run_request::HypRunOptions;
@@ -244,6 +242,28 @@ pub mod tests
 
         let coverage_enabled = app_state.configuration.get(|c| c.coverage_enabled);
         assert!(coverage_enabled);
+    }
+
+    #[test]
+    pub fn log_is_stored_in_view_state()
+    {
+        let (mut app_state, mut layout) = example_app_state();
+        let (log_tx, log_rx) = crossbeam_channel::unbounded();
+
+        log_tx.send(LogMessage::new("example log")).unwrap();
+
+        {
+            // TODO: Make this possible to run without needing the UI parts?
+            let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+                UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
+                    .with_log_rx(MaybeOwned::Borrowed(&log_rx))
+                    .call();
+            });
+
+            ui.run();
+        }
+
+        assert_eq!(1, app_state.view_state.logs().len());
     }
 
     #[test]

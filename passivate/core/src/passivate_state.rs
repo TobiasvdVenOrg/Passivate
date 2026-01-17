@@ -19,5 +19,5 @@ impl<TBridge: Bridge> PassivateState<TBridge>
         }
     }
 
-    pub fn update_state(&mut self, change: &PassivateStateChange<'_, TBridge>) {}
+    pub fn update_state(&mut self, change: Option<&PassivateStateChange<'_, TBridge>>) {}
 }
