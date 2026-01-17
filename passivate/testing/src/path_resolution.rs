@@ -1,4 +1,5 @@
-use std::{env, fs};
+use std::env;
+use std::fs::{self, File, OpenOptions};
 
 use camino::{Utf8Path, Utf8PathBuf};
 
@@ -35,7 +36,13 @@ where
         fs::create_dir_all(dir)?;
     }
 
-    let _ = fs::copy(&from, &to)?;
+    {
+        let mut from = File::open(&from)?;
+        let mut to = OpenOptions::new().create(true).write(true).truncate(true).open(&to)?;
+
+        // Avoid fs::copy, as it will also copy file permissions (which may be read-only for 'from')
+        std::io::copy(&mut from, &mut to)?;
+    }
 
     Ok(to)
 }
