@@ -171,7 +171,7 @@ impl<TBridge: Bridge> Session<TBridge>
         let hyp: Hyp<TBridge> = match state
         {
             HypReportState::Fixed(hyp_state) => Hyp::new(info, hyp_state),
-            HypReportState::Derived => todo!()
+            HypReportState::Derived => Hyp::new(info, HypState::Unknown)
         };
 
         self.hyps.insert(hyp);

@@ -9,9 +9,13 @@ mod sub_dir
 #[test]
 pub fn example_integration_test_id()
 {
-    let id = test_id!().fully_qualified("::");
+    let id = test_id!();
+    let fully_qualified = id.fully_qualified("::");
 
-    assert_eq!("passivate_hyp_names::integration_tests::example_integration_test_id", id);
+    assert_eq!(
+        "passivate_hyp_names::integration_tests::example_integration_test_id",
+        fully_qualified
+    );
 }
 
 #[test]
@@ -26,7 +30,7 @@ pub fn example_integration_test_id_qualified_without_crate()
 }
 
 #[test]
-pub fn get_crate_name_from_test_id()
+pub fn get_package_and_crate_name_from_test_id()
 {
     let id = test_id!();
 

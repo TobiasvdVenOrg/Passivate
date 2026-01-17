@@ -330,7 +330,11 @@ impl HypRunner
                             HypState::Failed
                         };
 
-                        let hyp_id = HypId::new(&test_instance.suite_info.binary_name, "todo_crate", test_instance.name);
+                        let hyp_id = HypId::new(
+                            test_instance.suite_info.package.name(),
+                            &test_instance.suite_info.binary_name,
+                            test_instance.name
+                        );
                         let hyp_info = RustHyp::new_single(hyp_id);
                         let report = HypReport::new_fixed(hyp_info, state);
 

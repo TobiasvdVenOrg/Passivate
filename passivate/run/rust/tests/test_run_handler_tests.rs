@@ -161,7 +161,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::all(HypRunOptions::default()));
 
-    let failed_test = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
+    let failed_test = HypId::new("sample_project", "multiply_tests", "multiply_2_and_2_is_4");
 
     let session = HypSession::from_events(session_rx);
 
