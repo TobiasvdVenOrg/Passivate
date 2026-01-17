@@ -159,7 +159,12 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         match self.hyps.entry(output.id().chain()).or_none()
         {
-            Some(_) => todo!(),
+            Some(hyp) =>
+            {
+                let (id, content) = (output.id, output.output);
+                hyp.add_output(content);
+                Ok(None)
+            }
             None => Err(HypSessionEvent::Output(output))
         }
     }

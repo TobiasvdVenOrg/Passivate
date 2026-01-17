@@ -3,8 +3,8 @@ use crate::bridge::Bridge;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutputReport<TBridge: Bridge>
 {
-    id: TBridge::Id,
-    output: TBridge::Output
+    pub id: TBridge::Id,
+    pub output: TBridge::Output
 }
 
 impl<TBridge: Bridge> OutputReport<TBridge>

@@ -26,10 +26,12 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
 use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge};
+use passivate_model_bridge::hyp_session_event::{ConsoleOutput, ConsoleOutputKind};
 use passivate_model_bridge::hyp_state::HypState;
+use passivate_model_bridge::output_report::OutputReport;
 use passivate_run_core::hyp_run_errors::TestRunError;
 
-use crate::model::{RustBridge, RustHyp};
+use crate::model::{RustBridge, RustHyp, RustOutput};
 use crate::nextest_cargo_options;
 
 #[mockall::automock]
@@ -335,10 +337,23 @@ impl HypRunner
                             &test_instance.suite_info.binary_name,
                             test_instance.name
                         );
-                        let hyp_info = RustHyp::new_single(hyp_id);
-                        let report = HypReport::new_fixed(hyp_info, state);
+                        let hyp_info = RustHyp::new_single(hyp_id.clone());
+                        let hyp_report = HypReport::new_fixed(hyp_info, state);
 
-                        tx.send_hyp(report);
+                        tx.send_hyp(hyp_report);
+
+                        for line in test_output
+                        {
+                            let output_report = OutputReport::new(
+                                hyp_id.clone(),
+                                RustOutput::Console(ConsoleOutput {
+                                    content: line,
+                                    kind: ConsoleOutputKind::StdErr
+                                })
+                            );
+
+                            tx.send_output(output_report);
+                        }
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,
