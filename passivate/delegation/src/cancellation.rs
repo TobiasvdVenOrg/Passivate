@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Cancellation
 {
     flag: Arc<AtomicBool>

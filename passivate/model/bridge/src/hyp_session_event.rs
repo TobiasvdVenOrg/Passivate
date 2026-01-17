@@ -105,8 +105,8 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
         {
             HypSessionEvent::RunStarted => write!(f, "Run Started"),
             HypSessionEvent::Output(output_report) => write!(f, "Output: {}", output_report.id()),
-            HypSessionEvent::Hyp(_) => todo!(),
-            HypSessionEvent::RunCompleted => todo!(),
+            HypSessionEvent::Hyp(hyp_report) => write!(f, "Hyp: {}", hyp_report.hyp_info),
+            HypSessionEvent::RunCompleted => write!(f, "Run Completed"),
             HypSessionEvent::RunError(_) => write!(f, "Run Error")
         }
     }

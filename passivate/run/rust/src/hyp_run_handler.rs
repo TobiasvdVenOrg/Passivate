@@ -76,8 +76,6 @@ fn run_hyps(
     compute_coverage: bool
 )
 {
-    hyp_session_bridge.start_run();
-
     // if compute_coverage
     // {
     //     self.coverage_tx.send(CoverageStatus::Preparing);

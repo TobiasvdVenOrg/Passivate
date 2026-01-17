@@ -105,7 +105,7 @@ fn initialize_logger() -> Result<crossbeam_channel::Receiver<LogMessage>, Startu
 
     log::set_logger(logger)
         .map(|()| {
-            log::set_max_level(log::LevelFilter::Info);
+            log::set_max_level(log::LevelFilter::max());
         })
         .map_err(StartupError::Logger)?;
 

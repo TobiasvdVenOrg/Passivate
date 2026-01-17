@@ -1,5 +1,6 @@
 use crate::bridge::Bridge;
 
+#[derive(Debug)]
 pub struct HypRunRequest<TBridge: Bridge>
 {
     pub kind: HypRunRequestKind<TBridge>,

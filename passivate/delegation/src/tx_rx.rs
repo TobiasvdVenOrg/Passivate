@@ -54,7 +54,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CancellableMessage<T: Send + Sync + 'static>
 {
     pub message: T,
