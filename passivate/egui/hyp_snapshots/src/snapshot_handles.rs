@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use epaint::TextureHandle;
 use epaint::textures::TextureOptions;
 
@@ -46,5 +48,18 @@ impl<THypId> SnapshotHandles<THypId>
             are_identical: true,
             hyp_id
         }
+    }
+}
+
+impl<THypId: Debug> Debug for SnapshotHandles<THypId>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        f.debug_struct("SnapshotHandles")
+            .field("current", &self.current.is_some())
+            .field("new", &self.new.is_some())
+            .field("are_identical", &self.are_identical)
+            .field("hyp_id", &self.hyp_id)
+            .finish()
     }
 }

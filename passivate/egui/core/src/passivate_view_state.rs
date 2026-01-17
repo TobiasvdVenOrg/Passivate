@@ -89,7 +89,7 @@ impl<TBridge: Bridge> PassivateViewState<TBridge>
         egui_context: &egui::Context
     ) -> Option<SnapshotHandles<TBridge::Id>>
     {
-        let snapshot_directories = &configuration.snapshot_directories;
+        let snapshot_directories = dbg!(&configuration.snapshot_directories);
 
         if !snapshot_directories.is_empty()
         {

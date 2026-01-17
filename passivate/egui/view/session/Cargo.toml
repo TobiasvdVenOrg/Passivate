@@ -11,10 +11,15 @@ passivate_model_bridge = { path = "../../../model/bridge" }
 passivate_model_core = { path = "../../../model/core" }
 passivate_run_rust = { path = "../../../run/rust" }
 passivate_egui_core = { path = "../../core" }
+passivate_testing = { path = "../../../testing", optional = true }
 
 egui.workspace = true
 
 [dev-dependencies]
 passivate_hyp_names = { path = "../../../hyp_names" }
 
+
 egui_kittest.workspace = true
+
+[features]
+testing = ["dep:passivate_testing"]

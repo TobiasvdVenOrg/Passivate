@@ -14,7 +14,7 @@ use crate::app_state::AppState;
 pub struct App<'a>
 {
     layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
-    state: &'a mut AppState,
+    state: &'a mut AppState<RustBridge>,
     run_hyps_tx: crossbeam_channel::Sender<CancellableMessage<HypRunRequest<RustBridge>>>,
     session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     log_rx: crossbeam_channel::Receiver<LogMessage>
@@ -24,7 +24,7 @@ impl<'a> App<'a>
 {
     pub fn new(
         layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
-        state: &'a mut AppState,
+        state: &'a mut AppState<RustBridge>,
         run_hyps_tx: crossbeam_channel::Sender<CancellableMessage<HypRunRequest<RustBridge>>>,
         session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
         log_rx: crossbeam_channel::Receiver<LogMessage>

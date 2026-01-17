@@ -23,12 +23,6 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
-[profile.test]
-panic = "abort"
-
-[profile.bench]
-panic = "abort"
-
 [workspace.dependencies]
 assert_matches = "1.5.0"
 bon = "3.6.5"

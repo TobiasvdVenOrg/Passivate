@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 passivate_delegation = { path = "../delegation" }
 passivate_hyp_names = { path = "../hyp_names" }
+passivate_testing = { path = "../testing", optional = true }
 
 camino.workspace = true
 log.workspace = true
@@ -17,7 +18,8 @@ stdext.workspace = true
 mockall.workspace = true
 
 [dev-dependencies]
-passivate_testing = { path = "../testing" }
-
 galvanic-assert.workspace = true
 itertools.workspace = true
+
+[features]
+testing = ["dep:passivate_testing"]

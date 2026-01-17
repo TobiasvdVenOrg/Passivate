@@ -3826,6 +3826,7 @@ dependencies = [
  "passivate_model_bridge",
  "passivate_model_core",
  "passivate_run_rust",
+ "passivate_testing",
 ]
 
 [[package]]

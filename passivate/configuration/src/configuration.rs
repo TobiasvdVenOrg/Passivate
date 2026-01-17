@@ -17,6 +17,7 @@ impl PassivateConfiguration
 }
 
 // TODO: Generate this
+#[derive(Debug)]
 pub enum ConfigurationChange
 {
     CoverageEnabled(bool),

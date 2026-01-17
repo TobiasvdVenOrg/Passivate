@@ -2,6 +2,7 @@ use passivate_configuration::configuration::ConfigurationChange;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_core::hyp::Hyp;
 
+#[derive(Debug)]
 pub enum PassivateStateChange<'a, TBridge: Bridge>
 {
     HypSelected(&'a Hyp<TBridge>),

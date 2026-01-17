@@ -2,15 +2,15 @@ use maybe_owned::MaybeOwned;
 use passivate_delegation::{MockRx, Rx, RxError};
 use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_log::log_message::LogMessage;
+use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_bridge::{MockRunHypsBridge, RunHypsBridge};
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
-use passivate_run_rust::model::RustBridge;
 
 use crate::app_state::AppState;
 
-pub struct UpdateApp<'a, TRunHyps, TRxSession, TRxLog>
+pub struct UpdateApp<'a, TBridge: Bridge, TRunHyps, TRxSession, TRxLog>
 {
-    test_self: &'a mut AppState,
+    test_self: &'a mut AppState<TBridge>,
     egui_context: &'a egui::Context,
     layout: &'a mut DockingLayout,
     run_hyps: MaybeOwned<'a, TRunHyps>,
@@ -18,9 +18,10 @@ pub struct UpdateApp<'a, TRunHyps, TRxSession, TRxLog>
     log_rx: MaybeOwned<'a, TRxLog>
 }
 
-impl<'a> UpdateApp<'a, MockRunHypsBridge<RustBridge>, MockRx<HypSessionEvent<RustBridge>>, MockRx<LogMessage>>
+impl<'a, TBridge: Bridge>
+    UpdateApp<'a, TBridge, MockRunHypsBridge<TBridge>, MockRx<HypSessionEvent<TBridge>>, MockRx<LogMessage>>
 {
-    pub fn with(test_self: &'a mut AppState, egui_context: &'a egui::Context, layout: &'a mut DockingLayout) -> Self
+    pub fn with(test_self: &'a mut AppState<TBridge>, egui_context: &'a egui::Context, layout: &'a mut DockingLayout) -> Self
     {
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().returning(|_, _| ());
@@ -53,9 +54,12 @@ impl<'a> UpdateApp<'a, MockRunHypsBridge<RustBridge>, MockRx<HypSessionEvent<Rus
     }
 }
 
-impl<'a, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, _TRunHyps, _TRxSession, _TRxLog>
+impl<'a, TBridge: Bridge, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, TBridge, _TRunHyps, _TRxSession, _TRxLog>
 {
-    pub fn with_run_hyps<TRunHyps>(self, run_hyps: MaybeOwned<'a, TRunHyps>) -> UpdateApp<'a, TRunHyps, _TRxSession, _TRxLog>
+    pub fn with_run_hyps<TRunHyps>(
+        self,
+        run_hyps: MaybeOwned<'a, TRunHyps>
+    ) -> UpdateApp<'a, TBridge, TRunHyps, _TRxSession, _TRxLog>
     {
         UpdateApp {
             test_self: self.test_self,
@@ -70,7 +74,7 @@ impl<'a, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, _TRunHyps, _TRxSession, 
     pub fn with_session_rx<TRxSession>(
         self,
         session_rx: MaybeOwned<'a, TRxSession>
-    ) -> UpdateApp<'a, _TRunHyps, TRxSession, _TRxLog>
+    ) -> UpdateApp<'a, TBridge, _TRunHyps, TRxSession, _TRxLog>
     {
         UpdateApp {
             test_self: self.test_self,
@@ -82,7 +86,7 @@ impl<'a, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, _TRunHyps, _TRxSession, 
         }
     }
 
-    pub fn with_log_rx<TRxLog>(self, log_rx: MaybeOwned<'a, TRxLog>) -> UpdateApp<'a, _TRunHyps, _TRxSession, TRxLog>
+    pub fn with_log_rx<TRxLog>(self, log_rx: MaybeOwned<'a, TRxLog>) -> UpdateApp<'a, TBridge, _TRunHyps, _TRxSession, TRxLog>
     {
         UpdateApp {
             test_self: self.test_self,
@@ -95,10 +99,10 @@ impl<'a, _TRunHyps, _TRxSession, _TRxLog> UpdateApp<'a, _TRunHyps, _TRxSession, 
     }
 }
 
-impl<'a, TRunHyps, TRxSession, TRxLog> UpdateApp<'a, TRunHyps, TRxSession, TRxLog>
+impl<'a, TBridge: Bridge, TRunHyps, TRxSession, TRxLog> UpdateApp<'a, TBridge, TRunHyps, TRxSession, TRxLog>
 where
-    TRunHyps: RunHypsBridge<RustBridge>,
-    TRxSession: Rx<HypSessionEvent<RustBridge>>,
+    TRunHyps: RunHypsBridge<TBridge>,
+    TRxSession: Rx<HypSessionEvent<TBridge>>,
     TRxLog: Rx<LogMessage>
 {
     pub fn call(&mut self)

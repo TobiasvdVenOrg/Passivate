@@ -45,6 +45,14 @@ impl DerefMut for TestSession
     }
 }
 
+impl Into<HypSession<TestSession>> for TestSession
+{
+    fn into(self) -> HypSession<TestSession>
+    {
+        self.0
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TestId(Vec<String>);
 
