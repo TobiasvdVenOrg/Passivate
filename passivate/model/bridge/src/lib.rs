@@ -5,6 +5,7 @@ extern crate enum_display_derive;
 
 pub mod bridge;
 pub mod bridge_hyp;
+pub mod hyp_report;
 pub mod hyp_run_bridge;
 pub mod hyp_run_request;
 pub mod hyp_session_bridge;

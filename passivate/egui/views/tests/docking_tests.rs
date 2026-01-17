@@ -7,7 +7,7 @@ use egui_kittest::Harness;
 use galvanic_assert::assert_that;
 use itertools::Itertools;
 use passivate_configuration::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
-use passivate_configuration::configuration_source::{ConfigurationSource, MockConfigurationSource};
+use passivate_configuration::configuration_source::MockConfigurationSource;
 use passivate_egui_docking::dock_views::{DockViewer, DockViews};
 use passivate_egui_docking::docking_layout::{DockId, DockingLayout};
 use passivate_egui_docking::layout_management::LayoutManagement;

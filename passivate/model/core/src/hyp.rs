@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
@@ -13,12 +15,7 @@ pub struct Hyp<TBridge: Bridge>
 
 impl<TBridge: Bridge> Hyp<TBridge>
 {
-    pub fn new(info: TBridge::HypInfo) -> Self
-    {
-        Self::with_state(info, HypState::Unknown)
-    }
-
-    pub fn with_state(info: TBridge::HypInfo, state: HypState) -> Self
+    pub fn new(info: TBridge::HypInfo, state: HypState) -> Self
     {
         Self {
             info,
@@ -30,11 +27,6 @@ impl<TBridge: Bridge> Hyp<TBridge>
     pub fn id(&self) -> &TBridge::Id
     {
         self.info.id()
-    }
-
-    pub fn name(&self) -> std::borrow::Cow<'_, str>
-    {
-        self.info.name()
     }
 
     pub fn info(&self) -> &TBridge::HypInfo
@@ -70,5 +62,13 @@ impl<TBridge: Bridge> IdChain for Hyp<TBridge>
     fn chain(&self) -> &[Self::Link]
     {
         self.info.chain()
+    }
+}
+
+impl<TBridge: Bridge> Display for Hyp<TBridge>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{}", self.id())
     }
 }

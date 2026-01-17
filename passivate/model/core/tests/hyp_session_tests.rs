@@ -3,6 +3,8 @@ extern crate assert_matches;
 
 use itertools::assert_equal;
 use passivate_id_chain_tree::chain;
+use passivate_id_chain_tree::id_chain::IdChain;
+use passivate_model_bridge::hyp_report::HypReport;
 use passivate_model_bridge::hyp_session_bridge::*;
 use passivate_model_bridge::hyp_session_event::{CompilationMessage, CompilationMessageKind, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
@@ -101,8 +103,8 @@ pub fn project_existence_updates_session()
     let project_1 = TestHypKind::Project(TestProject::new("test_project_1"));
     let project_2 = TestHypKind::Project(TestProject::new("test_project_2"));
 
-    session.send_hyp(project_1.clone());
-    session.send_hyp(project_2.clone());
+    session.send_hyp(HypReport::new_derived(project_1.clone()));
+    session.send_hyp(HypReport::new_derived(project_2.clone()));
 
     assert_equal(session.hyps().iter().map(|h| h.info()), [&project_1, &project_2]);
 }
@@ -158,10 +160,10 @@ pub fn hyp_becomes_part_of_parent()
     let mut session = new_started_session();
 
     let project_info = TestHypKind::Project(TestProject::new("example_project"));
-    session.send_hyp(project_info);
+    session.send_hyp(HypReport::new_derived(project_info));
 
     let hyp = TestHypKind::Hyp(TestHyp::new(TestId::from("example_project::example_hyp")));
-    session.send_hyp(hyp.clone());
+    session.send_hyp(HypReport::new_derived(hyp.clone()));
 
     let project_id = chain!("example_project");
     let project = session.hyps().entry(project_id).node_or_none().unwrap();
@@ -179,6 +181,21 @@ pub fn run_error_leaves_session_completed_but_in_failed_state()
     ));
 
     assert_matches!(session.activity(), Ok(HypState::Failed));
+}
+
+#[test]
+pub fn passed_hyp_has_passed_state()
+{
+    let mut session = new_started_session();
+
+    let hyp_id = TestId::from("example");
+    let test_hyp = TestHyp::new(hyp_id.clone());
+    let hyp_info = TestHypKind::Hyp(test_hyp);
+    let report = HypReport::new_fixed(hyp_info, HypState::Passed);
+
+    session.send_hyp(report);
+
+    assert_matches!(session.hyps().entry(hyp_id.chain()).unwrap().state(), HypState::Passed);
 }
 
 fn new_started_session() -> TestSession

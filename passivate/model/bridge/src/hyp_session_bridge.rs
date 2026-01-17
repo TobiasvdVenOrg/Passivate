@@ -2,6 +2,7 @@ use mockall::mock;
 use passivate_delegation::Tx;
 
 use crate::bridge::Bridge;
+use crate::hyp_report::HypReport;
 use crate::hyp_session_event::HypSessionEvent;
 use crate::output_report::OutputReport;
 
@@ -18,7 +19,7 @@ pub trait SendOutputBridge<TBridge: Bridge>: Send + Sync + 'static
 
 pub trait SendHypBridge<TBridge: Bridge>: Send + Sync + 'static
 {
-    fn send_hyp(&mut self, hyp_info: TBridge::HypInfo);
+    fn send_hyp(&mut self, hyp_report: HypReport<TBridge>);
 }
 
 pub trait CompleteRunBridge<TBridge: Bridge>: Send + Sync + 'static
@@ -60,10 +61,10 @@ where
     TBridge: Bridge,
     TTx: Tx<HypSessionEvent<TBridge>> + Send + Sync + 'static
 {
-    fn send_hyp(&mut self, hyp_info: TBridge::HypInfo)
+    fn send_hyp(&mut self, hyp_report: HypReport<TBridge>)
     {
         log::info!("send_hyp");
-        self.send(HypSessionEvent::HypExists(hyp_info));
+        self.send(HypSessionEvent::Hyp(hyp_report));
     }
 }
 
@@ -106,7 +107,7 @@ mock! {
 
     impl<TBridge: Bridge> SendHypBridge<TBridge> for HypSessionBridge<TBridge>
     {
-        fn send_hyp(&mut self, hyp_info: TBridge::HypInfo);
+        fn send_hyp(&mut self, hyp_report: HypReport<TBridge>);
     }
 
     impl<TBridge: Bridge> CompleteRunBridge<TBridge> for HypSessionBridge<TBridge>

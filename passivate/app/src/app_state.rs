@@ -121,9 +121,7 @@ fn map_session_change(change: HypSessionChange<RustBridge>) -> Option<PassivateS
 #[cfg(test)]
 pub mod tests
 {
-    use std::fmt::Debug;
 
-    use camino::Utf8PathBuf;
     use egui::accesskit::Role;
     use egui_kittest::Harness;
     use egui_kittest::kittest::{Key, Queryable};
@@ -142,13 +140,13 @@ pub mod tests
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
+    use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
     use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
     use passivate_model_bridge::hyp_run_request::HypRunOptions;
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
-    use passivate_model_core::hyp::Hyp;
     use passivate_model_core::hyp_session::HypSession;
-    use passivate_run_rust::model::{RustBridge, RustHyp};
+    use passivate_run_rust::model::RustHyp;
 
     use crate::app_state::AppState;
     use crate::testing::app_state::UpdateApp;
@@ -189,8 +187,10 @@ pub mod tests
         test_entry.click();
         ui.step();
 
-        let example_hyp = example_hyp(HypState::Passed);
-        session_tx.send(HypSessionEvent::HypCompleted(example_hyp.id().clone()));
+        let hyp_info = example_hyp(HypState::Passed);
+        let hyp_report = HypReport::new_fixed(hyp_info, HypState::Passed);
+
+        session_tx.send(HypSessionEvent::Hyp(hyp_report)).unwrap();
 
         ui.step();
         ui.snapshot(&test_name!());
@@ -220,16 +220,6 @@ pub mod tests
         coverage_toggle.click();
 
         ui.run();
-    }
-
-    struct DebugHarness<'a, State = ()>(&'a Harness<'a, State>);
-
-    impl<'a, State> Debug for DebugHarness<'a, State>
-    {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-        {
-            f.debug_struct("State").field("tree", &self.0.kittest_state().root()).finish()
-        }
     }
 
     #[test]
@@ -308,9 +298,8 @@ pub mod tests
         (app_state, layout)
     }
 
-    fn example_hyp(state: HypState) -> Hyp<RustBridge>
+    fn example_hyp(state: HypState) -> RustHyp
     {
-        let hyp_id = RustHyp::new_single(HypId::new("example_package", "example_crate", "example_test"));
-        Hyp::with_state(hyp_id, state)
+        RustHyp::new_single(HypId::new("example_package", "example_crate", "example_test"))
     }
 }

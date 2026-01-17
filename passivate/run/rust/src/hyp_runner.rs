@@ -24,6 +24,7 @@ use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_delegation::Cancellation;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
+use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
 use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_run_core::hyp_run_errors::TestRunError;
@@ -320,7 +321,7 @@ impl HypRunner
                             })
                             .collect();
 
-                        let status = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
+                        let state = if let FinalStatusLevel::Pass = run_statuses.describe().final_status_level()
                         {
                             HypState::Passed
                         }
@@ -330,9 +331,10 @@ impl HypRunner
                         };
 
                         let hyp_id = HypId::new(&test_instance.suite_info.binary_name, "todo_crate", test_instance.name);
-                        let hyp = RustHyp::new_single(hyp_id);
+                        let hyp_info = RustHyp::new_single(hyp_id);
+                        let report = HypReport::new_fixed(hyp_info, state);
 
-                        tx.send_hyp(hyp);
+                        tx.send_hyp(report);
                     }
                     nextest_runner::reporter::events::TestEventKind::RunFinished {
                         run_id: _,

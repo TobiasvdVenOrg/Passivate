@@ -23,7 +23,7 @@ impl DetailsView
             };
 
             ui.horizontal(|ui| {
-                let text = RichText::new(details.hyp.name()).size(16.0).color(color);
+                let text = RichText::new(format!("{}", details.hyp)).size(16.0).color(color);
                 ui.heading(text);
 
                 if ui.button("Pin").clicked()
@@ -149,7 +149,7 @@ mod tests
     #[test]
     pub fn show_a_failing_test_with_output()
     {
-        let mut failing_test: Hyp<TestSession> = Hyp::with_state(
+        let mut failing_test: Hyp<TestSession> = Hyp::new(
             TestHypKind::Hyp(TestHyp::new("example_package::example_crate::example_test")),
             HypState::Failed
         );
@@ -238,6 +238,6 @@ mod tests
     fn example_hyp(name: &str, status: HypState) -> Hyp<RustBridge>
     {
         let id = RustHyp::new_single(HypId::new("example_package", "example_crate", name));
-        Hyp::with_state(id, status)
+        Hyp::new(id, status)
     }
 }

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt::{Display, Pointer};
 
 use camino::Utf8PathBuf;
@@ -110,20 +109,6 @@ impl BridgeHyp for RustHyp
     {
         &self.id
     }
-
-    fn name(&self) -> Cow<'_, str>
-    {
-        self.id.name(&HypNameStrategy::Default)
-    }
-
-    fn state(&self) -> Option<HypState>
-    {
-        match &self.kind
-        {
-            RustHypKind::Single(hyp) => Some(hyp.state),
-            RustHypKind::Package(_) => None
-        }
-    }
 }
 
 impl IdChain for RustHyp
@@ -133,6 +118,14 @@ impl IdChain for RustHyp
     fn chain(&self) -> &[Self::Link]
     {
         self.id.chain()
+    }
+}
+
+impl Display for RustHyp
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{}", self.id)
     }
 }
 

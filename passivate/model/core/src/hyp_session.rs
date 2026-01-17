@@ -4,6 +4,7 @@ use passivate_delegation::Rx;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_id_chain_tree::tree::Tree;
 use passivate_model_bridge::bridge::Bridge;
+use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
@@ -130,8 +131,8 @@ impl<TBridge: Bridge> Session<TBridge>
             {
                 match event
                 {
-                    HypSessionEvent::Output(report) => self.output(report),
-                    HypSessionEvent::HypExists(project) => self.hyp_exists(project),
+                    HypSessionEvent::Output(output_report) => self.output(output_report),
+                    HypSessionEvent::Hyp(hyp_report) => self.hyp(hyp_report),
                     HypSessionEvent::RunCompleted => self.complete_run(),
                     HypSessionEvent::RunError(run_error) => self.run_error(run_error),
                     _ => Err(event)
@@ -163,9 +164,15 @@ impl<TBridge: Bridge> Session<TBridge>
         }
     }
 
-    fn hyp_exists(&mut self, hyp_node_info: TBridge::HypInfo) -> ChangeResult<'_, TBridge>
+    fn hyp(&mut self, hyp_report: HypReport<TBridge>) -> ChangeResult<'_, TBridge>
     {
-        let hyp: Hyp<TBridge> = Hyp::new(hyp_node_info);
+        let (info, state) = (hyp_report.hyp_info, hyp_report.state);
+
+        let hyp: Hyp<TBridge> = match state
+        {
+            HypReportState::Fixed(hyp_state) => Hyp::new(info, hyp_state),
+            HypReportState::Derived => todo!()
+        };
 
         self.hyps.insert(hyp);
 

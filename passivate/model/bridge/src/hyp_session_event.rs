@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use crate::bridge::Bridge;
+use crate::hyp_report::HypReport;
 use crate::output_report::OutputReport;
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
@@ -91,9 +92,7 @@ pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
     Output(OutputReport<TBridge>),
-    HypExists(TBridge::HypInfo),
-    HypRunning(TBridge::Id),
-    HypCompleted(TBridge::Id),
+    Hyp(HypReport<TBridge>),
     RunCompleted,
     RunError(TBridge::RunError)
 }
@@ -106,9 +105,7 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
         {
             HypSessionEvent::RunStarted => write!(f, "Run Started"),
             HypSessionEvent::Output(output_report) => write!(f, "Output: {}", output_report.id()),
-            HypSessionEvent::HypExists(_) => todo!(),
-            HypSessionEvent::HypRunning(_) => todo!(),
-            HypSessionEvent::HypCompleted(_) => todo!(),
+            HypSessionEvent::Hyp(_) => todo!(),
             HypSessionEvent::RunCompleted => todo!(),
             HypSessionEvent::RunError(_) => write!(f, "Run Error")
         }

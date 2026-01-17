@@ -1,7 +1,5 @@
 use std::ops::{Deref, DerefMut};
 
-use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_delegation::{Rx, Tx};
 use passivate_egui_docking::docking_layout::DockId;
 use passivate_egui_docking::view::View;
 use passivate_egui_view_configuration::ConfigurationView;
@@ -9,7 +7,6 @@ use passivate_egui_view_coverage::CoverageView;
 use passivate_egui_view_details::details_view::DetailsView;
 use passivate_egui_view_log::LogView;
 use passivate_egui_view_session::session_view::SessionView;
-use passivate_model_bridge::bridge::Bridge;
 
 pub enum PassivateView
 {

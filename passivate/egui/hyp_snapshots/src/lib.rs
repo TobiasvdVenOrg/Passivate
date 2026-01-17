@@ -32,7 +32,7 @@ impl Snapshots
 
     pub fn from_hyp<TBridge: Bridge>(&self, hyp: &Hyp<TBridge>) -> Snapshot
     {
-        let file_name = hyp.name();
+        let file_name = hyp.to_string();
         let current = self.from_file(Utf8PathBuf::from(&file_name).with_extension("png"));
         let new = self.from_file(Utf8PathBuf::from(&file_name).with_extension("new.png"));
 

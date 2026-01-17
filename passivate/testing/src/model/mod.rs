@@ -1,10 +1,10 @@
-use std::borrow::Cow;
 use std::fmt::Display;
 use std::ops::{Deref, DerefMut};
 
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
+use passivate_model_bridge::hyp_report::HypReport;
 use passivate_model_bridge::hyp_session_bridge::{
     CompleteRunBridge,
     RunErrorBridge,
@@ -13,7 +13,6 @@ use passivate_model_bridge::hyp_session_bridge::{
     StartRunBridge
 };
 use passivate_model_bridge::hyp_session_event::{CompilationMessage, HypSessionEvent};
-use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
 use passivate_model_core::hyp_session::HypSession;
 
@@ -132,15 +131,13 @@ impl BridgeHyp for TestHypKind
             TestHypKind::Project(test_project) => &test_project.id
         }
     }
+}
 
-    fn name(&self) -> Cow<'_, str>
+impl Display for TestHypKind
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        Cow::Owned(self.id().to_string())
-    }
-
-    fn state(&self) -> Option<HypState>
-    {
-        Some(HypState::Unknown)
+        write!(f, "{}", self.id())
     }
 }
 
@@ -201,9 +198,9 @@ impl SendOutputBridge<TestSession> for TestSession
 
 impl SendHypBridge<TestSession> for TestSession
 {
-    fn send_hyp(&mut self, hyp: TestHypKind)
+    fn send_hyp(&mut self, hyp_report: HypReport<TestSession>)
     {
-        self.0.update(HypSessionEvent::HypExists(hyp));
+        self.0.update(HypSessionEvent::Hyp(hyp_report));
     }
 }
 

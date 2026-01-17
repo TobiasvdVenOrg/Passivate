@@ -1,12 +1,8 @@
-use std::borrow::Cow;
+use std::fmt::Display;
 
-use crate::hyp_state::HypState;
-
-pub trait BridgeHyp
+pub trait BridgeHyp: Display
 {
     type Id;
 
     fn id(&self) -> &Self::Id;
-    fn name(&self) -> Cow<'_, str>;
-    fn state(&self) -> Option<HypState>;
 }
