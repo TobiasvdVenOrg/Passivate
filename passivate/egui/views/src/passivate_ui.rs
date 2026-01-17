@@ -68,7 +68,7 @@ pub fn ui<'env, TBridge: Bridge>(
         .show_leaf_close_all_buttons(false)
         .show(egui_context, &mut dock_viewer);
 
-    // egui_context.request_repaint();
+    egui_context.request_repaint();
 
     passivate_context.changes
 }

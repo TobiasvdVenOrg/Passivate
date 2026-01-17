@@ -3557,6 +3557,7 @@ dependencies = [
 name = "passivate"
 version = "0.1.0"
 dependencies = [
+ "bon",
  "camino",
  "chrono",
  "clap",
@@ -3940,6 +3941,7 @@ version = "0.1.0"
 dependencies = [
  "camino",
  "dunce",
+ "log",
  "notify",
  "passivate_delegation",
  "passivate_model_bridge",

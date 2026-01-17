@@ -10,3 +10,4 @@ passivate_model_bridge = { path = "../model/bridge" }
 notify.workspace = true
 camino.workspace = true
 dunce.workspace = true
+log.workspace = true

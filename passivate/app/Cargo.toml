@@ -21,6 +21,7 @@ passivate_egui_view_details = { path = "../egui/view/details" }
 passivate_egui_view_log = { path = "../egui/view/log" }
 passivate_egui_view_session = { path = "../egui/view/session" }
 
+bon.workspace = true
 clap.workspace = true
 egui = { workspace = true, features = [ "persistence" ] }
 egui_dock.workspace = true
