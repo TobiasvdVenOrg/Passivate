@@ -140,7 +140,7 @@ pub mod tests
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
     use passivate_hyp_names::test_name;
-    use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
+    use passivate_model_bridge::hyp_report::HypReport;
     use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
     use passivate_model_bridge::hyp_run_request::HypRunOptions;
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
@@ -187,7 +187,7 @@ pub mod tests
         test_entry.click();
         ui.step();
 
-        let hyp_info = example_hyp(HypState::Passed);
+        let hyp_info = example_hyp();
         let hyp_report = HypReport::new_fixed(hyp_info, HypState::Passed);
 
         session_tx.send(HypSessionEvent::Hyp(hyp_report)).unwrap();
@@ -298,7 +298,7 @@ pub mod tests
         (app_state, layout)
     }
 
-    fn example_hyp(state: HypState) -> RustHyp
+    fn example_hyp() -> RustHyp
     {
         RustHyp::new_single(HypId::new("example_package", "example_crate", "example_test"))
     }
