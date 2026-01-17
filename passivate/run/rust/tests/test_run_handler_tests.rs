@@ -38,7 +38,7 @@ pub fn running_single_hyp_leaves_session_in_passed_state()
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
-    let session = HypSession::from_events(session_rx);
+    let session = HypSession::from_events(session_rx.try_iter());
 
     assert_matches!(session.state(), HypState::Passed);
 }
@@ -57,7 +57,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::single(hyp_to_run, HypRunOptions::default()));
 
-    let session = HypSession::from_events(session_rx);
+    let session = HypSession::from_events(session_rx.try_iter());
     let mut iter = session.hyps().iter();
 
     assert_matches!(iter.next(), Some(hyp_to_run));
@@ -164,7 +164,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = HypId::new("sample_project", "multiply_tests", "multiply_2_and_2_is_4");
 
-    let session = HypSession::from_events(session_rx);
+    let session = HypSession::from_events(session_rx.try_iter());
 
     let failed_test = session.hyps().get(failed_test.chain()).unwrap();
 
@@ -202,9 +202,9 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
     handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
     handle_hyp_run.call(HypRunRequest::all(HypRunOptions::default()));
 
-    let failed_hyp = HypId::new("simple_project", "multiply_tests", "multiply_2_and_2_is_4");
+    let failed_hyp = HypId::new("sample_project", "multiply_tests", "multiply_2_and_2_is_4");
 
-    let session = HypSession::from_events(session_rx);
+    let session = HypSession::from_events(session_rx.try_iter());
 
     let failed_test = session.hyps().get(&failed_hyp).unwrap();
 
@@ -241,7 +241,7 @@ pub fn when_hyp_run_fails_error_is_reported()
         .with_hyp_session_bridge(session_tx)
         .call(HypRunRequest::all(HypRunOptions::default()));
 
-    let session = HypSession::from_events(session_rx);
+    let session = HypSession::from_events(session_rx.try_iter());
 
     assert_matches!(session.activity(), Ok(HypState::Failed));
 }
