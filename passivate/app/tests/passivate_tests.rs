@@ -1,7 +1,9 @@
-#[cfg(target_os = "windows")]
-use libtest_mimic::Failed;
+use std::thread;
 
-#[cfg(target_os = "windows")]
+use libtest_mimic::Failed;
+use passivate_hyp_names::test_name;
+use passivate_testing::test_data_setup::TestDataSetup;
+
 #[tokio::main]
 async fn main()
 {
@@ -18,35 +20,37 @@ async fn main()
     libtest_mimic::run(&args, tests).exit();
 }
 
-#[cfg(target_os = "windows")]
 pub fn start_and_exit_passivate() -> Result<(), Failed>
 {
     use std::time::Duration;
 
-    use camino::Utf8PathBuf;
     use passivate::start::run_app_and_get_context;
     use passivate_core::{compose::compose, passivate_args::PassivateArgs};
     use tokio::{task, time};
 
+    let setup = TestDataSetup::builder(test_name!(), "simple_project").build();
+
     let args = PassivateArgs::builder()
-        .manifest_directory(Utf8PathBuf::from("..\\..\\test_data\\simple_project"))
+        .manifest_directory(setup.workspace_path())
         .build();
 
-    let passivate = compose(args)?;
-    run_app_and_get_context(passivate,
-        Box::new(move |context: egui::Context| {
-            task::spawn(async move {
-                // Asynchronously send a close window command to passivate after some delay
-                time::sleep(Duration::from_secs(4)).await;
+    thread::scope(|scope| {
+        let passivate = compose(args, scope)?;
+        run_app_and_get_context(passivate,
+            Box::new(move |context: egui::Context| {
+                task::spawn(async move {
+                    // Asynchronously send a close window command to passivate after some delay
+                    time::sleep(Duration::from_secs(4)).await;
 
-                context.send_viewport_cmd(egui::ViewportCommand::Close);
-            });
+                    context.send_viewport_cmd(egui::ViewportCommand::Close);
+                });
+            })
+        )
+        .map_err(|error|
+        {
+            eprintln!("{:?}", error);
+            error
         })
-    )
-    .map_err(|error|
-    {
-        eprintln!("{:?}", error);
-        error
     })?;
 
     // This test does not assert, it exists to ensure that passivate starts (the context_accessor is invoked) and exits without hanging
@@ -54,6 +58,3 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     // The timeout is configured in .config/nextest.toml
     Ok(())
 }
-
-#[cfg(not(target_os = "windows"))]
-fn main() {}
