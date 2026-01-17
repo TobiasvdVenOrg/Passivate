@@ -106,7 +106,7 @@ fn internal_ui<'ctx, 'env, TBridge: Bridge>(
         {
             if let Some(selected_hyp_id) = &state.selected_hyp
             {
-                let hyp = session.hyps().entry(selected_hyp_id.chain()).or_none();
+                let hyp = session.hyps().get(selected_hyp_id.chain());
 
                 if let Some(hyp) = hyp
                 {

@@ -166,7 +166,7 @@ pub fn hyp_becomes_part_of_parent()
     session.send_hyp(HypReport::new_derived(hyp.clone()));
 
     let project_id = chain!("example_project");
-    let project = session.hyps().entry(project_id).node_or_none().unwrap();
+    let project = session.hyps().get_node(project_id).unwrap();
 
     assert_equal(project.iter_children().map(|c| c.info()), [&hyp]);
 }
@@ -195,7 +195,7 @@ pub fn passed_hyp_has_passed_state()
 
     session.send_hyp(report);
 
-    assert_matches!(session.hyps().entry(hyp_id.chain()).unwrap().state(), HypState::Passed);
+    assert_matches!(session.hyps().get(hyp_id.chain()).unwrap().state(), HypState::Passed);
 }
 
 fn new_started_session() -> TestSession

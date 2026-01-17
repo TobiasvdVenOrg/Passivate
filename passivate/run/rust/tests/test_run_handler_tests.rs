@@ -147,6 +147,7 @@ pub fn updating_a_snapshot_only_updates_one_exact_snapshot() -> Result<(), IoErr
     Ok(())
 }
 
+/// This test assumes RUST_BACKTRACE=0 (the extra lines in the output are otherwise unaccounted for)
 #[test]
 pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 {
@@ -165,7 +166,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let session = HypSession::from_events(session_rx);
 
-    let failed_test = session.hyps().entry(failed_test.chain()).unwrap();
+    let failed_test = session.hyps().get(failed_test.chain()).unwrap();
 
     let expected = vec![
         RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),
@@ -205,7 +206,7 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let session = HypSession::from_events(session_rx);
 
-    let failed_test = session.hyps().entry(&failed_hyp).unwrap();
+    let failed_test = session.hyps().get(&failed_hyp).unwrap();
 
     let expected = vec![
         RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),

@@ -337,6 +337,7 @@ impl HypRunner
                             &test_instance.suite_info.binary_name,
                             test_instance.name
                         );
+
                         let hyp_info = RustHyp::new_single(hyp_id.clone());
                         let hyp_report = HypReport::new_fixed(hyp_info, state);
 

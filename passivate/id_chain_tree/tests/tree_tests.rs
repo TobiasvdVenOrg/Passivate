@@ -23,6 +23,11 @@ impl TestValue
             path: path.into().split("::").map(String::from).collect()
         }
     }
+
+    pub fn change_name(&mut self, new_name: impl Into<String>)
+    {
+        self.name = new_name.into();
+    }
 }
 
 impl IdChain for TestValue
@@ -63,8 +68,23 @@ pub fn find_value_by_chain()
 
     let chain = chain!("some", "chain", "id");
 
-    assert_matches!(tree.entry(chain).unwrap(), value => {
+    assert_matches!(tree.get(chain).unwrap(), value => {
         assert_eq!("FIND_THIS", value.name);
+    });
+}
+
+#[test]
+pub fn find_and_mutate_value()
+{
+    let mut tree = tree!(TestValue::new("ORIGINAL_NAME", "some::chain::id"));
+
+    let chain = chain!("some", "chain", "id");
+
+    let value = tree.get_mut(chain).unwrap();
+    value.change_name("MODIFIED");
+
+    assert_matches!(tree.get(chain).unwrap(), value => {
+        assert_eq!("MODIFIED", value.name);
     });
 }
 
@@ -78,7 +98,7 @@ pub fn iterate_children_of_a_node()
     let tree = tree!(parent, child1.clone(), child2.clone());
 
     let parent_chain = chain!("A");
-    let node = tree.entry(parent_chain).node_or_none().unwrap();
+    let node = tree.get_node(parent_chain).unwrap();
 
     assert_equal(node.iter_children(), [&child1, &child2]);
 }
