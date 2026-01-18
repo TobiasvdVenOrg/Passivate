@@ -73,6 +73,7 @@ pub fn run_app_and_get_context(
                 layout,
                 &mut app_state,
                 hyp_run_tx,
+                source_change_rx,
                 session_event_rx,
                 log_rx
             )))

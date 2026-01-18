@@ -13,6 +13,7 @@ use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_bridge::RunHypsBridge;
 use passivate_model_bridge::hyp_run_request::HypRunOptions;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
+use passivate_model_bridge::source_change_event::SourceChangeEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_model_core::hyp_session_change::HypSessionChange;
 
@@ -77,12 +78,18 @@ impl<TBridge: Bridge> AppState<TBridge>
         egui_context: &egui::Context,
         layout: &mut DockingLayout,
         run_hyps: &impl RunHypsBridge<TBridge>,
+        source_change_rx: &impl Rx<SourceChangeEvent>,
         session_event_rx: &impl Rx<HypSessionEvent<TBridge>>,
         log_rx: &impl Rx<LogMessage>
     )
     {
         let mut rerun_required = self.first_update;
         self.first_update = false;
+
+        if source_change_rx.try_recv().is_ok()
+        {
+            rerun_required = true;
+        }
 
         let session_change = self.session.update_next(session_event_rx).and_then(map_session_change);
 
@@ -148,6 +155,7 @@ fn map_session_change<TBridge: Bridge>(change: HypSessionChange<TBridge>) -> Opt
 #[cfg(test)]
 pub mod tests
 {
+    use std::path::PathBuf;
 
     use egui::accesskit::Role;
     use egui_kittest::Harness;
@@ -167,6 +175,7 @@ pub mod tests
     use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, StartRunBridge};
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
+    use passivate_model_bridge::source_change_event::SourceChangeEvent;
     use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestSession};
 
@@ -237,6 +246,27 @@ pub mod tests
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
                 .with_run_hyps(MaybeOwned::Borrowed(&mock_run_hyps))
+                .call();
+        });
+
+        ui.step();
+    }
+
+    #[test]
+    pub fn hyps_are_run_upon_source_change_event()
+    {
+        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
+        let mut mock_run_hyps = MockRunHypsBridge::new();
+        mock_run_hyps.expect_run_all().once().return_const(());
+        mock_run_hyps.expect_run_single().never();
+        let (source_change_tx, source_change_rx) = crossbeam_channel::unbounded();
+
+        source_change_tx.send(SourceChangeEvent::File(PathBuf::default())).unwrap();
+
+        let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
+            UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
+                .with_run_hyps(MaybeOwned::Borrowed(&mock_run_hyps))
+                .with_source_change_rx(MaybeOwned::Borrowed(&source_change_rx))
                 .call();
         });
 

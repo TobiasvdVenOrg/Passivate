@@ -7,6 +7,7 @@ use passivate_egui_docking::layout_management::LayoutManagement;
 use passivate_log::log_message::LogMessage;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
+use passivate_model_bridge::source_change_event::SourceChangeEvent;
 use passivate_run_rust::model::RustBridge;
 
 use crate::app_state::AppState;
@@ -16,6 +17,7 @@ pub struct App<'a>
     layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
     state: &'a mut AppState<RustBridge>,
     run_hyps_tx: crossbeam_channel::Sender<CancellableMessage<HypRunRequest<RustBridge>>>,
+    source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
     session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     log_rx: crossbeam_channel::Receiver<LogMessage>
 }
@@ -26,6 +28,7 @@ impl<'a> App<'a>
         layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
         state: &'a mut AppState<RustBridge>,
         run_hyps_tx: crossbeam_channel::Sender<CancellableMessage<HypRunRequest<RustBridge>>>,
+        source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
         session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
         log_rx: crossbeam_channel::Receiver<LogMessage>
     ) -> Self
@@ -34,6 +37,7 @@ impl<'a> App<'a>
             layout,
             state,
             run_hyps_tx,
+            source_change_rx,
             session_event_rx,
             log_rx
         }
@@ -45,6 +49,7 @@ impl<'a> App<'a>
             ctx,
             self.layout.get_current(),
             &self.run_hyps_tx,
+            &self.source_change_rx,
             &self.session_event_rx,
             &self.log_rx
         );
