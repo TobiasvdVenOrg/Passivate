@@ -84,7 +84,7 @@ impl<TBridge: Bridge> AppState<TBridge>
         let mut rerun_required = self.first_update;
         self.first_update = false;
 
-        let session_change = self.session.update_next(session_event_rx).map(map_session_change).flatten();
+        let session_change = self.session.update_next(session_event_rx).and_then(map_session_change);
 
         {
             self.state.update_state(session_change.as_ref());
