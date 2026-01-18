@@ -21,39 +21,27 @@ use nextest_runner::signal::SignalHandlerKind;
 use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilterBuilder, TestFilterPatterns};
 use nextest_runner::test_output::ChildExecutionOutput;
-use passivate_delegation::Cancellation;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
-use passivate_model_bridge::hyp_report::{HypReport, HypReportState};
+use passivate_model_bridge::hyp_report::HypReport;
 use passivate_model_bridge::hyp_session_bridge::{SendHypBridge, SendOutputBridge};
 use passivate_model_bridge::hyp_session_event::{ConsoleOutput, ConsoleOutputKind};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_bridge::output_report::OutputReport;
-use passivate_run_core::hyp_run_errors::TestRunError;
 
+use crate::hyp_run_error::HypRunError;
 use crate::model::{RustBridge, RustHyp, RustOutput};
 use crate::nextest_cargo_options;
+use crate::nextest_error::NextestError;
 
 #[mockall::automock]
 pub trait RunHyps
 {
-    fn run_hyps<TTx>(
-        &mut self,
-        instrument_coverage: bool,
-        cancellation: Cancellation,
-        tx: &mut TTx,
-        filter: Vec<String>
-    ) -> Result<(), TestRunError>
+    fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 
-    fn run_hyp<TTx>(
-        &mut self,
-        hyp_id: &HypId,
-        update_snapshots: bool,
-        cancellation: Cancellation,
-        tx: &mut TTx
-    ) -> Result<(), TestRunError>
+    fn run_hyp<TTx>(&mut self, hyp_id: &HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 }
@@ -81,10 +69,9 @@ impl HypRunner
         &mut self,
         options: CargoOptions,
         instrument_coverage: bool,
-        cancellation: Cancellation,
         tx: &mut TTx,
         filter: Vec<String>
-    ) -> Result<(), TestRunError>
+    ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -99,7 +86,7 @@ impl HypRunner
             }
         }
 
-        let result = self.run_hyps_internal(options, cancellation, tx, filter);
+        let result = self.run_hyps_internal(options, tx, filter);
 
         unsafe {
             std::env::remove_var("RUSTFLAGS");
@@ -109,22 +96,13 @@ impl HypRunner
         result
     }
 
-    fn run_hyps_internal<TTx>(
-        &mut self,
-        options: CargoOptions,
-        cancellation: Cancellation,
-        tx: &mut TTx,
-        filter: Vec<String>
-    ) -> Result<(), TestRunError>
+    fn run_hyps_internal<TTx>(&mut self, options: CargoOptions, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         log::info!("Starting test run");
 
-        let build_platforms = BuildPlatforms::new_with_no_target().map_err(|error| {
-            eprintln!("3 {:?}", error);
-            TestRunError::Temp
-        })?;
+        let build_platforms = BuildPlatforms::new_with_no_target().map_err(NextestError::HostPlatformDetect)?;
 
         let output_context = OutputContext {
             verbose: false,
@@ -139,11 +117,9 @@ impl HypRunner
             &build_platforms,
             output_context
         )
-        .map_err(|error| TestRunError::Temp)?;
-        let graph = PackageGraph::from_json(graph_data).map_err(|error| {
-            eprintln!("1 {:?}", error);
-            TestRunError::Temp
-        })?;
+        .map_err(NextestError::CargoMetadata)?;
+
+        let graph = PackageGraph::from_json(graph_data)?;
 
         log::info!("Completed 'metadata'");
 
@@ -158,33 +134,26 @@ impl HypRunner
             tool_config_files,
             &experimental
         )
-        .map_err(|error| {
-            eprintln!("2 {:?}", error);
-            TestRunError::Temp
-        })?;
+        .map_err(NextestError::ConfigParse)?;
 
         let binary_list = options
             .compute_binary_list(&graph, Some(&manifest_path), output_context, build_platforms.clone())
-            .map_err(|error| TestRunError::Temp)?;
-
-        log::info!("Completed 'test --no-run'");
+            .map_err(NextestError::CreateBinaryList)?;
 
         let path_mapper = PathMapper::noop();
         let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
         let platform_filter = None;
         let artifacts =
             RustTestArtifact::from_binary_list(&graph, Arc::new(binary_list), &rust_build_meta, &path_mapper, platform_filter)
-                .map_err(|error| {
-                    eprintln!("4 {:?}", error);
-                    TestRunError::Temp
-                })?;
+                .map_err(NextestError::FromMessages)?;
+
         let double_spawn = DoubleSpawnInfo::disabled();
         let target_runner = TargetRunner::empty();
 
-        let profile = nextest_config.profile(NextestConfig::DEFAULT_PROFILE).map_err(|error| {
-            eprintln!("5 {:?}", error);
-            TestRunError::Temp
-        })?;
+        let profile = nextest_config
+            .profile(NextestConfig::DEFAULT_PROFILE)
+            .map_err(NextestError::ProfileNotFound)?;
+
         let profile = profile.apply_build_platforms(&build_platforms);
 
         let context = TestExecuteContext {
@@ -205,22 +174,25 @@ impl HypRunner
 
             for pattern in filter
             {
-                let filterset = Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test)
-                    .map_err(|error| TestRunError::Temp)?;
+                let filterset =
+                    Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test).map_err(|error| {
+                        error
+                            .errors
+                            .into_iter()
+                            .next()
+                            .map_or_else(|| NextestError::UnknownFiltersetParse, NextestError::FiltersetParse)
+                    })?;
                 filter_sets.push(filterset);
             }
 
             let partitioner_builder = None;
 
             TestFilterBuilder::new(RunIgnored::Default, partitioner_builder, patterns, filter_sets)
-                .map_err(|error| TestRunError::Temp)?
+                .map_err(NextestError::TestFilterBuilder)?
         };
 
         let cli_configs: Vec<String> = Vec::new();
-        let cargo_configs = CargoConfigs::new(cli_configs.into_iter()).map_err(|error| {
-            eprintln!("6 {:?}", error);
-            TestRunError::Temp
-        })?;
+        let cargo_configs = CargoConfigs::new(cli_configs.into_iter()).map_err(NextestError::CargoConfig)?;
 
         let env = EnvironmentMap::new(&cargo_configs);
 
@@ -235,12 +207,7 @@ impl HypRunner
             FilterBound::DefaultSet,
             get_num_cpus()
         )
-        .map_err(|error| {
-            eprintln!("7 {:?}", error);
-            TestRunError::Temp
-        })?;
-
-        log::info!("Completed test list");
+        .map_err(NextestError::CreateTestList)?;
 
         let mut runner_builder = TestRunnerBuilder::default();
         runner_builder.set_max_fail(MaxFail::from_fail_fast(false));
@@ -255,10 +222,7 @@ impl HypRunner
                 DoubleSpawnInfo::disabled(),
                 TargetRunner::empty()
             )
-            .map_err(|error| {
-                eprintln!("8 {:?}", error);
-                TestRunError::Temp
-            })?;
+            .map_err(NextestError::TestRunnerBuild)?;
 
         runner
             .execute(|test_event| {
@@ -274,7 +238,7 @@ impl HypRunner
                     {}
                     nextest_runner::reporter::events::TestEventKind::TestStarted {
                         stress_index: _,
-                        test_instance,
+                        test_instance: _,
                         current_stats: _,
                         running: _
                     } =>
@@ -367,10 +331,7 @@ impl HypRunner
                     {}
                 };
             })
-            .map_err(|error| {
-                eprintln!("9 {:?}", error);
-                TestRunError::Temp
-            })?;
+            .map_err(NextestError::TestRunnerExecute)?;
 
         log::info!("Completed test run");
 
@@ -380,13 +341,7 @@ impl HypRunner
 
 impl RunHyps for HypRunner
 {
-    fn run_hyps<TTx>(
-        &mut self,
-        instrument_coverage: bool,
-        cancellation: Cancellation,
-        tx: &mut TTx,
-        filter: Vec<String>
-    ) -> Result<(), TestRunError>
+    fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -394,16 +349,10 @@ impl RunHyps for HypRunner
             .target_dir(self.target_dir.clone())
             .call();
 
-        self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter)
+        self.run_hyps_with_options(cargo_options, instrument_coverage, tx, filter)
     }
 
-    fn run_hyp<TTx>(
-        &mut self,
-        hyp_id: &HypId,
-        update_snapshots: bool,
-        cancellation: Cancellation,
-        tx: &mut TTx
-    ) -> Result<(), TestRunError>
+    fn run_hyp<TTx>(&mut self, hyp_id: &HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -426,7 +375,7 @@ impl RunHyps for HypRunner
             .target_dir(self.target_dir.clone())
             .call();
 
-        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, cancellation, tx, filter);
+        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, tx, filter);
 
         unsafe {
             std::env::set_var("UPDATE_SNAPSHOTS", "0");

@@ -66,7 +66,6 @@ pub fn compose<'scope, 'env>(
     let passivate_path = workspace_path.join("..").join(".passivate");
     let coverage_path = passivate_path.join("coverage");
     let target_path = passivate_path.join("target");
-    let binary_path = target_path.join("x86_64-pc-windows-msvc/debug");
 
     let hyp_runner = HypRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
 

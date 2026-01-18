@@ -1,6 +1,6 @@
 use std::thread;
 
-use passivate_delegation::{CancellableMessage, Cancellation, Rx};
+use passivate_delegation::{CancellableMessage, Rx};
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
@@ -11,8 +11,8 @@ use passivate_model_bridge::hyp_session_bridge::{
     SendOutputBridge,
     StartRunBridge
 };
-use passivate_run_core::hyp_run_errors::TestRunError;
 
+use crate::hyp_run_error::HypRunError;
 use crate::hyp_runner::RunHyps;
 use crate::model::RustBridge;
 
@@ -32,7 +32,7 @@ pub fn hyp_run_thread<'scope, 'env>(
     scope.spawn(move || {
         while let Ok(trigger) = hyp_run_trigger_rx.recv()
         {
-            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger.message, trigger.cancellation);
+            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger.message);
         }
     });
 }
@@ -40,33 +40,15 @@ pub fn hyp_run_thread<'scope, 'env>(
 pub fn handle_hyp_run_trigger(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    request: HypRunRequest<RustBridge>,
-    cancellation: Cancellation
+    request: HypRunRequest<RustBridge>
 )
 {
     hyp_session_bridge.start_run();
 
     let result = match request.kind
     {
-        HypRunRequestKind::All =>
-        {
-            run_hyps(
-                runner,
-                hyp_session_bridge,
-                cancellation.clone(),
-                request.options.compute_coverage
-            )
-        }
-        HypRunRequestKind::Single { hyp_id } =>
-        {
-            run_hyp(
-                runner,
-                hyp_session_bridge,
-                &hyp_id,
-                request.options.update_snapshots,
-                cancellation.clone()
-            )
-        }
+        HypRunRequestKind::All => run_hyps(runner, hyp_session_bridge, request.options.compute_coverage),
+        HypRunRequestKind::Single { hyp_id } => run_hyp(runner, hyp_session_bridge, &hyp_id, request.options.update_snapshots)
     };
 
     match result
@@ -79,9 +61,8 @@ pub fn handle_hyp_run_trigger(
 fn run_hyps(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    cancellation: Cancellation,
     compute_coverage: bool
-) -> Result<(), TestRunError>
+) -> Result<(), HypRunError>
 {
     // if compute_coverage
     // {
@@ -93,20 +74,15 @@ fn run_hyps(
     //     log::error!("error cleaning coverage output: {:?}", clean_error);
     // }
 
-    let test_output = runner.run_hyps(compute_coverage, cancellation.clone(), hyp_session_bridge, Vec::new());
-
-    test_output
+    runner.run_hyps(compute_coverage, hyp_session_bridge, Vec::new())
 }
 
 fn run_hyp(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     id: &HypId,
-    update_snapshots: bool,
-    cancellation: Cancellation
-) -> Result<(), TestRunError>
+    update_snapshots: bool
+) -> Result<(), HypRunError>
 {
-    let result = runner.run_hyp(id, update_snapshots, cancellation, hyp_session_bridge);
-
-    result
+    runner.run_hyp(id, update_snapshots, hyp_session_bridge)
 }

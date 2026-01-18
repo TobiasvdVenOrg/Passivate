@@ -12,8 +12,8 @@ members = [
     "id_chain_tree",
     "coverage",
     "cargo",
-    "run/rust",
-    "run/core"]
+    "run/rust"
+    ]
 
 resolver = "2"
 

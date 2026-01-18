@@ -6,7 +6,7 @@ use crate::node_view::NodeView;
 
 pub trait ChainLink = Debug + Eq + Sized;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct Tree<TLink: ChainLink, TValue: IdChain<Link = TLink>>
 {
     values: Vec<Node<TValue>>

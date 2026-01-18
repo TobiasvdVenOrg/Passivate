@@ -1,7 +1,3 @@
-use std::env;
-
-use passivate_coverage::grcov::Grcov;
-use passivate_delegation::Cancellation;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
 use passivate_run_rust::hyp_run_handler::{HypSessionBridge, handle_hyp_run_trigger};
@@ -9,22 +5,11 @@ use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps, RunHyps};
 use passivate_run_rust::model::RustBridge;
 use passivate_testing::test_data_setup::TestDataSetup;
 
-#[bon::builder]
-pub fn test_grcov(#[builder(start_fn)] setup: &TestDataSetup) -> Grcov
-{
-    Grcov::builder()
-        .workspace_path(setup.workspace_path())
-        .output_path(setup.coverage_path())
-        .binary_path(setup.binary_path())
-        .build()
-}
-
 /// Convenience builder to invoke 'handle_hyp_run_trigger'
 pub struct HandleHypRunTrigger<TRunHyps, THypSessionBridge>
 {
     run_hyps: TRunHyps,
-    hyp_session_bridge: THypSessionBridge,
-    cancellation: Cancellation
+    hyp_session_bridge: THypSessionBridge
 }
 
 impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
@@ -36,16 +21,15 @@ impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
 
         mock_run_hyps
             .expect_run_hyps::<MockHypSessionBridge<RustBridge>>()
-            .return_const(Ok(()));
+            .returning(|_, _, _| Ok(()));
 
         mock_run_hyps
             .expect_run_hyp::<MockHypSessionBridge<RustBridge>>()
-            .return_const(Ok(()));
+            .returning(|_, _, _| Ok(()));
 
         Self {
             run_hyps: mock_run_hyps,
-            hyp_session_bridge: mock_hyp_session_bridge,
-            cancellation: Cancellation::default()
+            hyp_session_bridge: mock_hyp_session_bridge
         }
     }
 }
@@ -61,8 +45,7 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
     {
         HandleHypRunTrigger::<_TRunHyps, THypSessionBridge> {
             run_hyps: self.run_hyps,
-            hyp_session_bridge,
-            cancellation: self.cancellation
+            hyp_session_bridge
         }
     }
 
@@ -72,8 +55,7 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
     {
         HandleHypRunTrigger::<TRunHyps, _THypSessionBridge> {
             run_hyps,
-            hyp_session_bridge: self.hyp_session_bridge,
-            cancellation: self.cancellation
+            hyp_session_bridge: self.hyp_session_bridge
         }
     }
 
@@ -87,8 +69,7 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
 
         HandleHypRunTrigger::<HypRunner, _THypSessionBridge> {
             run_hyps: runner,
-            hyp_session_bridge: self.hyp_session_bridge,
-            cancellation: self.cancellation
+            hyp_session_bridge: self.hyp_session_bridge
         }
     }
 }
@@ -100,11 +81,6 @@ where
 {
     pub fn call(&mut self, request: HypRunRequest<RustBridge>)
     {
-        handle_hyp_run_trigger(
-            &mut self.run_hyps,
-            &mut self.hyp_session_bridge,
-            request,
-            self.cancellation.clone()
-        );
+        handle_hyp_run_trigger(&mut self.run_hyps, &mut self.hyp_session_bridge, request);
     }
 }

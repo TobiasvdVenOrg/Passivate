@@ -3660,7 +3660,6 @@ dependencies = [
  "passivate_model_core",
  "passivate_model_rust",
  "passivate_notify",
- "passivate_run_core",
  "passivate_run_rust",
  "passivate_testing",
  "pretty_assertions",
@@ -3760,7 +3759,6 @@ dependencies = [
  "passivate_model_bridge",
  "passivate_model_core",
  "passivate_model_rust",
- "passivate_run_core",
  "passivate_run_rust",
 ]
 
@@ -3775,7 +3773,6 @@ dependencies = [
  "passivate_coverage",
  "passivate_delegation",
  "passivate_hyp_names",
- "passivate_run_core",
  "passivate_run_rust",
 ]
 
@@ -3949,17 +3946,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "passivate_run_core"
-version = "0.1.0"
-dependencies = [
- "log",
- "passivate_delegation",
- "passivate_model_bridge",
- "passivate_model_core",
- "thiserror 2.0.17",
-]
-
-[[package]]
 name = "passivate_run_rust"
 version = "0.1.0"
 dependencies = [
@@ -3983,7 +3969,6 @@ dependencies = [
  "passivate_model_bridge",
  "passivate_model_core",
  "passivate_model_rust",
- "passivate_run_core",
  "passivate_testing",
  "pretty_assertions",
  "stdext",

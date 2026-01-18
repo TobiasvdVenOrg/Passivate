@@ -2,6 +2,7 @@ use camino::Utf8PathBuf;
 use egui::Ui;
 use passivate_configuration::configuration::{ConfigurationChange, PassivateConfiguration};
 
+#[derive(Default)]
 pub struct ConfigurationView
 {
     snapshots_path_field: String
@@ -11,9 +12,7 @@ impl ConfigurationView
 {
     pub fn new() -> Self
     {
-        Self {
-            snapshots_path_field: String::new()
-        }
+        Self::default()
     }
 
     pub fn ui(&mut self, ui: &mut Ui, configuration: &PassivateConfiguration) -> Vec<ConfigurationChange>

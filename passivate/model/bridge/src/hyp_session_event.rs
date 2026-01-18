@@ -87,7 +87,7 @@ pub enum ConsoleOutputKind
     StdErr
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum HypSessionEvent<TBridge: Bridge>
 {
     RunStarted,
@@ -111,3 +111,19 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
         }
     }
 }
+
+impl<TBridge: Bridge> PartialEq for HypSessionEvent<TBridge>
+{
+    fn eq(&self, other: &Self) -> bool
+    {
+        match (self, other)
+        {
+            (Self::Output(l0), Self::Output(r0)) => l0 == r0,
+            (Self::Hyp(l0), Self::Hyp(r0)) => l0 == r0,
+            (Self::RunError(_), Self::RunError(_)) => panic!("attempt to compare HypSessionEvent::RunError for equality"),
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other)
+        }
+    }
+}
+
+impl<TBridge: Bridge> Eq for HypSessionEvent<TBridge> {}

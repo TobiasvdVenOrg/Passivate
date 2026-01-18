@@ -34,13 +34,7 @@ impl<TBridge: Bridge> HypSession<TBridge>
 {
     pub fn new() -> Self
     {
-        let session = Session {
-            activity: HypState::Unknown,
-            hyps: Tree::new(),
-            output: Vec::new()
-        };
-
-        HypSession { session, error: None }
+        Self::default()
     }
 
     pub fn from_events(events: impl IntoIterator<Item = HypSessionEvent<TBridge>>) -> Self
@@ -52,7 +46,7 @@ impl<TBridge: Bridge> HypSession<TBridge>
 
     pub fn activity(&self) -> Result<HypState, &HypSessionStateError<TBridge>>
     {
-        self.error.as_ref().map_or_else(|| Ok(self.session.activity), |e| Err(e))
+        self.error.as_ref().map_or_else(|| Ok(self.session.activity), Err)
     }
 
     pub fn hyps(&self) -> &Tree<TBridge::IdLink, Hyp<TBridge>>
@@ -192,5 +186,19 @@ impl<TBridge: Bridge> Session<TBridge>
         self.activity = HypState::Failed;
 
         Ok(None)
+    }
+}
+
+impl<TBridge: Bridge> Default for HypSession<TBridge>
+{
+    fn default() -> Self
+    {
+        let session = Session {
+            activity: HypState::Unknown,
+            hyps: Tree::new(),
+            output: Vec::new()
+        };
+
+        HypSession { session, error: None }
     }
 }

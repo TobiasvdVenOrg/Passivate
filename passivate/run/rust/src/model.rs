@@ -9,7 +9,8 @@ use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
 use passivate_model_bridge::hyp_session_event::{CompilationMessage, ConsoleOutput};
 use passivate_model_bridge::hyp_state::HypState;
-use passivate_run_core::hyp_run_errors::TestRunError;
+
+use crate::hyp_run_error::HypRunError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageInfo
@@ -135,5 +136,5 @@ impl Bridge for RustBridge
     type Id = HypId;
     type IdLink = String;
     type Output = RustOutput;
-    type RunError = TestRunError;
+    type RunError = HypRunError;
 }

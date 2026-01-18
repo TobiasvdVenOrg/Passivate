@@ -78,8 +78,7 @@ pub(crate) fn hyp_label(ui: &mut Ui, text: impl Into<String>)
     ui.label(text);
 }
 
-pub(crate) fn show_hyp<'a, TBridge: Bridge>(ui: &mut Ui, hyp: &'a Hyp<TBridge>, text: impl Into<String>)
--> Option<HypUiAction>
+pub(crate) fn show_hyp<TBridge: Bridge>(ui: &mut Ui, hyp: &Hyp<TBridge>, text: impl Into<String>) -> Option<HypUiAction>
 {
     match hyp.state()
     {

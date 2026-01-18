@@ -5,6 +5,7 @@ extern crate assert_matches;
 
 use std::fs;
 use std::io::Error as IoError;
+use std::sync::Arc;
 
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
@@ -16,9 +17,10 @@ use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest};
 use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
-use passivate_run_core::hyp_run_errors::TestRunError;
+use passivate_run_rust::hyp_run_error::HypRunError;
 use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_run_rust::model::{RustBridge, RustOutput};
+use passivate_run_rust::nextest_error::NextestError;
 use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
@@ -60,7 +62,7 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
     let session = HypSession::from_events(session_rx.try_iter());
     let mut iter = session.hyps().iter();
 
-    assert_matches!(iter.next(), Some(hyp_to_run));
+    assert_matches!(iter.next(), Some(_hyp_to_run));
     assert_matches!(iter.next(), None);
 }
 
@@ -168,13 +170,13 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     let failed_test = session.hyps().get(failed_test.chain()).unwrap();
 
-    let expected = vec![
+    let expected = [
         RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),
         RustOutput::Console(ConsoleOutput::new_stderr("  left: 5")),
         RustOutput::Console(ConsoleOutput::new_stderr(" right: 4")),
         RustOutput::Console(ConsoleOutput::new_stderr(
             "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
-        )),
+        ))
     ];
     assert_that!(
         // Skip first 2 lines to avoid a thread ID that is not deterministic
@@ -208,13 +210,13 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
 
     let failed_test = session.hyps().get(&failed_hyp).unwrap();
 
-    let expected = vec![
+    let expected = [
         RustOutput::Console(ConsoleOutput::new_stderr("assertion `left == right` failed")),
         RustOutput::Console(ConsoleOutput::new_stderr("  left: 5")),
         RustOutput::Console(ConsoleOutput::new_stderr(" right: 4")),
         RustOutput::Console(ConsoleOutput::new_stderr(
             "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
-        )),
+        ))
     ];
 
     assert_that!(
@@ -232,7 +234,7 @@ pub fn when_hyp_run_fails_error_is_reported()
     let mut run_hyps = MockRunHyps::new();
     run_hyps
         .expect_run_hyps::<crossbeam_channel::Sender<HypSessionEvent<RustBridge>>>()
-        .return_const(Err(TestRunError::Temp));
+        .returning(|_, _, _| Err(HypRunError::Nextest(Arc::new(NextestError::UnknownFiltersetParse))));
 
     let (session_tx, session_rx) = crossbeam_channel::unbounded();
 

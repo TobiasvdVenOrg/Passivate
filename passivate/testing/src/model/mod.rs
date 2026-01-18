@@ -16,7 +16,7 @@ use passivate_model_bridge::hyp_session_event::{CompilationMessage, HypSessionEv
 use passivate_model_bridge::output_report::OutputReport;
 use passivate_model_core::hyp_session::HypSession;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct TestSession(HypSession<TestSession>);
 
 impl TestSession
@@ -45,11 +45,11 @@ impl DerefMut for TestSession
     }
 }
 
-impl Into<HypSession<TestSession>> for TestSession
+impl From<TestSession> for HypSession<TestSession>
 {
-    fn into(self) -> HypSession<TestSession>
+    fn from(val: TestSession) -> Self
     {
-        self.0
+        val.0
     }
 }
 
