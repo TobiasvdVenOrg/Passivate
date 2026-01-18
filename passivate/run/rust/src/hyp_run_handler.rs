@@ -11,6 +11,7 @@ use passivate_model_bridge::hyp_session_bridge::{
     SendOutputBridge,
     StartRunBridge
 };
+use passivate_run_core::hyp_run_errors::TestRunError;
 
 use crate::hyp_runner::RunHyps;
 use crate::model::RustBridge;
@@ -31,9 +32,7 @@ pub fn hyp_run_thread<'scope, 'env>(
     scope.spawn(move || {
         while let Ok(trigger) = hyp_run_trigger_rx.recv()
         {
-            hyp_session_bridge.start_run();
             handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger.message, trigger.cancellation);
-            hyp_session_bridge.complete_run();
         }
     });
 }
@@ -45,7 +44,9 @@ pub fn handle_hyp_run_trigger(
     cancellation: Cancellation
 )
 {
-    match request.kind
+    hyp_session_bridge.start_run();
+
+    let result = match request.kind
     {
         HypRunRequestKind::All =>
         {
@@ -66,7 +67,13 @@ pub fn handle_hyp_run_trigger(
                 cancellation.clone()
             )
         }
-    }
+    };
+
+    match result
+    {
+        Ok(_) => hyp_session_bridge.complete_run(),
+        Err(test_error) => hyp_session_bridge.run_error(test_error)
+    };
 }
 
 fn run_hyps(
@@ -74,7 +81,7 @@ fn run_hyps(
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     cancellation: Cancellation,
     compute_coverage: bool
-)
+) -> Result<(), TestRunError>
 {
     // if compute_coverage
     // {
@@ -86,24 +93,9 @@ fn run_hyps(
     //     log::error!("error cleaning coverage output: {:?}", clean_error);
     // }
 
-    if cancellation.is_cancelled()
-    {
-        return;
-    }
-
     let test_output = runner.run_hyps(compute_coverage, cancellation.clone(), hyp_session_bridge, Vec::new());
 
-    if cancellation.is_cancelled()
-    {
-        return;
-    }
-
-    match test_output
-    {
-        Ok(_) =>
-        {}
-        Err(test_error) => hyp_session_bridge.run_error(test_error)
-    };
+    test_output
 }
 
 fn run_hyp(
@@ -112,12 +104,9 @@ fn run_hyp(
     id: &HypId,
     update_snapshots: bool,
     cancellation: Cancellation
-)
+) -> Result<(), TestRunError>
 {
     let result = runner.run_hyp(id, update_snapshots, cancellation, hyp_session_bridge);
 
-    if let Err(error) = result
-    {
-        todo!()
-    }
+    result
 }
