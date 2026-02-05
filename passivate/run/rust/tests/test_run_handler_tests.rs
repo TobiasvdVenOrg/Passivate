@@ -3,21 +3,25 @@ mod helpers;
 #[macro_use]
 extern crate assert_matches;
 
-use std::fs;
 use std::io::Error as IoError;
 use std::sync::Arc;
+use std::time::Duration;
+use std::{fs, thread};
 
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
 use itertools::Itertools;
+use mockall::Sequence;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
-use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest};
+use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
+use passivate_model_bridge::hyp_session_bridge::{self, CancelRunBridge, CompleteRunBridge, MockHypSessionBridge};
 use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_run_rust::hyp_run_error::HypRunError;
+use passivate_run_rust::hyp_run_handler::hyp_run_thread;
 use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_run_rust::nextest_error::NextestError;
@@ -25,6 +29,59 @@ use passivate_testing::test_data_setup::TestDataSetup;
 use passivate_testing::test_snapshot_path::TestSnapshotPath;
 
 use crate::helpers::HandleHypRunTrigger;
+
+#[test]
+pub fn hyp_run_thread_cancels_run_upon_new_request()
+{
+    let (hyp_run_trigger_tx, hyp_run_trigger_rx) = crossbeam_channel::unbounded();
+    let mut hyp_session_bridge = MockHypSessionBridge::new();
+
+    let mut cancel_then_complete = Sequence::new();
+
+    hyp_session_bridge.expect_start_run();
+
+    hyp_session_bridge
+        .expect_cancel_run()
+        .times(1)
+        .in_sequence(&mut cancel_then_complete);
+
+    hyp_session_bridge
+        .expect_complete_run()
+        .times(1)
+        .in_sequence(&mut cancel_then_complete);
+
+    let mut runner = MockRunHyps::new();
+    runner
+        .expect_run_hyps()
+        .returning(|_, _: &mut MockHypSessionBridge<RustBridge>, _| {
+            thread::sleep(Duration::from_secs(1)); // sleep to give time for cancellation to come in
+            Ok(())
+        });
+
+    thread::scope(|scope| {
+        _ = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
+
+        hyp_run_trigger_tx
+            .send(HypRunRequest {
+                kind: HypRunRequestKind::All,
+                options: HypRunOptions::default()
+            })
+            .unwrap();
+
+        hyp_run_trigger_tx
+            .send(HypRunRequest {
+                kind: HypRunRequestKind::All,
+                options: HypRunOptions::default()
+            })
+            .unwrap();
+
+        drop(hyp_run_trigger_tx);
+
+        // t.join().unwrap();
+
+        // eprintln!("oi");
+    });
+}
 
 #[test]
 pub fn running_single_hyp_leaves_session_in_passed_state()

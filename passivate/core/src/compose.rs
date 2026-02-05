@@ -4,7 +4,6 @@ use std::{env, thread};
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_configuration::configuration_source::FileConfigurationSource;
-use passivate_delegation::CancellableMessage;
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
@@ -28,7 +27,7 @@ pub struct PassivateCore
     pub state: PassivateState<RustBridge>,
     pub passivate_path: Utf8PathBuf,
     pub source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
-    pub hyp_run_tx: crossbeam_channel::Sender<CancellableMessage<HypRunRequest<RustBridge>>>,
+    pub hyp_run_tx: crossbeam_channel::Sender<HypRunRequest<RustBridge>>,
     pub session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     pub configuration: ConfigurationManager,
     pub log_rx: crossbeam_channel::Receiver<LogMessage>,

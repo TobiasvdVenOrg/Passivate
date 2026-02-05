@@ -2,7 +2,7 @@ use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_delegation::{Cancellation, Rx};
+use passivate_delegation::Rx;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;
@@ -138,7 +138,7 @@ impl<TBridge: Bridge> AppState<TBridge>
 
         if rerun_required
         {
-            run_hyps.run_all(HypRunOptions::default(), Cancellation::default());
+            run_hyps.run_all(HypRunOptions::default());
         }
     }
 }
@@ -162,7 +162,6 @@ pub mod tests
     use egui_kittest::kittest::{Key, Queryable};
     use itertools::Itertools;
     use maybe_owned::MaybeOwned;
-    use mockall::predicate;
     use mockall::predicate::eq;
     use passivate_egui_docking::view::View;
     use passivate_egui_views::passivate_views::PassivateViews;
@@ -278,13 +277,10 @@ pub mod tests
     {
         let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
-        mock_run_hyps.expect_run_all().once().with(
-            eq(HypRunOptions {
-                compute_coverage: true,
-                ..Default::default()
-            }),
-            predicate::always()
-        );
+        mock_run_hyps.expect_run_all().once().with(eq(HypRunOptions {
+            compute_coverage: true,
+            ..Default::default()
+        }));
         mock_run_hyps.expect_run_single().never();
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {

@@ -94,6 +94,7 @@ pub enum HypSessionEvent<TBridge: Bridge>
     Output(OutputReport<TBridge>),
     Hyp(HypReport<TBridge>),
     RunCompleted,
+    RunCancelled,
     RunError(TBridge::RunError)
 }
 
@@ -107,6 +108,7 @@ impl<TBridge: Bridge> Display for HypSessionEvent<TBridge>
             HypSessionEvent::Output(output_report) => write!(f, "Output: {}", output_report.id()),
             HypSessionEvent::Hyp(hyp_report) => write!(f, "Hyp: {}", hyp_report.hyp_info),
             HypSessionEvent::RunCompleted => write!(f, "Run Completed"),
+            HypSessionEvent::RunCancelled => write!(f, "Run Cancelled"),
             HypSessionEvent::RunError(_) => write!(f, "Run Error")
         }
     }

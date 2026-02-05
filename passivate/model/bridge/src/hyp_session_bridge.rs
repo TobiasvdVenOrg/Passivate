@@ -27,6 +27,11 @@ pub trait CompleteRunBridge<TBridge: Bridge>: Send + Sync + 'static
     fn complete_run(&mut self);
 }
 
+pub trait CancelRunBridge<TBridge: Bridge>: Send + Sync + 'static
+{
+    fn cancel_run(&mut self);
+}
+
 pub trait RunErrorBridge<TBridge: Bridge>: Send + Sync + 'static
 {
     fn run_error(&mut self, run_error: TBridge::RunError);
@@ -80,6 +85,18 @@ where
     }
 }
 
+impl<TTx, TBridge: Bridge> CancelRunBridge<TBridge> for TTx
+where
+    TBridge: Bridge,
+    TTx: Tx<HypSessionEvent<TBridge>> + Send + Sync + 'static
+{
+    fn cancel_run(&mut self)
+    {
+        log::info!("complete_run");
+        self.send(HypSessionEvent::RunCancelled);
+    }
+}
+
 impl<TTx, TBridge: Bridge> RunErrorBridge<TBridge> for TTx
 where
     TBridge: Bridge,
@@ -115,8 +132,27 @@ mock! {
         fn complete_run(&mut self);
     }
 
+    impl<TBridge: Bridge> CancelRunBridge<TBridge> for HypSessionBridge<TBridge>
+    {
+        fn cancel_run(&mut self);
+    }
+
     impl<TBridge: Bridge> RunErrorBridge<TBridge> for HypSessionBridge<TBridge>
     {
         fn run_error(&mut self, run_error: TBridge::RunError);
     }
+}
+
+pub fn stub<TBridge: Bridge>() -> MockHypSessionBridge<TBridge>
+{
+    let mut mock = MockHypSessionBridge::new();
+
+    mock.expect_start_run().return_const(());
+    mock.expect_send_hyp().return_const(());
+    mock.expect_send_output().return_const(());
+    mock.expect_cancel_run().return_const(());
+    mock.expect_complete_run().return_const(());
+    mock.expect_run_error().return_const(());
+
+    mock
 }

@@ -35,6 +35,7 @@ passivate_testing = { path = "../../testing" }
 assert_matches.workspace = true
 pretty_assertions.workspace = true
 galvanic-assert.workspace = true
+tokio.workspace = true
 
 [features]
 testing = []

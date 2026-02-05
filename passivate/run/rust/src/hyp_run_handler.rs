@@ -1,10 +1,11 @@
 use std::thread;
 
-use passivate_delegation::{CancellableMessage, Rx};
+use passivate_delegation::Rx;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{
+    CancelRunBridge,
     CompleteRunBridge,
     RunErrorBridge,
     SendHypBridge,
@@ -20,21 +21,22 @@ pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
     + SendHypBridge<TBridge>
     + SendOutputBridge<TBridge>
     + CompleteRunBridge<TBridge>
+    + CancelRunBridge<TBridge>
     + RunErrorBridge<TBridge>;
 
 pub fn hyp_run_thread<'scope, 'env>(
     scope: &'scope thread::Scope<'scope, 'env>,
-    hyp_run_trigger_rx: impl Rx<CancellableMessage<HypRunRequest<RustBridge>>> + 'env,
+    hyp_run_trigger_rx: impl Rx<HypRunRequest<RustBridge>> + 'scope,
     mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
-    mut runner: impl RunHyps + Send + Sync + 'static
-)
+    mut runner: impl RunHyps + Send + Sync + 'scope
+) -> thread::ScopedJoinHandle<'scope, ()>
 {
     scope.spawn(move || {
         while let Ok(trigger) = hyp_run_trigger_rx.recv()
         {
-            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger.message);
+            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger);
         }
-    });
+    })
 }
 
 pub fn handle_hyp_run_trigger(
@@ -43,6 +45,8 @@ pub fn handle_hyp_run_trigger(
     request: HypRunRequest<RustBridge>
 )
 {
+    eprintln!("handle_hyp_run_trigger start");
+
     hyp_session_bridge.start_run();
 
     let result = match request.kind
@@ -53,9 +57,19 @@ pub fn handle_hyp_run_trigger(
 
     match result
     {
-        Ok(_) => hyp_session_bridge.complete_run(),
-        Err(test_error) => hyp_session_bridge.run_error(test_error)
+        Ok(_) =>
+        {
+            eprintln!("complete_run");
+            hyp_session_bridge.complete_run();
+        }
+        Err(test_error) =>
+        {
+            eprintln!("run_error");
+            hyp_session_bridge.run_error(test_error);
+        }
     };
+
+    eprintln!("handle_hyp_run_trigger end");
 }
 
 fn run_hyps(
