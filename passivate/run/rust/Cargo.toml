@@ -28,6 +28,7 @@ guppy.workspace = true
 itertools.workspace = true
 stdext.workspace = true
 mockall.workspace = true
+tokio.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../../testing" }

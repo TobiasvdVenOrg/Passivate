@@ -27,7 +27,7 @@ pub struct PassivateCore
     pub state: PassivateState<RustBridge>,
     pub passivate_path: Utf8PathBuf,
     pub source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
-    pub hyp_run_tx: crossbeam_channel::Sender<HypRunRequest<RustBridge>>,
+    pub hyp_run_tx: tokio::sync::mpsc::UnboundedSender<HypRunRequest<RustBridge>>,
     pub session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     pub configuration: ConfigurationManager,
     pub log_rx: crossbeam_channel::Receiver<LogMessage>,
@@ -56,7 +56,7 @@ pub fn compose<'scope, 'env>(
     let (session_event_tx, session_event_rx) = crossbeam_channel::unbounded();
 
     // Send requests to run hyps
-    let (hyp_run_tx, hyp_run_rx) = crossbeam_channel::unbounded();
+    let (hyp_run_tx, hyp_run_rx) = tokio::sync::mpsc::unbounded_channel();
 
     // Paths
     let working_dir = Utf8PathBuf::from_path_buf(env::current_dir()?)

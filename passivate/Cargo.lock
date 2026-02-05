@@ -3668,6 +3668,7 @@ dependencies = [
  "serde_json",
  "stdext",
  "thiserror 2.0.17",
+ "tokio",
 ]
 
 [[package]]
@@ -3697,6 +3698,7 @@ dependencies = [
  "quote",
  "syn 2.0.111",
  "thiserror 2.0.17",
+ "tokio",
 ]
 
 [[package]]

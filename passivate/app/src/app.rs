@@ -15,7 +15,7 @@ pub struct App<'a>
 {
     layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
     state: &'a mut AppState<RustBridge>,
-    run_hyps_tx: crossbeam_channel::Sender<HypRunRequest<RustBridge>>,
+    run_hyps_tx: tokio::sync::mpsc::UnboundedSender<HypRunRequest<RustBridge>>,
     source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
     session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     log_rx: crossbeam_channel::Receiver<LogMessage>
@@ -26,7 +26,7 @@ impl<'a> App<'a>
     pub fn new(
         layout: LayoutManagement<FileConfigurationSource<DockingLayout>>,
         state: &'a mut AppState<RustBridge>,
-        run_hyps_tx: crossbeam_channel::Sender<HypRunRequest<RustBridge>>,
+        run_hyps_tx: tokio::sync::mpsc::UnboundedSender<HypRunRequest<RustBridge>>,
         source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
         session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
         log_rx: crossbeam_channel::Receiver<LogMessage>

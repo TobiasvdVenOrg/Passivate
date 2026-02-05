@@ -36,6 +36,7 @@ camino.workspace = true
 eframe.workspace = true
 log.workspace = true
 itertools.workspace = true
+tokio.workspace = true
 maybe-owned.workspace = true
 
 [dev-dependencies]

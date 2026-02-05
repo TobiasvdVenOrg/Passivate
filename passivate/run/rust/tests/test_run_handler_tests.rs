@@ -31,9 +31,21 @@ use passivate_testing::test_snapshot_path::TestSnapshotPath;
 use crate::helpers::HandleHypRunTrigger;
 
 #[test]
+pub fn bla()
+{
+    eprintln!("BLA");
+
+    thread::sleep(Duration::from_secs(4));
+
+    eprintln!("BLA2");
+}
+
+#[test]
 pub fn hyp_run_thread_cancels_run_upon_new_request()
 {
-    let (hyp_run_trigger_tx, hyp_run_trigger_rx) = crossbeam_channel::unbounded();
+    println!("start hyp_run_thread_cancels_run_upon_new_request");
+
+    let (hyp_run_trigger_tx, hyp_run_trigger_rx) = tokio::sync::mpsc::unbounded_channel();
     let mut hyp_session_bridge = MockHypSessionBridge::new();
 
     let mut cancel_then_complete = Sequence::new();
@@ -59,7 +71,9 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
         });
 
     thread::scope(|scope| {
-        _ = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
+        let t = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
+
+        eprintln!("TX 1");
 
         hyp_run_trigger_tx
             .send(HypRunRequest {
@@ -68,6 +82,7 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             })
             .unwrap();
 
+        eprintln!("TX 2");
         hyp_run_trigger_tx
             .send(HypRunRequest {
                 kind: HypRunRequestKind::All,
@@ -75,9 +90,11 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             })
             .unwrap();
 
+        eprintln!("DROP TX");
         drop(hyp_run_trigger_tx);
 
-        // t.join().unwrap();
+        eprintln!("JOIN");
+        t.join().unwrap();
 
         // eprintln!("oi");
     });

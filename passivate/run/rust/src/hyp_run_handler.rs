@@ -1,9 +1,11 @@
 use std::thread;
+use std::time::Duration;
 
+use crossbeam_channel::select;
 use passivate_delegation::Rx;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
+use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{
     CancelRunBridge,
     CompleteRunBridge,
@@ -12,6 +14,7 @@ use passivate_model_bridge::hyp_session_bridge::{
     SendOutputBridge,
     StartRunBridge
 };
+use tokio::sync::oneshot;
 
 use crate::hyp_run_error::HypRunError;
 use crate::hyp_runner::RunHyps;
@@ -26,20 +29,69 @@ pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
 
 pub fn hyp_run_thread<'scope, 'env>(
     scope: &'scope thread::Scope<'scope, 'env>,
-    hyp_run_trigger_rx: impl Rx<HypRunRequest<RustBridge>> + 'scope,
+    mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
     mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
-    mut runner: impl RunHyps + Send + Sync + 'scope
+    mut runner: impl RunHyps + Send + Sync + 'static
 ) -> thread::ScopedJoinHandle<'scope, ()>
 {
+    eprintln!("start hyp_run_thread");
+
     scope.spawn(move || {
-        while let Ok(trigger) = hyp_run_trigger_rx.recv()
-        {
-            handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger);
-        }
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .worker_threads(1)
+            .enable_time()
+            .build()
+            .unwrap();
+
+        runtime.block_on(async {
+            loop
+            {
+                eprintln!("LOOP");
+
+                tokio::select! {
+                    request = hyp_run_trigger_rx.recv() => {
+                        eprintln!("RECV: {request:?}");
+                        //*current = countdown();
+                        //let trigger = hyp_run_trigger_rx.borrow_and_update();
+
+                        match request
+                        {
+                            Some(request) =>
+                            {
+                                hyp_session_bridge.start_run();
+                                countdown(request).await;
+                            },
+                            None => {
+                                hyp_session_bridge.complete_run();
+                                eprintln!("BREAK");
+                                break;
+                            }
+                        };
+                        //*current = handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger);
+                    }
+                }
+            }
+
+            eprintln!("EXIT LOOP");
+        });
+
+        eprintln!("EXIT BLOCKON");
     })
 }
 
-pub fn handle_hyp_run_trigger(
+async fn countdown(request: HypRunRequest<RustBridge>)
+{
+    eprintln!("start {request:?}");
+    eprintln!("3");
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    eprintln!("2");
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    eprintln!("1");
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    eprintln!("done {request:?}");
+}
+
+pub async fn handle_hyp_run_trigger(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     request: HypRunRequest<RustBridge>
@@ -51,8 +103,11 @@ pub fn handle_hyp_run_trigger(
 
     let result = match request.kind
     {
-        HypRunRequestKind::All => run_hyps(runner, hyp_session_bridge, request.options.compute_coverage),
-        HypRunRequestKind::Single { hyp_id } => run_hyp(runner, hyp_session_bridge, &hyp_id, request.options.update_snapshots)
+        HypRunRequestKind::All => run_hyps(runner, hyp_session_bridge, request.options.compute_coverage).await,
+        HypRunRequestKind::Single { hyp_id } =>
+        {
+            run_hyp(runner, hyp_session_bridge, &hyp_id, request.options.update_snapshots).await
+        }
     };
 
     match result
@@ -68,11 +123,9 @@ pub fn handle_hyp_run_trigger(
             hyp_session_bridge.run_error(test_error);
         }
     };
-
-    eprintln!("handle_hyp_run_trigger end");
 }
 
-fn run_hyps(
+async fn run_hyps(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     compute_coverage: bool
@@ -91,7 +144,7 @@ fn run_hyps(
     runner.run_hyps(compute_coverage, hyp_session_bridge, Vec::new())
 }
 
-fn run_hyp(
+async fn run_hyp(
     runner: &mut impl RunHyps,
     hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
     id: &HypId,

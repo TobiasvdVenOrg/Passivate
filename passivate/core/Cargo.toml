@@ -27,6 +27,7 @@ fs_extra.workspace = true
 futures.workspace = true
 guppy.workspace = true
 itertools.workspace = true
+tokio.workspace = true
 log.workspace = true
 mockall.workspace = true
 serde.workspace = true

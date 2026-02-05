@@ -30,6 +30,15 @@ where
     }
 }
 
+impl<T> Tx<T> for tokio::sync::mpsc::UnboundedSender<T>
+where
+    T: Send + Sync + 'static
+{
+    fn send(&self, message: T)
+    {
+        self.send(message).expect("failed to send t")
+    }
+}
 #[mockall::automock]
 pub trait Rx<T>: Send + Sync
 where
