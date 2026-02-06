@@ -1,5 +1,6 @@
-use std::thread;
+use std::pin::{Pin, pin};
 use std::time::Duration;
+use std::{future, thread};
 
 use crossbeam_channel::select;
 use passivate_delegation::Rx;
@@ -44,6 +45,10 @@ pub fn hyp_run_thread<'scope, 'env>(
             .unwrap();
 
         runtime.block_on(async {
+            let mut c: Pin<Box<dyn Future<Output = ()>>> = Box::pin(future::pending());
+
+            let mut bla = false;
+
             loop
             {
                 eprintln!("LOOP");
@@ -58,16 +63,35 @@ pub fn hyp_run_thread<'scope, 'env>(
                         {
                             Some(request) =>
                             {
+                                if bla
+                                {
+                                    hyp_session_bridge.cancel_run();
+                                }
+
+                                eprintln!("START");
                                 hyp_session_bridge.start_run();
-                                countdown(request).await;
+                                c = Box::pin(countdown(request));
+                                bla = true;
                             },
                             None => {
-                                hyp_session_bridge.complete_run();
                                 eprintln!("BREAK");
+
+                                if bla
+                                {
+                                    eprintln!("WAIT");
+                                    c.await;
+                                    eprintln!("CONTINUE");
+                                }
+
+                                hyp_session_bridge.complete_run();
                                 break;
                             }
                         };
                         //*current = handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger);
+                    }
+
+                    running = c.as_mut() => {
+                        eprintln!("DONE");
                     }
                 }
             }

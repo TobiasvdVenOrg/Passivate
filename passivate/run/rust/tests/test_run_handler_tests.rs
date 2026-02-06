@@ -31,16 +31,6 @@ use passivate_testing::test_snapshot_path::TestSnapshotPath;
 use crate::helpers::HandleHypRunTrigger;
 
 #[test]
-pub fn bla()
-{
-    eprintln!("BLA");
-
-    thread::sleep(Duration::from_secs(4));
-
-    eprintln!("BLA2");
-}
-
-#[test]
 pub fn hyp_run_thread_cancels_run_upon_new_request()
 {
     println!("start hyp_run_thread_cancels_run_upon_new_request");
