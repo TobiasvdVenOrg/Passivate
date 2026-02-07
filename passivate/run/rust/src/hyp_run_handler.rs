@@ -1,4 +1,5 @@
 use std::pin::{Pin, pin};
+use std::process::Output;
 use std::time::Duration;
 use std::{future, thread};
 
@@ -15,7 +16,7 @@ use passivate_model_bridge::hyp_session_bridge::{
     SendOutputBridge,
     StartRunBridge
 };
-use tokio::sync::oneshot;
+use tokio_util::sync::CancellationToken;
 
 use crate::hyp_run_error::HypRunError;
 use crate::hyp_runner::RunHyps;
@@ -28,12 +29,74 @@ pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
     + CancelRunBridge<TBridge>
     + RunErrorBridge<TBridge>;
 
-pub fn hyp_run_thread<'scope, 'env>(
+struct HypRunContext<THypSessionBridge, TRunHyps>
+where
+    THypSessionBridge: HypSessionBridge<RustBridge>,
+    TRunHyps: RunHyps
+{
+    hyp_session_bridge: THypSessionBridge,
+    run_hyps: TRunHyps
+}
+
+impl<THypSessionBridge, TRunHyps> HypRunContext<THypSessionBridge, TRunHyps>
+where
+    THypSessionBridge: HypSessionBridge<RustBridge>,
+    TRunHyps: RunHyps
+{
+    async fn pending_hyp_run(self, cancellation: CancellationToken) -> Self
+    {
+        let pending = future::pending();
+
+        tokio::select! {
+            _ = pending => {
+                unreachable!()
+            }
+
+            _ = cancellation.cancelled() => {
+
+            }
+        };
+
+        self
+    }
+
+    async fn countdown(mut self, request: HypRunRequest<RustBridge>, cancellation: CancellationToken) -> Self
+    {
+        eprintln!("start {request:?}");
+        self.hyp_session_bridge.start_run();
+
+        for count in (0 .. 3).rev().map(|c| c + 1)
+        {
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(1)) => {
+                    eprintln!("{count}");
+                }
+
+                _ = cancellation.cancelled() => {
+                    eprintln!("CANCEL");
+                    self.hyp_session_bridge.cancel_run();
+                    return self;
+                }
+            };
+        }
+
+        eprintln!("done {request:?}");
+
+        self.hyp_session_bridge.complete_run();
+
+        self
+    }
+}
+
+pub fn hyp_run_thread<'scope, 'env, THypSessionBridge, TRunHyps>(
     scope: &'scope thread::Scope<'scope, 'env>,
     mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
-    mut hyp_session_bridge: impl HypSessionBridge<RustBridge>,
-    mut runner: impl RunHyps + Send + Sync + 'static
+    hyp_session_bridge: THypSessionBridge,
+    run_hyps: TRunHyps
 ) -> thread::ScopedJoinHandle<'scope, ()>
+where
+    THypSessionBridge: HypSessionBridge<RustBridge>,
+    TRunHyps: RunHyps + Send + Sync + 'static
 {
     eprintln!("start hyp_run_thread");
 
@@ -45,9 +108,13 @@ pub fn hyp_run_thread<'scope, 'env>(
             .unwrap();
 
         runtime.block_on(async {
-            let mut c: Pin<Box<dyn Future<Output = ()>>> = Box::pin(future::pending());
-
-            let mut bla = false;
+            let mut cancellation = tokio_util::sync::CancellationToken::new();
+            let context = HypRunContext {
+                hyp_session_bridge,
+                run_hyps
+            };
+            let mut running_request: Pin<Box<dyn Future<Output = HypRunContext<THypSessionBridge, TRunHyps>>>> =
+                Box::pin(context.pending_hyp_run(cancellation.child_token()));
 
             loop
             {
@@ -63,34 +130,23 @@ pub fn hyp_run_thread<'scope, 'env>(
                         {
                             Some(request) =>
                             {
-                                if bla
-                                {
-                                    hyp_session_bridge.cancel_run();
-                                }
-
                                 eprintln!("START");
-                                hyp_session_bridge.start_run();
-                                c = Box::pin(countdown(request));
-                                bla = true;
+
+                                cancellation.cancel();
+                                let context = running_request.await;
+                                cancellation = CancellationToken::new();
+                                running_request = Box::pin(context.countdown(request, cancellation.child_token()));
                             },
                             None => {
                                 eprintln!("BREAK");
-
-                                if bla
-                                {
-                                    eprintln!("WAIT");
-                                    c.await;
-                                    eprintln!("CONTINUE");
-                                }
-
-                                hyp_session_bridge.complete_run();
+                                //cancellation.cancel();
+                                _ = running_request.await;
                                 break;
                             }
                         };
-                        //*current = handle_hyp_run_trigger(&mut runner, &mut hyp_session_bridge, trigger);
                     }
 
-                    running = c.as_mut() => {
+                    _ = running_request.as_mut() => {
                         eprintln!("DONE");
                     }
                 }
@@ -101,18 +157,6 @@ pub fn hyp_run_thread<'scope, 'env>(
 
         eprintln!("EXIT BLOCKON");
     })
-}
-
-async fn countdown(request: HypRunRequest<RustBridge>)
-{
-    eprintln!("start {request:?}");
-    eprintln!("3");
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    eprintln!("2");
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    eprintln!("1");
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    eprintln!("done {request:?}");
 }
 
 pub async fn handle_hyp_run_trigger(

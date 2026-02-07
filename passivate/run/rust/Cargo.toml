@@ -29,6 +29,7 @@ itertools.workspace = true
 stdext.workspace = true
 mockall.workspace = true
 tokio.workspace = true
+tokio-util.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../../testing" }
