@@ -1,8 +1,5 @@
 #![feature(trait_alias)]
 
-#[macro_use]
-extern crate enum_display_derive;
-
 pub mod bridge;
 pub mod bridge_hyp;
 pub mod hyp_report;

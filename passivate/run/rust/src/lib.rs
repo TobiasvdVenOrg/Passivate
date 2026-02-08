@@ -1,4 +1,5 @@
 #![feature(trait_alias)]
+#![feature(never_type)]
 
 pub mod hyp_run_error;
 pub mod hyp_run_handler;

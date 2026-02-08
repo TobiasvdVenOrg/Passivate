@@ -13,4 +13,3 @@ bon.workspace = true
 camino.workspace = true
 dunce.workspace = true
 log.workspace = true
-enum-display-derive.workspace = true

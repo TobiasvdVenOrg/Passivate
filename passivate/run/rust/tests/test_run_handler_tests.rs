@@ -6,7 +6,7 @@ extern crate assert_matches;
 use std::io::Error as IoError;
 use std::sync::Arc;
 use std::time::Duration;
-use std::{fs, thread};
+use std::fs;
 
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;
@@ -53,10 +53,7 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
     let mut runner = MockRunHyps::new();
     runner
         .expect_run_hyps()
-        .returning(|_, _: &mut MockHypSessionBridge<RustBridge>, _| {
-            thread::sleep(Duration::from_secs(1)); // sleep to give time for cancellation to come in
-            Ok(())
-        });
+        .returning(|_, _: &mut MockHypSessionBridge<RustBridge>, _| Ok(()));
 
     let runtime = hyp_run_handler::build_tokio_runtime();
     let handle = spawn_hyp_run_future(&runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);

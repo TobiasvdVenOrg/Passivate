@@ -10,7 +10,6 @@ passivate_delegation = { path = "../../delegation" }
 
 camino.workspace = true
 mockall.workspace = true
-enum-display-derive.workspace = true
 log.workspace = true
 
 [dev-dependencies]

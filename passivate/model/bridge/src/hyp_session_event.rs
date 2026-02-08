@@ -4,7 +4,7 @@ use crate::bridge::Bridge;
 use crate::hyp_report::HypReport;
 use crate::output_report::OutputReport;
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CompilationMessageKind
 {
     Info,
@@ -50,7 +50,7 @@ impl Display for CompilationMessage
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        write!(f, "{}: {}", self.kind, self.content)
+        write!(f, "{:?}: {}", self.kind, self.content)
     }
 }
 

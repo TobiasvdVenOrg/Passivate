@@ -13,7 +13,6 @@ log.workspace = true
 camino.workspace = true
 itertools.workspace = true
 thiserror.workspace = true
-enum-display-derive.workspace = true
 
 [dev-dependencies]
 passivate_testing = { path = "../../testing" }

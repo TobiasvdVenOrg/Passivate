@@ -92,7 +92,7 @@ where
 {
     fn cancel_run(&mut self)
     {
-        log::info!("complete_run");
+        log::info!("cancel_run");
         self.send(HypSessionEvent::RunCancelled);
     }
 }

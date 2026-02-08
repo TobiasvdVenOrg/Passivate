@@ -163,10 +163,17 @@ impl IdChain for TestHypKind
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TestOutput
 {
     Compilation(CompilationMessage)
+}
+
+impl Display for TestOutput
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
 }
 
 impl<T> From<T> for TestOutput

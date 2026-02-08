@@ -18,6 +18,7 @@ passivate_id_chain_tree = { path = "../../id_chain_tree" }
 nextest-runner = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-runner" }
 nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-filtering" }
 
+async-trait.workspace = true
 log.workspace = true
 bon.workspace = true
 crossbeam-channel.workspace = true
