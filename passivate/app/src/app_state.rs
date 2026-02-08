@@ -359,7 +359,7 @@ pub mod tests
     #[test]
     pub fn configuring_snapshots_path_starts_a_hyp_run()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().return_const(()).once();
 
