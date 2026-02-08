@@ -85,7 +85,7 @@ where
     }
 }
 
-pub fn hyp_run_tokio_runtime() -> tokio::runtime::Runtime
+pub fn build_tokio_runtime() -> tokio::runtime::Runtime
 {
     tokio::runtime::Builder::new_current_thread()
         .worker_threads(1)
@@ -96,56 +96,55 @@ pub fn hyp_run_tokio_runtime() -> tokio::runtime::Runtime
 
 pub fn hyp_run_thread<'scope, 'env, THypSessionBridge, TRunHyps>(
     scope: &'scope thread::Scope<'scope, 'env>,
-    runtime: tokio::runtime::Runtime,
+    runtime: &'env tokio::runtime::Runtime,
     mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
     hyp_session_bridge: THypSessionBridge,
     run_hyps: TRunHyps
-) -> thread::ScopedJoinHandle<'scope, ()>
+)
+-> tokio::task::JoinHandle<()>
 where
     THypSessionBridge: HypSessionBridge<RustBridge>,
     TRunHyps: RunHyps + Send + Sync + 'static
 {
-    scope.spawn(move || {
-        runtime.block_on(async {
-            let mut cancellation = tokio_util::sync::CancellationToken::new();
-            let context = HypRunContext {
-                hyp_session_bridge,
-                run_hyps
-            };
-            let mut running_request: Pin<Box<dyn Future<Output = HypRunContext<THypSessionBridge, TRunHyps>>>> =
-                Box::pin(context.pending_hyp_run(cancellation.child_token()));
+    runtime.spawn(async move {
+        let mut cancellation = tokio_util::sync::CancellationToken::new();
+        let context = HypRunContext {
+            hyp_session_bridge,
+            run_hyps
+        };
+        let mut running_request: Pin<Box<dyn Future<Output = HypRunContext<THypSessionBridge, TRunHyps>> + Send>> =
+            Box::pin(context.pending_hyp_run(cancellation.child_token()));
 
-            loop
-            {
-                tokio::select! {
-                    request = hyp_run_trigger_rx.recv() => {
+        loop
+        {
+            tokio::select! {
+                request = hyp_run_trigger_rx.recv() => {
 
-                        match request
+                    match request
+                    {
+                        Some(request) =>
                         {
-                            Some(request) =>
-                            {
-                                // New request, cancel a running request first and retrieve the context, then start the handling the new request
-                                cancellation.cancel();
-                                let context = running_request.await;
-                                cancellation = CancellationToken::new();
-                                running_request = Box::pin(context.countdown(request, cancellation.child_token()));
-                            },
-                            None => {
-                                // Channel closed, cancel a running request
-                                cancellation.cancel();
-                                _ = running_request.await;
-                                break;
-                            }
-                        };
-                    }
+                            // New request, cancel a running request first and retrieve the context, then start the handling the new request
+                            cancellation.cancel();
+                            let context = running_request.await;
+                            cancellation = CancellationToken::new();
+                            running_request = Box::pin(context.countdown(request, cancellation.child_token()));
+                        },
+                        None => {
+                            // Channel closed, cancel a running request
+                            cancellation.cancel();
+                            _ = running_request.await;
+                            break;
+                        }
+                    };
+                }
 
-                    context = running_request.as_mut() => {
-                        // A request completed
-                        running_request = Box::pin(context.pending_hyp_run(cancellation.child_token()));
-                    }
-                };
+                context = running_request.as_mut() => {
+                    // A request completed
+                    running_request = Box::pin(context.pending_hyp_run(cancellation.child_token()));
+                }
             };
-        });
+        };
     })
 }
 

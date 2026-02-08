@@ -11,9 +11,10 @@ use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::source_change_event::SourceChangeEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
-use passivate_run_rust::hyp_run_handler::{hyp_run_thread, hyp_run_tokio_runtime};
+use passivate_run_rust::hyp_run_handler::hyp_run_thread;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_run_rust::model::RustBridge;
+use tokio::runtime::Runtime;
 
 use crate::passivate_args::PassivateArgs;
 use crate::passivate_state::PassivateState;
@@ -44,7 +45,8 @@ impl PassivateCore
 
 pub fn compose<'scope, 'env>(
     args: PassivateArgs,
-    scope: &'scope thread::Scope<'scope, 'env>
+    scope: &'scope thread::Scope<'scope, 'env>,
+    runtime: &'env Runtime
 ) -> Result<PassivateCore, StartupError>
 {
     let log_rx = initialize_logger()?;
@@ -70,7 +72,6 @@ pub fn compose<'scope, 'env>(
 
     let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
 
-    let runtime = hyp_run_tokio_runtime();
     hyp_run_thread(scope, runtime, hyp_run_rx, session_event_tx, hyp_runner);
 
     // Notify

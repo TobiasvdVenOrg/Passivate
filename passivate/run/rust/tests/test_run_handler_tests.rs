@@ -16,12 +16,12 @@ use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
-use passivate_model_bridge::hyp_session_bridge::{self, CancelRunBridge, CompleteRunBridge, MockHypSessionBridge};
+use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
 use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_run_rust::hyp_run_error::HypRunError;
-use passivate_run_rust::hyp_run_handler::{hyp_run_thread, hyp_run_tokio_runtime};
+use passivate_run_rust::hyp_run_handler::{self, hyp_run_thread};
 use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_run_rust::nextest_error::NextestError;
@@ -60,9 +60,10 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             Ok(())
         });
 
+    let runtime = hyp_run_handler::build_tokio_runtime();
+
     thread::scope(|scope| {
-        let runtime = hyp_run_tokio_runtime();
-        _ = hyp_run_thread(scope, runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
+        let handle = hyp_run_thread(scope, &runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
 
         hyp_run_trigger_tx
             .send(HypRunRequest {
@@ -78,7 +79,18 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             })
             .unwrap();
 
-        thread::sleep(Duration::from_secs(6));
+        runtime.block_on(async {
+            tokio::select! {
+                _ = handle => {
+
+                }
+
+                _ = tokio::time::sleep(Duration::from_secs(6)) => {
+
+                }
+            };
+        });
+
         drop(hyp_run_trigger_tx);
     });
 }

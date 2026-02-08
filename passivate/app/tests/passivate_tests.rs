@@ -2,10 +2,10 @@ use std::thread;
 
 use libtest_mimic::Failed;
 use passivate_hyp_names::test_name;
+use passivate_run_rust::hyp_run_handler;
 use passivate_testing::test_data_setup::TestDataSetup;
 
-#[tokio::main]
-async fn main()
+fn main()
 {
     use libtest_mimic::{Arguments, Trial};
 
@@ -34,8 +34,10 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
         .manifest_directory(setup.workspace_path())
         .build();
 
+    let runtime = hyp_run_handler::build_tokio_runtime();
+
     thread::scope(|scope| {
-        let passivate = compose(args, scope)?;
+        let passivate = compose(args, scope, &runtime)?;
         run_app_and_get_context(passivate,
             Box::new(move |context: egui::Context| {
                 task::spawn(async move {
