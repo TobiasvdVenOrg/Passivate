@@ -180,6 +180,7 @@ pub mod tests
     use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_bridge::source_change_event::SourceChangeEvent;
+    use passivate_run_rust::hyp_run_handler::HypSessionBridge;
     use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestSession};
 
@@ -215,8 +216,12 @@ pub mod tests
     #[test]
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
-        let (session_tx, session_rx) = crossbeam_channel::unbounded();
+        let (mut session_tx, session_rx) = crossbeam_channel::unbounded();
         let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+
+        let views = PassivateViews::stub();
+        let session_tab = layout.dock_state().find_tab(&views.session_dock().id()).unwrap();
+        layout.dock_state().set_active_tab(session_tab);
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
@@ -224,16 +229,19 @@ pub mod tests
                 .call();
         });
 
+        let hyp_info = example_hyp();
+        let hyp_report = HypReport::new_fixed(hyp_info, HypState::Passed);
+
+        session_tx.start_run();
+        ui.step();
+        session_tx.send_hyp(hyp_report);
+        ui.step();
+        session_tx.complete_run();
         ui.step();
 
         let test_entry = ui.get_by_label("example_test");
         test_entry.click();
         ui.step();
-
-        let hyp_info = example_hyp();
-        let hyp_report = HypReport::new_fixed(hyp_info, HypState::Passed);
-
-        session_tx.send(HypSessionEvent::Hyp(hyp_report)).unwrap();
 
         ui.step();
         ui.snapshot(&test_name!());
