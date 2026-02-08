@@ -147,25 +147,3 @@ where
         };
     })
 }
-
-pub async fn handle_hyp_run_trigger(
-    runner: &mut impl RunHyps,
-    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    request: HypRunRequest<RustBridge>
-)
-{
-    eprintln!("handle_hyp_run_trigger start");
-}
-
-pub async fn handle_hyp_run_trigger2<THypSessionBridge, TRunHyps>(
-    runner: TRunHyps,
-    hyp_session_bridge: THypSessionBridge,
-    request: HypRunRequest<RustBridge>,
-    cancellation: CancellationToken
-)
-where
-    THypSessionBridge: HypSessionBridge<RustBridge>,
-    TRunHyps: RunHyps + Send + Sync + 'static
-{
-    eprintln!("handle_hyp_run_trigger start");
-}

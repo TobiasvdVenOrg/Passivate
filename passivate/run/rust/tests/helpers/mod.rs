@@ -1,6 +1,6 @@
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
-use passivate_run_rust::hyp_run_handler::{self, HypSessionBridge, build_tokio_runtime, handle_hyp_run_trigger};
+use passivate_run_rust::hyp_run_handler::{self, HypSessionBridge};
 use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps, RunHyps};
 use passivate_run_rust::model::RustBridge;
 use passivate_testing::test_data_setup::TestDataSetup;
@@ -93,7 +93,7 @@ where
 {
     pub fn call(&mut self, request: HypRunRequest<RustBridge>)
     {
-        let runtime = self.runtime.get_or_insert(build_tokio_runtime());
+        let runtime = self.runtime.get_or_insert(hyp_run_handler::build_tokio_runtime());
         let cancellation = self.cancellation.get_or_insert(CancellationToken::new()).child_token();
 
         runtime.block_on(async {
