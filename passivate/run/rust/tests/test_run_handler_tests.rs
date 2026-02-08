@@ -21,7 +21,7 @@ use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_run_rust::hyp_run_error::HypRunError;
-use passivate_run_rust::hyp_run_handler::hyp_run_thread;
+use passivate_run_rust::hyp_run_handler::{hyp_run_thread, hyp_run_tokio_runtime};
 use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_run_rust::nextest_error::NextestError;
@@ -61,7 +61,8 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
         });
 
     thread::scope(|scope| {
-        _ = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
+        let runtime = hyp_run_tokio_runtime();
+        _ = hyp_run_thread(scope, runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
 
         hyp_run_trigger_tx
             .send(HypRunRequest {

@@ -85,8 +85,18 @@ where
     }
 }
 
+pub fn hyp_run_tokio_runtime() -> tokio::runtime::Runtime
+{
+    tokio::runtime::Builder::new_current_thread()
+        .worker_threads(1)
+        .enable_time()
+        .build()
+        .unwrap()
+}
+
 pub fn hyp_run_thread<'scope, 'env, THypSessionBridge, TRunHyps>(
     scope: &'scope thread::Scope<'scope, 'env>,
+    runtime: tokio::runtime::Runtime,
     mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
     hyp_session_bridge: THypSessionBridge,
     run_hyps: TRunHyps
@@ -96,12 +106,6 @@ where
     TRunHyps: RunHyps + Send + Sync + 'static
 {
     scope.spawn(move || {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .worker_threads(1)
-            .enable_time()
-            .build()
-            .unwrap();
-
         runtime.block_on(async {
             let mut cancellation = tokio_util::sync::CancellationToken::new();
             let context = HypRunContext {
