@@ -1,5 +1,3 @@
-use std::thread;
-
 use clap::Parser;
 use passivate::start;
 use passivate_core::compose::compose;
@@ -12,9 +10,6 @@ fn main() -> Result<(), StartupError>
     let args = PassivateArgs::parse();
 
     let runtime = hyp_run_handler::build_tokio_runtime();
-
-    thread::scope(|scope| {
-        let passivate = compose(args, scope, &runtime)?;
-        start::run_app(passivate)
-    })
+    let passivate = compose(args, &runtime)?;
+    start::run_app(passivate)
 }

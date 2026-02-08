@@ -1,5 +1,3 @@
-use std::thread;
-
 use libtest_mimic::Failed;
 use passivate_hyp_names::test_name;
 use passivate_run_rust::hyp_run_handler;
@@ -36,23 +34,22 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
 
     let runtime = hyp_run_handler::build_tokio_runtime();
 
-    thread::scope(|scope| {
-        let passivate = compose(args, scope, &runtime)?;
-        run_app_and_get_context(passivate,
-            Box::new(move |context: egui::Context| {
-                task::spawn(async move {
-                    // Asynchronously send a close window command to passivate after some delay
-                    time::sleep(Duration::from_secs(4)).await;
+    let passivate = compose(args, &runtime)?;
 
-                    context.send_viewport_cmd(egui::ViewportCommand::Close);
-                });
-            })
-        )
-        .map_err(|error|
-        {
-            eprintln!("{:?}", error);
-            error
+    run_app_and_get_context(passivate,
+        Box::new(move |context: egui::Context| {
+            task::spawn(async move {
+                // Asynchronously send a close window command to passivate after some delay
+                time::sleep(Duration::from_secs(4)).await;
+
+                context.send_viewport_cmd(egui::ViewportCommand::Close);
+            });
         })
+    )
+    .map_err(|error|
+    {
+        eprintln!("{:?}", error);
+        error
     })?;
 
     // This test does not assert, it exists to ensure that passivate starts (the context_accessor is invoked) and exits without hanging

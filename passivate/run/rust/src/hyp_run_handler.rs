@@ -1,6 +1,6 @@
 use std::pin::Pin;
 use std::time::Duration;
-use std::{future, thread};
+use std::future;
 
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
@@ -94,9 +94,8 @@ pub fn build_tokio_runtime() -> tokio::runtime::Runtime
         .unwrap()
 }
 
-pub fn hyp_run_thread<'scope, 'env, THypSessionBridge, TRunHyps>(
-    scope: &'scope thread::Scope<'scope, 'env>,
-    runtime: &'env tokio::runtime::Runtime,
+pub fn spawn_hyp_run_future<THypSessionBridge, TRunHyps>(
+    runtime: &tokio::runtime::Runtime,
     mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
     hyp_session_bridge: THypSessionBridge,
     run_hyps: TRunHyps

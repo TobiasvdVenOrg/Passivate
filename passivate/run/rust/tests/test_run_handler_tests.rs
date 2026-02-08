@@ -21,7 +21,7 @@ use passivate_model_bridge::hyp_session_event::{ConsoleOutput, HypSessionEvent};
 use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_run_rust::hyp_run_error::HypRunError;
-use passivate_run_rust::hyp_run_handler::{self, hyp_run_thread};
+use passivate_run_rust::hyp_run_handler::{self, spawn_hyp_run_future};
 use passivate_run_rust::hyp_runner::MockRunHyps;
 use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_run_rust::nextest_error::NextestError;
@@ -33,8 +33,6 @@ use crate::helpers::HandleHypRunTrigger;
 #[test]
 pub fn hyp_run_thread_cancels_run_upon_new_request()
 {
-    println!("start hyp_run_thread_cancels_run_upon_new_request");
-
     let (hyp_run_trigger_tx, hyp_run_trigger_rx) = tokio::sync::mpsc::unbounded_channel();
     let mut hyp_session_bridge = MockHypSessionBridge::new();
 
@@ -61,38 +59,27 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
         });
 
     let runtime = hyp_run_handler::build_tokio_runtime();
+    let handle = spawn_hyp_run_future(&runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
 
-    thread::scope(|scope| {
-        let handle = hyp_run_thread(scope, &runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
+    hyp_run_trigger_tx
+        .send(HypRunRequest {
+            kind: HypRunRequestKind::All,
+            options: HypRunOptions::default()
+        })
+        .unwrap();
 
-        hyp_run_trigger_tx
-            .send(HypRunRequest {
-                kind: HypRunRequestKind::All,
-                options: HypRunOptions::default()
-            })
-            .unwrap();
+    hyp_run_trigger_tx
+        .send(HypRunRequest {
+            kind: HypRunRequestKind::All,
+            options: HypRunOptions::default()
+        })
+        .unwrap();
 
-        hyp_run_trigger_tx
-            .send(HypRunRequest {
-                kind: HypRunRequestKind::All,
-                options: HypRunOptions::default()
-            })
-            .unwrap();
-
-        runtime.block_on(async {
-            tokio::select! {
-                _ = handle => {
-
-                }
-
-                _ = tokio::time::sleep(Duration::from_secs(6)) => {
-
-                }
-            };
-        });
-
-        drop(hyp_run_trigger_tx);
+    runtime.block_on(async {
+        _ = tokio::time::timeout(Duration::from_secs(6), handle).await;
     });
+
+    drop(hyp_run_trigger_tx);
 }
 
 #[test]

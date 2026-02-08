@@ -1,5 +1,5 @@
+use std::env;
 use std::sync::OnceLock;
-use std::{env, thread};
 
 use camino::Utf8PathBuf;
 use passivate_configuration::configuration_manager::ConfigurationManager;
@@ -11,7 +11,7 @@ use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::source_change_event::SourceChangeEvent;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
-use passivate_run_rust::hyp_run_handler::hyp_run_thread;
+use passivate_run_rust::hyp_run_handler;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_run_rust::model::RustBridge;
 use tokio::runtime::Runtime;
@@ -43,11 +43,7 @@ impl PassivateCore
     }
 }
 
-pub fn compose<'scope, 'env>(
-    args: PassivateArgs,
-    scope: &'scope thread::Scope<'scope, 'env>,
-    runtime: &'env Runtime
-) -> Result<PassivateCore, StartupError>
+pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, StartupError>
 {
     let log_rx = initialize_logger()?;
 
@@ -72,7 +68,7 @@ pub fn compose<'scope, 'env>(
 
     let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
 
-    hyp_run_thread(scope, runtime, hyp_run_rx, session_event_tx, hyp_runner);
+    hyp_run_handler::spawn_hyp_run_future(runtime, hyp_run_rx, session_event_tx, hyp_runner);
 
     // Notify
     let change_events = NotifyChangeEvents::new(&workspace_path, source_change_tx)?;
