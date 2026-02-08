@@ -177,10 +177,8 @@ pub mod tests
     use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
     use passivate_model_bridge::hyp_run_request::HypRunOptions;
     use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, StartRunBridge};
-    use passivate_model_bridge::hyp_session_event::HypSessionEvent;
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_bridge::source_change_event::SourceChangeEvent;
-    use passivate_run_rust::hyp_run_handler::HypSessionBridge;
     use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestSession};
 
