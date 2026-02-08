@@ -1,13 +1,10 @@
-use std::pin::{Pin, pin};
-use std::process::Output;
+use std::pin::Pin;
 use std::time::Duration;
 use std::{future, thread};
 
-use crossbeam_channel::select;
-use passivate_delegation::Rx;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
-use passivate_model_bridge::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};
+use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{
     CancelRunBridge,
     CompleteRunBridge,
@@ -98,8 +95,6 @@ where
     THypSessionBridge: HypSessionBridge<RustBridge>,
     TRunHyps: RunHyps + Send + Sync + 'static
 {
-    eprintln!("start hyp_run_thread");
-
     scope.spawn(move || {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .worker_threads(1)
@@ -118,44 +113,35 @@ where
 
             loop
             {
-                eprintln!("LOOP");
-
                 tokio::select! {
                     request = hyp_run_trigger_rx.recv() => {
-                        eprintln!("RECV: {request:?}");
-                        //*current = countdown();
-                        //let trigger = hyp_run_trigger_rx.borrow_and_update();
 
                         match request
                         {
                             Some(request) =>
                             {
-                                eprintln!("START");
-
+                                // New request, cancel a running request first and retrieve the context, then start the handling the new request
                                 cancellation.cancel();
                                 let context = running_request.await;
                                 cancellation = CancellationToken::new();
                                 running_request = Box::pin(context.countdown(request, cancellation.child_token()));
                             },
                             None => {
-                                eprintln!("BREAK");
-                                //cancellation.cancel();
+                                // Channel closed, cancel a running request
+                                cancellation.cancel();
                                 _ = running_request.await;
                                 break;
                             }
                         };
                     }
 
-                    _ = running_request.as_mut() => {
-                        eprintln!("DONE");
+                    context = running_request.as_mut() => {
+                        // A request completed
+                        running_request = Box::pin(context.pending_hyp_run(cancellation.child_token()));
                     }
-                }
-            }
-
-            eprintln!("EXIT LOOP");
+                };
+            };
         });
-
-        eprintln!("EXIT BLOCKON");
     })
 }
 

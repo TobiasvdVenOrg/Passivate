@@ -61,9 +61,7 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
         });
 
     thread::scope(|scope| {
-        let t = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
-
-        eprintln!("TX 1");
+        _ = hyp_run_thread(scope, hyp_run_trigger_rx, hyp_session_bridge, runner);
 
         hyp_run_trigger_tx
             .send(HypRunRequest {
@@ -72,7 +70,6 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             })
             .unwrap();
 
-        eprintln!("TX 2");
         hyp_run_trigger_tx
             .send(HypRunRequest {
                 kind: HypRunRequestKind::All,
@@ -80,13 +77,8 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
             })
             .unwrap();
 
-        eprintln!("DROP TX");
+        thread::sleep(Duration::from_secs(6));
         drop(hyp_run_trigger_tx);
-
-        eprintln!("JOIN");
-        t.join().unwrap();
-
-        // eprintln!("oi");
     });
 }
 
