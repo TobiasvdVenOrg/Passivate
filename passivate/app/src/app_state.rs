@@ -138,7 +138,12 @@ impl<TBridge: Bridge> AppState<TBridge>
 
         if rerun_required
         {
-            run_hyps.run_all(HypRunOptions::default());
+            let configuration = &*self.configuration.acquire();
+
+            run_hyps.run_all(HypRunOptions {
+                update_snapshots: false,
+                compute_coverage: configuration.coverage_enabled
+            });
         }
     }
 }
@@ -275,13 +280,17 @@ pub mod tests
     #[test]
     pub fn when_configuration_view_enables_coverage_hyps_run_with_coverage_enabled()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().once().with(eq(HypRunOptions {
             compute_coverage: true,
             ..Default::default()
         }));
         mock_run_hyps.expect_run_single().never();
+
+        let views = PassivateViews::stub();
+        let configuration_tab = layout.dock_state().find_tab(&views.configuration_dock().id()).unwrap();
+        layout.dock_state().set_active_tab(configuration_tab);
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             UpdateApp::with(&mut app_state, ui.ctx(), &mut layout)
