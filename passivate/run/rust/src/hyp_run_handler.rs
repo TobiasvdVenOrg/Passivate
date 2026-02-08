@@ -1,8 +1,6 @@
 use std::pin::Pin;
-use std::time::Duration;
 use std::future;
 
-use passivate_hyp_names::hyp_id::HypId;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_request::{HypRunRequest, HypRunRequestKind};
 use passivate_model_bridge::hyp_session_bridge::{
@@ -26,63 +24,69 @@ pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
     + CancelRunBridge<TBridge>
     + RunErrorBridge<TBridge>;
 
-struct HypRunContext<THypSessionBridge, TRunHyps>
+async fn pending_hyp_run<THypSessionBridge, TRunHyps>(hyp_session_bridge: THypSessionBridge, run_hyps: TRunHyps, cancellation: CancellationToken) -> (THypSessionBridge, TRunHyps)
 where
     THypSessionBridge: HypSessionBridge<RustBridge>,
-    TRunHyps: RunHyps
+    TRunHyps: RunHyps + Send
 {
-    hyp_session_bridge: THypSessionBridge,
-    run_hyps: TRunHyps
+    cancellation.run_until_cancelled(future::pending::<!>()).await;
+
+    (hyp_session_bridge, run_hyps)
 }
 
-impl<THypSessionBridge, TRunHyps> HypRunContext<THypSessionBridge, TRunHyps>
+pub async fn handle_request<THypSessionBridge, TRunHyps>(
+    hyp_session_bridge: &mut THypSessionBridge,
+    run_hyps: &mut TRunHyps,
+    request: HypRunRequest<RustBridge>,
+    cancellation: CancellationToken
+)
 where
     THypSessionBridge: HypSessionBridge<RustBridge>,
-    TRunHyps: RunHyps
+    TRunHyps: RunHyps + Send + Sync + 'static
 {
-    async fn pending_hyp_run(self, cancellation: CancellationToken) -> Self
+    hyp_session_bridge.start_run();
+
+    let task: Pin<Box<dyn Future<Output = Result<(), HypRunError>> + Send>> = match request.kind
     {
-        let pending = future::pending();
-
-        tokio::select! {
-            _ = pending => {
-                unreachable!()
-            }
-
-            _ = cancellation.cancelled() => {
-
-            }
-        };
-
-        self
-    }
-
-    async fn countdown(mut self, request: HypRunRequest<RustBridge>, cancellation: CancellationToken) -> Self
-    {
-        eprintln!("start {request:?}");
-        self.hyp_session_bridge.start_run();
-
-        for count in (0 .. 3).rev().map(|c| c + 1)
+        HypRunRequestKind::All => Box::pin(run_hyps.run_hyps(request.options.compute_coverage, hyp_session_bridge, Vec::new())),
+        HypRunRequestKind::Single { hyp_id } =>
         {
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(1)) => {
-                    eprintln!("{count}");
-                }
-
-                _ = cancellation.cancelled() => {
-                    eprintln!("CANCEL");
-                    self.hyp_session_bridge.cancel_run();
-                    return self;
-                }
-            };
+            Box::pin(run_hyps.run_hyp( hyp_id, request.options.update_snapshots,  hyp_session_bridge))
         }
+    };
 
-        eprintln!("done {request:?}");
+    let result = cancellation.run_until_cancelled(task).await;
 
-        self.hyp_session_bridge.complete_run();
+    match result
+    {
+        Some(Ok(_)) =>
+        {
+            hyp_session_bridge.complete_run();
+        }
+        Some(Err(test_error)) =>
+        {
+            hyp_session_bridge.run_error(test_error);
+        }
+        None =>
+        {
+            hyp_session_bridge.cancel_run();
+        }
+    };
+}
 
-        self
-    }
+async fn handle_request_take<THypSessionBridge, TRunHyps>(
+    mut hyp_session_bridge: THypSessionBridge,
+    mut run_hyps: TRunHyps,
+    request: HypRunRequest<RustBridge>,
+    cancellation: CancellationToken
+) -> (THypSessionBridge, TRunHyps)
+where
+    THypSessionBridge: HypSessionBridge<RustBridge>,
+    TRunHyps: RunHyps + Send + Sync + 'static
+{
+    handle_request(&mut hyp_session_bridge, &mut run_hyps, request, cancellation).await;
+
+    (hyp_session_bridge, run_hyps)
 }
 
 pub fn build_tokio_runtime() -> tokio::runtime::Runtime
@@ -107,12 +111,9 @@ where
 {
     runtime.spawn(async move {
         let mut cancellation = tokio_util::sync::CancellationToken::new();
-        let context = HypRunContext {
-            hyp_session_bridge,
-            run_hyps
-        };
-        let mut running_request: Pin<Box<dyn Future<Output = HypRunContext<THypSessionBridge, TRunHyps>> + Send>> =
-            Box::pin(context.pending_hyp_run(cancellation.child_token()));
+
+        let mut running_request: Pin<Box<dyn Future<Output = (THypSessionBridge, TRunHyps)> + Send>> =
+            Box::pin(pending_hyp_run(hyp_session_bridge, run_hyps, cancellation.child_token()));
 
         loop
         {
@@ -125,9 +126,9 @@ where
                         {
                             // New request, cancel a running request first and retrieve the context, then start the handling the new request
                             cancellation.cancel();
-                            let context = running_request.await;
+                            let (hyp_session_bridge, run_hyps) = running_request.await;
                             cancellation = CancellationToken::new();
-                            running_request = Box::pin(context.countdown(request, cancellation.child_token()));
+                            running_request = Box::pin(handle_request_take(hyp_session_bridge, run_hyps, request, cancellation.child_token()));
                         },
                         None => {
                             // Channel closed, cancel a running request
@@ -138,9 +139,9 @@ where
                     };
                 }
 
-                context = running_request.as_mut() => {
+                (hyp_session_bridge, run_hyps) = running_request.as_mut() => {
                     // A request completed
-                    running_request = Box::pin(context.pending_hyp_run(cancellation.child_token()));
+                    running_request = Box::pin(pending_hyp_run(hyp_session_bridge, run_hyps, cancellation.child_token()));
                 }
             };
         };
@@ -154,58 +155,17 @@ pub async fn handle_hyp_run_trigger(
 )
 {
     eprintln!("handle_hyp_run_trigger start");
-
-    hyp_session_bridge.start_run();
-
-    let result = match request.kind
-    {
-        HypRunRequestKind::All => run_hyps(runner, hyp_session_bridge, request.options.compute_coverage).await,
-        HypRunRequestKind::Single { hyp_id } =>
-        {
-            run_hyp(runner, hyp_session_bridge, &hyp_id, request.options.update_snapshots).await
-        }
-    };
-
-    match result
-    {
-        Ok(_) =>
-        {
-            eprintln!("complete_run");
-            hyp_session_bridge.complete_run();
-        }
-        Err(test_error) =>
-        {
-            eprintln!("run_error");
-            hyp_session_bridge.run_error(test_error);
-        }
-    };
 }
 
-async fn run_hyps(
-    runner: &mut impl RunHyps,
-    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    compute_coverage: bool
-) -> Result<(), HypRunError>
+pub async fn handle_hyp_run_trigger2<THypSessionBridge, TRunHyps>(
+    runner: TRunHyps,
+    hyp_session_bridge: THypSessionBridge,
+    request: HypRunRequest<RustBridge>,
+    cancellation: CancellationToken
+)
+where
+    THypSessionBridge: HypSessionBridge<RustBridge>,
+    TRunHyps: RunHyps + Send + Sync + 'static
 {
-    // if compute_coverage
-    // {
-    //     self.coverage_tx.send(CoverageStatus::Preparing);
-    // }
-
-    // if let Err(clean_error) = self.coverage.clean_coverage_output()
-    // {
-    //     log::error!("error cleaning coverage output: {:?}", clean_error);
-    // }
-
-    runner.run_hyps(compute_coverage, hyp_session_bridge, Vec::new())
-}
-
-async fn run_hyp(
-    runner: &mut impl RunHyps,
-    hyp_session_bridge: &mut impl HypSessionBridge<RustBridge>,
-    id: &HypId,
-    update_snapshots: bool
-) -> Result<(), HypRunError>
-{
-    runner.run_hyp(id, update_snapshots, hyp_session_bridge)
+    eprintln!("handle_hyp_run_trigger start");
 }

@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use camino::Utf8PathBuf;
 use guppy::graph::PackageGraph;
 use nextest_filtering::{Filterset, FiltersetKind, ParseContext};
@@ -35,13 +36,14 @@ use crate::nextest_cargo_options;
 use crate::nextest_error::NextestError;
 
 #[mockall::automock]
+#[async_trait]
 pub trait RunHyps
 {
-    fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
+    async fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 
-    fn run_hyp<TTx>(&mut self, hyp_id: &HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 }
@@ -65,7 +67,7 @@ impl HypRunner
         }
     }
 
-    fn run_hyps_with_options<TTx>(
+    async fn run_hyps_with_options<TTx>(
         &mut self,
         options: CargoOptions,
         instrument_coverage: bool,
@@ -86,7 +88,7 @@ impl HypRunner
             }
         }
 
-        let result = self.run_hyps_internal(options, tx, filter);
+        let result = self.run_hyps_internal(options, tx, filter).await;
 
         unsafe {
             std::env::remove_var("RUSTFLAGS");
@@ -96,7 +98,12 @@ impl HypRunner
         result
     }
 
-    fn run_hyps_internal<TTx>(&mut self, options: CargoOptions, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
+    async fn run_hyps_internal<TTx>(
+        &mut self,
+        options: CargoOptions,
+        tx: &mut TTx,
+        filter: Vec<String>
+    ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -339,9 +346,10 @@ impl HypRunner
     }
 }
 
+#[async_trait]
 impl RunHyps for HypRunner
 {
-    fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
+    async fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -350,9 +358,10 @@ impl RunHyps for HypRunner
             .call();
 
         self.run_hyps_with_options(cargo_options, instrument_coverage, tx, filter)
+            .await
     }
 
-    fn run_hyp<TTx>(&mut self, hyp_id: &HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -375,7 +384,9 @@ impl RunHyps for HypRunner
             .target_dir(self.target_dir.clone())
             .call();
 
-        let result = self.run_hyps_with_options(cargo_options, instrument_coverage, tx, filter);
+        let result = self
+            .run_hyps_with_options(cargo_options, instrument_coverage, tx, filter)
+            .await;
 
         unsafe {
             std::env::set_var("UPDATE_SNAPSHOTS", "0");
