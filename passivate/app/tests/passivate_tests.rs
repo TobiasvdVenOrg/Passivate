@@ -24,7 +24,7 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
 
     use passivate::start::run_app_and_get_context;
     use passivate_core::{compose::compose, passivate_args::PassivateArgs};
-    use tokio::{task, time};
+    use tokio::time;
 
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build();
 
@@ -37,8 +37,8 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     let passivate = compose(args, &runtime)?;
 
     run_app_and_get_context(passivate,
-        Box::new(move |context: egui::Context| {
-            task::spawn(async move {
+        Box::new(|context: egui::Context| {
+            runtime.spawn(async move {
                 // Asynchronously send a close window command to passivate after some delay
                 time::sleep(Duration::from_secs(4)).await;
 

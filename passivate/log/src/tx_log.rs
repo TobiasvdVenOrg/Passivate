@@ -1,4 +1,4 @@
-use passivate_delegation::Tx;
+use passivate_delegation::tx_rx::Tx;
 
 use crate::log_message::LogMessage;
 

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use passivate_delegation::Tx;
+use passivate_delegation::tx_rx::Tx;
 
 use crate::source_change_event::SourceChangeEvent;
 

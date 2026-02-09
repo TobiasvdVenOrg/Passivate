@@ -91,8 +91,8 @@ where
 
 pub fn build_tokio_runtime() -> tokio::runtime::Runtime
 {
-    tokio::runtime::Builder::new_current_thread()
-        .worker_threads(1)
+    tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
         .enable_time()
         .build()
         .unwrap()

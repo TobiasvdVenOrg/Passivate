@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use passivate_delegation::Rx;
+use passivate_delegation::tx_rx::Rx;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_id_chain_tree::tree::Tree;
 use passivate_model_bridge::bridge::Bridge;

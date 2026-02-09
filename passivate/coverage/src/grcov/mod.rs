@@ -2,12 +2,11 @@ pub mod covdir_json;
 
 use std::fs;
 use std::io::Error as IoError;
-use camino::{Utf8Path, Utf8PathBuf};
-use passivate_cargo::cargo_workspace;
 use std::process::Command;
 use std::time::Duration;
 
-use passivate_delegation::Cancellation;
+use camino::{Utf8Path, Utf8PathBuf};
+use passivate_cargo::cargo_workspace;
 
 use crate::compute_coverage::ComputeCoverage;
 use crate::coverage_errors::{CoverageError, NoProfrawFilesError, NoProfrawFilesKind};
@@ -24,7 +23,7 @@ pub struct Grcov
 
 impl ComputeCoverage for Grcov
 {
-    fn compute_coverage(&self, cancellation: Cancellation) -> Result<CoverageStatus, CoverageError>
+    fn compute_coverage(&self) -> Result<CoverageStatus, CoverageError>
     {
         match get_profraw_count(&self.output_path)
         {
@@ -49,8 +48,6 @@ impl ComputeCoverage for Grcov
             _ =>
             {}
         };
-
-        cancellation.check()?;
 
         let projects = cargo_workspace::projects(&self.workspace_path)?;
 
@@ -82,11 +79,11 @@ impl ComputeCoverage for Grcov
         {
             std::thread::sleep(Duration::from_millis(100));
 
-            if cancellation.is_cancelled()
-            {
-                let _ = grcov.kill();
-                break;
-            }
+            // if cancellation.is_cancelled()
+            // {
+            //     let _ = grcov.kill();
+            //     break;
+            // }
 
             let exited = grcov.try_wait().map_err(|e| CoverageError::FailedToGenerate(e.kind()))?;
 

@@ -1,4 +1,4 @@
-use passivate_delegation::Tx;
+use passivate_delegation::tx_rx::Tx;
 
 use crate::bridge::Bridge;
 use crate::hyp_run_request::{HypRunOptions, HypRunRequest, HypRunRequestKind};

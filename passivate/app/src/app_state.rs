@@ -2,7 +2,7 @@ use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_delegation::Rx;
+use passivate_delegation::tx_rx::Rx;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
 use passivate_egui_docking::dock_views::DockViews;
 use passivate_egui_docking::docking_layout::DockingLayout;

@@ -1,8 +1,7 @@
 use std::io::ErrorKind as IoErrorKind;
-use camino::Utf8PathBuf;
 
+use camino::Utf8PathBuf;
 use passivate_cargo::cargo_workspace_errors::CargoWorkspaceError;
-use passivate_delegation::Cancelled;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -25,9 +24,6 @@ pub enum CoverageError
 
     #[error("failed to parse covdir output")]
     CovdirParse(String),
-
-    #[error("coverage was cancelled")]
-    Cancelled(#[from] Cancelled),
 
     #[error("unexpected failure parsing workspace metadata")]
     Workspace(#[from] CargoWorkspaceError)

@@ -3,10 +3,10 @@ mod helpers;
 #[macro_use]
 extern crate assert_matches;
 
+use std::fs;
 use std::io::Error as IoError;
 use std::sync::Arc;
 use std::time::Duration;
-use std::fs;
 
 use galvanic_assert::assert_that;
 use galvanic_assert::matchers::collection::contains_in_order;

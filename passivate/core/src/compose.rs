@@ -9,12 +9,14 @@ use passivate_log::tx_log::TxLog;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::source_change_event::SourceChangeEvent;
+use passivate_model_core::hyp;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
 use passivate_run_rust::hyp_run_handler;
 use passivate_run_rust::hyp_runner::HypRunner;
 use passivate_run_rust::model::RustBridge;
 use tokio::runtime::Runtime;
+use tokio::task::JoinHandle;
 
 use crate::passivate_args::PassivateArgs;
 use crate::passivate_state::PassivateState;
@@ -32,7 +34,8 @@ pub struct PassivateCore
     pub session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
     pub configuration: ConfigurationManager,
     pub log_rx: crossbeam_channel::Receiver<LogMessage>,
-    change_events: NotifyChangeEvents
+    change_events: NotifyChangeEvents,
+    pub hyp_run_task: Option<JoinHandle<()>>
 }
 
 impl PassivateCore
@@ -68,7 +71,12 @@ pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, 
 
     let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
 
-    hyp_run_handler::spawn_hyp_run_future(runtime, hyp_run_rx, session_event_tx, hyp_runner);
+    let hyp_run_task = hyp_run_handler::spawn_hyp_run_future(
+        runtime,
+        hyp_run_rx,
+        session_event_tx,
+        hyp_runner
+    );
 
     // Notify
     let change_events = NotifyChangeEvents::new(&workspace_path, source_change_tx)?;
@@ -85,7 +93,8 @@ pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, 
         session_event_rx,
         configuration,
         log_rx,
-        change_events
+        change_events,
+        hyp_run_task: Some(hyp_run_task)
     })
 }
 

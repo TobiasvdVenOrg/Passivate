@@ -1,7 +1,5 @@
 use thiserror::Error;
 
-use super::Cancellation;
-
 #[derive(Error, Debug)]
 pub enum RxError
 {
@@ -61,11 +59,4 @@ where
     {
         Ok(self.try_recv()?)
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct CancellableMessage<T: Send + Sync + 'static>
-{
-    pub message: T,
-    pub cancellation: Cancellation
 }

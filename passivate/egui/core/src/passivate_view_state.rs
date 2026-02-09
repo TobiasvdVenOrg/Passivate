@@ -1,6 +1,6 @@
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_core::passivate_state_change::PassivateStateChange;
-use passivate_delegation::Rx;
+use passivate_delegation::tx_rx::Rx;
 use passivate_egui_hyp_snapshots::Snapshots;
 use passivate_egui_hyp_snapshots::snapshot_handles::SnapshotHandles;
 use passivate_log::log_message::LogMessage;

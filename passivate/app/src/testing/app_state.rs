@@ -1,5 +1,5 @@
 use maybe_owned::MaybeOwned;
-use passivate_delegation::{MockRx, Rx, RxError};
+use passivate_delegation::tx_rx::{MockRx, Rx, RxError};
 use passivate_egui_docking::docking_layout::DockingLayout;
 use passivate_log::log_message::LogMessage;
 use passivate_model_bridge::bridge::Bridge;
