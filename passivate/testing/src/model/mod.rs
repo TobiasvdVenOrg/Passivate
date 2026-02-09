@@ -6,6 +6,7 @@ use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::bridge_hyp::BridgeHyp;
 use passivate_model_bridge::hyp_report::HypReport;
 use passivate_model_bridge::hyp_session_bridge::{
+    CancelRunBridge,
     CompleteRunBridge,
     RunErrorBridge,
     SendHypBridge,
@@ -171,7 +172,8 @@ pub enum TestOutput
 
 impl Display for TestOutput
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
         todo!()
     }
 }
@@ -224,6 +226,14 @@ impl CompleteRunBridge<TestSession> for TestSession
     fn complete_run(&mut self)
     {
         self.0.update(HypSessionEvent::RunCompleted);
+    }
+}
+
+impl CancelRunBridge<TestSession> for TestSession
+{
+    fn cancel_run(&mut self)
+    {
+        self.0.update(HypSessionEvent::RunCancelled);
     }
 }
 

@@ -129,6 +129,7 @@ impl<TBridge: Bridge> Session<TBridge>
                     HypSessionEvent::Hyp(hyp_report) => self.hyp(hyp_report),
                     HypSessionEvent::RunCompleted => self.complete_run(),
                     HypSessionEvent::RunError(run_error) => self.run_error(run_error),
+                    HypSessionEvent::RunCancelled => self.cancel_run(),
                     _ => Err(event)
                 }
             }
@@ -138,6 +139,13 @@ impl<TBridge: Bridge> Session<TBridge>
     fn start_run(&mut self) -> ChangeResult<'_, TBridge>
     {
         self.activity = HypState::Running;
+
+        Ok(None)
+    }
+
+    fn cancel_run(&mut self) -> ChangeResult<'_, TBridge>
+    {
+        self.activity = HypState::Unknown;
 
         Ok(None)
     }

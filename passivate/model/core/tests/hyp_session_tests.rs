@@ -198,6 +198,16 @@ pub fn passed_hyp_has_passed_state()
     assert_matches!(session.hyps().get(hyp_id.chain()).unwrap().state(), HypState::Passed);
 }
 
+#[test]
+pub fn cancelled_started_session_is_in_unknown_state()
+{
+    let mut session = new_started_session();
+
+    session.cancel_run();
+
+    assert_matches!(session.state(), HypState::Unknown);
+}
+
 fn new_started_session() -> TestSession
 {
     let mut session = TestSession::new();
