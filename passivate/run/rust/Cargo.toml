@@ -13,10 +13,13 @@ passivate_hyp_names = { path = "../../hyp_names" }
 passivate_coverage = { path = "../../coverage" }
 passivate_id_chain_tree = { path = "../../id_chain_tree" }
 
-#nextest-runner = { path = "../../../passivate-nextest/nextest-runner" }
-#nextest-filtering = { path = "../../../passivate-nextest/nextest-filtering" }
-nextest-runner = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-runner" }
-nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "non-cli-use", package = "nextest-filtering" }
+# cargo-nextest = { path = "../../../../passivate-nextest/cargo-nextest" }
+# nextest-runner  = { path = "../../../../passivate-nextest/nextest-runner" }
+# nextest-filtering = { path = "../../../../passivate-nextest/nextest-filtering" }
+
+cargo-nextest = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "passivate-compatible", package = "cargo-nextest" }
+nextest-runner = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "passivate-compatible", package = "nextest-runner" }
+nextest-filtering = { git = "https://github.com/TobiasvdVenOrg/passivate-nextest", branch = "passivate-compatible", package = "nextest-filtering" }
 
 async-trait.workspace = true
 log.workspace = true

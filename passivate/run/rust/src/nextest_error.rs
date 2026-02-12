@@ -1,17 +1,16 @@
 use std::convert::Infallible;
 use std::fmt::Display;
 
+use cargo_nextest::ExpectedError;
 use nextest_filtering::errors::ParseSingleError;
 use nextest_runner::errors::{
     CargoConfigError,
-    CargoMetadataError,
     ConfigParseError,
-    CreateBinaryListError,
     CreateTestListError,
     FromMessagesError,
     HostPlatformDetectError,
     ProfileNotFound,
-    TestFilterBuilderError,
+    TestFilterBuildError,
     TestRunnerBuildError,
     TestRunnerExecuteErrors
 };
@@ -21,18 +20,17 @@ use thiserror::Error;
 pub enum NextestError
 {
     HostPlatformDetect(#[from] HostPlatformDetectError),
-    CargoMetadata(#[from] CargoMetadataError),
     ConfigParse(#[from] ConfigParseError),
-    CreateBinaryList(#[from] CreateBinaryListError),
     FromMessages(#[from] FromMessagesError),
     ProfileNotFound(#[from] ProfileNotFound),
     FiltersetParse(#[from] ParseSingleError),
     UnknownFiltersetParse,
-    TestFilterBuilder(#[from] TestFilterBuilderError),
     CargoConfig(#[from] CargoConfigError),
     CreateTestList(#[from] CreateTestListError),
+    TestFilterBuild(#[from] TestFilterBuildError),
     TestRunnerBuild(#[from] TestRunnerBuildError),
-    TestRunnerExecute(#[from] TestRunnerExecuteErrors<Infallible>)
+    TestRunnerExecute(#[from] TestRunnerExecuteErrors<Infallible>),
+    Expected(#[from] ExpectedError)
 }
 
 impl Display for NextestError

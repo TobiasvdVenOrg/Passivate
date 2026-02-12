@@ -104,7 +104,7 @@ where
 {
     fn run_error(&mut self, run_error: TBridge::RunError)
     {
-        log::info!("run_error");
+        log::info!("run_error: {run_error:?}");
         self.send(HypSessionEvent::RunError(run_error));
     }
 }

@@ -9,7 +9,6 @@ use passivate_log::tx_log::TxLog;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::source_change_event::SourceChangeEvent;
-use passivate_model_core::hyp;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_notify::notify_change_events::NotifyChangeEvents;
 use passivate_run_rust::hyp_run_handler;
@@ -71,12 +70,7 @@ pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, 
 
     let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
 
-    let hyp_run_task = hyp_run_handler::spawn_hyp_run_future(
-        runtime,
-        hyp_run_rx,
-        session_event_tx,
-        hyp_runner
-    );
+    let hyp_run_task = hyp_run_handler::spawn_hyp_run_future(runtime, hyp_run_rx, session_event_tx, hyp_runner);
 
     // Notify
     let change_events = NotifyChangeEvents::new(&workspace_path, source_change_tx)?;
