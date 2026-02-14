@@ -30,7 +30,8 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
 
     let args = PassivateArgs::builder()
         .root_directory(setup.workspace_path())
-        .target_directory(setup.output_path())
+        .config_directory(setup.output_path()) // Put the passivate.toml that normally goes in /.config in the test output along with other output
+        .passivate_directory(setup.output_path())
         .build();
 
     let runtime = hyp_run_handler::build_tokio_runtime();

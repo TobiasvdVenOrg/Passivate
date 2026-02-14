@@ -1,26 +1,27 @@
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct DefaultPaths
 {
     pub root: Utf8PathBuf,
-    pub passivate: Utf8PathBuf,
-    pub target: Utf8PathBuf
+    pub passivate: Utf8PathBuf
 }
 
 impl DefaultPaths
 {
-    pub fn new(root: Utf8PathBuf) -> Self
+    pub fn from_root(root: Utf8PathBuf) -> Self
     {
-        let passivate = root.join(".passivate");
-        let target = passivate.join("target");
+        let passivate = root.join("..").join(".passivate");
 
-        Self { root, passivate, target }
+        Self { root, passivate }
     }
 }
 
 #[cfg(feature = "testing")]
 pub fn stub() -> DefaultPaths
 {
-    DefaultPaths::new(Utf8PathBuf::from("testing_stub"))
+    DefaultPaths {
+        root: Utf8PathBuf::from("testing_stub"),
+        passivate: Utf8PathBuf::from("testing_stub").join(".passivate")
+    }
 }

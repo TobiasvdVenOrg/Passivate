@@ -1,3 +1,4 @@
+use camino::Utf8PathBuf;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::default_paths::{self, DefaultPaths};
 
@@ -29,6 +30,15 @@ impl<TBridge: Bridge> HypRunRequest<TBridge>
             configuration,
             paths
         }
+    }
+
+    pub fn passivate_directory(&self) -> Utf8PathBuf
+    {
+        self.configuration
+            .passivate_directory
+            .as_ref()
+            .unwrap_or(&self.paths.passivate)
+            .clone()
     }
 }
 

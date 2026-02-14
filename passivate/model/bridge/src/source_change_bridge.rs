@@ -15,8 +15,6 @@ where
 {
     fn file_changed(&self, file: PathBuf)
     {
-        log::info!("File change: {file:?}");
-
         self.send(SourceChangeEvent::File(file));
     }
 }

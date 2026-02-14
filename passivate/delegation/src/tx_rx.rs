@@ -28,13 +28,13 @@ where
     }
 }
 
-impl<T> Tx<T> for tokio::sync::mpsc::UnboundedSender<T>
+impl<T> Tx<T> for tokio::sync::mpsc::Sender<T>
 where
     T: Send + Sync + 'static
 {
     fn send(&self, message: T)
     {
-        self.send(message).expect("failed to send t")
+        self.blocking_send(message).expect("failed to send t")
     }
 }
 #[mockall::automock]

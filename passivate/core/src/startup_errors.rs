@@ -24,7 +24,7 @@ pub enum StartupError
     Logger(log::SetLoggerError),
     #[error("logger already initialized")]
     LoggerAlreadyInitialized,
-    #[error("configuration error")]
+    #[error("configuration error: {0}")]
     PassivateConfiguration(#[from] ConfigurationError),
     #[error("invalid UTF8")]
     Utf8(String),

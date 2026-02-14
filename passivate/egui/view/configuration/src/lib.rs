@@ -64,7 +64,7 @@ mod tests
         let mut configuration_view = ConfigurationView::new();
 
         let configuration = PassivateConfiguration {
-            target_dir: Some(Utf8PathBuf::from("example/target/directory")),
+            passivate_directory: Some(Utf8PathBuf::from("some/alternative/.passivate")),
             coverage_enabled: true,
             snapshot_directories: vec![Utf8PathBuf::from("tests/snapshots")]
         };

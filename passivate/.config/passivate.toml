@@ -1,5 +1,5 @@
 coverage_enabled = false
 snapshot_directories = [
     'F:\Projects\Passivate\passivate\passivate_app\tests\snapshots',
-    'F:\Projects\Passivate\passivate\passivate_egui\tests\snapshots'
+    'F:\Projects\Passivate\passivate\passivate_egui\tests\snapshots',
 ]

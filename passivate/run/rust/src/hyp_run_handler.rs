@@ -46,10 +46,12 @@ where
 {
     hyp_session_bridge.start_run();
 
+    let target_dir = request.passivate_directory().join("target");
+
     let run_hyps_options = RunHypsOptions {
-      manifest_dir: request.paths.root.join("Cargo.toml"),
+      manifest_dir: request.paths.root,
       coverage_dir: None,
-      target_dir: request.configuration.target_dir.unwrap_or(request.paths.target),
+      target_dir,
       update_snapshots: false
     };
 
@@ -107,7 +109,7 @@ pub fn build_tokio_runtime() -> tokio::runtime::Runtime
 
 pub fn spawn_hyp_run_future<THypSessionBridge, TRunHyps>(
     runtime: &tokio::runtime::Runtime,
-    mut hyp_run_trigger_rx: tokio::sync::mpsc::UnboundedReceiver<HypRunRequest<RustBridge>>,
+    mut hyp_run_trigger_rx: tokio::sync::mpsc::Receiver<HypRunRequest<RustBridge>>,
     hyp_session_bridge: THypSessionBridge,
     run_hyps: TRunHyps
 )

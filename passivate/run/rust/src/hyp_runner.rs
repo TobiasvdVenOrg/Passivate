@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use camino::Utf8PathBuf;
-use cargo_nextest::cargo_cli::CargoOptions;
 use cargo_nextest::dispatch::helpers::acquire_graph_data;
 use cargo_nextest::output::{Color, OutputContext};
 use guppy::graph::PackageGraph;
@@ -153,6 +152,8 @@ impl HypRunner
         };
 
         let manifest_path = options.manifest_dir.join("Cargo.toml");
+
+        log::info!("querying metadata for: {manifest_path}");
 
         let graph_data = acquire_graph_data(
             Some(&manifest_path),

@@ -35,7 +35,7 @@ use crate::helpers::HandleHypRunRequest;
 #[test]
 pub fn hyp_run_thread_cancels_run_upon_new_request()
 {
-    let (hyp_run_trigger_tx, hyp_run_trigger_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (hyp_run_trigger_tx, hyp_run_trigger_rx) = tokio::sync::mpsc::channel(1);
     let mut hyp_session_bridge = MockHypSessionBridge::new();
 
     let mut cancel_then_complete = Sequence::new();
@@ -61,11 +61,11 @@ pub fn hyp_run_thread_cancels_run_upon_new_request()
     let handle = spawn_hyp_run_future(&runtime, hyp_run_trigger_rx, hyp_session_bridge, runner);
 
     hyp_run_trigger_tx
-        .send(HypRunRequest::all(PassivateConfiguration::default(), default_paths::stub()))
+        .blocking_send(HypRunRequest::all(PassivateConfiguration::default(), default_paths::stub()))
         .unwrap();
 
     hyp_run_trigger_tx
-        .send(HypRunRequest::all(PassivateConfiguration::default(), default_paths::stub()))
+        .blocking_send(HypRunRequest::all(PassivateConfiguration::default(), default_paths::stub()))
         .unwrap();
 
     runtime.block_on(async {

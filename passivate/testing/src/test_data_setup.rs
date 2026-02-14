@@ -91,8 +91,7 @@ impl TestDataSetup
     {
         DefaultPaths {
             root: self.workspace_path(),
-            passivate: self.passivate_path(),
-            target: self.output_path()
+            passivate: self.passivate_path()
         }
     }
 

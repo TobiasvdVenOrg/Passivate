@@ -39,28 +39,33 @@ impl NotifyChangeEvents
                 {
                     Ok(event) =>
                     {
-                        for path in &event.paths
+                        if !event.kind.is_access()
                         {
-                            let extension = path.extension();
+                            log::info!("notify: {event:?}");
 
-                            if let Some(extension) = extension
-                                && extension == "rs"
-                                && let Ok(metadata) = fs::metadata(path)
-                                && let Ok(modified) = metadata.modified()
+                            for path in &event.paths
                             {
-                                if let Some(last_modification) = modification_cache.get(path)
+                                let extension = path.extension();
+
+                                if let Some(extension) = extension
+                                    && extension == "rs"
+                                    && let Ok(metadata) = fs::metadata(path)
+                                    && let Ok(modified) = metadata.modified()
                                 {
-                                    if &modified > last_modification
+                                    if let Some(last_modification) = modification_cache.get(path)
+                                    {
+                                        if &modified > last_modification
+                                        {
+                                            bridge.file_changed(path.clone());
+                                        }
+                                    }
+                                    else
                                     {
                                         bridge.file_changed(path.clone());
                                     }
-                                }
-                                else
-                                {
-                                    bridge.file_changed(path.clone());
-                                }
 
-                                modification_cache.insert(path.clone(), modified);
+                                    modification_cache.insert(path.clone(), modified);
+                                }
                             }
                         }
                     }

@@ -1,7 +1,4 @@
-use camino::Utf8Path;
-use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
-use passivate_core::passivate_args::PassivateArgs;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_delegation::tx_rx::Rx;
@@ -185,7 +182,7 @@ pub mod tests
     use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestSession};
 
-    use crate::app_state::{self, AppState};
+    use crate::app_state::AppState;
     use crate::testing::app_state::UpdateApp;
 
     #[test]

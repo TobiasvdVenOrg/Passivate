@@ -5,6 +5,6 @@ use clap;
 pub struct PassivateArgs
 {
     pub root_directory: Option<Utf8PathBuf>,
-
-    pub target_directory: Option<Utf8PathBuf>
+    pub config_directory: Option<Utf8PathBuf>,
+    pub passivate_directory: Option<Utf8PathBuf>
 }
