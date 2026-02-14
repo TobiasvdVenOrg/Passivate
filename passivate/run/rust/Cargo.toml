@@ -36,6 +36,8 @@ tokio.workspace = true
 tokio-util.workspace = true
 
 [dev-dependencies]
+passivate_configuration = { path = "../../configuration", features = ["testing"] }
+passivate_model_bridge = { path = "../../model/bridge", features = ["testing"] }
 passivate_testing = { path = "../../testing" }
 
 assert_matches.workspace = true

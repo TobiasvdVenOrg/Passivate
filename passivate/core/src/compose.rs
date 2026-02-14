@@ -2,8 +2,11 @@ use std::env;
 use std::sync::OnceLock;
 
 use camino::Utf8PathBuf;
+use passivate_configuration::configuration::ConfigurationChange;
+use passivate_configuration::configuration_errors::ConfigurationError;
 use passivate_configuration::configuration_manager::ConfigurationManager;
 use passivate_configuration::configuration_source::FileConfigurationSource;
+use passivate_configuration::default_paths::{self, DefaultPaths};
 use passivate_log::log_message::LogMessage;
 use passivate_log::tx_log::TxLog;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
@@ -27,7 +30,6 @@ pub struct PassivateCore
 {
     pub session: HypSession<RustBridge>,
     pub state: PassivateState<RustBridge>,
-    pub passivate_path: Utf8PathBuf,
     pub source_change_rx: crossbeam_channel::Receiver<SourceChangeEvent>,
     pub hyp_run_tx: tokio::sync::mpsc::UnboundedSender<HypRunRequest<RustBridge>>,
     pub session_event_rx: crossbeam_channel::Receiver<HypSessionEvent<RustBridge>>,
@@ -61,19 +63,23 @@ pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, 
     // Paths
     let working_dir = Utf8PathBuf::from_path_buf(env::current_dir()?)
         .map_err(|error| StartupError::Utf8(format!("working directory was not utf8: {error:?}")))?;
-    let workspace_path = args.manifest_directory.unwrap_or(working_dir);
-    let passivate_path = workspace_path.join("..").join(".passivate");
-    let coverage_path = passivate_path.join("coverage");
-    let target_path = passivate_path.join("target");
+    let default_paths = DefaultPaths::new(working_dir);
+    let root_path = args.root_directory.unwrap_or(default_paths.root.clone());
 
-    let hyp_runner = HypRunner::new(workspace_path.clone(), target_path.clone(), coverage_path.clone());
+    let hyp_runner = HypRunner;
 
-    let configuration = ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"))?;
+    let mut configuration =
+        ConfigurationManager::from_source(FileConfigurationSource::from(".config/passivate.toml"), default_paths)
+            .map_err(ConfigurationError::Load)?;
+
+    configuration
+        .change(ConfigurationChange::TargetDir(args.target_directory))
+        .map_err(ConfigurationError::Persist)?;
 
     let hyp_run_task = hyp_run_handler::spawn_hyp_run_future(runtime, hyp_run_rx, session_event_tx, hyp_runner);
 
     // Notify
-    let change_events = NotifyChangeEvents::new(&workspace_path, source_change_tx)?;
+    let change_events = NotifyChangeEvents::start_watching(root_path, source_change_tx)?;
 
     let session = HypSession::new();
     let state = PassivateState::new();
@@ -81,7 +87,6 @@ pub fn compose(args: PassivateArgs, runtime: &Runtime) -> Result<PassivateCore, 
     Ok(PassivateCore {
         session,
         state,
-        passivate_path,
         source_change_rx,
         hyp_run_tx,
         session_event_rx,

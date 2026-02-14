@@ -3,25 +3,33 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::configuration::{ConfigurationChange, PassivateConfiguration};
 use crate::configuration_errors::{ConfigurationLoadError, ConfigurationPersistError};
 use crate::configuration_source::ConfigurationSource;
+use crate::default_paths::{self, DefaultPaths};
 
 #[derive(Clone)]
 pub struct ConfigurationManager
 {
     configuration: Arc<Mutex<PassivateConfiguration>>,
+    paths: DefaultPaths,
     source: Option<Arc<dyn ConfigurationSource<PassivateConfiguration> + Send + Sync + 'static>>
 }
 
 impl ConfigurationManager
 {
-    pub fn new(configuration: PassivateConfiguration) -> ConfigurationManager
+    pub fn new(configuration: PassivateConfiguration, paths: DefaultPaths) -> ConfigurationManager
     {
         ConfigurationManager {
             configuration: Arc::new(Mutex::new(configuration)),
+            paths,
             source: None
         }
     }
 
-    pub fn from_source<TSource>(source: TSource) -> Result<Self, ConfigurationLoadError>
+    pub fn paths(&self) -> &DefaultPaths
+    {
+        &self.paths
+    }
+
+    pub fn from_source<TSource>(source: TSource, paths: DefaultPaths) -> Result<Self, ConfigurationLoadError>
     where
         TSource: ConfigurationSource<PassivateConfiguration> + Send + Sync + 'static
     {
@@ -30,6 +38,7 @@ impl ConfigurationManager
 
         Ok(Self {
             configuration: Arc::new(Mutex::new(configuration)),
+            paths,
             source: Some(source)
         })
     }
@@ -63,11 +72,28 @@ impl ConfigurationManager
     }
 }
 
-impl Default for ConfigurationManager
+#[cfg(feature = "testing")]
+#[bon::bon]
+impl ConfigurationManager
 {
-    fn default() -> Self
+    #[builder]
+    pub fn stub(
+        #[builder(default = PassivateConfiguration::default())] configuration: PassivateConfiguration,
+        #[builder(default = default_paths::stub())] default_paths: DefaultPaths
+    ) -> ConfigurationManager
     {
-        Self::new(PassivateConfiguration::default())
+        ConfigurationManager::new(configuration, default_paths)
+    }
+
+    #[builder]
+    pub fn stub_from_source<TSource>(
+        #[builder(start_fn)] source: TSource,
+        #[builder(default = default_paths::stub())] default_paths: DefaultPaths
+    ) -> Result<ConfigurationManager, ConfigurationLoadError>
+    where
+        TSource: ConfigurationSource<PassivateConfiguration> + Send + Sync + 'static
+    {
+        ConfigurationManager::from_source(source, default_paths)
     }
 }
 
@@ -92,16 +118,16 @@ mod tests
     use crate::configuration_source::{FileConfigurationSource, MockConfigurationSource};
 
     #[test]
-    pub fn when_configuration_is_loaded_from_file_then_changes_are_persisted_there() -> Result<(), Box<dyn Error>>
+    pub fn when_configuration_is_loaded_from_file_then_changes_are_persisted_there() -> Result<(), Box<dyn std::error::Error>>
     {
         let file = copy_from_data_to_output("example_configurations/minimal_configuration.toml")?;
 
-        let mut manager = ConfigurationManager::from_source(FileConfigurationSource::from(&file))?;
+        let mut manager = ConfigurationManager::stub_from_source(FileConfigurationSource::from(&file)).call()?;
 
         assert_that!(&manager.get(|c| c.coverage_enabled), eq(false));
         manager.change(ConfigurationChange::CoverageEnabled(true)).unwrap();
 
-        let reloaded_manager = ConfigurationManager::from_source(FileConfigurationSource::from(&file))?;
+        let reloaded_manager = ConfigurationManager::stub_from_source(FileConfigurationSource::from(&file)).call()?;
 
         assert_that!(&reloaded_manager.get(|c| c.coverage_enabled), eq(true));
         Ok(())
@@ -117,7 +143,7 @@ mod tests
         let file = dir.join("new_configuration.toml");
         let source = FileConfigurationSource::from(&file);
 
-        let mut manager = ConfigurationManager::from_source(source)?;
+        let mut manager = ConfigurationManager::stub_from_source(source).call()?;
 
         manager
             .change(ConfigurationChange::AddSnapshotDirectory(Utf8PathBuf::from("first/change")))
@@ -140,7 +166,7 @@ mod tests
             ))))
         });
 
-        let mut manager = ConfigurationManager::from_source(source)?;
+        let mut manager = ConfigurationManager::stub_from_source(source).call()?;
 
         let spy_log = SpyLog::set();
 
@@ -157,7 +183,7 @@ mod tests
     pub fn configuration_update_changes_configuration()
     {
         let configuration = PassivateConfiguration::default();
-        let mut manager = ConfigurationManager::new(configuration);
+        let mut manager = ConfigurationManager::stub().configuration(configuration).call();
 
         manager
             .change(ConfigurationChange::AddSnapshotDirectory(Utf8PathBuf::from("Example/path")))

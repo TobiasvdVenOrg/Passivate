@@ -1,14 +1,13 @@
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_model_bridge::hyp_session_bridge::MockHypSessionBridge;
 use passivate_run_rust::hyp_run_handler::{self, HypSessionBridge};
-use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps, RunHyps};
+use passivate_run_rust::hyp_runner::{MockRunHyps, RunHyps};
 use passivate_run_rust::model::RustBridge;
-use passivate_testing::test_data_setup::TestDataSetup;
 use tokio::runtime::Runtime;
 use tokio_util::sync::CancellationToken;
 
-/// Convenience builder to invoke 'handle_hyp_run_trigger'
-pub struct HandleHypRunTrigger<TRunHyps, THypSessionBridge>
+/// Convenience builder to invoke 'hyp_run_handler::handle_request'
+pub struct HandleHypRunRequest<TRunHyps, THypSessionBridge>
 {
     run_hyps: TRunHyps,
     hyp_session_bridge: THypSessionBridge,
@@ -16,7 +15,7 @@ pub struct HandleHypRunTrigger<TRunHyps, THypSessionBridge>
     cancellation: Option<CancellationToken>
 }
 
-impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
+impl HandleHypRunRequest<MockRunHyps, MockHypSessionBridge<RustBridge>>
 {
     pub fn new() -> Self
     {
@@ -25,7 +24,7 @@ impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
 
         mock_run_hyps
             .expect_run_hyps::<MockHypSessionBridge<RustBridge>>()
-            .returning(|_, _, _| Ok(()));
+            .returning(|_, _| Ok(()));
 
         mock_run_hyps
             .expect_run_hyp::<MockHypSessionBridge<RustBridge>>()
@@ -40,16 +39,16 @@ impl HandleHypRunTrigger<MockRunHyps, MockHypSessionBridge<RustBridge>>
     }
 }
 
-impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionBridge>
+impl<_TRunHyps, _THypSessionBridge> HandleHypRunRequest<_TRunHyps, _THypSessionBridge>
 {
     pub fn with_hyp_session_bridge<THypSessionBridge>(
         self,
         hyp_session_bridge: THypSessionBridge
-    ) -> HandleHypRunTrigger<_TRunHyps, THypSessionBridge>
+    ) -> HandleHypRunRequest<_TRunHyps, THypSessionBridge>
     where
         THypSessionBridge: HypSessionBridge<RustBridge>
     {
-        HandleHypRunTrigger::<_TRunHyps, THypSessionBridge> {
+        HandleHypRunRequest::<_TRunHyps, THypSessionBridge> {
             run_hyps: self.run_hyps,
             hyp_session_bridge,
             runtime: self.runtime,
@@ -57,28 +56,12 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
         }
     }
 
-    pub fn with_runner<TRunHyps>(self, run_hyps: TRunHyps) -> HandleHypRunTrigger<TRunHyps, _THypSessionBridge>
+    pub fn with_runner<TRunHyps>(self, run_hyps: TRunHyps) -> HandleHypRunRequest<TRunHyps, _THypSessionBridge>
     where
         TRunHyps: RunHyps
     {
-        HandleHypRunTrigger::<TRunHyps, _THypSessionBridge> {
+        HandleHypRunRequest::<TRunHyps, _THypSessionBridge> {
             run_hyps,
-            hyp_session_bridge: self.hyp_session_bridge,
-            runtime: self.runtime,
-            cancellation: self.cancellation
-        }
-    }
-
-    pub fn with_runner_from_setup(self, setup: &TestDataSetup) -> HandleHypRunTrigger<HypRunner, _THypSessionBridge>
-    {
-        let runner = HypRunner::new(
-            setup.workspace_path().clone(),
-            setup.output_path().clone(),
-            setup.coverage_path().clone()
-        );
-
-        HandleHypRunTrigger::<HypRunner, _THypSessionBridge> {
-            run_hyps: runner,
             hyp_session_bridge: self.hyp_session_bridge,
             runtime: self.runtime,
             cancellation: self.cancellation
@@ -86,7 +69,7 @@ impl<_TRunHyps, _THypSessionBridge> HandleHypRunTrigger<_TRunHyps, _THypSessionB
     }
 }
 
-impl<TRunHyps, THypSessionBridge> HandleHypRunTrigger<TRunHyps, THypSessionBridge>
+impl<TRunHyps, THypSessionBridge> HandleHypRunRequest<TRunHyps, THypSessionBridge>
 where
     TRunHyps: RunHyps + Send + Sync + 'static,
     THypSessionBridge: HypSessionBridge<RustBridge>

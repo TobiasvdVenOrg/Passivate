@@ -14,12 +14,9 @@ pub enum NotifyChangeEventsError
 
 impl NotifyChangeEventsError
 {
-    pub fn invalid_path(path: &Utf8Path, notify_error: NotifyError) -> NotifyChangeEventsError
+    pub fn invalid_path(path: Utf8PathBuf, notify_error: NotifyError) -> NotifyChangeEventsError
     {
-        NotifyChangeEventsError::InvalidPath {
-            path: path.to_path_buf(),
-            notify_error
-        }
+        NotifyChangeEventsError::InvalidPath { path, notify_error }
     }
 
     fn try_absolute_path(relative_path: &Utf8Path) -> String

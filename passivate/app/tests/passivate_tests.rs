@@ -29,7 +29,8 @@ pub fn start_and_exit_passivate() -> Result<(), Failed>
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build();
 
     let args = PassivateArgs::builder()
-        .manifest_directory(setup.workspace_path())
+        .root_directory(setup.workspace_path())
+        .target_directory(setup.output_path())
         .build();
 
     let runtime = hyp_run_handler::build_tokio_runtime();

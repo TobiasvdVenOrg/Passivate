@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::io;
 use std::sync::mpsc::SendError;
 
-use passivate_configuration::configuration_errors::ConfigurationLoadError;
+use passivate_configuration::configuration_errors::ConfigurationError;
 use passivate_model_bridge::hyp_run_request::HypRunRequest;
 use passivate_notify::notify_change_events_errors::NotifyChangeEventsError;
 use passivate_run_rust::model::RustBridge;
@@ -25,7 +25,7 @@ pub enum StartupError
     #[error("logger already initialized")]
     LoggerAlreadyInitialized,
     #[error("configuration error")]
-    PassivateConfiguration(#[from] ConfigurationLoadError),
+    PassivateConfiguration(#[from] ConfigurationError),
     #[error("invalid UTF8")]
     Utf8(String),
     #[error("IO error")]

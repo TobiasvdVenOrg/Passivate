@@ -4220,7 +4220,9 @@ dependencies = [
 name = "passivate_configuration"
 version = "0.1.0"
 dependencies = [
+ "bon",
  "camino",
+ "clap",
  "galvanic-assert",
  "itertools",
  "log",
@@ -4497,9 +4499,11 @@ dependencies = [
 name = "passivate_model_bridge"
 version = "0.1.0"
 dependencies = [
+ "bon",
  "camino",
  "log",
  "mockall",
+ "passivate_configuration",
  "passivate_delegation",
  "passivate_hyp_names",
  "passivate_id_chain_tree",
@@ -4589,6 +4593,7 @@ dependencies = [
  "camino",
  "dunce",
  "log",
+ "passivate_configuration",
  "passivate_hyp_names",
  "passivate_id_chain_tree",
  "passivate_model_bridge",

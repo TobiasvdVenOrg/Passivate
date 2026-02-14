@@ -33,8 +33,8 @@ impl<'a, TBridge: Bridge>
     pub fn with(test_self: &'a mut AppState<TBridge>, egui_context: &'a egui::Context, layout: &'a mut DockingLayout) -> Self
     {
         let mut mock_run_hyps = MockRunHypsBridge::new();
-        mock_run_hyps.expect_run_all().returning(|_| ());
-        mock_run_hyps.expect_run_single().returning(|_, _| ());
+        mock_run_hyps.expect_run_all().returning(|_, _| ());
+        mock_run_hyps.expect_run_single().returning(|_, _, _| ());
 
         let mut mock_source_change_rx = MockRx::new();
         mock_source_change_rx

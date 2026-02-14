@@ -25,7 +25,6 @@ use nextest_runner::runner::TestRunnerBuilder;
 use nextest_runner::signal::SignalHandlerKind;
 use nextest_runner::target_runner::TargetRunner;
 use nextest_runner::test_filter::{FilterBound, RunIgnored, TestFilter, TestFilterPatterns};
-use nextest_runner::test_output::ChildExecutionOutput;
 use passivate_hyp_names::hyp_id::HypId;
 use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_model_bridge::hyp_report::HypReport;
@@ -36,67 +35,96 @@ use passivate_model_bridge::output_report::OutputReport;
 
 use crate::hyp_run_error::HypRunError;
 use crate::model::{RustBridge, RustHyp, RustOutput};
-use crate::nextest_cargo_options::{self, cargo_build_scope_options};
+use crate::nextest_cargo_options;
 use crate::nextest_error::NextestError;
+
+#[derive(bon::Builder)]
+pub struct RunHypsOptions
+{
+    pub manifest_dir: Utf8PathBuf,
+    pub target_dir: Utf8PathBuf,
+    pub coverage_dir: Option<Utf8PathBuf>,
+    pub update_snapshots: bool
+}
 
 #[mockall::automock]
 #[async_trait]
 pub trait RunHyps
 {
-    async fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
+    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 
-    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 }
 
 #[derive(Clone)]
-pub struct HypRunner
+pub struct HypRunner;
+
+#[async_trait]
+impl RunHyps for HypRunner
 {
-    working_dir: Utf8PathBuf,
-    target_dir: Utf8PathBuf,
-    coverage_output_dir: Utf8PathBuf
+    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
+    {
+        let filter = vec![];
+        self.run_hyps_with_options(options, filter, tx).await
+    }
+
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    where
+        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
+    {
+        let strategy = HypNameStrategy::QualifiedWithoutCrate {
+            separator: "::".to_string()
+        };
+
+        let filter = vec![hyp_id.name(&strategy).to_string()];
+
+        let result = self.run_hyps_with_options(options, filter, tx).await;
+
+        result
+    }
 }
 
 impl HypRunner
 {
-    pub fn new(working_dir: Utf8PathBuf, target_dir: Utf8PathBuf, coverage_output_dir: Utf8PathBuf) -> Self
-    {
-        Self {
-            working_dir,
-            target_dir,
-            coverage_output_dir
-        }
-    }
-
     async fn run_hyps_with_options<TTx>(
         &mut self,
-        options: CargoOptions,
-        instrument_coverage: bool,
-        tx: &mut TTx,
-        filter: Vec<String>
+        options: &RunHypsOptions,
+        filter: Vec<String>,
+        tx: &mut TTx
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
-        fs::create_dir_all(&self.coverage_output_dir)?;
-        let coverage_output_dir = dunce::canonicalize(&self.coverage_output_dir)?;
+        if let Some(coverage_dir) = &options.coverage_dir
+        {
+            fs::create_dir_all(coverage_dir)?;
+            let coverage_output_dir = dunce::canonicalize(coverage_dir)?;
 
-        unsafe {
-            if instrument_coverage
-            {
+            unsafe {
                 std::env::set_var("RUSTFLAGS", "-C instrument-coverage");
                 std::env::set_var("LLVM_PROFILE_FILE", coverage_output_dir.join("coverage-%p-%m.profraw"));
             }
         }
 
-        let result = self.run_hyps_internal(options, tx, filter).await;
+        if options.update_snapshots
+        {
+            unsafe {
+                std::env::set_var("UPDATE_SNAPSHOTS", "1");
+            }
+        }
+
+        let result = self.run_hyps_internal(options, filter, tx).await;
 
         unsafe {
             std::env::remove_var("RUSTFLAGS");
             std::env::remove_var("LLVM_PROFILE_FILE");
+            std::env::set_var("UPDATE_SNAPSHOTS", "0");
         }
 
         result
@@ -104,14 +132,18 @@ impl HypRunner
 
     async fn run_hyps_internal<TTx>(
         &mut self,
-        options: CargoOptions,
-        tx: &mut TTx,
-        filter: Vec<String>
+        options: &RunHypsOptions,
+        filter: Vec<String>,
+        tx: &mut TTx
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         log::info!("Starting test run");
+
+        let cargo_options = nextest_cargo_options::cargo_options()
+            .target_dir(options.target_dir.clone())
+            .call();
 
         let build_platforms = BuildPlatforms::new_with_no_target().map_err(NextestError::HostPlatformDetect)?;
 
@@ -120,11 +152,12 @@ impl HypRunner
             color: Color::Auto
         };
 
-        let manifest_path = self.working_dir.join("Cargo.toml");
+        let manifest_path = options.manifest_dir.join("Cargo.toml");
+
         let graph_data = acquire_graph_data(
             Some(&manifest_path),
-            Some(&self.target_dir),
-            &options,
+            Some(&options.target_dir),
+            &cargo_options,
             &build_platforms,
             output_context
         )
@@ -139,7 +172,7 @@ impl HypRunner
         let tool_config_files = Vec::new();
         let experimental = BTreeSet::new();
         let nextest_config = NextestConfig::from_sources(
-            self.working_dir.clone(),
+            options.manifest_dir.as_path(),
             &parse_context,
             config_file,
             tool_config_files,
@@ -147,7 +180,7 @@ impl HypRunner
         )
         .map_err(NextestError::ConfigParse)?;
 
-        let binary_list = options
+        let binary_list = cargo_options
             .compute_binary_list("test", &graph, Some(&manifest_path), output_context, build_platforms.clone())
             .map_err(NextestError::Expected)?;
 
@@ -212,7 +245,7 @@ impl HypRunner
             rust_build_meta,
             &test_filter,
             partitioner_builder,
-            self.working_dir.clone(),
+            options.manifest_dir.clone(),
             env,
             &profile,
             FilterBound::DefaultSet,
@@ -240,7 +273,7 @@ impl HypRunner
                 match test_event
                 {
                     nextest_runner::reporter::events::ReporterEvent::Tick => todo!(),
-                    nextest_runner::reporter::events::ReporterEvent::Test(test_event) => fun_name(tx, *test_event)
+                    nextest_runner::reporter::events::ReporterEvent::Test(test_event) => process_nextest_event(tx, *test_event)
                 };
             })
             .map_err(NextestError::TestRunnerExecute)?;
@@ -251,7 +284,7 @@ impl HypRunner
     }
 }
 
-fn fun_name<TTx>(tx: &mut TTx, test_event: TestEvent<'_>)
+fn process_nextest_event<TTx>(tx: &mut TTx, test_event: TestEvent<'_>)
 where
     TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
 {
@@ -357,56 +390,4 @@ where
         _ =>
         {}
     };
-}
-
-#[async_trait]
-impl RunHyps for HypRunner
-{
-    async fn run_hyps<TTx>(&mut self, instrument_coverage: bool, tx: &mut TTx, filter: Vec<String>) -> Result<(), HypRunError>
-    where
-        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
-    {
-        let cargo_options = nextest_cargo_options::cargo_options()
-            .target_dir(self.target_dir.clone())
-            .call();
-
-        self.run_hyps_with_options(cargo_options, instrument_coverage, tx, filter)
-            .await
-    }
-
-    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, update_snapshots: bool, tx: &mut TTx) -> Result<(), HypRunError>
-    where
-        TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
-    {
-        let instrument_coverage = false;
-        let strategy = HypNameStrategy::QualifiedWithoutCrate {
-            separator: "::".to_string()
-        };
-
-        let filter = vec![hyp_id.name(&strategy).to_string()];
-
-        if update_snapshots
-        {
-            unsafe {
-                std::env::set_var("UPDATE_SNAPSHOTS", "1");
-            }
-        }
-
-        let cargo_scope = cargo_build_scope_options().all_features(true).call();
-
-        let cargo_options = nextest_cargo_options::cargo_options()
-            .build_scope(cargo_scope)
-            .target_dir(self.target_dir.clone())
-            .call();
-
-        let result = self
-            .run_hyps_with_options(cargo_options, instrument_coverage, tx, filter)
-            .await;
-
-        unsafe {
-            std::env::set_var("UPDATE_SNAPSHOTS", "0");
-        }
-
-        result
-    }
 }

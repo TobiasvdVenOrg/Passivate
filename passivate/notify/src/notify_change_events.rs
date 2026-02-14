@@ -24,8 +24,8 @@ pub struct NotifyChangeEvents
 
 impl NotifyChangeEvents
 {
-    pub fn new(
-        path: &Utf8Path,
+    pub fn start_watching(
+        path: Utf8PathBuf,
         bridge: impl FileChangedBridge + Send + Sync + 'static
     ) -> Result<NotifyChangeEvents, NotifyChangeEventsError>
     {
@@ -77,12 +77,9 @@ impl NotifyChangeEvents
         {
             Ok(watcher) =>
             {
-                let watcher = Self::start_watcher(watcher, path)?;
+                let watcher = Self::start_watcher(watcher, &path)?;
 
-                Ok(NotifyChangeEvents {
-                    watcher,
-                    path: path.to_path_buf()
-                })
+                Ok(NotifyChangeEvents { watcher, path })
             }
             Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(path, notify_error))
         }
@@ -93,7 +90,7 @@ impl NotifyChangeEvents
         match self.watcher.unwatch(self.path.as_std_path())
         {
             Ok(_) => Ok(()),
-            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(self.path.as_path(), notify_error))
+            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(self.path.clone(), notify_error))
         }
     }
 
@@ -104,7 +101,7 @@ impl NotifyChangeEvents
         match watch_result
         {
             Ok(_) => Ok(watcher),
-            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(path, notify_error))
+            Err(notify_error) => Err(NotifyChangeEventsError::invalid_path(path.to_path_buf(), notify_error))
         }
     }
 }

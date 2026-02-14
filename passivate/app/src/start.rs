@@ -1,3 +1,4 @@
+use passivate_configuration::configuration_errors::ConfigurationError;
 use passivate_core::compose::PassivateCore;
 use passivate_core::startup_errors::StartupError;
 use passivate_egui_core::passivate_view_state::PassivateViewState;
@@ -26,7 +27,6 @@ pub fn run_app_and_get_context(
     let PassivateCore {
         session,
         state,
-        passivate_path,
         source_change_rx,
         hyp_run_tx,
         session_event_rx,
@@ -44,10 +44,17 @@ pub fn run_app_and_get_context(
 
     let views = PassivateViews::new(tests_view, details_view, coverage_view, configuration_view, log_view);
 
-    let layout = passivate_layout::load(&passivate_path.join("default_docking_layout.toml"), &views)?;
+    let layout_path = configuration.paths().passivate.join("default_docking_layout.toml");
+    let layout = passivate_layout::load(&layout_path, &views).map_err(ConfigurationError::Load)?;
     let dock_views = DockViews::new(views.into());
 
     log::info!("Passivate started.");
+
+    let persistence_path = configuration
+        .paths()
+        .passivate
+        .join("default_window_state.json")
+        .into_std_path_buf();
 
     // Block until app closes
     let eframe_options = eframe::NativeOptions {
@@ -56,7 +63,7 @@ pub fn run_app_and_get_context(
             .with_inner_size([1024.0, 512.0])
             .with_min_inner_size([300.0, 220.0]),
         persist_window: true,
-        persistence_path: Some(passivate_path.join("default_window_state.json").into_std_path_buf()),
+        persistence_path: Some(persistence_path),
         ..Default::default()
     };
 

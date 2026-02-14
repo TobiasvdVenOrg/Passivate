@@ -1,5 +1,7 @@
+use camino::Utf8Path;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::configuration_manager::ConfigurationManager;
+use passivate_core::passivate_args::PassivateArgs;
 use passivate_core::passivate_state::PassivateState;
 use passivate_core::passivate_state_change::PassivateStateChange;
 use passivate_delegation::tx_rx::Rx;
@@ -11,7 +13,6 @@ use passivate_egui_views::{passivate_layout, passivate_ui};
 use passivate_log::log_message::LogMessage;
 use passivate_model_bridge::bridge::Bridge;
 use passivate_model_bridge::hyp_run_bridge::RunHypsBridge;
-use passivate_model_bridge::hyp_run_request::HypRunOptions;
 use passivate_model_bridge::hyp_session_event::HypSessionEvent;
 use passivate_model_bridge::source_change_event::SourceChangeEvent;
 use passivate_model_core::hyp_session::HypSession;
@@ -25,32 +26,6 @@ pub struct AppState<TBridge: Bridge>
     dock_views: DockViews<PassivateView>,
     configuration: ConfigurationManager,
     first_update: bool
-}
-
-#[bon::builder]
-pub fn stub<TBridge: Bridge>(
-    #[builder(default = HypSession::new())] session: HypSession<TBridge>,
-    #[builder(default = true)] first_update: bool
-) -> (AppState<TBridge>, DockingLayout)
-{
-    let state = PassivateState::new();
-    let view_state = PassivateViewState::default();
-    let configuration = ConfigurationManager::new(PassivateConfiguration::default());
-
-    let views = PassivateViews::stub();
-
-    let layout = passivate_layout::default(&views);
-    let dock_views = DockViews::new(views.into());
-    let app_state = AppState {
-        session,
-        state,
-        view_state,
-        dock_views,
-        configuration,
-        first_update
-    };
-
-    (app_state, layout)
 }
 
 impl<TBridge: Bridge> AppState<TBridge>
@@ -140,10 +115,7 @@ impl<TBridge: Bridge> AppState<TBridge>
         {
             let configuration = &*self.configuration.acquire();
 
-            run_hyps.run_all(HypRunOptions {
-                update_snapshots: false,
-                compute_coverage: configuration.coverage_enabled
-            });
+            run_hyps.run_all(configuration.clone(), self.configuration.paths().clone());
         }
     }
 }
@@ -157,6 +129,37 @@ fn map_session_change<TBridge: Bridge>(change: HypSessionChange<TBridge>) -> Opt
     }
 }
 
+#[cfg(feature = "testing")]
+#[bon::bon]
+impl<TBridge: Bridge> AppState<TBridge>
+{
+    #[builder]
+    pub fn stub(
+        #[builder(default = HypSession::new())] session: HypSession<TBridge>,
+        #[builder(default = true)] first_update: bool
+    ) -> (AppState<TBridge>, DockingLayout)
+    {
+        let state = PassivateState::new();
+        let view_state = PassivateViewState::default();
+        let configuration = ConfigurationManager::stub().call();
+
+        let views = PassivateViews::stub();
+
+        let layout = passivate_layout::default(&views);
+        let dock_views = DockViews::new(views.into());
+        let app_state = AppState {
+            session,
+            state,
+            view_state,
+            dock_views,
+            configuration,
+            first_update
+        };
+
+        (app_state, layout)
+    }
+}
+
 #[cfg(test)]
 pub mod tests
 {
@@ -167,7 +170,8 @@ pub mod tests
     use egui_kittest::kittest::{Key, Queryable};
     use itertools::Itertools;
     use maybe_owned::MaybeOwned;
-    use mockall::predicate::eq;
+    use mockall::predicate::{always, eq};
+    use passivate_configuration::configuration::PassivateConfiguration;
     use passivate_egui_docking::view::View;
     use passivate_egui_views::passivate_views::PassivateViews;
     use passivate_hyp_names::hyp_id::HypId;
@@ -175,14 +179,13 @@ pub mod tests
     use passivate_log::log_message::LogMessage;
     use passivate_model_bridge::hyp_report::HypReport;
     use passivate_model_bridge::hyp_run_bridge::MockRunHypsBridge;
-    use passivate_model_bridge::hyp_run_request::HypRunOptions;
     use passivate_model_bridge::hyp_session_bridge::{CompleteRunBridge, SendHypBridge, StartRunBridge};
     use passivate_model_bridge::hyp_state::HypState;
     use passivate_model_bridge::source_change_event::SourceChangeEvent;
     use passivate_run_rust::model::{RustBridge, RustHyp};
     use passivate_testing::model::{TestHyp, TestHypKind, TestSession};
 
-    use crate::app_state;
+    use crate::app_state::{self, AppState};
     use crate::testing::app_state::UpdateApp;
 
     #[test]
@@ -196,7 +199,7 @@ pub mod tests
         ));
         session.complete_run();
 
-        let (mut app_state, mut layout) = app_state::stub().session(session.into()).call();
+        let (mut app_state, mut layout) = AppState::stub().session(session.into()).call();
 
         let mut ui = Harness::new_ui(|ui: &mut egui::Ui| {
             UpdateApp::with(&mut app_state, ui.ctx(), &mut layout).call();
@@ -215,7 +218,7 @@ pub mod tests
     pub fn when_a_test_is_selected_and_then_changes_status_the_details_view_also_updates()
     {
         let (mut session_tx, session_rx) = crossbeam_channel::unbounded();
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().call();
 
         let views = PassivateViews::stub();
         let session_tab = layout.dock_state().find_tab(&views.session_dock().id()).unwrap();
@@ -248,7 +251,7 @@ pub mod tests
     #[test]
     pub fn hyps_are_run_upon_first_update()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().once().return_const(());
         mock_run_hyps.expect_run_single().never();
@@ -265,7 +268,7 @@ pub mod tests
     #[test]
     pub fn hyps_are_run_upon_source_change_event()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().first_update(false).call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().once().return_const(());
         mock_run_hyps.expect_run_single().never();
@@ -286,12 +289,15 @@ pub mod tests
     #[test]
     pub fn when_configuration_view_enables_coverage_hyps_run_with_coverage_enabled()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().first_update(false).call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
-        mock_run_hyps.expect_run_all().once().with(eq(HypRunOptions {
-            compute_coverage: true,
-            ..Default::default()
-        }));
+        mock_run_hyps.expect_run_all().once().with(
+            eq(PassivateConfiguration {
+                coverage_enabled: true,
+                ..Default::default()
+            }),
+            always()
+        );
         mock_run_hyps.expect_run_single().never();
 
         let views = PassivateViews::stub();
@@ -313,7 +319,7 @@ pub mod tests
     #[test]
     pub fn enabling_coverage_in_coverage_view_modifies_configuration()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().call();
 
         let views = PassivateViews::stub();
         let coverage_tab = layout.dock_state().find_tab(&views.coverage_dock().id()).unwrap();
@@ -337,7 +343,7 @@ pub mod tests
     #[test]
     pub fn log_is_stored_in_view_state()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().call();
         let (log_tx, log_rx) = crossbeam_channel::unbounded();
 
         log_tx.send(LogMessage::new("example log")).unwrap();
@@ -359,7 +365,7 @@ pub mod tests
     #[test]
     pub fn configuring_snapshots_path_starts_a_hyp_run()
     {
-        let (mut app_state, mut layout) = app_state::stub::<RustBridge>().first_update(false).call();
+        let (mut app_state, mut layout) = AppState::<RustBridge>::stub().first_update(false).call();
         let mut mock_run_hyps = MockRunHypsBridge::new();
         mock_run_hyps.expect_run_all().return_const(()).once();
 

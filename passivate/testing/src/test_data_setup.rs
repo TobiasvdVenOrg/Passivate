@@ -2,6 +2,7 @@ use std::fs;
 
 use bon::bon;
 use camino::Utf8PathBuf;
+use passivate_configuration::default_paths::DefaultPaths;
 
 use crate::path_resolution::{clean_directory, test_data_path, test_output_path};
 use crate::test_snapshot_path::{TestSnapshotPath, TestSnapshotPathKind};
@@ -84,6 +85,15 @@ impl TestDataSetup
     pub fn binary_path(&self) -> Utf8PathBuf
     {
         self.output_path().join("debug")
+    }
+
+    pub fn paths(&self) -> DefaultPaths
+    {
+        DefaultPaths {
+            root: self.workspace_path(),
+            passivate: self.passivate_path(),
+            target: self.output_path()
+        }
     }
 
     pub fn snapshot_directories(&self) -> Vec<Utf8PathBuf>

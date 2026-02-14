@@ -14,7 +14,7 @@ use passivate_model_bridge::hyp_session_bridge::{
 use tokio_util::sync::CancellationToken;
 
 use crate::hyp_run_error::HypRunError;
-use crate::hyp_runner::RunHyps;
+use crate::hyp_runner::{RunHyps, RunHypsOptions};
 use crate::model::RustBridge;
 
 pub trait HypSessionBridge<TBridge: Bridge> = StartRunBridge<TBridge>
@@ -46,12 +46,19 @@ where
 {
     hyp_session_bridge.start_run();
 
+    let run_hyps_options = RunHypsOptions {
+      manifest_dir: request.paths.root.join("Cargo.toml"),
+      coverage_dir: None,
+      target_dir: request.configuration.target_dir.unwrap_or(request.paths.target),
+      update_snapshots: false
+    };
+
     let task: Pin<Box<dyn Future<Output = Result<(), HypRunError>> + Send>> = match request.kind
     {
-        HypRunRequestKind::All => Box::pin(run_hyps.run_hyps(request.options.compute_coverage, hyp_session_bridge, Vec::new())),
+        HypRunRequestKind::All => Box::pin(run_hyps.run_hyps(&run_hyps_options, hyp_session_bridge)),
         HypRunRequestKind::Single { hyp_id } =>
         {
-            Box::pin(run_hyps.run_hyp( hyp_id, request.options.update_snapshots,  hyp_session_bridge))
+            Box::pin(run_hyps.run_hyp( hyp_id, &run_hyps_options,  hyp_session_bridge))
         }
     };
 
