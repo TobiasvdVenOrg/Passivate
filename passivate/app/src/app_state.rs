@@ -158,6 +158,7 @@ impl<TBridge: Bridge> AppState<TBridge>
 }
 
 #[cfg(test)]
+#[cfg(feature = "testing")]
 pub mod tests
 {
     use std::path::PathBuf;

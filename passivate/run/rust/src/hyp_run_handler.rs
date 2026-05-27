@@ -38,7 +38,8 @@ pub async fn handle_request<THypSessionBridge, TRunHyps>(
     hyp_session_bridge: &mut THypSessionBridge,
     run_hyps: &mut TRunHyps,
     request: HypRunRequest<RustBridge>,
-    cancellation: CancellationToken
+    cancellation: CancellationToken,
+    runtime: &tokio::runtime::Runtime
 )
 where
     THypSessionBridge: HypSessionBridge<RustBridge>,
@@ -57,10 +58,10 @@ where
 
     let task: Pin<Box<dyn Future<Output = Result<(), HypRunError>> + Send>> = match request.kind
     {
-        HypRunRequestKind::All => Box::pin(run_hyps.run_hyps(&run_hyps_options, hyp_session_bridge)),
+        HypRunRequestKind::All => Box::pin(run_hyps.run_hyps(&run_hyps_options, hyp_session_bridge, runtime)),
         HypRunRequestKind::Single { hyp_id } =>
         {
-            Box::pin(run_hyps.run_hyp( hyp_id, &run_hyps_options,  hyp_session_bridge))
+            Box::pin(run_hyps.run_hyp( hyp_id, &run_hyps_options,  hyp_session_bridge, runtime))
         }
     };
 
@@ -87,13 +88,14 @@ async fn handle_request_take<THypSessionBridge, TRunHyps>(
     mut hyp_session_bridge: THypSessionBridge,
     mut run_hyps: TRunHyps,
     request: HypRunRequest<RustBridge>,
-    cancellation: CancellationToken
+    cancellation: CancellationToken,
+    runtime: &tokio::runtime::Runtime
 ) -> (THypSessionBridge, TRunHyps)
 where
     THypSessionBridge: HypSessionBridge<RustBridge>,
     TRunHyps: RunHyps + Send + Sync + 'static
 {
-    handle_request(&mut hyp_session_bridge, &mut run_hyps, request, cancellation).await;
+    handle_request(&mut hyp_session_bridge, &mut run_hyps, request, cancellation, runtime).await;
 
     (hyp_session_bridge, run_hyps)
 }
@@ -118,6 +120,8 @@ where
     THypSessionBridge: HypSessionBridge<RustBridge>,
     TRunHyps: RunHyps + Send + Sync + 'static
 {
+    let runtime2 = build_tokio_runtime();
+
     runtime.spawn(async move {
         let mut cancellation = tokio_util::sync::CancellationToken::new();
 
@@ -137,7 +141,7 @@ where
                             cancellation.cancel();
                             let (hyp_session_bridge, run_hyps) = running_request.await;
                             cancellation = CancellationToken::new();
-                            running_request = Box::pin(handle_request_take(hyp_session_bridge, run_hyps, request, cancellation.child_token()));
+                            running_request = Box::pin(handle_request_take(hyp_session_bridge, run_hyps, request, cancellation.child_token(), &runtime2));
                         },
                         None => {
                             // Channel closed, cancel a running request

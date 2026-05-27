@@ -47,14 +47,24 @@ pub struct RunHypsOptions
 }
 
 #[mockall::automock]
-#[async_trait]
 pub trait RunHyps
 {
-    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    fn run_hyps<TTx>(
+        &mut self,
+        options: &RunHypsOptions,
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
+    ) -> impl std::future::Future<Output = Result<(), HypRunError>> + Send
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 
-    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    fn run_hyp<TTx>(
+        &mut self,
+        hyp_id: HypId,
+        options: &RunHypsOptions,
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
+    ) -> impl std::future::Future<Output = Result<(), HypRunError>> + Send
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 }
@@ -62,18 +72,28 @@ pub trait RunHyps
 #[derive(Clone)]
 pub struct HypRunner;
 
-#[async_trait]
 impl RunHyps for HypRunner
 {
-    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    async fn run_hyps<TTx>(
+        &mut self,
+        options: &RunHypsOptions,
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
+    ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         let filter = vec![];
-        self.run_hyps_with_options(options, filter, tx).await
+        self.run_hyps_with_options(options, filter, tx, runtime).await
     }
 
-    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
+    async fn run_hyp<TTx>(
+        &mut self,
+        hyp_id: HypId,
+        options: &RunHypsOptions,
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
+    ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -83,7 +103,7 @@ impl RunHyps for HypRunner
 
         let filter = vec![hyp_id.name(&strategy).to_string()];
 
-        let result = self.run_hyps_with_options(options, filter, tx).await;
+        let result = self.run_hyps_with_options(options, filter, tx, runtime).await;
 
         result
     }
@@ -95,7 +115,8 @@ impl HypRunner
         &mut self,
         options: &RunHypsOptions,
         filter: Vec<String>,
-        tx: &mut TTx
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
@@ -118,7 +139,7 @@ impl HypRunner
             }
         }
 
-        let result = self.run_hyps_internal(options, filter, tx).await;
+        let result = self.run_hyps_internal(options, filter, tx, runtime).await;
 
         unsafe {
             std::env::remove_var("RUSTFLAGS");
@@ -133,155 +154,173 @@ impl HypRunner
         &mut self,
         options: &RunHypsOptions,
         filter: Vec<String>,
-        tx: &mut TTx
+        tx: &mut TTx,
+        runtime: &tokio::runtime::Runtime
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         log::info!("Starting test run");
 
-        let cargo_options = nextest_cargo_options::cargo_options()
-            .target_dir(options.target_dir.clone())
-            .call();
+        std::thread::scope(|scope| {
+            scope
+                .spawn(move || {
+                    let cargo_options = nextest_cargo_options::cargo_options()
+                        .target_dir(options.target_dir.clone())
+                        .call();
 
-        let build_platforms = BuildPlatforms::new_with_no_target().map_err(NextestError::HostPlatformDetect)?;
+                    let build_platforms = BuildPlatforms::new_with_no_target().map_err(NextestError::HostPlatformDetect)?;
 
-        let output_context = OutputContext {
-            verbose: false,
-            color: Color::Auto
-        };
+                    let output_context = OutputContext {
+                        verbose: false,
+                        color: Color::Auto
+                    };
 
-        let manifest_path = options.manifest_dir.join("Cargo.toml");
+                    let manifest_path = options.manifest_dir.join("Cargo.toml");
 
-        log::info!("querying metadata for: {manifest_path}");
+                    log::info!("querying metadata for: {manifest_path}");
 
-        let graph_data = acquire_graph_data(
-            Some(&manifest_path),
-            Some(&options.target_dir),
-            &cargo_options,
-            &build_platforms,
-            output_context
-        )
-        .map_err(NextestError::Expected)?;
+                    let graph_data = acquire_graph_data(
+                        Some(&manifest_path),
+                        Some(&options.target_dir),
+                        &cargo_options,
+                        &build_platforms,
+                        output_context
+                    )
+                    .map_err(NextestError::Expected)?;
 
-        let graph = PackageGraph::from_json(graph_data)?;
+                    let graph = PackageGraph::from_json(graph_data)?;
 
-        log::info!("Completed 'metadata'");
+                    log::info!("Completed 'metadata'");
 
-        let parse_context = ParseContext::new(&graph);
-        let config_file = None;
-        let tool_config_files = Vec::new();
-        let experimental = BTreeSet::new();
-        let nextest_config = NextestConfig::from_sources(
-            options.manifest_dir.as_path(),
-            &parse_context,
-            config_file,
-            tool_config_files,
-            &experimental
-        )
-        .map_err(NextestError::ConfigParse)?;
+                    let parse_context = ParseContext::new(&graph);
+                    let config_file = None;
+                    let tool_config_files = Vec::new();
+                    let experimental = BTreeSet::new();
+                    let nextest_config = NextestConfig::from_sources(
+                        options.manifest_dir.as_path(),
+                        &parse_context,
+                        config_file,
+                        tool_config_files,
+                        &experimental
+                    )
+                    .map_err(NextestError::ConfigParse)?;
 
-        let binary_list = cargo_options
-            .compute_binary_list("test", &graph, Some(&manifest_path), output_context, build_platforms.clone())
-            .map_err(NextestError::Expected)?;
+                    let binary_list = cargo_options
+                        .compute_binary_list("test", &graph, Some(&manifest_path), output_context, build_platforms.clone())
+                        .map_err(NextestError::Expected)?;
 
-        let path_mapper = PathMapper::noop();
-        let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
-        let platform_filter = None;
-        let artifacts =
-            RustTestArtifact::from_binary_list(&graph, Arc::new(binary_list), &rust_build_meta, &path_mapper, platform_filter)
-                .map_err(NextestError::FromMessages)?;
+                    let path_mapper = PathMapper::noop();
+                    let rust_build_meta = binary_list.rust_build_meta.map_paths(&path_mapper);
+                    let platform_filter = None;
+                    let artifacts = RustTestArtifact::from_binary_list(
+                        &graph,
+                        Arc::new(binary_list),
+                        &rust_build_meta,
+                        &path_mapper,
+                        platform_filter
+                    )
+                    .map_err(NextestError::FromMessages)?;
 
-        let double_spawn = DoubleSpawnInfo::disabled();
-        let target_runner = TargetRunner::empty();
+                    let double_spawn = DoubleSpawnInfo::disabled();
+                    let target_runner = TargetRunner::empty();
 
-        let profile = nextest_config
-            .profile(NextestConfig::DEFAULT_PROFILE)
-            .map_err(NextestError::ProfileNotFound)?;
+                    let profile = nextest_config
+                        .profile(NextestConfig::DEFAULT_PROFILE)
+                        .map_err(NextestError::ProfileNotFound)?;
 
-        let profile = profile.apply_build_platforms(&build_platforms);
+                    let profile = profile.apply_build_platforms(&build_platforms);
 
-        let context = TestExecuteContext {
-            profile_name: NextestConfig::DEFAULT_PROFILE,
-            double_spawn: &double_spawn,
-            target_runner: &target_runner
-        };
+                    let context = TestExecuteContext {
+                        profile_name: NextestConfig::DEFAULT_PROFILE,
+                        double_spawn: &double_spawn,
+                        target_runner: &target_runner
+                    };
 
-        let test_filter = if filter.is_empty()
-        {
-            TestFilter::default_set(NextestRunMode::Test, RunIgnored::Default)
-        }
-        else
-        {
-            let patterns = TestFilterPatterns::new(Vec::new());
+                    let test_filter =
+                        if filter.is_empty()
+                        {
+                            TestFilter::default_set(NextestRunMode::Test, RunIgnored::Default)
+                        }
+                        else
+                        {
+                            let patterns = TestFilterPatterns::new(Vec::new());
 
-            let mut filter_sets = vec![];
+                            let mut filter_sets = vec![];
 
-            for pattern in filter
-            {
-                let filterset =
-                    Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test).map_err(|error| {
-                        error
-                            .errors
-                            .into_iter()
-                            .next()
-                            .map_or_else(|| NextestError::UnknownFiltersetParse, NextestError::FiltersetParse)
-                    })?;
-                filter_sets.push(filterset);
-            }
+                            for pattern in filter
+                            {
+                                let filterset =
+                                    Filterset::parse(format!("test(={})", pattern), &parse_context, FiltersetKind::Test)
+                                        .map_err(|error| {
+                                            error.errors.into_iter().next().map_or_else(
+                                                || NextestError::UnknownFiltersetParse,
+                                                NextestError::FiltersetParse
+                                            )
+                                        })?;
+                                filter_sets.push(filterset);
+                            }
 
-            TestFilter::new(NextestRunMode::Test, RunIgnored::Default, patterns, filter_sets)
-                .map_err(NextestError::TestFilterBuild)?
-        };
+                            TestFilter::new(NextestRunMode::Test, RunIgnored::Default, patterns, filter_sets)
+                                .map_err(NextestError::TestFilterBuild)?
+                        };
 
-        let cli_configs: Vec<String> = Vec::new();
-        let cargo_configs = CargoConfigs::new(cli_configs.into_iter()).map_err(NextestError::CargoConfig)?;
+                    let cli_configs: Vec<String> = Vec::new();
+                    let cargo_configs = CargoConfigs::new(cli_configs.into_iter()).map_err(NextestError::CargoConfig)?;
 
-        let env = EnvironmentMap::new(&cargo_configs);
+                    let env = EnvironmentMap::new(&cargo_configs);
 
-        let partitioner_builder = None;
-        let test_list = TestList::new(
-            &context,
-            artifacts.into_iter(),
-            rust_build_meta,
-            &test_filter,
-            partitioner_builder,
-            options.manifest_dir.clone(),
-            env,
-            &profile,
-            FilterBound::DefaultSet,
-            get_num_cpus()
-        )
-        .map_err(NextestError::CreateTestList)?;
+                    let partitioner_builder = None;
+                    let test_list = TestList::new(
+                        &context,
+                        artifacts.into_iter(),
+                        rust_build_meta,
+                        &test_filter,
+                        partitioner_builder,
+                        options.manifest_dir.clone(),
+                        env,
+                        &profile,
+                        FilterBound::DefaultSet,
+                        get_num_cpus()
+                    )
+                    .map_err(NextestError::CreateTestList)?;
 
-        let mut runner_builder = TestRunnerBuilder::default();
-        runner_builder.set_max_fail(MaxFail::from_fail_fast(false));
+                    let mut runner_builder = TestRunnerBuilder::default();
+                    runner_builder.set_max_fail(MaxFail::from_fail_fast(false));
 
-        let runner = runner_builder
-            .build(
-                &test_list,
-                &profile,
-                vec![], // we aren't testing CLI args at the moment
-                SignalHandlerKind::Noop,
-                InputHandlerKind::Noop,
-                DoubleSpawnInfo::disabled(),
-                TargetRunner::empty()
-            )
-            .map_err(NextestError::TestRunnerBuild)?;
+                    let runner = runner_builder
+                        .build(
+                            &test_list,
+                            &profile,
+                            vec![], // we aren't testing CLI args at the moment
+                            SignalHandlerKind::Noop,
+                            InputHandlerKind::Noop,
+                            DoubleSpawnInfo::disabled(),
+                            TargetRunner::empty()
+                        )
+                        .map_err(NextestError::TestRunnerBuild)?;
 
-        runner
-            .execute(|test_event| {
-                match test_event
-                {
-                    nextest_runner::reporter::events::ReporterEvent::Tick => todo!(),
-                    nextest_runner::reporter::events::ReporterEvent::Test(test_event) => process_nextest_event(tx, *test_event)
-                };
-            })
-            .map_err(NextestError::TestRunnerExecute)?;
+                    runner
+                        .execute(|test_event| {
+                            match test_event
+                            {
+                                nextest_runner::reporter::events::ReporterEvent::Tick =>
+                                {}
+                                nextest_runner::reporter::events::ReporterEvent::Test(test_event) =>
+                                {
+                                    process_nextest_event(tx, *test_event)
+                                }
+                            };
+                        })
+                        .map_err(NextestError::TestRunnerExecute)?;
 
-        log::info!("Completed test run");
+                    log::info!("Completed test run");
 
-        Ok(())
+                    Ok(())
+                })
+                .join()
+        })
+        .unwrap()
     }
 }
 
