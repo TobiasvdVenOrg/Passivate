@@ -2,7 +2,6 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use camino::Utf8PathBuf;
 use cargo_nextest::dispatch::helpers::acquire_graph_data;
 use cargo_nextest::output::{Color, OutputContext};
@@ -47,24 +46,14 @@ pub struct RunHypsOptions
 }
 
 #[mockall::automock]
+#[async_trait::async_trait]
 pub trait RunHyps
 {
-    fn run_hyps<TTx>(
-        &mut self,
-        options: &RunHypsOptions,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
-    ) -> impl std::future::Future<Output = Result<(), HypRunError>> + Send
+    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 
-    fn run_hyp<TTx>(
-        &mut self,
-        hyp_id: HypId,
-        options: &RunHypsOptions,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
-    ) -> impl std::future::Future<Output = Result<(), HypRunError>> + Send
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>;
 }
@@ -72,28 +61,18 @@ pub trait RunHyps
 #[derive(Clone)]
 pub struct HypRunner;
 
+#[async_trait::async_trait]
 impl RunHyps for HypRunner
 {
-    async fn run_hyps<TTx>(
-        &mut self,
-        options: &RunHypsOptions,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
-    ) -> Result<(), HypRunError>
+    async fn run_hyps<TTx>(&mut self, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
         let filter = vec![];
-        self.run_hyps_with_options(options, filter, tx, runtime).await
+        self.run_hyps_with_options(options, filter, tx).await
     }
 
-    async fn run_hyp<TTx>(
-        &mut self,
-        hyp_id: HypId,
-        options: &RunHypsOptions,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
-    ) -> Result<(), HypRunError>
+    async fn run_hyp<TTx>(&mut self, hyp_id: HypId, options: &RunHypsOptions, tx: &mut TTx) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
     {
@@ -103,7 +82,7 @@ impl RunHyps for HypRunner
 
         let filter = vec![hyp_id.name(&strategy).to_string()];
 
-        let result = self.run_hyps_with_options(options, filter, tx, runtime).await;
+        let result = self.run_hyps_with_options(options, filter, tx).await;
 
         result
     }
@@ -115,8 +94,7 @@ impl HypRunner
         &mut self,
         options: &RunHypsOptions,
         filter: Vec<String>,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
+        tx: &mut TTx
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
@@ -139,7 +117,7 @@ impl HypRunner
             }
         }
 
-        let result = self.run_hyps_internal(options, filter, tx, runtime).await;
+        let result = self.run_hyps_internal(options, filter, tx).await;
 
         unsafe {
             std::env::remove_var("RUSTFLAGS");
@@ -154,8 +132,7 @@ impl HypRunner
         &mut self,
         options: &RunHypsOptions,
         filter: Vec<String>,
-        tx: &mut TTx,
-        runtime: &tokio::runtime::Runtime
+        tx: &mut TTx
     ) -> Result<(), HypRunError>
     where
         TTx: SendHypBridge<RustBridge> + SendOutputBridge<RustBridge>
