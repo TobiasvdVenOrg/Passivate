@@ -159,15 +159,24 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn output(&mut self, output: OutputReport<TBridge>) -> ChangeResult<'_, TBridge>
     {
-        match self.hyps.get_mut(output.id().chain())
+        let chain = output.id().chain();
+
+        if chain.is_empty()
         {
-            Some(hyp) =>
+            self.output.push(output.output);
+            Ok(None)
+        }
+        else
+        {
+            match self.hyps.get_mut(chain)
             {
-                let (_id, content) = (output.id, output.output);
-                hyp.add_output(content);
-                Ok(None)
+                Some(hyp) =>
+                {
+                    hyp.add_output(output.output);
+                    Ok(None)
+                }
+                None => Err(HypSessionEvent::Output(output))
             }
-            None => Err(HypSessionEvent::Output(output))
         }
     }
 
