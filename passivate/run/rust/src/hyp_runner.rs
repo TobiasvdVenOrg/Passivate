@@ -372,11 +372,11 @@ where
                 HypState::Failed
             };
 
-            let hyp_id = HypId::new(
-                test_instance.binary_id.as_str(),
-                test_instance.test_name.as_str().split("::").next().unwrap(),
-                test_instance.test_name.as_str().split("::").skip(1).join("::")
-            );
+            let mut binary_id = test_instance.binary_id.as_str().split("::");
+            let package_id = binary_id.next().unwrap();
+            let crate_id = binary_id.next().unwrap();
+
+            let hyp_id = HypId::new(package_id, crate_id, test_instance.test_name.as_str());
 
             let hyp_info = RustHyp::new_single(hyp_id.clone());
             let hyp_report = HypReport::new_fixed(hyp_info, state);

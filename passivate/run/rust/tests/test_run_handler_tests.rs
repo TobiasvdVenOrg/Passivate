@@ -15,6 +15,7 @@ use mockall::Sequence;
 use passivate_configuration::configuration::PassivateConfiguration;
 use passivate_configuration::default_paths;
 use passivate_hyp_names::hyp_id::HypId;
+use passivate_hyp_names::hyp_name_strategy::HypNameStrategy;
 use passivate_hyp_names::test_name;
 use passivate_id_chain_tree::id_chain::IdChain;
 use passivate_model_bridge::hyp_run_request::{self, HypRunRequest, HypRunRequestKind};
@@ -24,7 +25,7 @@ use passivate_model_bridge::hyp_state::HypState;
 use passivate_model_core::hyp_session::HypSession;
 use passivate_run_rust::hyp_run_error::HypRunError;
 use passivate_run_rust::hyp_run_handler::{self, spawn_hyp_run_future};
-use passivate_run_rust::hyp_runner::MockRunHyps;
+use passivate_run_rust::hyp_runner::{HypRunner, MockRunHyps};
 use passivate_run_rust::model::{RustBridge, RustOutput};
 use passivate_run_rust::nextest_error::NextestError;
 use passivate_testing::test_data_setup::TestDataSetup;
@@ -200,6 +201,7 @@ pub fn failing_tests_output_is_captured_in_state() -> Result<(), IoError>
 
     HandleHypRunRequest::new()
         .with_hyp_session_bridge(session_tx)
+        .with_runner(HypRunner)
         .call(HypRunRequest::stub().paths(setup.paths()).call());
 
     let failed_test = HypId::new("sample_project", "multiply_tests", "multiply_2_and_2_is_4");
