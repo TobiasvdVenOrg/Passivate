@@ -105,12 +105,15 @@ pub fn single_hyp_run_only_runs_one_exact_hyp()
     let setup = TestDataSetup::builder(test_name!(), "simple_project").build().clean_output();
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_2_and_2_is_4");
 
-    HandleHypRunRequest::new().with_hyp_session_bridge(session_tx).call(
-        HypRunRequest::stub()
-            .kind(HypRunRequestKind::Single { hyp_id: hyp_to_run })
-            .paths(setup.paths())
-            .call()
-    );
+    HandleHypRunRequest::new()
+        .with_runner(HypRunner)
+        .with_hyp_session_bridge(session_tx)
+        .call(
+            HypRunRequest::stub()
+                .kind(HypRunRequestKind::Single { hyp_id: hyp_to_run })
+                .paths(setup.paths())
+                .call()
+        );
 
     let session = HypSession::from_events(session_rx.try_iter());
     let mut iter = session.hyps().iter();
