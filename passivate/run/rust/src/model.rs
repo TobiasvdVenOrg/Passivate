@@ -26,6 +26,18 @@ pub enum WorkspaceCompilation
     Message(CompilationMessage)
 }
 
+impl Display for WorkspaceCompilation
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self
+        {
+            WorkspaceCompilation::WaitForLock => write!(f, "waiting for lock"),
+            WorkspaceCompilation::Message(compilation_message) => compilation_message.fmt(f)
+        }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RustBridge;
 

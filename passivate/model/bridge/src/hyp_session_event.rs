@@ -80,6 +80,14 @@ impl ConsoleOutput
     }
 }
 
+impl Display for ConsoleOutput
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "{}", self.content)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConsoleOutputKind
 {
