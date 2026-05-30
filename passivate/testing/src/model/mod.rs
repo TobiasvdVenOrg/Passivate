@@ -174,7 +174,10 @@ impl Display for TestOutput
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        todo!()
+        match self
+        {
+            TestOutput::Compilation(compilation_message) => compilation_message.fmt(f)
+        }
     }
 }
 
