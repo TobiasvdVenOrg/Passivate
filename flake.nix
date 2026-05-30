@@ -30,6 +30,7 @@
                 #targets = [ "x86_64-unknown-linux-gnu" ]
               })
             )
+            cargo-nextest
           ];
 
           LD_LIBRARY_PATH = libPath;
