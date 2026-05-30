@@ -236,7 +236,9 @@ pub fn failing_tests_output_persists_on_repeat_runs() -> Result<(), IoError>
         .build()
         .clean_output();
 
-    let mut handle_hyp_run = HandleHypRunRequest::new().with_hyp_session_bridge(session_tx);
+    let mut handle_hyp_run = HandleHypRunRequest::new()
+        .with_runner(HypRunner)
+        .with_hyp_session_bridge(session_tx);
 
     // Run tests twice
     handle_hyp_run.call(HypRunRequest::stub().paths(setup.paths()).call());

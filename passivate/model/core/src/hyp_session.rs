@@ -140,6 +140,8 @@ impl<TBridge: Bridge> Session<TBridge>
     {
         self.activity = HypState::Running;
 
+        self.hyps.clear();
+
         Ok(None)
     }
 

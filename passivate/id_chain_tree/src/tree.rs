@@ -49,6 +49,11 @@ impl<TLink: ChainLink, TValue: IdChain<Link = TLink>> Tree<TLink, TValue>
         self.find_node(chain).map(|node| NodeView::new(node, self))
     }
 
+    pub fn clear(&mut self)
+    {
+        self.values.clear();
+    }
+
     fn find_node(&self, chain: &[TLink]) -> Option<&Node<TValue>>
     {
         self.values.iter().find(|e| e.chain() == chain)
