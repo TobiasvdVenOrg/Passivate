@@ -373,8 +373,9 @@ where
             };
 
             let mut binary_id = test_instance.binary_id.as_str().split("::");
+
             let package_id = binary_id.next().unwrap();
-            let crate_id = binary_id.next().unwrap();
+            let crate_id = binary_id.next().unwrap_or(package_id);
 
             let hyp_id = HypId::new(package_id, crate_id, test_instance.test_name.as_str());
 

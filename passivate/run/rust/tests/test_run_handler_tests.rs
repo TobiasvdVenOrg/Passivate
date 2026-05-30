@@ -85,12 +85,15 @@ pub fn running_single_hyp_leaves_session_in_passed_state()
 
     let hyp_to_run = HypId::new("simple_project", "simple_project", "add_8_and_8_is_16");
 
-    HandleHypRunRequest::new().with_hyp_session_bridge(session_tx).call(
-        HypRunRequest::stub()
-            .kind(HypRunRequestKind::Single { hyp_id: hyp_to_run })
-            .paths(setup.paths())
-            .call()
-    );
+    HandleHypRunRequest::new()
+        .with_hyp_session_bridge(session_tx)
+        .with_runner(HypRunner)
+        .call(
+            HypRunRequest::stub()
+                .kind(HypRunRequestKind::Single { hyp_id: hyp_to_run })
+                .paths(setup.paths())
+                .call()
+        );
 
     let session = HypSession::from_events(session_rx.try_iter());
 
