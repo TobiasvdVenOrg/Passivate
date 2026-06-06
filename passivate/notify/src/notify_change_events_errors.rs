@@ -26,7 +26,7 @@ impl NotifyChangeEventsError
         match canonicalize
         {
             Ok(absolute_path) => absolute_path.display().to_string(),
-            Err(_) => "[Not Found]".to_string()
+            Err(err) => format!("[Not Found] ({err})")
         }
     }
 
@@ -48,8 +48,9 @@ impl Display for NotifyChangeEventsError
     {
         match &self
         {
-            NotifyChangeEventsError::InvalidPath { path, notify_error: _ } =>
+            NotifyChangeEventsError::InvalidPath { path, notify_error } =>
             {
+                writeln!(f, "{}", notify_error)?;
                 writeln!(f, "input was: {}", path)?;
                 writeln!(f, "full path was: {}", Self::try_absolute_path(path))?;
                 write!(f, "working directory: {}", Self::try_working_dir())

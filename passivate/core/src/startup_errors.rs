@@ -16,7 +16,7 @@ pub enum StartupError
     {
         argument: String
     },
-    #[error("notify failed")]
+    #[error("notify failed: {0}")]
     NotifyChangeEvents(#[from] NotifyChangeEventsError),
     #[error("channel error")]
     Channel(SendError<HypRunRequest<RustBridge>>),

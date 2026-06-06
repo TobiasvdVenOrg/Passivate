@@ -23,7 +23,8 @@
         pkgs.libGL
       ];
 
-      craneLib = crane.mkLib pkgs;
+      defaultCraneLib = crane.mkLib pkgs;
+      craneLib = defaultCraneLib.overrideToolchain (p: p.rust-bin.nightly.latest.default);
 
       commonArgs = {
         pname = "passivate";
@@ -41,9 +42,7 @@
 
         strictDeps = true;
 
-        buildInputs = [
-          # Add additional build inputs here
-        ];
+        PASSIVATE_TEST_DATA = "${./test_data}";
       };
 
       deps-args = {
