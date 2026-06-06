@@ -5,6 +5,6 @@
   "description": "Build Passivate",
   "checkinterval": 30,
   "enableemail": false,
-  "enable_dynamic_run_command": true,
+  "enable_dynamic_run_command": false,
   "keepnr": 4
 }
