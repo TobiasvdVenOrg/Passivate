@@ -6,14 +6,9 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane";
-    passivate-nextest.url = "github:TobiasvdVenOrg/passivate-nextest/passivate-compatible";
   };
 
-
-
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, passivate-nextest, ... }:
-
-
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       overlays = [ rust-overlay.overlays.default ];
@@ -28,30 +23,21 @@
         pkgs.libGL
       ];
 
-      crane-pkgs = nixpkgs.legacyPackages.${system};
       craneLib = crane.mkLib pkgs;
-
-      root-src = ./.;
-
-      mod-src = pkgs.runCommand "passivate" {} ''
-                  echo "mkdir $out"
-                  mkdir -p $out
-
-                  echo "cp ${root-src}"
-
-                  cp -r ${root-src}/passivate $out/passivate
-                  cp -r ${passivate-nextest} $out/passivate-nextest
-              '';
-
-      passivate-src = mod-src + "/passivate";
-
-      clean-src = craneLib.cleanCargoSource passivate-src;
 
       commonArgs = {
         pname = "passivate";
         version = "0.1.0";
 
-        src = clean-src;
+        postUnpack = ''
+          cd $sourceRoot/passivate
+          sourceRoot="."
+        '';
+
+        src = ./.;
+
+        cargoToml = ./passivate/Cargo.toml;
+        cargoLock = ./passivate/Cargo.lock;
 
         strictDeps = true;
 
