@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "hidden": false,
+  "type": 1,
+  "description": "Build Passivate",
+  "checkinterval": 30,
+  "enableemail": false,
+  "enable_dynamic_run_command": true,
+  "keepnr": 4
+}
