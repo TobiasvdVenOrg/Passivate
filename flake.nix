@@ -9,69 +9,75 @@
   };
 
   outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
     let
-      overlays = [ rust-overlay.overlays.default ];
+      allSystems = flake-utils.lib.eachDefaultSystem (system:
+        let
+          overlays = [ rust-overlay.overlays.default ];
 
-      pkgs = import nixpkgs {
-        inherit system overlays;
-      };
+          pkgs = import nixpkgs {
+            inherit system overlays;
+          };
 
-      libPath = pkgs.lib.makeLibraryPath [
-        pkgs.wayland
-        pkgs.libxkbcommon
-        pkgs.libGL
-      ];
+          libPath = pkgs.lib.makeLibraryPath [
+            pkgs.wayland
+            pkgs.libxkbcommon
+            pkgs.libGL
+          ];
 
-      defaultCraneLib = crane.mkLib pkgs;
-      craneLib = defaultCraneLib.overrideToolchain (p: p.rust-bin.nightly.latest.default);
+          defaultCraneLib = crane.mkLib pkgs;
+          craneLib = defaultCraneLib.overrideToolchain (p: p.rust-bin.nightly.latest.default);
 
-      commonArgs = {
-        pname = "passivate";
-        version = "0.1.0";
+          commonArgs = {
+            pname = "passivate";
+            version = "0.1.0";
 
-        postUnpack = ''
-          cd $sourceRoot/passivate
-          sourceRoot="."
-        '';
+            postUnpack = ''
+              cd $sourceRoot/passivate
+              sourceRoot="."
+            '';
 
-        src = ./.;
+            src = ./.;
 
-        cargoToml = ./passivate/Cargo.toml;
-        cargoLock = ./passivate/Cargo.lock;
+            cargoToml = ./passivate/Cargo.toml;
+            cargoLock = ./passivate/Cargo.lock;
 
-        strictDeps = true;
-        doCheck = false;
+            strictDeps = true;
+            doCheck = false;
 
-        PASSIVATE_TEST_DATA = "${./test_data}";
-      };
+            PASSIVATE_TEST_DATA = "${./test_data}";
+          };
 
-      deps-args = {
-          cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-        };
+          deps-args = {
+              cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+            };
 
-        crate-args = commonArgs // deps-args;
-        my-crate = craneLib.buildPackage crate-args;
+            crate-args = commonArgs // deps-args;
+            my-crate = craneLib.buildPackage crate-args;
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            buildInputs = [
+              (
+                pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
+                  extensions = [ "rust-src" "rust-analyzer" ];
+                  #targets = [ "x86_64-unknown-linux-gnu" ]
+                })
+              )
+              pkgs.cargo-nextest
+            ];
+
+            LD_LIBRARY_PATH = libPath;
+            PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
+          };
+
+          packages.default = my-crate;
+
+        }
+      );
     in
     {
-      devShells.default = pkgs.mkShell {
-        buildInputs = [
-          (
-            pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
-              extensions = [ "rust-src" "rust-analyzer" ];
-              #targets = [ "x86_64-unknown-linux-gnu" ]
-            })
-          )
-          pkgs.cargo-nextest
-        ];
+      packages = allSystems.packages;
 
-        LD_LIBRARY_PATH = libPath;
-        PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
-      };
-
-      packages.default = my-crate;
-
-      hydraJobs = my-crate;
-    }
-  );
+      hydraJobs.x86_64-linux.default = allSystems.packages.x86_64-linux.default;
+    };
 }
