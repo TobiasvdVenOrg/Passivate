@@ -52,7 +52,7 @@
             };
 
             crate-args = commonArgs // deps-args;
-            my-crate = craneLib.buildPackage crate-args;
+            passivate-build = craneLib.buildPackage crate-args;
         in
         {
           devShells.default = pkgs.mkShell {
@@ -70,8 +70,7 @@
             PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
           };
 
-          packages.default = my-crate;
-
+          packages.default = passivate-build;
         }
       );
     in
