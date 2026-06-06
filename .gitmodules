@@ -1,0 +1,3 @@
+[submodule "passivate-nextest"]
+	path = passivate-nextest
+	url = https://github.com/TobiasvdVenOrg/passivate-nextest
