@@ -70,6 +70,11 @@
       };
 
       packages.default = my-crate;
+
+      hydraJobs = {
+        inherit (self)
+          packages;
+      };
     }
   );
 }
