@@ -6,7 +6,6 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane";
-    self.submodules = true;
   };
 
   outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, ... }:
