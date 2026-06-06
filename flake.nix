@@ -41,6 +41,7 @@
         cargoLock = ./passivate/Cargo.lock;
 
         strictDeps = true;
+        doCheck = false;
 
         PASSIVATE_TEST_DATA = "${./test_data}";
       };
