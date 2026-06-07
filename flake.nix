@@ -45,14 +45,20 @@
             doCheck = false;
 
             PASSIVATE_TEST_DATA = "${./test_data}";
+
+            buildInputs = [
+              pkgs.wayland
+              pkgs.libxkbcommon
+              pkgs.libGL
+            ];
           };
 
           deps-args = {
               cargoArtifacts = craneLib.buildDepsOnly commonArgs;
             };
 
-            crate-args = commonArgs // deps-args;
-            passivate-build = craneLib.buildPackage crate-args;
+          crate-args = commonArgs // deps-args;
+          passivate-build = craneLib.buildPackage crate-args;
         in
         {
           devShells.default = pkgs.mkShell {
