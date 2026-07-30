@@ -6,6 +6,7 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane";
+    self.submodules = true;
   };
 
   outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, ... }:
@@ -46,6 +47,31 @@
 
             PASSIVATE_TEST_DATA = "${./test_data}";
 
+            nativeBuildInputs = [
+              pkgs.makeWrapper
+              pkgs.autoPatchelfHook
+            ];
+
+            buildInputs = [
+              pkgs.libgcc
+            ];
+          };
+
+          deps-args = {
+              postInstall = ''
+                # wrapProgram $out/bin/passivate --prefix LD_LIBRARY_PATH : ${libPath}
+              '';
+
+              libs = libPath;
+
+              postFixup = ''
+                  patchelf $out/bin/passivate
+                '';
+
+              cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+            };
+
+          crate-args = commonArgs // deps-args // {
             buildInputs = [
               pkgs.wayland
               pkgs.libxkbcommon
@@ -53,11 +79,6 @@
             ];
           };
 
-          deps-args = {
-              cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-            };
-
-          crate-args = commonArgs // deps-args;
           passivate-build = craneLib.buildPackage crate-args;
         in
         {
@@ -70,9 +91,17 @@
                 })
               )
               pkgs.cargo-nextest
+              pkgs.wayland
+              pkgs.wl-clipboard
             ];
 
             LD_LIBRARY_PATH = libPath;
+            # LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            #             pkgs.wayland
+            #             pkgs.libxkbcommon
+            #             pkgs.libGL
+            #           ];
+
             PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
           };
 
@@ -82,7 +111,7 @@
     in
     {
       packages = allSystems.packages;
-
+      devShells = allSystems.devShells;
       hydraJobs.x86_64-linux.default = allSystems.packages.x86_64-linux.default;
     };
 }
