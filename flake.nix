@@ -19,12 +19,14 @@
             inherit system overlays;
           };
 
-          libPath = pkgs.lib.makeLibraryPath [
-            pkgs.wayland
-            pkgs.libxkbcommon
-            pkgs.libGL
-            pkgs.libgcc
-          ];
+          libInputs = [
+              pkgs.wayland
+              pkgs.libxkbcommon
+              pkgs.libGL
+              pkgs.libgcc
+            ];
+
+          libPath = pkgs.lib.makeLibraryPath libInputs;
 
           defaultCraneLib = crane.mkLib pkgs;
           craneLib = defaultCraneLib.overrideToolchain (p: p.rust-bin.nightly.latest.default);
@@ -50,37 +52,21 @@
 
             nativeBuildInputs = [
               pkgs.makeWrapper
-              pkgs.libgcc
-              pkgs.stdenv.cc.cc.lib
-              pkgs.wayland
             ];
           };
 
           deps-args = {
               postInstall = ''
-                # wrapProgram $out/bin/passivate --prefix LD_LIBRARY_PATH : ${libPath}
-                echo "WRAPPING"
                 wrapProgram $out/bin/passivate --prefix LD_LIBRARY_PATH : ${libPath}
-                echo "DONE WRAPPING"
               '';
 
               libs = libPath;
-
-              postFixup = ''
-                  echo hahahaha
-                  #auto-patchelf --libs ${pkgs.libgcc}/lib ${pkgs.wayland}/lib  --paths $out/bin/passivate
-                '';
 
               cargoArtifacts = craneLib.buildDepsOnly commonArgs;
             };
 
           crate-args = commonArgs // deps-args // {
-            buildInputs = [
-              pkgs.wayland
-              pkgs.libxkbcommon
-              pkgs.libGL
-              pkgs.libgcc
-            ];
+            buildInputs = libInputs;
           };
 
           passivate-build = craneLib.buildPackage crate-args;
@@ -91,7 +77,6 @@
               (
                 pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
                   extensions = [ "rust-src" "rust-analyzer" ];
-                  #targets = [ "x86_64-unknown-linux-gnu" ]
                 })
               )
               pkgs.cargo-nextest
