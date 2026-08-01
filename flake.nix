@@ -23,6 +23,7 @@
             pkgs.wayland
             pkgs.libxkbcommon
             pkgs.libGL
+            pkgs.libgcc
           ];
 
           defaultCraneLib = crane.mkLib pkgs;
@@ -49,23 +50,25 @@
 
             nativeBuildInputs = [
               pkgs.makeWrapper
-              pkgs.autoPatchelfHook
-            ];
-
-            buildInputs = [
               pkgs.libgcc
+              pkgs.stdenv.cc.cc.lib
+              pkgs.wayland
             ];
           };
 
           deps-args = {
               postInstall = ''
                 # wrapProgram $out/bin/passivate --prefix LD_LIBRARY_PATH : ${libPath}
+                echo "WRAPPING"
+                wrapProgram $out/bin/passivate --prefix LD_LIBRARY_PATH : ${libPath}
+                echo "DONE WRAPPING"
               '';
 
               libs = libPath;
 
               postFixup = ''
-                  patchelf $out/bin/passivate
+                  echo hahahaha
+                  #auto-patchelf --libs ${pkgs.libgcc}/lib ${pkgs.wayland}/lib  --paths $out/bin/passivate
                 '';
 
               cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -76,6 +79,7 @@
               pkgs.wayland
               pkgs.libxkbcommon
               pkgs.libGL
+              pkgs.libgcc
             ];
           };
 
@@ -92,16 +96,9 @@
               )
               pkgs.cargo-nextest
               pkgs.wayland
-              pkgs.wl-clipboard
             ];
 
             LD_LIBRARY_PATH = libPath;
-            # LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-            #             pkgs.wayland
-            #             pkgs.libxkbcommon
-            #             pkgs.libGL
-            #           ];
-
             PASSIVATE_TEST_DATA = "${toString ./.}/test_data";
           };
 
