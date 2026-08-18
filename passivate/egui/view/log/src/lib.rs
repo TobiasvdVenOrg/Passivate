@@ -7,15 +7,18 @@ impl LogView
 {
     pub fn ui(&mut self, ui: &mut Ui, logs: &Vec<LogEntry>)
     {
-        ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
-            for trace in logs
-            {
-                ui.horizontal(|ui| {
-                    ui.label(&trace.timestamp);
-                    ui.label(&trace.message);
-                });
-            }
-        });
+        ScrollArea::vertical()
+            .stick_to_bottom(true)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                for trace in logs
+                {
+                    ui.horizontal(|ui| {
+                        ui.label(&trace.timestamp);
+                        ui.label(&trace.message);
+                    });
+                }
+            });
     }
 }
 
