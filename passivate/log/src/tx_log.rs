@@ -28,8 +28,10 @@ impl<TTx: LogMessageTx> log::Log for TxLog<TTx>
     {
         if record.metadata().target().starts_with("passivate")
         {
-            self.tx
-                .send(LogMessage::new(format!("{} - {}", record.level(), record.args())));
+            let message = LogMessage::new(format!("{} - {}", record.level(), record.args()));
+            println!("{} {}", message.timestamp, message.content);
+
+            self.tx.send(message);
         }
     }
 
