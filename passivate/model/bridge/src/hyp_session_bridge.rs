@@ -44,7 +44,6 @@ where
 {
     fn start_run(&mut self)
     {
-        log::info!("start_run");
         self.send(HypSessionEvent::RunStarted);
     }
 }
@@ -56,7 +55,6 @@ where
 {
     fn send_output(&mut self, report: OutputReport<TBridge>)
     {
-        log::info!("send_output");
         self.send(HypSessionEvent::Output(report));
     }
 }
@@ -68,7 +66,6 @@ where
 {
     fn send_hyp(&mut self, hyp_report: HypReport<TBridge>)
     {
-        log::info!("send_hyp");
         self.send(HypSessionEvent::Hyp(hyp_report));
     }
 }
@@ -80,7 +77,6 @@ where
 {
     fn complete_run(&mut self)
     {
-        log::info!("complete_run");
         self.send(HypSessionEvent::RunCompleted);
     }
 }
@@ -92,7 +88,6 @@ where
 {
     fn cancel_run(&mut self)
     {
-        log::info!("cancel_run");
         self.send(HypSessionEvent::RunCancelled);
     }
 }

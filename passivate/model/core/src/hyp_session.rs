@@ -109,8 +109,6 @@ impl<TBridge: Bridge> Session<TBridge>
 
     fn process_event(&mut self, event: HypSessionEvent<TBridge>) -> ChangeResult<'_, TBridge>
     {
-        log::info!("process_event: {}", event);
-
         match self.activity
         {
             HypState::Unknown | HypState::Passed | HypState::Failed =>

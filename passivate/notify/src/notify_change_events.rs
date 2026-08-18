@@ -41,8 +41,6 @@ impl NotifyChangeEvents
                     {
                         if !event.kind.is_access()
                         {
-                            log::info!("notify: {event:?}");
-
                             for path in &event.paths
                             {
                                 let extension = path.extension();
