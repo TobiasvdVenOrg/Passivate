@@ -114,6 +114,8 @@ impl<TBridge: Bridge> AppState<TBridge>
 
             run_hyps.run_all(configuration.clone(), self.configuration.paths().clone());
         }
+
+        egui_context.request_repaint();
     }
 }
 
