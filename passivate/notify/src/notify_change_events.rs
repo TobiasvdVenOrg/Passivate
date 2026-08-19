@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use notify::{
@@ -21,6 +21,8 @@ pub struct NotifyChangeEvents
     watcher: RecommendedWatcher,
     path: Utf8PathBuf
 }
+
+const CONSECUTIVE_CHANGE_THRESHOLD: Duration = Duration::from_millis(100);
 
 impl NotifyChangeEvents
 {
@@ -52,13 +54,16 @@ impl NotifyChangeEvents
                                 {
                                     if let Some(last_modification) = modification_cache.get(path)
                                     {
-                                        if &modified > last_modification
+                                        if let Ok(delta) = modified.duration_since(*last_modification)
+                                            && delta > CONSECUTIVE_CHANGE_THRESHOLD
                                         {
+                                            log::info!("source change trigger: {path:?}");
                                             bridge.file_changed(path.clone());
                                         }
                                     }
                                     else
                                     {
+                                        log::info!("source change trigger: {path:?}");
                                         bridge.file_changed(path.clone());
                                     }
 
