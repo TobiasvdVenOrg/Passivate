@@ -6,7 +6,6 @@ use camino::Utf8PathBuf;
 use cargo_nextest::dispatch::helpers::acquire_graph_data;
 use cargo_nextest::output::{Color, OutputContext};
 use guppy::graph::PackageGraph;
-use itertools::Itertools;
 use nextest_filtering::{Filterset, FiltersetKind, ParseContext};
 use nextest_runner::cargo_config::{CargoConfigs, EnvironmentMap};
 use nextest_runner::config::core::{NextestConfig, get_num_cpus};
@@ -82,9 +81,7 @@ impl RunHyps for HypRunner
 
         let filter = vec![hyp_id.name(&strategy).to_string()];
 
-        let result = self.run_hyps_with_options(options, filter, tx).await;
-
-        result
+        self.run_hyps_with_options(options, filter, tx).await
     }
 }
 
@@ -243,14 +240,14 @@ impl HypRunner
                         };
 
                     let cli_configs: Vec<String> = Vec::new();
-                    let cargo_configs = CargoConfigs::new(cli_configs.into_iter()).map_err(NextestError::CargoConfig)?;
+                    let cargo_configs = CargoConfigs::new(cli_configs).map_err(NextestError::CargoConfig)?;
 
                     let env = EnvironmentMap::new(&cargo_configs);
 
                     let partitioner_builder = None;
                     let test_list = TestList::new(
                         &context,
-                        artifacts.into_iter(),
+                        artifacts,
                         rust_build_meta,
                         &test_filter,
                         partitioner_builder,
